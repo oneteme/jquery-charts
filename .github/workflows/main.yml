@@ -1,0 +1,21 @@
+name: Jquery Core Pipeline
+on:
+  push:
+    branches: [ "main" ]
+    paths-ignore: [ "README.md", "doc/**" ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+          scope: '@oneteme'
+      - run: npm install  
+      - run: npm run build jquery-core
+      - run: npm publish ./dist/oneteme/jquery-core --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }})
