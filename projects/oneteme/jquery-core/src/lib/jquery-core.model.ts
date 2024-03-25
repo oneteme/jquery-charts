@@ -10,10 +10,10 @@ export interface ChartConfig {
 
 export interface DataMapper {
     field: string; //  o=> {'value' : o.coun200, 'key': 'nb 200' }
+    stackField?: string;
     label?: string;
     unit?: string;
     color?: string;
-    stack?: string;
     group?: string;
 }
 
@@ -75,7 +75,7 @@ export class DataSet {
 
     data(mappers: DataMapper[], defaultValue: any = null): RowSet[] {
         return mappers.flatMap(m => {
-            if (m.stack) {
+            if (m.stackField) {
                 return this.stackedData(m, defaultValue);
             } else {
                 return this.simpleData(m, defaultValue);
@@ -85,11 +85,12 @@ export class DataSet {
 
     simpleData(mapper: DataMapper, defaultValue: any = null): RowSet {
         // Fonctionne pas avec l'order
-        return { name: mapper.label, data: this.objects.map(o => isNaN(o[mapper.field]) ? defaultValue : o[mapper.field]), mapper: mapper };
+        // console.log("simpleData", { name: mapper.label, group: mapper.group, data: this.objects.map(o => isNaN(o[mapper.field]) ? defaultValue : o[mapper.field]), mapper: mapper })
+        return { name: mapper.label, group: mapper.group, data: this.objects.map(o => isNaN(o[mapper.field]) ? defaultValue : o[mapper.field]), mapper: mapper };
     }
 
     stackedData(mapper: DataMapper, defaultValue: any = null): RowSet[] {
-        let rowFn = toCategoriesFn(mapper.stack);
+        let rowFn = toCategoriesFn(mapper.stackField);
         let map = this.objects.reduce((acc, o) => {
             if (!acc[rowFn(o)]) {
                 acc[rowFn(o)] = {};
@@ -98,10 +99,10 @@ export class DataSet {
             acc[rowFn(o)]['group'] = o[mapper.group];
             return acc;
         }, {});
-        console.log("stackedData", map, this.objects);
+        // console.log("stackedData", map, this.objects);
         return Object.entries(map)
             .map((arr: [string, any]) => {
-                return { name: arr[0], group: arr[1]['group'],  data: this.labels.map(l => isNaN(arr[1][l]) ? defaultValue : arr[1][l]), mapper: mapper }
+                return { name: arr[0], group: arr[1]['group'], data: this.labels.map(l => isNaN(arr[1][l]) ? defaultValue : arr[1][l]), mapper: mapper }
             });
     }
 }

@@ -1,25 +1,32 @@
-<div style="display: flex; justify-content: space-around;">
+<div style="display: flex; justify-content: space-between;">
   <chart type="pie" [config]="pieExample.config" [data]="pieExample.data" />
   <chart type="pie" [config]="pieExample2.config" [data]="pieExample2.data" />
   <chart type="pie" [config]="pieExample3.config" [data]="pieExample3.data" />
 </div>
-<div style="display: flex; justify-content: space-around;">
+<div style="display: flex; justify-content: space-between;">
   <chart type="donut" [config]="donutExample1.config" [data]="donutExample1.data" />
   <chart type="donut" [config]="donutExample2.config" [data]="donutExample2.data" />
   <chart type="donut" [config]="donutExample3.config" [data]="donutExample3.data" />
 </div>
-<div style="display: flex; justify-content: space-around;">
+<div style="display: flex; justify-content: space-between;">
   <chart type="polarArea" [config]="polarAreaExample1.config" [data]="polarAreaExample1.data" />
   <chart type="polarArea" [config]="polarAreaExample2.config" [data]="polarAreaExample2.data" />
   <chart type="polarArea" [config]="polarAreaExample3.config" [data]="polarAreaExample3.data" />
 </div>
-<div style="display: flex; justify-content: space-around;">
+<div style="display: flex; justify-content: space-between;">
   <chart type="radialBar" [config]="polarAreaExample1.config" [data]="polarAreaExample1.data" />
   <chart type="radialBar" [config]="polarAreaExample2.config" [data]="polarAreaExample2.data" />
   <chart type="radialBar" [config]="polarAreaExample3.config" [data]="polarAreaExample3.data" />
 </div>
 
-<chart type="line" [config]="lineExample1.config" [data]="lineExample1.data" />
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 33%;" type="line" [config]="lineExample1.config" [data]="lineExample1.data" />
+  <chart style="width: 33%;" type="line" [config]="lineExample2.config" [data]="lineExample2.data" />
+  <chart style="width: 33%;" type="line" [config]="lineExample3.config" [data]="lineExample3.data" />
+</div>
 <chart type="area" [config]="areaExample1.config" [data]="areaExample1.data" />
 <chart type="bar" [config]="barExample1.config" [data]="barExample1.data" />
-<chart type="bar" [config]="barExample2.config" [data]="barExample2.data" />
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 49%;" type="bar" [config]="barExample2.config" [data]="barExample2.data" />
+  <chart style="width: 49%;" type="bar" [config]="barExample3.config" [data]="barExample3.data" />
+</div>

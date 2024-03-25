@@ -76,9 +76,9 @@ export class BarChartDirective implements ChartView, OnDestroy {
         category.type === 'string' ? 'category' : 'numeric';
 
       series = dataSet.data(mappers, 0).map(d => {
-        return { name: d.mapper.group ? d.name + '_' + d.mapper.group : d.name, color: d.mapper.color, group: d.mapper.group, data: d.data };
+        return { name: d.name, color: d.mapper.color, group: d.group, data: d.data };
       });
-      console.log("dataset", dataSet, categories, series);
+      // console.log("dataset", dataSet, categories, series);
       this._isDataLoaded = true;
     }
     mergeDeep(this._options, { series: series, xaxis: { type: type, categories: categories } });
