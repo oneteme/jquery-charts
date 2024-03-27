@@ -5,5 +5,7 @@
     <div *ngSwitchCase="'donut'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading"></div>
     <div *ngSwitchCase="'polarArea'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading"></div>
     <div *ngSwitchCase="'radialBar'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading"></div> 
-    <div *ngSwitchCase="'bar'" bar-chart [config]="config" [data]="data" [isLoading]="isLoading"></div>
+    <div *ngSwitchCase="'bar'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading"></div>
+    <div *ngSwitchCase="'funnel'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading"></div>
+    <div *ngSwitchCase="'pyramid'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading"></div>
 </div>

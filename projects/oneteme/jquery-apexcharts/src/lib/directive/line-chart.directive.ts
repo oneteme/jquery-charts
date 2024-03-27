@@ -1,16 +1,16 @@
 import { Directive, ElementRef, Input, NgZone, OnDestroy, inject } from "@angular/core";
-import { ChartConfig, ChartView, DataSet, mergeDeep } from "@oneteme/jquery-core";
+import { ChartConfig, ChartView, DataSet, LineChartMapper, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
     selector: '[line-chart]'
 })
-export class LineChartDirective implements ChartView, OnDestroy {
+export class LineChartDirective<T extends LineChartMapper> implements ChartView<T>, OnDestroy {
     private el: ElementRef = inject(ElementRef);
     private ngZone: NgZone = inject(NgZone);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartConfig = {};
+    private _chartConfig: ChartConfig<T> = {};
     private _options: any = {
         chart: {
             type: 'line',
@@ -35,7 +35,7 @@ export class LineChartDirective implements ChartView, OnDestroy {
         }
     }
 
-    @Input() set config(object: ChartConfig) {
+    @Input() set config(object: ChartConfig<T>) {
         if (object) {
             this._chartConfig = object;
             mergeDeep(this._options, {
@@ -72,7 +72,7 @@ export class LineChartDirective implements ChartView, OnDestroy {
 
             let dataSet = new DataSet(objects, category?.mapper);
 
-            series = dataSet.data(mappers, 0).map(d => ({ name: d.mapper.label, color: d.mapper.color, data: d.data }));
+            series = dataSet.data(mappers, 0).map(d => ({ name: d.name, color: d.mapper.color, data: d.data }));
 
             categories = dataSet.labels;
             type = category.type == 'date' ? 'datetime' :

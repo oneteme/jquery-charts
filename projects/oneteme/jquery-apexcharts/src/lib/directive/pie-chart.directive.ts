@@ -1,16 +1,16 @@
 import { Directive, ElementRef, Input, NgZone, OnDestroy, inject } from "@angular/core";
-import { ChartConfig, ChartView, DataSet, mergeDeep } from "@oneteme/jquery-core";
+import { ChartConfig, ChartView, DataSet, PieChartMapper, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
     selector: '[pie-chart]'
 })
-export class PieChartDirective implements ChartView, OnDestroy {
+export class PieChartDirective<T extends PieChartMapper> implements ChartView<T>, OnDestroy {
     private el: ElementRef = inject(ElementRef);
     private ngZone: NgZone = inject(NgZone);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartConfig = {};
+    private _chartConfig: ChartConfig<T> = {};
     private _options: any = {
         chart: {
             type: 'pie', // default value
@@ -34,7 +34,7 @@ export class PieChartDirective implements ChartView, OnDestroy {
         }
     }
 
-    @Input() set config(object: ChartConfig) {
+    @Input() set config(object: ChartConfig<T>) {
         if (object) {
             this._chartConfig = object;
             mergeDeep(this._options, {

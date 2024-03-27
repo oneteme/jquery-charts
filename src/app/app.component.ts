@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
-import { ChartConfig } from '@oneteme/jquery-core';
-import { DataSet } from 'projects/oneteme/jquery-core/src/public-api';
+import { BarChartMapper, ChartConfig, DataMapper, MultiLineChartMapper, StackedBarChartMapper } from '@oneteme/jquery-core';
 
 @Component({
   selector: 'app-root',
@@ -8,7 +7,7 @@ import { DataSet } from 'projects/oneteme/jquery-core/src/public-api';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  pieExample: { data: any[], config: ChartConfig } = {
+  pieExample: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count1: 30, count2: 70, count3: 20 }
     ],
@@ -25,7 +24,7 @@ export class AppComponent {
     }
   };
 
-  pieExample2: { data: any[], config: ChartConfig } = {
+  pieExample2: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 40, field: 'Field 1' },
       { count: 20, field: 'Field 2' },
@@ -47,7 +46,7 @@ export class AppComponent {
     }
   };
 
-  pieExample3: { data: any[], config: ChartConfig } = {
+  pieExample3: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
       { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -69,7 +68,7 @@ export class AppComponent {
     }
   };
 
-  donutExample1: { data: any[], config: ChartConfig } = {
+  donutExample1: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count1: 30, count2: 70, count3: 20 }
     ],
@@ -86,7 +85,7 @@ export class AppComponent {
     }
   };
 
-  donutExample2: { data: any[], config: ChartConfig } = {
+  donutExample2: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 40, field: 'Field 1' },
       { count: 20, field: 'Field 2' },
@@ -108,7 +107,7 @@ export class AppComponent {
     }
   };
 
-  donutExample3: { data: any[], config: ChartConfig } = {
+  donutExample3: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
       { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -130,7 +129,7 @@ export class AppComponent {
     }
   };
 
-  polarAreaExample1: { data: any[], config: ChartConfig } = {
+  polarAreaExample1: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count1: 30, count2: 70, count3: 20 }
     ],
@@ -147,7 +146,7 @@ export class AppComponent {
     }
   };
 
-  polarAreaExample2: { data: any[], config: ChartConfig } = {
+  polarAreaExample2: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 40, field: 'Field 1' },
       { count: 20, field: 'Field 2' },
@@ -169,7 +168,7 @@ export class AppComponent {
     }
   };
 
-  polarAreaExample3: { data: any[], config: ChartConfig } = {
+  polarAreaExample3: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
       { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -191,7 +190,7 @@ export class AppComponent {
     }
   };
 
-  lineExample1: { data: any[], config: ChartConfig } = {
+  lineExample1: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 10, field: '2020' },
       { count: 30, field: '2021' },
@@ -219,7 +218,7 @@ export class AppComponent {
     }
   };
 
-  lineExample2: { data: any[], config: ChartConfig } = {
+  lineExample2: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count1: 10, count2: 0, field: '2020' },
       { count1: 30, count2: 60, field: '2021' },
@@ -234,8 +233,8 @@ export class AppComponent {
         mapper: 'field'
       },
       mappers: [
-        { field: 'count1', label: 'Count 1' },
-        { field: 'count2', label: 'Count 2' }
+        { field: 'count1', label: 'Sub Field 1' },
+        { field: 'count2', label: 'Sub Field 2' }
       ],
       options: {
         chart: {
@@ -253,18 +252,18 @@ export class AppComponent {
     }
   };
 
-  lineExample3: { data: any[], config: ChartConfig } = {
+  lineExample3: { data: any[], config: ChartConfig<MultiLineChartMapper> } = {
     data: [
       { count: 10, field: '2020', subField: "Sub Field 1" },
-      { count: 0, field: '2020', subField: "Sub Field 2"  },
-      { count: 30, field: '2021', subField: "Sub Field 1"  },
-      { count: 60, field: '2021', subField: "Sub Field 2"  },
-      { count: 20, field: '2022', subField: "Sub Field 1"  },
-      { count: 50, field: '2022', subField: "Sub Field 2"  },
-      { count: 60, field: '2023', subField: "Sub Field 1"  },
-      { count: 60, field: '2023', subField: "Sub Field 2"  },
-      { count: 10, field: '2024', subField: "Sub Field 1"  },
-      { count: 0, field: '2024', subField: "Sub Field 2"  }
+      { count: 0, field: '2020', subField: "Sub Field 2" },
+      { count: 30, field: '2021', subField: "Sub Field 1" },
+      { count: 60, field: '2021', subField: "Sub Field 2" },
+      { count: 20, field: '2022', subField: "Sub Field 1" },
+      { count: 50, field: '2022', subField: "Sub Field 2" },
+      { count: 60, field: '2023', subField: "Sub Field 1" },
+      { count: 60, field: '2023', subField: "Sub Field 2" },
+      { count: 10, field: '2024', subField: "Sub Field 1" },
+      { count: 0, field: '2024', subField: "Sub Field 2" }
     ],
     config: {
       title: 'Exemple de Line Chart n°3',
@@ -273,7 +272,7 @@ export class AppComponent {
         mapper: 'field'
       },
       mappers: [
-        { field: 'count', stackField: 'subField' }
+        { field: 'count', multiField: 'subField' }
       ],
       options: {
         chart: {
@@ -291,7 +290,7 @@ export class AppComponent {
     }
   };
 
-  areaExample1: { data: any[], config: ChartConfig } = {
+  areaExample1: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count: 10, date: '2020' },
       { count: 30, date: '2021' },
@@ -319,7 +318,7 @@ export class AppComponent {
     }
   };
 
-  barExample1: { data: any[], config: ChartConfig } = {
+  barExample1: { data: any[], config: ChartConfig<DataMapper> } = {
     data: [
       { count1: 20, count2: 10, count3: 40, field: 'Field 1' },
       { count1: 60, count2: 20, count3: 10, field: 'Field 2' },
@@ -333,9 +332,9 @@ export class AppComponent {
         mapper: 'field'
       },
       mappers: [
-        { field: 'count1', label: 'Count 1' },
-        { field: 'count2', label: 'Count 2' },
-        { field: 'count3', label: 'Count 3' }
+        { field: 'count1', label: 'Sub Field 1' },
+        { field: 'count2', label: 'Sub Field 2' },
+        { field: 'count3', label: 'Sub Field 3' }
       ],
       options: {
         chart: {
@@ -352,7 +351,7 @@ export class AppComponent {
     }
   };
 
-  barExample2: { data: any[], config: ChartConfig } = {
+  barExample2: { data: any[], config: ChartConfig<StackedBarChartMapper> } = {
     data: [
       { count: 20, field: 'Field 1', subField: 'Sub Field 1', group: 'Group 1' },
       { count: 60, field: 'Field 1', subField: 'Sub Field 2', group: 'Group 1' },
@@ -396,7 +395,7 @@ export class AppComponent {
     }
   };
 
-  barExample3: { data: any[], config: ChartConfig } = {
+  barExample3: { data: any[], config: ChartConfig<BarChartMapper> } = {
     data: [
       { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
       { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
@@ -431,8 +430,43 @@ export class AppComponent {
     }
   };
 
+  funnelExample: { data?: any[], config: ChartConfig<DataMapper> } = {
+    data: [
+      { count: 20, field: 'Field 1' },
+      { count: 60, field: 'Field 2' },
+      
+      
+      { count: 100, field: 'Field 3' },
+      { count: 200, field: 'Field 4' },
+      { count: 240, field: 'Field 5' },
+    ],
+    config: {
+      title: 'Exemple de Funnel Chart n°1',
+      category: {
+        type: 'string',
+        mapper: 'field'
+      },
+      mappers: [
+        { field: 'count' }
+      ],
+      options: {
+        chart: {
+          height: 250
+        },
+        plotOptions: {
+          bar: {
+            borderRadius: 0,
+            horizontal: true,
+            distributed: true,
+            barHeight: "80%",
+            isFunnel: true
+          }
+        }
+      }
+    }
+  }
 
   ngOnInit() {
-
+    
   }
 }
