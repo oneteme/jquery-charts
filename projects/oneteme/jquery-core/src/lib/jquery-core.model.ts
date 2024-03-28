@@ -1,51 +1,54 @@
 export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
 
-export function constant<T>(value: T): DataProvider<T> {
-    return o=> value;
+export function constants<T>(values: T[]): DataProvider<T> {
+    return (o, idx)=> values[idx];
 }
 
-export function joinConstants(values: string[], separator: string = '_'): DataProvider<string> {
-    return o=> values.join(separator);
+export function field<T>(name: string): DataProvider<T> {
+    return o=> o[name];
 }
 
-export function field<T>(field: string): DataProvider<T> {
-    return o=> o[field];
+export function mapFieldValues<T>(name: string, map: Map<any, T>): DataProvider<T> {
+    return o=> map.get(o[name]);
 }
 
-//TODO other types !?
-export function joinFields(fields: string[], separator: string = '_'): DataProvider<string> {
-    return o=> fields.map(f=> o[f]).filter(notUndefined).join(separator);
+export function joinFields(names: string[], separator: string = '_'): DataProvider<string> {
+    return combineFields(names, args=> args.join(separator));
 }
 
-export function rangeFields<T>(minField: string, maxField: string): DataProvider<T[]> {
-    return o=> {
-        var minFn: DataProvider<T> = field(minField);
-        var maxFn: DataProvider<T> = field(maxField);
-        var min = minFn(o);
-        var max = maxFn(o);
+export function combineFields<T>(names: string[], fn: (args: any[])=> T): DataProvider<T> {
+    return o=> fn(names.map(f=> o[f]).filter(notUndefined));
+}
+
+export function rangeFields<T>(minName: string, maxName: string): DataProvider<T[]> {
+    return (o, i)=> {
+        var minFn: DataProvider<T> = field(minName);
+        var maxFn: DataProvider<T> = field(maxName);
+        var min = minFn(o,i);
+        var max = maxFn(o,i);
         return notUndefined(min) && notUndefined(max) ? [min, max] : undefined;
     };
 }
 
 function series<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: YaxisType) : CommonSerie[] {
     if(continues){
-        return mappers.map(m=> ({name: m.label, group: m.group, data:continueSerieData(objects, m, defaultValue)}));
+        return mappers.map(m=> ({name: m.label, group: m.group, data: continueSerieData(objects, m, defaultValue)}));
     }
     var categs = distinct(objects, mappers.map(m=> m.x));
-    return mappers.map(m=> ({name: m.label, group: m.group, data:discontinueSerieData(objects, categs, m, defaultValue)}));
+    return mappers.map(m=> ({name: m.label, group: m.group, data: discontinueSerieData(objects, categs, m, defaultValue)}));
 }
 
 function continueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], mapper: DataMapper<X,Y>, defaultValue?: Y) : Coordinate2D[] {
-    return objects.map(o=>({x: mapper.x(o), y: mapper.y(o) || defaultValue}));
+    return objects.map((o,i)=>({x: mapper.x(o,i), y: requireNotUndefined(mapper.y(o,i), defaultValue)}));
 }
 
 function discontinueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], categories: X[], mapper: DataMapper<X,Y>, defaultValue?: Y) : Y[] {
     var arr = []
-    objects.map(o=>{
-        var key = mapper.x(o);
+    objects.map((o,i)=>{
+        var key = mapper.x(o,i);
         var idx = categories.indexOf(key);
         if(idx > -1){
-            arr[idx] = mapper.y(o) || defaultValue;
+            arr[idx] = requireNotUndefined(mapper.y(o,i), defaultValue);
         }
         else{
             throw `${key} not part of categories : ${categories}`;
@@ -63,12 +66,16 @@ function discontinueSerieData<X extends XaxisType, Y extends YaxisType>(objects:
 
 export function distinct<T>(objects: any[], providers : DataProvider<T>[]) : T[] { // T == XaxisType
     var categs = new Set<T>();
-    providers.forEach(p=> objects.forEach(o=> categs.add(p(o))));
+    providers.forEach(p=> objects.forEach((o,i)=> categs.add(p(o,i))));
     return [...categs];
 }
 
 function notUndefined(o: any): boolean {
     return !isUndefined(o);
+}
+
+function requireNotUndefined<T>(o: T, elseValue: T) : T{
+    return isUndefined(o) ? elseValue : o;
 }
 
 function isUndefined(o: any): boolean {
@@ -105,9 +112,9 @@ export declare type Coordinate2D = {x: XaxisType, y: YaxisType};
 
 export declare type XaxisType = number | string | Date;
 
-export declare type YaxisType = number | number[];
+export declare type YaxisType = number | number[]; //2D
 
-export type DataProvider<T> = (o: any) => T;
+export type DataProvider<T> = (o: any, idx: number) => T;
 
 
 
