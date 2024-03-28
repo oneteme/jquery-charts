@@ -73,6 +73,7 @@ export interface DataMapper {
     color?: string;
 }
 
+
 export interface Category<T> {
     type: 'string' | 'number' | 'date';
     mapper: DataProvider<T>;
