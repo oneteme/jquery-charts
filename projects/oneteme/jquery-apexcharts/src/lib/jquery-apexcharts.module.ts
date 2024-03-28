@@ -1,16 +1,12 @@
 import { NgModule } from '@angular/core';
-import { BarChartDirective } from './directive/bar-chart.directive';
 import { CommonModule } from '@angular/common';
-import { LineChartDirective } from './directive/line-chart.directive';
-import { PieChartDirective } from './directive/pie-chart.directive';
-import { ChartComponent } from './component/chart.component';
 import { TreemapChartDirective } from './directive/treemap-chart.directive';
+import { BarChartDirective } from './directive/bar-chart.directive';
+import { ChartComponent } from './component/chart.component';
 
 @NgModule({
   declarations: [
     BarChartDirective,
-    LineChartDirective,
-    PieChartDirective,
     TreemapChartDirective,
     ChartComponent
   ],
@@ -19,8 +15,6 @@ import { TreemapChartDirective } from './directive/treemap-chart.directive';
   ],
   exports: [
     BarChartDirective,
-    LineChartDirective,
-    PieChartDirective,
     TreemapChartDirective,
     ChartComponent
   ]
