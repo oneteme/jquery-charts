@@ -21,7 +21,7 @@ export class TreemapChartDirective implements OnDestroy {
             },
             series: [218, 149, 184, 55, 84, 31, 70, 30, 44, 68, 28, 19, 29],
             xaxis: {
-                type: 'string', categories: [
+                categories: [
                     "New Delhi",
                     "Kolkata",
                     "Mumbai",

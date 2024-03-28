@@ -1,3 +1,40 @@
+export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
+
+export function constant<T>(value: T): DataProvider<T> {
+    return (o: any, defaultValue: T) => value;
+}
+
+export function joinConstants(values: string[], separator: string = '_'): DataProvider<string> {
+    return (o: any, defaultValue: string) => values.filter(v => !isUndefined(v)).join(separator) || defaultValue;
+}
+
+export function field<T>(field: string): DataProvider<T> {
+    return (o: any, defaultValue: T) => isUndefined(o[field]) ? defaultValue : o[field];
+}
+
+//TODO other types !?
+export function joinFields(fields: string[], separator: string = '_'): DataProvider<string> {
+    return (o: any, defaultValue: string) => {
+        var s = fields.map(f => o[f]).filter(v => v != null && v != undefined).join(separator);
+        return isUndefined(s) ? defaultValue : s; //TODO check that 
+    }
+}
+
+export function rangeFields<T>(minField: string, maxField: string): DataProvider<T[]> {
+    return (o: any, defaultValue: T[]) => {
+        var min: DataProvider<T> = field(minField);
+        var max: DataProvider<T> = field(maxField);
+        return [min(o, defaultValue[0]), max(o, defaultValue[1])]; //TODO change defaultValue 
+    };
+}
+
+function isUndefined(o: any): boolean {
+    return o == null || o == undefined;
+}
+
+export type DataProvider<T> = (o: any, defaultValue: T) => T;
+
+
 export interface StackedBarChartMapper extends BarChartMapper {
     stackField: string;
 }
@@ -21,7 +58,7 @@ export interface PieChartMapper extends DataMapper {
 export interface ChartConfig<T extends DataMapper> {
     title?: string;
     subtitle?: string;
-    category?: Category; // fn: o=> o.status + '_' + o.host
+    category?: DataProvider<any>; // fn: o=> o.status + '_' + o.host
     xtitle?: string;
     ytitle?: string | { [key: string]: string }; // multiple  {key: val}
     mappers?: T[];
@@ -29,15 +66,16 @@ export interface ChartConfig<T extends DataMapper> {
 }
 
 export interface DataMapper {
-    field: string; //  o=> {'value' : o.coun200, 'key': 'nb 200' }
-    label?: string;
+    x: DataProvider<number | string | Date>;
+    y: DataProvider<number | number[]>; //  o=> {'value' : o.coun200, 'key': 'nb 200' }
+    label: DataProvider<string>;
     unit?: string;
     color?: string;
 }
 
-export interface Category {
+export interface Category<T> {
     type: 'string' | 'number' | 'date';
-    mapper: string | string[] | ((o: any) => any);
+    mapper: DataProvider<T>;
 }
 
 export interface ChartView<T extends DataMapper> {
@@ -53,7 +91,6 @@ export interface RowSet<T extends DataMapper> {
     group?: string;
 }
 
-export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
 
 export function toCategoriesFn(categories?: string | string[] | ((o: any) => any)): (o: any) => any {
     if (!categories) {
@@ -71,18 +108,41 @@ export function toCategoriesFn(categories?: string | string[] | ((o: any) => any
     return o => categories;
 }
 
+
+function serie<T>(objects: any[], provider : DataProvider<T>, defaultValue : T) : T[] {
+    return objects.map(o=> provider(o, defaultValue));
+}
+
+
+function serie2<T>(objects: any[], categories: string[], dm : DataMapper, defaultValue : T) : T[] {;
+    var arr = []
+    objects.map(o=>{
+        var key = dm.x(o, null); //TODO no default value
+        var idx = categories.indexOf(key);
+        if(idx > -1){
+            arr[idx] = dm.y(o, defaultValue);
+        }
+    });
+    return arr;
+}
+
+
+function categories(objects: any[], providers : DataProvider<string>[]){
+    var categs = new Set<string>();
+    providers.forEach(p=> objects.forEach(o=> categs.add(p(o, ""))));
+    return [...categs];
+}
+
 // Gestion des exceptions ? if field does not exist
 export class DataSet<T extends DataMapper> {
     objects: any[];
     labels: string[];
     colFn: (o: any) => any;
 
-    constructor(objects: any[], col: string | string[] | ((o: any) => any), dataMappers?: T[]) {
+    constructor(objects: any[], continues: boolean, dataMappers?: T[]) {
         this.objects = objects;
-        this.colFn = toCategoriesFn(col);
 
         let cols: Set<any> = new Set();
-        (dataMappers || objects).forEach(o => cols.add(this.colFn(o)));
         this.labels = [...cols];
     }
 
@@ -104,7 +164,7 @@ export class DataSet<T extends DataMapper> {
     simpleData<T extends DataMapper>(mapper: T, defaultValue: any = null): RowSet<T> {
         // Fonctionne pas avec l'order
         // console.log("simpleData", { name: mapper.label, group: mapper.group, data: this.objects.map(o => isNaN(o[mapper.field]) ? defaultValue : o[mapper.field]), mapper: mapper })
-        return { name: mapper.label, group: mapper['group'], data: this.objects.map(o => isNaN(o[mapper.field]) ? defaultValue : o[mapper.field]), mapper: mapper };
+        return { name: mapper.label, group: mapper['group'], data: mapper.field.build(this.objects, defaultValue), mapper: mapper };
     }
 
     stackedData<T extends DataMapper>(mapper: T, defaultValue: any = null): RowSet<T>[] {
