@@ -1,11 +1,12 @@
 export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
 
-export function constant<T>(value: T): DataProvider<T> {
-    return (o, idx)=> value;
-}
-
-export function constants<T>(values: T[]): DataProvider<T> {
-    return (o, idx)=> values[idx];
+export function values<T>(...values: T[]): DataProvider<T> {
+    return (o, idx)=>{ //this[single]=true
+        if(idx < values.length){
+            return values[idx];
+        }
+        throw `idx=${idx} out of values=${values}`;
+    }; 
 }
 
 export function field<T>(name: string): DataProvider<T> {
@@ -21,7 +22,7 @@ export function joinFields(names: string[], separator: string = '_'): DataProvid
 }
 
 export function combineFields<T>(names: string[], fn: (args: any[])=> T): DataProvider<T> {
-    return o=> fn(names.map(f=> o[f]).filter(notUndefined));
+    return o=> fn(names.map(f=> o[f]).filter(nonUndefined));
 }
 
 export function rangeFields<T>(minName: string, maxName: string): DataProvider<T[]> {
@@ -30,35 +31,42 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
         var maxFn: DataProvider<T> = field(maxName);
         var min = minFn(o,i);
         var max = maxFn(o,i);
-        return notUndefined(min) && notUndefined(max) ? [min, max] : undefined;
+        return nonUndefined(min) && nonUndefined(max) ? [min, max] : undefined;
     };
 }
 
-function series<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: YaxisType) : CommonSerie[] {
+export function series<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: Y) : CommonSerie<Y|Coordinate2D>[] {
     if(continues){
-        return mappers.map(m=> ({name: m.label, group: m.group, data: continueSerieData(objects, m, defaultValue)}));
+        return mappers.map(m=> ({name: m.name, group: m.group, data: continueSerieData(objects, m.data, defaultValue)}));
     }
-    var categs = distinct(objects, mappers.map(m=> m.x));
-    return mappers.map(m=> ({name: m.label, group: m.group, data: discontinueSerieData(objects, categs, m, defaultValue)}));
+    var categs = distinct(objects, mappers.map(m=> m.data.x));
+    return mappers.map(m=> ({name: m.name, group: m.group, data: discontinueSerieData(objects, categs, m.data, defaultValue)}));
 }
 
-function continueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], mapper: DataMapper<X,Y>, defaultValue?: Y) : Coordinate2D[] {
-    return objects.map((o,i)=>({x: mapper.x(o,i), y: requireNotUndefined(mapper.y(o,i), defaultValue)}));
+export function continueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], coord: CoordinateProvider<X,Y>, defaultValue?: Y) : Coordinate2D[] {
+    return objects.map((o,i)=>({x: coord.x(o,i), y: requireNonUndefined(coord.y(o,i), defaultValue)}));
 }
 
-function discontinueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], categories: X[], mapper: DataMapper<X,Y>, defaultValue?: Y) : Y[] {
+
+export function pivotDiscontinueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], categories: X[], coord: CoordinateProvider<X,Y>, defaultValue?: Y) : Y[] {
+
+    
+
+}
+
+export function discontinueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], categories: X[], coord: CoordinateProvider<X,Y>, defaultValue?: Y) : Y[] {
     var arr = []
     objects.map((o,i)=>{
-        var key = mapper.x(o,i);
+        var key = coord.x(o,i);
         var idx = categories.indexOf(key);
         if(idx > -1){
-            arr[idx] = requireNotUndefined(mapper.y(o,i), defaultValue);
+            arr[idx] = requireNonUndefined(coord.y(o,i), defaultValue);
         }
         else{
             throw `${key} not part of categories : ${categories}`;
         }
     });
-    if(notUndefined(defaultValue)){
+    if(nonUndefined(defaultValue)){
         for(var i=0; i<arr.length; i++){
             if(isUndefined(arr[i])){
                 arr[i] = defaultValue;
@@ -74,11 +82,11 @@ export function distinct<T>(objects: any[], providers : DataProvider<T>[]) : T[]
     return [...categs];
 }
 
-function notUndefined(o: any): boolean {
+function nonUndefined(o: any): boolean {
     return !isUndefined(o);
 }
 
-function requireNotUndefined<T>(o: T, elseValue: T) : T{
+function requireNonUndefined<T>(o: T, elseValue: T) : T{
     return isUndefined(o) ? elseValue : o;
 }
 
@@ -89,25 +97,27 @@ function isUndefined(o: any): boolean {
 export interface ChartConfig<X extends XaxisType, Y extends YaxisType> { 
     title?: string;
     subtitle?: string;
-    category?: DataProvider<any>; // fn: o=> o.status + '_' + o.host
     xtitle?: string;
     ytitle?: string | { [key: string]: string }; // multiple  {key: val}
+    width?: number;
+    height?: number;
+    pivot?: boolean;
+    continue?: boolean;
     mappers?: DataMapper<X,Y>[];
     options?: any;
 }
 
-export interface DataMapper<X extends XaxisType, Y extends YaxisType> {
-    x: DataProvider<X>;
-    y: DataProvider<Y>;
-    label: string;
+export interface DataMapper<X extends XaxisType, Y extends YaxisType> { //SerieBuider
+    data: CoordinateProvider<X,Y>
+    name?: string;
     group?: string;
-    unit?: string;
     color?: string;
+    unit?: string;
 }
 
-export interface CommonSerie {
-    name: string;
-    data: YaxisType[] | Coordinate2D[];
+export interface CommonSerie<T> {
+    data: T[];
+    name?: string;
     group?: string
     color?: string
 }
@@ -116,9 +126,11 @@ export declare type Coordinate2D = {x: XaxisType, y: YaxisType};
 
 export declare type XaxisType = number | string | Date;
 
-export declare type YaxisType = number | number[]; //2D
+export declare type YaxisType = number | number[];//2D
 
-export type DataProvider<T> = (o: any, idx: number) => T;
+export declare type CoordinateProvider<X,Y> = {x: DataProvider<X>, y: DataProvider<Y>};
+
+export declare type DataProvider<T> = (o: any, idx: number) => T;
 
 
 
