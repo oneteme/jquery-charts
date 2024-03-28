@@ -1,5 +1,9 @@
 export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
 
+export function constant<T>(value: T): DataProvider<T> {
+    return (o, idx)=> value;
+}
+
 export function constants<T>(values: T[]): DataProvider<T> {
     return (o, idx)=> values[idx];
 }
@@ -8,7 +12,7 @@ export function field<T>(name: string): DataProvider<T> {
     return o=> o[name];
 }
 
-export function mapFieldValues<T>(name: string, map: Map<any, T>): DataProvider<T> {
+export function mapField<T>(name: string, map: Map<any, T>): DataProvider<T> {
     return o=> map.get(o[name]);
 }
 
