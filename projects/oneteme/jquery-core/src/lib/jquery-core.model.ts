@@ -1,38 +1,119 @@
 export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
 
 export function constant<T>(value: T): DataProvider<T> {
-    return (o: any, defaultValue: T) => value;
+    return o=> value;
 }
 
 export function joinConstants(values: string[], separator: string = '_'): DataProvider<string> {
-    return (o: any, defaultValue: string) => values.filter(v => !isUndefined(v)).join(separator) || defaultValue;
+    return o=> values.join(separator);
 }
 
 export function field<T>(field: string): DataProvider<T> {
-    return (o: any, defaultValue: T) => isUndefined(o[field]) ? defaultValue : o[field];
+    return o=> o[field];
 }
 
 //TODO other types !?
 export function joinFields(fields: string[], separator: string = '_'): DataProvider<string> {
-    return (o: any, defaultValue: string) => {
-        var s = fields.map(f => o[f]).filter(v => v != null && v != undefined).join(separator);
-        return isUndefined(s) ? defaultValue : s; //TODO check that 
-    }
+    return o=> fields.map(f=> o[f]).filter(notUndefined).join(separator);
 }
 
 export function rangeFields<T>(minField: string, maxField: string): DataProvider<T[]> {
-    return (o: any, defaultValue: T[]) => {
-        var min: DataProvider<T> = field(minField);
-        var max: DataProvider<T> = field(maxField);
-        return [min(o, defaultValue[0]), max(o, defaultValue[1])]; //TODO change defaultValue 
+    return o=> {
+        var minFn: DataProvider<T> = field(minField);
+        var maxFn: DataProvider<T> = field(maxField);
+        var min = minFn(o);
+        var max = maxFn(o);
+        return notUndefined(min) && notUndefined(max) ? [min, max] : undefined;
     };
+}
+
+function series<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: YaxisType) : CommonSerie[] {
+    if(continues){
+        return mappers.map(m=> ({name: m.label, group: m.group, data:continueSerieData(objects, m, defaultValue)}));
+    }
+    var categs = distinct(objects, mappers.map(m=> m.x));
+    return mappers.map(m=> ({name: m.label, group: m.group, data:discontinueSerieData(objects, categs, m, defaultValue)}));
+}
+
+function continueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], mapper: DataMapper<X,Y>, defaultValue?: Y) : Coordinate2D[] {
+    return objects.map(o=>({x: mapper.x(o), y: mapper.y(o) || defaultValue}));
+}
+
+function discontinueSerieData<X extends XaxisType, Y extends YaxisType>(objects: any[], categories: X[], mapper: DataMapper<X,Y>, defaultValue?: Y) : Y[] {
+    var arr = []
+    objects.map(o=>{
+        var key = mapper.x(o);
+        var idx = categories.indexOf(key);
+        if(idx > -1){
+            arr[idx] = mapper.y(o) || defaultValue;
+        }
+        else{
+            throw `${key} not part of categories : ${categories}`;
+        }
+    });
+    if(notUndefined(defaultValue)){
+        for(var i=0; i<arr.length; i++){
+            if(isUndefined(arr[i])){
+                arr[i] = defaultValue;
+            }
+        }
+    }
+    return arr;
+}
+
+export function distinct<T>(objects: any[], providers : DataProvider<T>[]) : T[] { // T == XaxisType
+    var categs = new Set<T>();
+    providers.forEach(p=> objects.forEach(o=> categs.add(p(o))));
+    return [...categs];
+}
+
+function notUndefined(o: any): boolean {
+    return !isUndefined(o);
 }
 
 function isUndefined(o: any): boolean {
     return o == null || o == undefined;
 }
 
-export type DataProvider<T> = (o: any, defaultValue: T) => T;
+export interface ChartConfig<X extends XaxisType, Y extends YaxisType> { 
+    title?: string;
+    subtitle?: string;
+    category?: DataProvider<any>; // fn: o=> o.status + '_' + o.host
+    xtitle?: string;
+    ytitle?: string | { [key: string]: string }; // multiple  {key: val}
+    mappers?: DataMapper<X,Y>[];
+    options?: any;
+}
+
+export interface DataMapper<X extends XaxisType, Y extends YaxisType> {
+    x: DataProvider<X>;
+    y: DataProvider<Y>;
+    label: string;
+    group?: string;
+    unit?: string;
+    color?: string;
+}
+
+export interface CommonSerie {
+    name: string;
+    data: YaxisType[] | Coordinate2D[];
+    group?: string
+    color?: string
+}
+
+export declare type Coordinate2D = {x: XaxisType, y: YaxisType};
+
+export declare type XaxisType = number | string | Date;
+
+export declare type YaxisType = number | number[];
+
+export type DataProvider<T> = (o: any) => T;
+
+
+
+
+
+/*  OLD */
 
 
 export interface StackedBarChartMapper extends BarChartMapper {
@@ -53,24 +134,6 @@ export interface LineChartMapper extends DataMapper {
 
 export interface PieChartMapper extends DataMapper {
 
-}
-
-export interface ChartConfig<T extends DataMapper> {
-    title?: string;
-    subtitle?: string;
-    category?: DataProvider<any>; // fn: o=> o.status + '_' + o.host
-    xtitle?: string;
-    ytitle?: string | { [key: string]: string }; // multiple  {key: val}
-    mappers?: T[];
-    options?: any;
-}
-
-export interface DataMapper {
-    x: DataProvider<number | string | Date>;
-    y: DataProvider<number | number[]>; //  o=> {'value' : o.coun200, 'key': 'nb 200' }
-    label: DataProvider<string>;
-    unit?: string;
-    color?: string;
 }
 
 
@@ -109,30 +172,6 @@ export function toCategoriesFn(categories?: string | string[] | ((o: any) => any
     return o => categories;
 }
 
-
-function serie<T>(objects: any[], provider : DataProvider<T>, defaultValue : T) : T[] {
-    return objects.map(o=> provider(o, defaultValue));
-}
-
-
-function serie2<T>(objects: any[], categories: string[], dm : DataMapper, defaultValue : T) : T[] {;
-    var arr = []
-    objects.map(o=>{
-        var key = dm.x(o, null); //TODO no default value
-        var idx = categories.indexOf(key);
-        if(idx > -1){
-            arr[idx] = dm.y(o, defaultValue);
-        }
-    });
-    return arr;
-}
-
-
-function categories(objects: any[], providers : DataProvider<string>[]){
-    var categs = new Set<string>();
-    providers.forEach(p=> objects.forEach(o=> categs.add(p(o, ""))));
-    return [...categs];
-}
 
 // Gestion des exceptions ? if field does not exist
 export class DataSet<T extends DataMapper> {
