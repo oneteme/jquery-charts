@@ -1,16 +1,16 @@
 import { Directive, ElementRef, Input, NgZone, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartConfig, ChartView, XaxisType, YaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries } from "@oneteme/jquery-core";
+import { ChartConfig, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
   selector: '[bar-chart]'
 })
-export class BarChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnDestroy {
+export class BarChartDirective<X extends XaxisType> implements ChartView<X, number>, OnDestroy {
   private el: ElementRef = inject(ElementRef);
   private ngZone: NgZone = inject(NgZone);
 
   private _chart: ApexCharts;
-  private _chartConfig: ChartConfig<X, Y> = {};
+  private _chartConfig: ChartConfig<X, number> = {};
   private _options: any = {
     chart: {
       type: 'bar',
@@ -26,7 +26,7 @@ export class BarChartDirective<X extends XaxisType, Y extends YaxisType> impleme
 
   @Input({required: true}) type: 'bar' | 'funnel' | 'pyramid';
 
-  @Input({required: true}) config: ChartConfig<X, Y>;
+  @Input({required: true}) config: ChartConfig<X, number>;
 
   @Input({required: true}) data: any[];
 
@@ -59,7 +59,7 @@ export class BarChartDirective<X extends XaxisType, Y extends YaxisType> impleme
   }
 
   updateData() {
-    let commonSeries: CommonSerie<Y|Coordinate2D>[] = [];
+    let commonSeries: CommonSerie<number|Coordinate2D>[] = [];
     let categories: X[] = [];
     let type: 'category' | 'datetime' | 'numeric' = 'datetime';
     if (this.data.length) {
@@ -109,7 +109,6 @@ export class BarChartDirective<X extends XaxisType, Y extends YaxisType> impleme
   }
 
   updateChart() {
-    console.log("updateChart")
     if (this._chart) {
       this.updateOptions();
     } else {

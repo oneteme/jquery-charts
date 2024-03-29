@@ -34,13 +34,23 @@
 <chart type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data"/> -->
 <!-- <div treemap-chart></div> -->
 <div style="display: flex; justify-content: space-between;">
+  <chart type="pie" [config]="pieExample.config" [data]="pieExample.data" />
+  <chart type="pie" [config]="pieExample2.config" [data]="pieExample2.data" />
+  <chart type="pie" [config]="pieExample3.config" [data]="pieExample3.data" />
+</div>
+<div style="display: flex; justify-content: space-between;">
   <chart style="width: 49%" type="bar" [config]="barExample1.config" [data]="barExample1.data" />
   <chart style="width: 49%" type="bar" [config]="barExample2.config" [data]="barExample2.data" />
 </div>
 <div style="display: flex; justify-content: space-between;">
   <chart style="width: 49%" type="bar" [config]="barExample3.config" [data]="barExample3.data" />
-  <chart style="width: 49%" type="bar" [config]="barExample4.config" [data]="barExample4.data" />
 </div>
-
-<chart type="funnel" [config]="funnelExample.config" [data]="funnelExample.data" />
-<chart type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data" /> -->
+<div style="display: flex; justify-content: space-between;">
+  <chart  style="width: 49%" type="funnel" [config]="funnelExample.config" [data]="funnelExample.data" />
+  <chart  style="width: 49%" type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data" /> 
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 33%;" type="line" [config]="lineExample1.config" [data]="lineExample1.data" />
+  <chart style="width: 33%;" type="line" [config]="lineExample2.config" [data]="lineExample2.data" />
+  <chart style="width: 33%;" type="area" [config]="areaExample1.config" [data]="areaExample1.data" />
+</div>
