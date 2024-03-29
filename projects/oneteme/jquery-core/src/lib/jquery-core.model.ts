@@ -73,18 +73,16 @@ export function discontinueSerie<X extends XaxisType, Y extends YaxisType>(objec
 export function pivotSeries<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: Y) : CommonSerie<Y|Coordinate2D>[] {
     return continues 
         ? objects.map((o,idx)=> pivotContinueSerie(o, idx, mappers, defaultValue))
-        : objects.map((o,idx)=> pivotDiscontinueSerie(o, idx, mappers, defaultValue));
+        : objects.map((o,idx)=> pivotDiscontinueSerie(o, idx, mappers, defaultValue)); //categories are distinct 
 }
 
 export function pivotContinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mapper: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Coordinate2D> {
-    return {name: 'pivot', data: mapper.map(m=> ({x: m.name, y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
+    return {name: `serie_${idx}`, data: mapper.map(m=> ({x: m.name, y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
 }
 
 export function pivotDiscontinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mapper: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Y> {
-    return {name: 'pivot', data: mapper.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
+    return {name: `serie_${idx}`, data: mapper.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
 }
-
-
 
 export function distinct<T>(objects: any[], providers : DataProvider<T>[]) : T[] { // T == XaxisType
     var categs = new Set<T>();
@@ -112,7 +110,7 @@ export interface ChartConfig<X extends XaxisType, Y extends YaxisType> {
     width?: number;
     height?: number;
     pivot?: boolean; //transpose  
-    continue?: boolean;
+    continue?: boolean; //categories | [x,y]
     mappers?: DataMapper<X,Y>[];
     options?: any;
 }
@@ -123,6 +121,7 @@ export interface DataMapper<X extends XaxisType, Y extends YaxisType> { //SerieB
     group?: string;
     color?: string;
     unit?: string;
+    //type
 }
 
 export interface CommonSerie<T> {
@@ -179,6 +178,7 @@ export interface ChartView<T extends DataMapper> {
     config: ChartConfig<T>;
     data: any[];
     isLoading: boolean;
+    //canPivot
 }
 
 export interface RowSet<T extends DataMapper> {
