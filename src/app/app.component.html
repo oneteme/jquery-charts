@@ -33,6 +33,14 @@
 <chart type="funnel" [config]="funnelExample.config" [data]="funnelExample.data" />
 <chart type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data"/> -->
 <!-- <div treemap-chart></div> -->
-<chart type="bar" [config]="barExample1.config" [data]="barExample1.data" />
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 49%" type="bar" [config]="barExample1.config" [data]="barExample1.data" />
+  <chart style="width: 49%" type="bar" [config]="barExample2.config" [data]="barExample2.data" />
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 49%" type="bar" [config]="barExample3.config" [data]="barExample3.data" />
+  <chart style="width: 49%" type="bar" [config]="barExample4.config" [data]="barExample4.data" />
+</div>
 
-
+<chart type="funnel" [config]="funnelExample.config" [data]="funnelExample.data" />
+<chart type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data" /> -->

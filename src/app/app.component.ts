@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ChartConfig, XaxisType, YaxisType, constant, field } from '@oneteme/jquery-core';
+import { ChartConfig, XaxisType, YaxisType, field, values } from '@oneteme/jquery-core';
 
 @Component({
   selector: 'app-root',
@@ -434,8 +434,8 @@ export class AppComponent {
   //   data: [
   //     { count: 20, field: 'Field 1' },
   //     { count: 60, field: 'Field 2' },
-      
-      
+
+
   //     { count: 100, field: 'Field 3' },
   //     { count: 200, field: 'Field 4' },
   //     { count: 240, field: 'Field 5' },
@@ -474,15 +474,15 @@ export class AppComponent {
       { count1: 20, count2: 10, count3: 40, field: 'Field 4' }
     ],
     config: {
-      title: 'Exemple de Bar Chart n°1',
+      title: 'Exemple de Bar Chart Classique',
       mappers: [
-        { x: field('field'), y:  field('count1'), label: 'Sub Field 1'},
-        { x: field('field'), y:  field('count2'), label: 'Sub Field 2'},
-        { x: field('field'), y:  field('count3'), label: 'Sub Field 3'}
+        { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
+        { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
+        { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' }
       ],
+      height: 250,
       options: {
         chart: {
-          height: 250,
           toolbar: {
             show: false
           }
@@ -494,7 +494,155 @@ export class AppComponent {
       }
     }
   };
+
+  barExample2: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+    data: [
+      { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
+      { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
+      { count1: 50, count2: 30, count3: 50, count4: 30, field: 'Field 3' },
+      { count1: 80, count2: 40, count3: 80, count4: 40, field: 'Field 4' },
+    ],
+    config: {
+      title: 'Exemple de Bar Chart Stacked',
+      mappers: [
+        { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
+        { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
+        { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' },
+        { data: {x: field('field'), y: field('count4')}, name: 'Sub Field 4' }
+      ],
+      height: 250,
+      options: {
+        chart: {
+          stacked: true,
+          toolbar: {
+            show: false
+          }
+        },
+        stroke: {
+          width: 1,
+          colors: ["#fff"]
+        }
+      }
+    }
+  };
+
+  barExample3: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+    data: [
+      { count1: 20, count2: 60, count3: 20, count4: 60 }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart Sans Pivot',
+      mappers: [
+        { data: {x: values("Field 1"), y: field('count1')} },
+        { data: {x: values("Field 2"), y: field('count2')} },
+        { data: {x: values("Field 3"), y: field('count3')} },
+        { data: {x: values("Field 4"), y: field('count4')} }
+      ],
+      height: 250,
+      options: {
+        chart: {
+          stacked: true,
+          toolbar: {
+            show: false
+          }
+        },
+        stroke: {
+          width: 1,
+          colors: ["#fff"]
+        }
+      }
+    }
+  };
+
+  barExample4: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+    data: [
+      { count1: 20, count2: 60, count3: 20, count4: 60 }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart Avec Pivot',
+      mappers: [
+        { data: {x: values("Field 1"), y: field('count1')} },
+        { data: {x: values("Field 2"), y: field('count2')} },
+        { data: {x: values("Field 3"), y: field('count3')} },
+        { data: {x: values("Field 4"), y: field('count4')} }
+      ],
+      pivot: true,
+      height: 250,
+      options: {
+        chart: {
+          stacked: true,
+          toolbar: {
+            show: false
+          }
+        },
+        stroke: {
+          width: 1,
+          colors: ["#fff"]
+        }
+      }
+    }
+  };
+
+  // barExample3: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+  //   data: [
+  //     { count1: 20, field: 'Field 1', subField: 'Sub Field 1' },
+  //     { count1: 60, field: 'Field 1', subField: 'Sub Field 2' },
+  //     { count1: 20, field: 'Field 1', subField: 'Sub Field 3' },
+  //     { count1: 60, field: 'Field 1', subField: 'Sub Field 4' },
+  //     { count1: 30, field: 'Field 2', subField: 'Sub Field 1' },
+  //     { count1: 50, field: 'Field 3', subField: 'Sub Field 1' },
+  //     { count1: 80, field: 'Field 4', subField: 'Sub Field 1' },
+  //   ],
+  //   config: {
+  //     title: 'Exemple de Bar Chart n°2',
+  //     mappers: [
+  //       { data: {x: field('field'), y: field('count1')} }
+  //     ],
+  //     options: {
+  //       chart: {
+  //         height: 250,
+  //         stacked: true,
+  //         toolbar: {
+  //           show: false
+  //         }
+  //       },
+  //       stroke: {
+  //         width: 1,
+  //         colors: ["#fff"]
+  //       }
+  //     }
+  //   }
+  // };
+
+  funnelExample: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+    data: [
+      { count: 20, field: 'Field 1' },
+      { count: 60, field: 'Field 2' },
+      { count: 100, field: 'Field 3' },
+      { count: 200, field: 'Field 4' },
+      { count: 240, field: 'Field 5' },
+    ],
+    config: {
+      title: 'Exemple de Funnel Chart n°1',
+      mappers: [
+        { data: {x: field('field'), y: field('count')} }
+      ],
+      height: 250,
+      options: {
+        plotOptions: {
+          bar: {
+            borderRadius: 0,
+            horizontal: true,
+            distributed: true,
+            barHeight: "80%",
+            isFunnel: true
+          }
+        }
+      }
+    }
+  }
+
   ngOnInit() {
-    
+
   }
 }
