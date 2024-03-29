@@ -66,7 +66,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
       categories = distinct(this.data, this._chartConfig.mappers.map(m=> m.data.x));
       commonSeries = (this._chartConfig.pivot ? pivotSeries(this.data, this._chartConfig.mappers, this._chartConfig.continue) : series(this.data, this._chartConfig.mappers, this._chartConfig.continue)).map(s => {
         let data: any[] = s.data;
-        if(this.type == 'funnel') {
+        if(this.type == 'funnel') { //sort before create series
           data.sort((a, b) => b - a);
         } else if (this.type == 'pyramid') {
           data.sort((a, b) => a - b);

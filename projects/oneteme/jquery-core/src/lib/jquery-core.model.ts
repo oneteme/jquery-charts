@@ -77,11 +77,11 @@ export function pivotSeries<X extends XaxisType, Y extends YaxisType>(objects: a
 }
 
 export function pivotContinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mapper: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Coordinate2D> {
-    return {name: `serie_${idx}`, data: mapper.map(m=> ({x: m.name, y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
+    return {name: `serie_${idx+1}`, data: mapper.map(m=> ({x: m.name, y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
 }
 
 export function pivotDiscontinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mapper: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Y> {
-    return {name: `serie_${idx}`, data: mapper.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
+    return {name: `serie_${idx+1}`, data: mapper.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
 }
 
 export function distinct<T>(objects: any[], providers : DataProvider<T>[]) : T[] { // T == XaxisType
@@ -109,7 +109,8 @@ export interface ChartConfig<X extends XaxisType, Y extends YaxisType> {
     ytitle?: string | { [key: string]: string }; // multiple  {key: val}
     width?: number;
     height?: number;
-    pivot?: boolean; //transpose  
+    stacked?: boolean;//barChart only 
+    pivot?: boolean; //transpose data
     continue?: boolean; //categories | [x,y]
     mappers?: DataMapper<X,Y>[];
     options?: any;
@@ -118,7 +119,7 @@ export interface ChartConfig<X extends XaxisType, Y extends YaxisType> {
 export interface DataMapper<X extends XaxisType, Y extends YaxisType> { //SerieBuider
     data: CoordinateProvider<X,Y>
     name?: string;
-    group?: string;
+    group?: string; //rename to stack
     color?: string;
     unit?: string;
     //type
@@ -178,7 +179,8 @@ export interface ChartView<X extends XaxisType, Y extends YaxisType> {
     config: ChartConfig<X, Y>;
     data: any[];
     isLoading: boolean;
-    //canPivot
+    canPivot?: boolean;
+
 }
 
 // export interface RowSet<T extends DataMapper> {
