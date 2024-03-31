@@ -87,7 +87,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
         let type: 'category' | 'datetime' | 'numeric' = 'datetime';
         if (this.data.length) {
             categories = distinct(this.data, this._chartConfig.mappers.map(m => m.data.x));
-            commonSeries = this._chartConfig.pivot ? pivotSeries(this.data, this._chartConfig.mappers, this._chartConfig.continue) : series(this.data, this._chartConfig.mappers, this._chartConfig.continue);
+            commonSeries = this._chartConfig.pivot ? pivotSeries(this.data, this._chartConfig.mappers, this._chartConfig.continue) : series(this.data, this._chartConfig.mappers, this._chartConfig.continue); //TODO defaut value
             type = categories[0] instanceof Date ? 'datetime' : typeof categories[0] == 'number' ? 'numeric' : 'category';
         }
         mergeDeep(this._options, { series: commonSeries, xaxis: { type: type, categories: !this._chartConfig.continue ? categories : [] } });

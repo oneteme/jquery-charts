@@ -71,7 +71,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
         } else if (this.type == 'pyramid') {
           data.sort((a, b) => a - b);
         }
-        return { name: s.name, color: s.color, group: s.group, data: data };
+        return { name: s.name, color: s.color, group: s.stack, data: data };
       });
       type = categories[0] instanceof Date ? 'datetime' : typeof categories[0] == 'number' ? 'numeric' : 'category';
       console.log(categories, commonSeries);

@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input, NgZone, OnChanges, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartConfig, ChartView, CommonSerie, distinct, mergeDeep, series } from "@oneteme/jquery-core";
+import { ChartConfig, ChartView, CommonSerie, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -85,8 +85,10 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
         let colors: string[] = [];
         if (this.data.length) {
             categories = distinct(this.data, this._chartConfig.mappers.map(m => m.data.x));
-            commonSeries = series(this.data, this._chartConfig.mappers, false).flatMap(s => <number[]>s.data);
-            colors = this._chartConfig.mappers.filter(d => d.color).map(d => d.color);
+            commonSeries = (this._chartConfig.pivot 
+                ? pivotSeries(this.data, this._chartConfig.mappers, false)
+                : series(this.data, this._chartConfig.mappers, false)).flatMap(s => <number[]>s.data);
+            colors = this._chartConfig.mappers.filter(d => d.color).map(d => <string>d.color); //deprecated color: already returned
         }
         mergeDeep(this._options, { series: commonSeries, labels: categories, colors: colors });
     }
