@@ -35,6 +35,17 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
     };
 }
 
+export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartConfig<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
+    if(provider.continue){
+        return {series :  provider.mappers.flatMap(m=> continueSerie(objects, m, defaultValue))};
+    }
+    var categs = distinct(objects, provider.mappers.map(m=> m.data.x));
+    return { categories: categs, series: provider.mappers.flatMap(m=> discontinueSerie(objects, categs, m, defaultValue))};
+}
+
+/**
+ * @deprecated The method should not be used ==> buildChart
+ */
 export function series<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: Y) : CommonSerie<Y|Coordinate2D>[] {
     if(continues){
         return mappers.flatMap(m=> continueSerie(objects, m, defaultValue));
@@ -98,18 +109,21 @@ function resolveDataProvider<T>(provider?: T | DataProvider<T>): DataProvider<T>
             : (o,i)=> provider;
 }
 
+/**
+ * @deprecated The method should not be used ==> buildChart
+ */
 export function pivotSeries<X extends XaxisType, Y extends YaxisType>(objects: any[], mappers: DataMapper<X,Y>[], continues: boolean, defaultValue?: Y) : CommonSerie<Y|Coordinate2D>[] {
     return continues 
         ? objects.map((o,idx)=> pivotContinueSerie(o, idx, mappers, defaultValue))
         : objects.map((o,idx)=> pivotDiscontinueSerie(o, idx, mappers, defaultValue)); //categories are distinct 
 }
 
-export function pivotContinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mapper: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Coordinate2D> {
-    return {name: `serie_${idx+1}`, data: mapper.map(m=> ({x: resolveDataProvider(m.name)(o,idx), y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
+export function pivotContinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mappers: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Coordinate2D> {
+    return {name: `serie_${idx+1}`, data: mappers.map(m=> ({x: resolveDataProvider(m.name)(o,idx), y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
 }
 
-export function pivotDiscontinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mapper: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Y> {
-    return {name: `serie_${idx+1}`, data: mapper.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
+export function pivotDiscontinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mappers: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Y> {
+    return {name: `serie_${idx+1}`, data: mappers.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
 }
 
 export function distinct<T>(objects: any[], providers : DataProvider<T>[]) : T[] { // T == XaxisType
@@ -130,7 +144,8 @@ function isUndefined(o: any): boolean {
     return o == undefined; 
 }
 
-export interface ChartConfig<X extends XaxisType, Y extends YaxisType> { 
+
+export interface ChartConfig<X extends XaxisType, Y extends YaxisType> { //rm ChartProvider
     title?: string;
     subtitle?: string;
     xtitle?: string;
@@ -145,20 +160,12 @@ export interface ChartConfig<X extends XaxisType, Y extends YaxisType> {
     //xOrder?: 'asc'|'desc';
 }
 
-export interface DataMapper<X extends XaxisType, Y extends YaxisType> { //SerieBuider
+export interface DataMapper<X extends XaxisType, Y extends YaxisType> { //rm SerieProvider
     data: CoordinateProvider<X,Y>; // | [X,Y]
     name?: string | DataProvider<string>;
     stack?: string | DataProvider<string>; //one time at init
     color?: string | DataProvider<string>; //one time at init
     unit?: string;
-    //type
-}
-
-export interface CommonSerie<T> {
-    data: T[];
-    name?: string;
-    stack?: string;
-    color?: string
     //type
 }
 
@@ -172,8 +179,18 @@ export declare type CoordinateProvider<X,Y> = {x: DataProvider<X>, y: DataProvid
 
 export declare type DataProvider<T> = (o: any, idx: number) => T;
 
+export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordinate2D> {
+    categories?: X[];
+    series: CommonSerie<Y>[];
+}
 
-
+export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
+    data: Y[];
+    name?: string;
+    stack?: string;
+    color?: string
+    //type
+}
 
 
 /*  OLD */

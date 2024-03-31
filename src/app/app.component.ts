@@ -530,12 +530,8 @@ export class AppComponent {
     config: {
       title: 'Exemple de Bar Chart Classique',
       mappers: [
-        { 
-          data: {x: field('day'), y: field('count')}, 
-          name:(o,i)=> `st-${o['status']}`, 
-          stack: field('group'),
+        { data: {x: field('day'), y: field('count')}, name:(o,i)=> `st-${o['status']}`, stack: field('group')},
           //color: (o,i)=> o.status >= 500 ? 'red' : o.status >= 400 ? 'yellow' : 'green', 
-        }
       ],
       height: 250,
       options: {
