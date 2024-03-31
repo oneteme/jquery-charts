@@ -521,11 +521,11 @@ export class AppComponent {
       { day: '1', status: 400, count: 25, group: '4xx' },
       { day: '1', status: 404, count: 19, group: '4xx' },
       { day: '1', status: 500, count:  2, group: '5xx' },
-      { day: '2', status: 200, count: 10, group: '2xx' },
-      { day: '2', status: 202, count: 15, group: '2xx' },
-      { day: '2', status: 400, count:  7, group: '4xx' },
-      { day: '2', status: 404, count:  9, group: '4xx' },
-      { day: '2', status: 500, count: 12, group: '5xx' }
+      { day: '3', status: 200, count: 10, group: '2xx' },
+      { day: '3', status: 202, count: 15, group: '2xx' },
+      { day: '3', status: 400, count:  7, group: '4xx' },
+      { day: '3', status: 404, count:  9, group: '4xx' },
+      { day: '3', status: 500, count: 12, group: '5xx' }
     ],
     config: {
       title: 'Exemple de Bar Chart Classique',
@@ -534,6 +534,8 @@ export class AppComponent {
           //color: (o,i)=> o.status >= 500 ? 'red' : o.status >= 400 ? 'yellow' : 'green', 
       ],
       height: 250,
+      pivot: true,
+      continue : true,
       options: {
         chart: {
           stacked: true, //move to barchart
@@ -619,10 +621,10 @@ export class AppComponent {
     config: {
       title: 'Exemple de Bar Chart Stacked Avec Pivot',
       mappers: [
-        { data: {x: field('field'), y: field('count1')} },
-        { data: {x: field('field'), y: field('count2')} },
-        { data: {x: field('field'), y: field('count3')} },
-        { data: {x: field('field'), y: field('count4')} }
+        { data: {x: field('field'), y: field('count1')}, name: 'c1' },
+        { data: {x: field('field'), y: field('count2')}, name: 'c2'  },
+        { data: {x: field('field'), y: field('count3')}, name: 'c3'  },
+        { data: {x: field('field'), y: field('count4')}, name: 'c4'  }
       ],
       pivot: true,
       height: 250,

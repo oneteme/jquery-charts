@@ -27,20 +27,56 @@ export function combineFields<T>(names: string[], fn: (args: any[])=> T): DataPr
 
 export function rangeFields<T>(minName: string, maxName: string): DataProvider<T[]> {
     return (o, i)=> {
-        var minFn: DataProvider<T> = field(minName);
-        var maxFn: DataProvider<T> = field(maxName);
-        var min = minFn(o,i);
-        var max = maxFn(o,i);
+        let minFn: DataProvider<T> = field(minName);
+        let maxFn: DataProvider<T> = field(maxName);
+        let min = minFn(o,i);
+        let max = maxFn(o,i);
         return nonUndefined(min) && nonUndefined(max) ? [min, max] : undefined;
     };
 }
 
 export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartConfig<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
-    if(provider.continue){
-        return {series :  provider.mappers.flatMap(m=> continueSerie(objects, m, defaultValue))};
+    var mappers = provider.pivot ?
+        provider.mappers.map(m=>({
+            data:{x: resolveDataProvider(m.name, ''), y: m.data.y},
+            name: resolveDataProvider(m.data.x)
+        })) : provider.mappers;
+    var chart : CommonChart<X,Y|Coordinate2D> = {series:[]};
+    if(!provider.continue){
+        chart.categories = distinct(objects, mappers.map(m=> m.data.x));
     }
-    var categs = distinct(objects, provider.mappers.map(m=> m.data.x));
-    return { categories: categs, series: provider.mappers.flatMap(m=> discontinueSerie(objects, categs, m, defaultValue))};
+    var map = {};
+    mappers.forEach(m=> {
+        var np = resolveDataProvider(m.name);
+        var sp = resolveDataProvider(m.stack);
+        var cp = resolveDataProvider(m.color);
+        objects.forEach((o,i)=>{
+            var name = np(o,i) || ''; //can't use undefined as a map key
+            if(!map[name]){ //init serie
+                map[name] = {data: []};
+                name && (map[name].name = name);
+                var stack = sp(o, i);
+                var color = cp(o, i);
+                stack && (map[name].stack = stack); 
+                color && (map[name].color = color);            
+            }
+            if(provider.continue){
+                map[name].data.push({x: m.data.x(o,i), y: requireNonUndefined(m.data.y(o,i), defaultValue)});
+            }
+            else{
+                var key = m.data.x(o,i);
+                var idx = chart.categories.indexOf(key);
+                if(idx > -1){ //if !exist
+                    map[name].data[idx] = requireNonUndefined(m.data.y(o,i), defaultValue);
+                }
+                else{
+                    throw `'${key}' not part of categories : ${chart.categories}`;
+                }
+            }
+        });
+    })
+    chart.series = Object.values(map);
+    return chart;
 }
 
 /**
@@ -53,14 +89,16 @@ export function series<X extends XaxisType, Y extends YaxisType>(objects: any[],
     var categs = distinct(objects, mappers.map(m=> m.data.x));
     return mappers.flatMap(m=> discontinueSerie(objects, categs, m, defaultValue));
 }
-
+/**
+ * @deprecated The method should not be used ==> buildChart
+ */
 export function continueSerie<X extends XaxisType, Y extends YaxisType>(objects: any[], mapper: DataMapper<X,Y>, defaultValue?: Y) : CommonSerie<Coordinate2D>[] {
     var np = resolveDataProvider(mapper.name);
     var sp = resolveDataProvider(mapper.stack);
     var cp = resolveDataProvider(mapper.color);
     var map : {string:CommonSerie<Coordinate2D>} = objects.reduce((acc,o,i)=>{
         var name = np(o,i) || ''; //can't use undefined as a map key
-        if(!acc[name]){
+        if(!acc[name]){ //init serie
             acc[name] = {data: []};
             name && (acc[name].name = name);
             var stack = sp(o, i);
@@ -73,14 +111,16 @@ export function continueSerie<X extends XaxisType, Y extends YaxisType>(objects:
     },{});
     return Object.values(map);
 }
-
+/**
+ * @deprecated The method should not be used ==> buildChart
+ */
 export function discontinueSerie<X extends XaxisType, Y extends YaxisType>(objects: any[], categories: X[], mapper: DataMapper<X,Y>, defaultValue?: Y) : CommonSerie<Y>[] {
     var np = resolveDataProvider(mapper.name);
     var sp = resolveDataProvider(mapper.stack);
     var cp = resolveDataProvider(mapper.color);
     var map : {string:CommonSerie<Y>} = objects.reduce((acc,o,i)=>{
         var name = np(o, i) || ''; //can't use undefined as a map key
-        if(!acc[name]){
+        if(!acc[name]){ //init serie
             acc[name] = {data: Array(categories.length).fill(defaultValue)};
             name && (acc[name].name = name);
             var stack = sp(o, i);
@@ -94,16 +134,16 @@ export function discontinueSerie<X extends XaxisType, Y extends YaxisType>(objec
             acc[name].data[idx] = requireNonUndefined(mapper.data.y(o,i), defaultValue);
         }
         else{
-            throw `${key} not part of categories : ${categories}`;
+            throw `'${key}' not part of categories : ${categories}`;
         }
         return acc;
     }, {});
     return Object.values(map);
 }
 
-function resolveDataProvider<T>(provider?: T | DataProvider<T>): DataProvider<T> {
+function resolveDataProvider<T>(provider?: T | DataProvider<T>, defaultValue?: T): DataProvider<T> {
     return !provider
-        ? (o,i)=> undefined
+        ? (o,i)=> defaultValue
         : typeof provider == 'function'
             ? <DataProvider<T>> provider 
             : (o,i)=> provider;
@@ -117,12 +157,21 @@ export function pivotSeries<X extends XaxisType, Y extends YaxisType>(objects: a
         ? objects.map((o,idx)=> pivotContinueSerie(o, idx, mappers, defaultValue))
         : objects.map((o,idx)=> pivotDiscontinueSerie(o, idx, mappers, defaultValue)); //categories are distinct 
 }
-
+/**
+ * @deprecated The method should not be used ==> buildChart
+ */
 export function pivotContinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mappers: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Coordinate2D> {
-    return {name: `serie_${idx+1}`, data: mappers.map(m=> ({x: resolveDataProvider(m.name)(o,idx), y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
+    return {name: `serie_${idx+1}`, data: 
+    mappers.map(m=> ({x: resolveDataProvider(m.name)(o,idx), y: requireNonUndefined(m.data.y(o,idx), defaultValue)}))};
 }
-
+/**
+ * @deprecated The method should not be used ==> buildChart
+ */
 export function pivotDiscontinueSerie<X extends XaxisType, Y extends YaxisType>(o: any, idx: number, mappers: DataMapper<X,Y>[], defaultValue?: Y) : CommonSerie<Y> {
+    mappers.map(m=>({
+        name: resolveDataProvider(m.data.x)(o,idx), 
+        data: mappers.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))
+    }));
     return {name: `serie_${idx+1}`, data: mappers.map(m=> requireNonUndefined(m.data.y(o,idx), defaultValue))};
 }
 
@@ -190,6 +239,21 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
     stack?: string;
     color?: string
     //type
+}
+
+export function groupByFiled<T>(arr:[], name:string) : {[key:string]: T[]} {
+    return groupBy(arr, o=>o[name]);
+}
+
+export function groupBy<T>(arr:[], fn:(o:T,idx:number)=>string) : {[key:string]: T[]} {
+    return arr.reduce((acc, o, idx)=>{
+        var key = fn(o,idx);
+        if(!acc[key]){
+            acc[key] = [];
+        }
+        acc[key].push(o);
+        return acc;
+    },{});
 }
 
 

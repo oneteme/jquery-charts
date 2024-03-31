@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input, NgZone, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartConfig, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries } from "@oneteme/jquery-core";
+import { ChartConfig, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries, buildChart } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -59,6 +59,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   }
 
   updateData() {
+    var cc = buildChart(this.data, this._chartConfig);
     let commonSeries: CommonSerie<number|Coordinate2D>[] = [];
     let categories: X[] = [];
     let type: 'category' | 'datetime' | 'numeric' = 'datetime';
@@ -66,17 +67,20 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
       categories = distinct(this.data, this._chartConfig.mappers.map(m=> m.data.x));
       commonSeries = (this._chartConfig.pivot ? pivotSeries(this.data, this._chartConfig.mappers, this._chartConfig.continue) : series(this.data, this._chartConfig.mappers, this._chartConfig.continue)).map(s => {
         let data: any[] = s.data;
-        if(this.type == 'funnel') { //sort before create series
-          data.sort((a, b) => b - a);
+        if(this.type == 'funnel') {
+          data.sort((a, b) => b - a);  //TODO sort before create series
         } else if (this.type == 'pyramid') {
-          data.sort((a, b) => a - b);
+          data.sort((a, b) => a - b); //TODO sort before create series
         }
         return { name: s.name, color: s.color, group: s.stack, data: data };
       });
       type = categories[0] instanceof Date ? 'datetime' : typeof categories[0] == 'number' ? 'numeric' : 'category';
       console.log(categories, commonSeries);
     }
-    mergeDeep(this._options, { series: commonSeries, xaxis: { type: type, categories:  !this._chartConfig.continue ? categories : [] } });
+    if(this._chartConfig.stacked){
+      cc.series.forEach(s=>{ Object.assign(s,{group:s.stack})})
+    }
+    mergeDeep(this._options, { series: cc.series, xaxis: { type: type, categories: cc.categories || [] } });
   }
 
   updateLoading() {
