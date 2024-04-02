@@ -80,7 +80,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
     })
     chart.series = Object.values(series);
     if(provider.continue && provider.xorder){
-        chart.series.forEach(s=> s.data.sort(naturalObjectComparator(provider.xorder, field('x'))));
+        chart.series.forEach(s=> s.data.sort(naturalFieldComparator(provider.xorder, field('x'))));
     }
     return chart;
 }
@@ -265,7 +265,7 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
     //type
 }
 
-export function naturalObjectComparator<T>(sens: Sort, provider: DataProvider<T>) : (o1:any, o2:any)=>number {
+export function naturalFieldComparator<T>(sens: Sort, provider: DataProvider<T>) : (o1:any, o2:any)=>number {
     if(provider){
         const v = sens=='asc' ? 1 : -1; 
         return (o1,o2)=> {
