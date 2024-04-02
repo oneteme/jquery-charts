@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input, NgZone, OnChanges, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartConfig, ChartView, CommonSerie, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -10,7 +10,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     private ngZone: NgZone = inject(NgZone);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartConfig<string, number> = {};
+    private _chartConfig: ChartProvider<string, number> = {};
     private _options: any = {
         chart: {
             type: 'pie',
@@ -26,7 +26,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
 
     @Input({ required: true }) type: 'pie' | 'donut' | 'radialBar' | 'polarArea';
 
-    @Input({ required: true }) config: ChartConfig<string, number>;
+    @Input({ required: true }) config: ChartProvider<string, number>;
 
     @Input({ required: true }) data: any[];
 

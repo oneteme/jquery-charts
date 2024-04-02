@@ -76,13 +76,12 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
         });
     })
     chart.series = Object.values(series);
-    console.log('chart', chart)
     return chart;
 }
 
 function newChart<X extends XaxisType, Y extends YaxisType>(provider: ChartProvider<X,Y>) : CommonChart<X,Y>{
     return Object.entries(provider)
-    .filter(e=> ['ytitle', 'series'].indexOf(e[0])<0)
+    .filter(e=> ['series'].indexOf(e[0])<0)
     .reduce((acc,e)=>{acc[e[0]] = e[1]; return acc;}, {series:[]})
 }
 
@@ -205,7 +204,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm 
     title?: string;
     subtitle?: string;
     xtitle?: string;
-    ytitle?: string | { [key: string]: string }; // multiple  {key: val}
+    ytitle?: string; // multiple  {key: val}
     width?: number;
     height?: number;
     stacked?: boolean; //barChart only 
