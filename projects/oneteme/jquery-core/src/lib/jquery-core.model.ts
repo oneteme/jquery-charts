@@ -35,7 +35,7 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
     };
 }
 
-export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartConfig<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
+export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartProvider<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
     var mappers = provider.pivot ?
         provider.series.map(m=>({
             name: resolveDataProvider(m.data.x),
@@ -76,10 +76,11 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
         });
     })
     chart.series = Object.values(series);
+    console.log('chart', chart)
     return chart;
 }
 
-function newChart<X extends XaxisType, Y extends YaxisType>(provider: ChartConfig<X,Y>) : CommonChart<X,Y>{
+function newChart<X extends XaxisType, Y extends YaxisType>(provider: ChartProvider<X,Y>) : CommonChart<X,Y>{
     return Object.entries(provider)
     .filter(e=> ['ytitle', 'series'].indexOf(e[0])<0)
     .reduce((acc,e)=>{acc[e[0]] = e[1]; return acc;}, {series:[]})
@@ -200,7 +201,7 @@ function isUndefined(o: any): boolean {
 }
 
 
-export interface ChartConfig<X extends XaxisType, Y extends YaxisType> { //rm ChartProvider
+export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm ChartProvider
     title?: string;
     subtitle?: string;
     xtitle?: string;
@@ -240,11 +241,12 @@ export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordina
     title?: string;
     subtitle?: string;
     xtitle?: string;
-    ytitle?: string; // multiple  {key: val}
+    ytitle?: string;
     width?: number;
     height?: number;
     pivot?: boolean; //transpose data
     continue?: boolean; //categories | [x,y]
+    stacked?:boolean;
     options?: any;
 }
 
@@ -252,7 +254,7 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
     data: Y[];
     name?: string;
     stack?: string;
-    color?: string
+    color?: string;
     //type
 }
 
@@ -272,7 +274,7 @@ export function groupBy<T>(arr:[], fn: DataProvider<string>) : {[key:string]: T[
 }
 
 export interface ChartView<X extends XaxisType, Y extends YaxisType> {
-    config: ChartConfig<X, Y>;
+    config: ChartProvider<X, Y>;
     data: any[];
     isLoading: boolean;
     canPivot?: boolean;

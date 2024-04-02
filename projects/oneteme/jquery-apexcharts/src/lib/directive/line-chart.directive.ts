@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input, NgZone, OnChanges, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartConfig, ChartView, CommonSerie, Coordinate2D, XaxisType, YaxisType, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, CommonSerie, Coordinate2D, XaxisType, YaxisType, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -10,7 +10,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     private ngZone: NgZone = inject(NgZone);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartConfig<X, Y> = {};
+    private _chartConfig: ChartProvider<X, Y> = {};
 
     private _options: any = {
         chart: {
@@ -27,7 +27,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
 
     @Input({ required: true }) type: 'line' | 'area';
 
-    @Input({ required: true }) config: ChartConfig<X, Y>;
+    @Input({ required: true }) config: ChartProvider<X, Y>;
 
     @Input({ required: true }) data: any[];
 

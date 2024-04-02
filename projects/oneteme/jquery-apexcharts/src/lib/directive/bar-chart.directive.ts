@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input, NgZone, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartConfig, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries, buildChart } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries, buildChart } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -10,7 +10,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   private ngZone: NgZone = inject(NgZone);
 
   private _chart: ApexCharts;
-  private _chartConfig: ChartConfig<X, number> = {};
+  private _chartConfig: ChartProvider<X, number> = {};
   private _options: any = {
     chart: {
       type: 'bar',
@@ -26,7 +26,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
 
   @Input({required: true}) type: 'bar' | 'funnel' | 'pyramid';
 
-  @Input({required: true}) config: ChartConfig<X, number>;
+  @Input({required: true}) config: ChartProvider<X, number>;
 
   @Input({required: true}) data: any[];
 
@@ -80,6 +80,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
     if(this._chartConfig.stacked){
       cc.series.forEach(s=>{ Object.assign(s,{group:s.stack})})
     }
+    console.log(cc)
     mergeDeep(this._options, { series: cc.series, xaxis: { type: type, categories: cc.categories || [] } });
   }
 

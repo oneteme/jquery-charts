@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ChartConfig, XaxisType, YaxisType, field, joinFields, values } from '@oneteme/jquery-core';
+import { ChartProvider, XaxisType, YaxisType, field, joinFields, values } from '@oneteme/jquery-core';
 
 @Component({
   selector: 'app-root',
@@ -7,7 +7,7 @@ import { ChartConfig, XaxisType, YaxisType, field, joinFields, values } from '@o
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
-  // pieExample: { data: any[], config: ChartConfig<DataMapper> } = {
+  // pieExample: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count1: 30, count2: 70, count3: 20 }
   //   ],
@@ -24,7 +24,7 @@ export class AppComponent {
   //   }
   // };
 
-  // pieExample2: { data: any[], config: ChartConfig<DataMapper> } = {
+  // pieExample2: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 40, field: 'Field 1' },
   //     { count: 20, field: 'Field 2' },
@@ -46,7 +46,7 @@ export class AppComponent {
   //   }
   // };
 
-  // pieExample3: { data: any[], config: ChartConfig<DataMapper> } = {
+  // pieExample3: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
   //     { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -68,7 +68,7 @@ export class AppComponent {
   //   }
   // };
 
-  // donutExample1: { data: any[], config: ChartConfig<DataMapper> } = {
+  // donutExample1: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count1: 30, count2: 70, count3: 20 }
   //   ],
@@ -85,7 +85,7 @@ export class AppComponent {
   //   }
   // };
 
-  // donutExample2: { data: any[], config: ChartConfig<DataMapper> } = {
+  // donutExample2: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 40, field: 'Field 1' },
   //     { count: 20, field: 'Field 2' },
@@ -107,7 +107,7 @@ export class AppComponent {
   //   }
   // };
 
-  // donutExample3: { data: any[], config: ChartConfig<DataMapper> } = {
+  // donutExample3: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
   //     { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -129,7 +129,7 @@ export class AppComponent {
   //   }
   // };
 
-  // polarAreaExample1: { data: any[], config: ChartConfig<DataMapper> } = {
+  // polarAreaExample1: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count1: 30, count2: 70, count3: 20 }
   //   ],
@@ -146,7 +146,7 @@ export class AppComponent {
   //   }
   // };
 
-  // polarAreaExample2: { data: any[], config: ChartConfig<DataMapper> } = {
+  // polarAreaExample2: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 40, field: 'Field 1' },
   //     { count: 20, field: 'Field 2' },
@@ -168,7 +168,7 @@ export class AppComponent {
   //   }
   // };
 
-  // polarAreaExample3: { data: any[], config: ChartConfig<DataMapper> } = {
+  // polarAreaExample3: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
   //     { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -190,7 +190,7 @@ export class AppComponent {
   //   }
   // };
 
-  // lineExample1: { data: any[], config: ChartConfig<DataMapper> } = {
+  // lineExample1: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 10, field: '2020' },
   //     { count: 30, field: '2021' },
@@ -218,7 +218,7 @@ export class AppComponent {
   //   }
   // };
 
-  // lineExample2: { data: any[], config: ChartConfig<DataMapper> } = {
+  // lineExample2: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count1: 10, count2: 0, field: '2020' },
   //     { count1: 30, count2: 60, field: '2021' },
@@ -252,7 +252,7 @@ export class AppComponent {
   //   }
   // };
 
-  // lineExample3: { data: any[], config: ChartConfig<MultiLineChartMapper> } = {
+  // lineExample3: { data: any[], config: ChartProvider<MultiLineChartMapper> } = {
   //   data: [
   //     { count: 10, field: '2020', subField: "Sub Field 1" },
   //     { count: 0, field: '2020', subField: "Sub Field 2" },
@@ -290,7 +290,7 @@ export class AppComponent {
   //   }
   // };
 
-  // areaExample1: { data: any[], config: ChartConfig<DataMapper> } = {
+  // areaExample1: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 10, date: '2020' },
   //     { count: 30, date: '2021' },
@@ -318,7 +318,7 @@ export class AppComponent {
   //   }
   // };
 
-  // barExample1: { data: any[], config: ChartConfig<DataMapper> } = {
+  // barExample1: { data: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count1: 20, count2: 10, count3: 40, field: 'Field 1' },
   //     { count1: 60, count2: 20, count3: 10, field: 'Field 2' },
@@ -351,7 +351,7 @@ export class AppComponent {
   //   }
   // };
 
-  // barExample2: { data: any[], config: ChartConfig<StackedBarChartMapper> } = {
+  // barExample2: { data: any[], config: ChartProvider<StackedBarChartMapper> } = {
   //   data: [
   //     { count: 20, field: 'Field 1', subField: 'Sub Field 1', group: 'Group 1' },
   //     { count: 60, field: 'Field 1', subField: 'Sub Field 2', group: 'Group 1' },
@@ -395,7 +395,7 @@ export class AppComponent {
   //   }
   // };
 
-  // barExample3: { data: any[], config: ChartConfig<BarChartMapper> } = {
+  // barExample3: { data: any[], config: ChartProvider<BarChartMapper> } = {
   //   data: [
   //     { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
   //     { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
@@ -430,7 +430,7 @@ export class AppComponent {
   //   }
   // };
 
-  // funnelExample: { data?: any[], config: ChartConfig<DataMapper> } = {
+  // funnelExample: { data?: any[], config: ChartProvider<DataMapper> } = {
   //   data: [
   //     { count: 20, field: 'Field 1' },
   //     { count: 60, field: 'Field 2' },
@@ -466,7 +466,7 @@ export class AppComponent {
   //   }
   // }
 
-  pieExample: { data: any[], config: ChartConfig<string, number> } = {
+  pieExample: { data: any[], config: ChartProvider<string, number> } = {
     data: [
       { count1: 30, count2: 70, count3: 20 }
     ],
@@ -481,7 +481,7 @@ export class AppComponent {
     }
   };
 
-  pieExample2: { data: any[], config: ChartConfig<string, number> } = {
+  pieExample2: { data: any[], config: ChartProvider<string, number> } = {
     data: [
       { count: 40, field: 'Field 1' },
       { count: 20, field: 'Field 2' },
@@ -497,7 +497,7 @@ export class AppComponent {
     }
   };
 
-  pieExample3: { data: any[], config: ChartConfig<string, number> } = {
+  pieExample3: { data: any[], config: ChartProvider<string, number> } = {
     data: [
       { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
       { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
@@ -514,7 +514,7 @@ export class AppComponent {
   };
   
   
-  barExample0: { data: any[], config: ChartConfig<XaxisType, number> } = {
+  barExample0: { data: any[], config: ChartProvider<XaxisType, number> } = {
     data: [
       { day: '1', status: 200, count: 14, group: '2xx' },
       { day: '1', status: 202, count:  5, group: '2xx' },
@@ -551,7 +551,7 @@ export class AppComponent {
     }
   };
 
-  barExample1: { data: any[], config: ChartConfig<XaxisType, number> } = {
+  barExample1: { data: any[], config: ChartProvider<XaxisType, number> } = {
     data: [
       { count1: 20, count2: 10, count3: 40, field: 'Field 1' },
       { count1: 60, count2: 20, count3: 10, field: 'Field 2' },
@@ -580,7 +580,7 @@ export class AppComponent {
     }
   };
 
-  barExample2: { data: any[], config: ChartConfig<XaxisType, number> } = {
+  barExample2: { data: any[], config: ChartProvider<XaxisType, number> } = {
     data: [
       { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
       { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
@@ -611,7 +611,7 @@ export class AppComponent {
     }
   };
 
-  barExample3: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+  barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
     data: [
       { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
       { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
@@ -643,7 +643,7 @@ export class AppComponent {
     }
   };
 
-  // barExample3: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+  // barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
   //   data: [
   //     { count1: 20, field: 'Field 1', subField: 'Sub Field 1' },
   //     { count1: 60, field: 'Field 1', subField: 'Sub Field 2' },
@@ -674,7 +674,7 @@ export class AppComponent {
   //   }
   // };
 
-  funnelExample: { data: any[], config: ChartConfig<XaxisType, number> } = {
+  funnelExample: { data: any[], config: ChartProvider<XaxisType, number> } = {
     data: [
       { count: 20, field: 'Field 1' },
       { count: 60, field: 'Field 2' },
@@ -702,7 +702,7 @@ export class AppComponent {
     }
   }
 
-  lineExample1: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+  lineExample1: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
     data: [
       { count: 10, field: '2020' },
       { count: 30, field: '2021' },
@@ -726,7 +726,7 @@ export class AppComponent {
     }
   };
 
-  lineExample2: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+  lineExample2: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
     data: [
       { count1: 10, count2: 0, field: '2020' },
       { count1: 30, count2: 60, field: '2021' },
@@ -756,7 +756,7 @@ export class AppComponent {
     }
   };
 
-  areaExample1: { data: any[], config: ChartConfig<XaxisType, YaxisType> } = {
+  areaExample1: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
     data: [
       { count: 10, date: '2020' },
       { count: 30, date: '2021' },
