@@ -535,7 +535,7 @@ export class AppComponent {
       ],
       height: 250,
       pivot: true,
-      continue : true,
+      continue : false,
       xorder: 'desc',
       options: {
         chart: {
