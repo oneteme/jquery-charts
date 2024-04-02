@@ -79,7 +79,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
         });
     })
     chart.series = Object.values(series);
-    if(provider.xorder){
+    if(provider.continue && provider.xorder){
         chart.series.forEach(s=> s.data.sort(naturalObjectComparator(provider.xorder, field('x'))));
     }
     return chart;
