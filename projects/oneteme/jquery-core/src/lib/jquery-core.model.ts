@@ -266,13 +266,15 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
 }
 
 export function naturalObjectComparator<T>(sens: Sort, provider: DataProvider<T>) : (o1:any, o2:any)=>number {
-    const p = provider ? provider : o=> o;
-    const v = sens=='asc' ? 1 : -1; 
-    return (o1,o2)=> {
-        let a = p(o1, undefined); 
-        let b = p(o2, undefined); 
-        return a>b?v:a<b?-v:0;
+    if(provider){
+        const v = sens=='asc' ? 1 : -1; 
+        return (o1,o2)=> {
+            let a = provider(o1, undefined); 
+            let b = provider(o2, undefined); 
+            return a>b?v:a<b?-v:0;
+        }
     }
+    return naturalComparator(sens);
 }
 
 export function naturalComparator<T>(sens: Sort) : (o1:T, o2:T)=>number {
