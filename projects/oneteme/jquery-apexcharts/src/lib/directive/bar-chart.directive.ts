@@ -77,10 +77,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
       type = categories[0] instanceof Date ? 'datetime' : typeof categories[0] == 'number' ? 'numeric' : 'category';
       console.log(categories, commonSeries);
     }
-    if(this._chartConfig.stacked){
-      cc.series.forEach(s=>{ Object.assign(s,{group:s.stack})})
-    }
-    console.log(cc)
+    cc.series.forEach(s=>{ Object.assign(s,{group:s.stack})})
     mergeDeep(this._options, { series: cc.series, xaxis: { type: type, categories: cc.categories || [] } });
   }
 

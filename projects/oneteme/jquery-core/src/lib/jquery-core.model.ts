@@ -44,6 +44,9 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
     var chart = newChart(provider);
     if(!provider.continue){
         chart.categories = distinct(objects, mappers.map(m=> m.data.x));
+        if(provider.xorder){
+            chart.categories.sort(naturalComparator(provider.xorder))
+        }
     }
     var series = {};
     mappers.forEach(m=> {
@@ -56,7 +59,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
                 series[name] = {data: []};
                 var stack = sp(o, i);
                 var color = cp(o, i);
-                name && (series[name].name = name);
+                name  && (series[name].name  = name);
                 stack && (series[name].stack = stack);
                 color && (series[name].color = color);            
             }
@@ -76,6 +79,9 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
         });
     })
     chart.series = Object.values(series);
+    if(provider.xorder){
+        chart.series.forEach(s=> s.data.sort(naturalObjectComparator(provider.xorder, field('x'))));
+    }
     return chart;
 }
 
@@ -212,7 +218,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm 
     continue?: boolean; //categories | [x,y]
     series?: SerieProvider<X,Y>[];
     options?: any;
-    //xOrder?: 'asc'|'desc';
+    xorder?: 'asc'|'desc'; //type ?
 }
 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> { //rm SerieProvider
@@ -234,6 +240,8 @@ export declare type CoordinateProvider<X,Y> = {x: DataProvider<X>, y: DataProvid
 
 export declare type DataProvider<T> = (o: any, idx: number) => T;
 
+export declare type Sort = 'asc' | 'desc';
+
 export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordinate2D> {
     series: CommonSerie<Y>[];
     categories?: X[];    
@@ -245,7 +253,7 @@ export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordina
     height?: number;
     pivot?: boolean; //transpose data
     continue?: boolean; //categories | [x,y]
-    stacked?:boolean;
+    stacked?: boolean;
     options?: any;
 }
 
@@ -255,6 +263,21 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
     stack?: string;
     color?: string;
     //type
+}
+
+export function naturalObjectComparator<T>(sens: Sort, provider: DataProvider<T>) : (o1:any, o2:any)=>number {
+    const p = provider ? provider : o=> o;
+    const v = sens=='asc' ? 1 : -1; 
+    return (o1,o2)=> {
+        let a = p(o1, undefined); 
+        let b = p(o2, undefined); 
+        return a>b?v:a<b?-v:0;
+    }
+}
+
+export function naturalComparator<T>(sens: Sort) : (o1:T, o2:T)=>number {
+    const v = sens=='asc' ? 1 : -1; 
+    return ((a:T,b:T)=> a>b?v:a<b?-v:0)
 }
 
 export function groupByFiled<T>(arr:[], name:string) : {[key:string]: T[]} {
@@ -269,7 +292,7 @@ export function groupBy<T>(arr:[], fn: DataProvider<string>) : {[key:string]: T[
         }
         acc[key].push(o);
         return acc;
-    },{});
+    }, {});
 }
 
 export interface ChartView<X extends XaxisType, Y extends YaxisType> {

@@ -536,6 +536,7 @@ export class AppComponent {
       height: 250,
       pivot: true,
       continue : true,
+      xorder: 'desc',
       options: {
         chart: {
           stacked: true, //move to barchart
