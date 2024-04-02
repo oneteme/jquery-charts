@@ -1,4 +1,4 @@
-export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid';
+export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
     return (o, idx)=>{ //this[single]=true
