@@ -472,7 +472,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Pie Chart n°1',
-      mappers: [
+      series: [
         { data: {x: values('Field 1'), y: field('count1')} },
         { data: {x: values('Field 2'), y: field('count2')} },
         { data: {x: values('Field 3'), y: field('count3')} }
@@ -490,7 +490,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Pie Chart n°2',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count')} },
       ],
       height: 250,
@@ -506,7 +506,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Pie Chart n°3',
-      mappers: [
+      series: [
         { data: {x: joinFields('_', 'field', 'subField'), y: field('count')} }
       ],
       height: 250
@@ -529,7 +529,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Bar Chart Classique',
-      mappers: [
+      series: [
         { data: {x: field('day'), y: field('count')}, name:(o,i)=> `st-${o['status']}`, stack: field('group')},
           //color: (o,i)=> o.status >= 500 ? 'red' : o.status >= 400 ? 'yellow' : 'green', 
       ],
@@ -560,7 +560,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Bar Chart Classique',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
         { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
         { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' }
@@ -589,7 +589,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Bar Chart Stacked Sans Pivot',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
         { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
         { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' },
@@ -620,7 +620,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Bar Chart Stacked Avec Pivot',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count1')}, name: 'c1' },
         { data: {x: field('field'), y: field('count2')}, name: 'c2'  },
         { data: {x: field('field'), y: field('count3')}, name: 'c3'  },
@@ -684,7 +684,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Funnel Chart n°1',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count')} }
       ],
       height: 250,
@@ -712,7 +712,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Line Chart Avec Une Serie',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count')} }
       ],
       height: 250,
@@ -736,7 +736,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple de Line Chart Avec Plusieurs Series',
-      mappers: [
+      series: [
         { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
         { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' }
       ],
@@ -766,7 +766,7 @@ export class AppComponent {
     ],
     config: {
       title: 'Exemple d\'Area Chart Avec Une Serie',
-      mappers: [
+      series: [
         { data: {x: field('date'), y: field('count')} }
       ],
       height: 250,

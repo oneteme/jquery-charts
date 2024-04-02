@@ -84,11 +84,11 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
         let commonSeries: number[] = [];
         let colors: string[] = [];
         if (this.data.length) {
-            categories = distinct(this.data, this._chartConfig.mappers.map(m => m.data.x));
+            categories = distinct(this.data, this._chartConfig.series.map(m => m.data.x));
             commonSeries = (this._chartConfig.pivot 
-                ? pivotSeries(this.data, this._chartConfig.mappers, false)
-                : series(this.data, this._chartConfig.mappers, false)).flatMap(s => <number[]>s.data);
-            colors = this._chartConfig.mappers.filter(d => d.color).map(d => <string>d.color); //deprecated color: already returned
+                ? pivotSeries(this.data, this._chartConfig.series, false)
+                : series(this.data, this._chartConfig.series, false)).flatMap(s => <number[]>s.data);
+            colors = this._chartConfig.series.filter(d => d.color).map(d => <string>d.color); //deprecated color: already returned
         }
         mergeDeep(this._options, { series: commonSeries, labels: categories, colors: colors });
     }
