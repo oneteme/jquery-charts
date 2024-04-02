@@ -216,9 +216,9 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm 
     stacked?: boolean; //barChart only 
     pivot?: boolean; //transpose data
     continue?: boolean; //categories | [x,y]
+    xorder?: Sort;
     series?: SerieProvider<X,Y>[];
     options?: any;
-    xorder?: 'asc'|'desc'; //type ?
 }
 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> { //rm SerieProvider
@@ -254,6 +254,7 @@ export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordina
     pivot?: boolean; //transpose data
     continue?: boolean; //categories | [x,y]
     stacked?: boolean;
+    xorder?: Sort;
     options?: any;
 }
 
