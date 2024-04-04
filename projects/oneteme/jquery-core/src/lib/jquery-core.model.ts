@@ -52,7 +52,9 @@ export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
                 data:{ 
                     x:<DataProvider<X>> combineProviders(joiner(), resolveDataProvider(s.name), s.data.x), // TODO change cast
                     y:s.data.y
-                }
+                },
+                color: s.color
+                //no unit
             }))
         };
     }
