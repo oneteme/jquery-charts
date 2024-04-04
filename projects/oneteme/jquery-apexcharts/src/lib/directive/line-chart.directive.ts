@@ -1,5 +1,5 @@
-import { Directive, ElementRef, Input, NgZone, OnChanges, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, CommonSerie, Coordinate2D, XaxisType, YaxisType, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -7,7 +7,6 @@ import ApexCharts from "apexcharts";
 })
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
-    private ngZone: NgZone = inject(NgZone);
 
     private _chart: ApexCharts;
     private _chartConfig: ChartProvider<X, Y> = {};
@@ -15,14 +14,8 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     private _options: any = {
         chart: {
             type: 'line',
-            animations: {
-                enabled: false
-            }
         },
-        series: [],
-        markers: {
-            size: 0
-        }
+        series: []
     };
 
     @Input({ required: true }) type: 'line' | 'area';
@@ -32,6 +25,8 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     @Input({ required: true }) data: any[];
 
     @Input() isLoading: boolean = false;
+
+    @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
 
     ngOnDestroy(): void {
         if (this._chart) {
@@ -56,11 +51,44 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
 
 
     updateConfig() {
+        let that = this;
         this._chartConfig = this.config;
         mergeDeep(this._options, {
             chart: {
                 height: this._chartConfig.height ?? '100%',
-                width: this._chartConfig.width ?? '100%'
+                width: this._chartConfig.width ?? '100%',
+                toolbar: {
+                    show: true,
+                    tools: {
+                      download: false,
+                      selection: false,
+                      zoom: false,
+                      zoomin: false,
+                      zoomout: false,
+                      pan: false,
+                      reset: false,
+                      customIcons: [{
+                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="20">',
+                        title: 'Graphique précédent',
+                        click: function (chart, options, e) {
+                          that.customEvent.emit("previous");
+                        }
+                      },
+                      {
+                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="20">',
+                        title: 'Graphique suivant',
+                        click: function (chart, options, e) {
+                          that.customEvent.emit("next");
+                        }
+                      }, {
+                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="20">',
+                        title: 'Graphique suivant',
+                        click: function (chart, options, e) {
+                          that.customEvent.emit("pivot");
+                        }
+                      }]
+                    }
+                  }
             },
             title: {
                 text: this._chartConfig.title
@@ -82,15 +110,18 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     updateData() {
-        let commonSeries: CommonSerie<Y | Coordinate2D>[] = [];
-        let categories: any[] = [];
+        var commonChart = buildChart(this.data, this._chartConfig);
         let type: 'category' | 'datetime' | 'numeric' = 'datetime';
-        if (this.data.length) {
-            categories = distinct(this.data, this._chartConfig.series.map(m => m.data.x));
-            commonSeries = this._chartConfig.pivot ? pivotSeries(this.data, this._chartConfig.series, this._chartConfig.continue) : series(this.data, this._chartConfig.series, this._chartConfig.continue); //TODO defaut value
-            type = categories[0] instanceof Date ? 'datetime' : typeof categories[0] == 'number' ? 'numeric' : 'category';
+        if (commonChart.continue) {
+            var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
+            type = x instanceof Date ? 'datetime' : typeof x == 'number' ? 'numeric' : 'category';
+        } else {
+            var categ = commonChart.categories[0];
+            type = categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
         }
-        mergeDeep(this._options, { series: commonSeries, xaxis: { type: type, categories: !this._chartConfig.continue ? categories : [] } });
+       
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
+        console.log("commonChartLine", this._options)
     }
 
     updateLoading() {
@@ -111,20 +142,20 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     createChart() {
-        this.ngZone.runOutsideAngular(() => this._chart = new ApexCharts(this.el.nativeElement, this._options));
+        this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
 
     updateOptions() {
         this._chart.resetSeries();
         if (this._options.chart.id) {
-            this.ngZone.runOutsideAngular(() => ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options));
+            ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
         } else {
-            this.ngZone.runOutsideAngular(() => this._chart.updateOptions(this._options, false, false));
+            this._chart.updateOptions(this._options, false, false);
         }
     }
 
     render() {
-        this.ngZone.runOutsideAngular(() => this._chart.render());
+        this._chart.render();
     }
 
 }

@@ -1,5 +1,5 @@
-import { Directive, ElementRef, Input, NgZone, OnChanges, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, DataProvider, SerieProvider, buildChart, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -32,6 +32,8 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
 
     @Input() isLoading: boolean = false;
 
+    @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
+
     ngOnDestroy(): void {
         if (this._chart) {
             this._chart.destroy();
@@ -49,16 +51,50 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
             if (changes.data.previousValue != changes.data.currentValue) {
                 this.updateData();
             }
+            console.log("pieOnChange", changes.type, changes.config, changes.data);
             this.updateChart();
         }
     }
 
     updateConfig() {
+        let that = this;
         this._chartConfig = this.config;
         mergeDeep(this._options, {
             chart: {
                 height: this._chartConfig.height ?? '100%',
-                width: this._chartConfig.width ?? '100%'
+                width: this._chartConfig.width ?? '100%',
+                toolbar: {
+                    show: true,
+                    tools: {
+                      download: false,
+                      selection: false,
+                      zoom: false,
+                      zoomin: false,
+                      zoomout: false,
+                      pan: false,
+                      reset: false,
+                      customIcons: [{
+                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="20">',
+                        title: 'Graphique précédent',
+                        click: function (chart, options, e) {
+                          that.customEvent.emit("previous");
+                        }
+                      },
+                      {
+                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="20">',
+                        title: 'Graphique suivant',
+                        click: function (chart, options, e) {
+                          that.customEvent.emit("next");
+                        }
+                      }, {
+                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="20">',
+                        title: 'Graphique suivant',
+                        click: function (chart, options, e) {
+                          that.customEvent.emit("pivot");
+                        }
+                      }]
+                    }
+                  }
             },
             title: {
                 text: this._chartConfig.title
@@ -80,17 +116,21 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     }
 
     updateData() {
-        let categories: string[] = [];
-        let commonSeries: number[] = [];
-        let colors: string[] = [];
-        if (this.data.length) {
-            categories = distinct(this.data, this._chartConfig.series.map(m => m.data.x));
-            commonSeries = (this._chartConfig.pivot 
-                ? pivotSeries(this.data, this._chartConfig.series, false)
-                : series(this.data, this._chartConfig.series, false)).flatMap(s => <number[]>s.data);
-            colors = this._chartConfig.series.filter(d => d.color).map(d => <string>d.color); //deprecated color: already returned
+        var chartConfig = {...this._chartConfig, pivot: false, continue: false, series: this.flatSeries(this._chartConfig, this.data)}
+        var commonChart = buildChart(this.data, chartConfig);
+        var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color); 
+        console.log("pieCommonChart", commonChart)
+        mergeDeep(this._options, { series: commonChart.series.flatMap(s => s.data), labels: commonChart.categories || [], colors: colors || [] });
+        console.log("pieCommonChart2", this._options)
+    }
+
+    flatSeries(chartConfig: ChartProvider<string, number>, data: any[]): SerieProvider<string, number>[]  {
+        if(data?.length > 1 && (chartConfig.series?.length > 1 || typeof chartConfig.series[0].name == 'function')) {
+            return chartConfig.series.map(s => ({data: {
+                x: (o,i)=> s.data.x(o,i) + "_" + (typeof s.name == 'string' ? s.name : (<DataProvider<string>>s.name)(o,i)), y: s.data.y }, color: s.color }));
+        } else {
+            return chartConfig.series;
         }
-        mergeDeep(this._options, { series: commonSeries, labels: categories, colors: colors });
     }
 
     updateLoading() {
@@ -111,19 +151,19 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     }
 
     createChart() {
-        this.ngZone.runOutsideAngular(() => this._chart = new ApexCharts(this.el.nativeElement, this._options));
+       this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
 
     updateOptions() {
         this._chart.resetSeries();
         if (this._options.chart.id) {
-            this.ngZone.runOutsideAngular(() => ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options));
+            ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
         } else {
-            this.ngZone.runOutsideAngular(() => this._chart.updateOptions(this._options, false, false));
+            this._chart.updateOptions(this._options, false, false);
         }
     }
 
     render() {
-        this.ngZone.runOutsideAngular(() => this._chart.render());
+        this._chart.render();
     }
 }

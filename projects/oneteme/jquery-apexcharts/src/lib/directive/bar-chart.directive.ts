@@ -1,5 +1,5 @@
-import { Directive, ElementRef, Input, NgZone, OnDestroy, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries, buildChart } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries, buildChart, CommonChart } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -24,20 +24,58 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
     }
   };
 
-  @Input({required: true}) type: 'bar' | 'funnel' | 'pyramid';
+  @Input({ alias: 'type', required: true }) type: 'bar' | 'funnel' | 'pyramid';
 
-  @Input({required: true}) config: ChartProvider<X, number>;
+  @Input({ alias: 'config', required: true }) config: ChartProvider<X, number>;
 
-  @Input({required: true}) data: any[];
+  @Input({ required: true }) data: any[];
 
   @Input() isLoading: boolean = false;
 
+  @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
+
   updateConfig() {
+    let that = this;
     this._chartConfig = this.config;
+
     mergeDeep(this._options, {
       chart: {
         height: this._chartConfig.height ?? '100%',
-        width: this._chartConfig.width ?? '100%'
+        width: this._chartConfig.width ?? '100%',
+        stacked: this._chartConfig.stacked,
+        toolbar: {
+          show: true,
+          tools: {
+            download: false,
+            selection: false,
+            zoom: false,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
+            reset: false,
+            customIcons: [{
+              icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
+              title: 'Graphique précédent',
+              click: function (chart, options, e) {
+                that.customEvent.emit("previous");
+              }
+            },
+            {
+              icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
+              title: 'Graphique suivant',
+              click: function (chart, options, e) {
+                that.customEvent.emit("next");
+              }
+            },
+            {
+              icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
+              title: 'Graphique suivant',
+              click: function (chart, options, e) {
+                that.customEvent.emit("pivot");
+              }
+            }]
+          }
+        }
       },
       title: {
         text: this._chartConfig.title
@@ -59,26 +97,22 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   }
 
   updateData() {
-    var cc = buildChart(this.data, this._chartConfig);
-    let commonSeries: CommonSerie<number|Coordinate2D>[] = [];
-    let categories: X[] = [];
-    let type: 'category' | 'datetime' | 'numeric' = 'datetime';
-    if (this.data.length) {
-      categories = distinct(this.data, this._chartConfig.series.map(m=> m.data.x));
-      commonSeries = (this._chartConfig.pivot ? pivotSeries(this.data, this._chartConfig.series, this._chartConfig.continue) : series(this.data, this._chartConfig.series, this._chartConfig.continue)).map(s => {
-        let data: any[] = s.data;
-        if(this.type == 'funnel') {
-          data.sort((a, b) => b - a);  //TODO sort before create series
-        } else if (this.type == 'pyramid') {
-          data.sort((a, b) => a - b); //TODO sort before create series
-        }
-        return { name: s.name, color: s.color, group: s.stack, data: data };
-      });
-      type = categories[0] instanceof Date ? 'datetime' : typeof categories[0] == 'number' ? 'numeric' : 'category';
-      console.log(categories, commonSeries);
+    if (this.type == 'funnel') {
+      this._chartConfig.xorder = 'asc';
+    } else if (this.type == 'pyramid') {
+      this._chartConfig.xorder = 'desc';
     }
-    cc.series.forEach(s=>{ Object.assign(s,{group:s.stack})})
-    mergeDeep(this._options, { series: cc.series, xaxis: { type: type, categories: cc.categories || [] } });
+    var commonChart = buildChart(this.data, this._chartConfig);
+    let type: 'category' | 'datetime' | 'numeric' = 'datetime';
+    if (commonChart.continue) {
+      var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
+      type = x instanceof Date ? 'datetime' : typeof x == 'number' ? 'numeric' : 'category';
+    } else {
+      var categ = commonChart.categories[0];
+      type = categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
+    }
+    console.log("commonChart", commonChart)
+    mergeDeep(this._options, { series: this._chartConfig.stacked ? commonChart.series.map(s => ({ data: s.data, name: s.name, group: s.stack, color: s.color })) : commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
   }
 
   updateLoading() {
@@ -90,14 +124,14 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if(changes.isLoading) {
+    if (changes.isLoading) {
       this.updateLoading();
     }
-    if(changes.type && changes.config && changes.data) {
-      if(changes.type.previousValue != changes.type.currentValue) {
+    if (changes.type && changes.config && changes.data) {
+      if (changes.type.previousValue != changes.type.currentValue) {
         this.updateConfig();
       }
-      if(changes.data.previousValue != changes.data.currentValue) {
+      if (changes.data.previousValue != changes.data.currentValue) {
         this.updateData();
       }
       this.updateChart();
@@ -120,19 +154,19 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   }
 
   createChart() {
-    this.ngZone.runOutsideAngular(() => this._chart = new ApexCharts(this.el.nativeElement, this._options));
+    this._chart = new ApexCharts(this.el.nativeElement, this._options);
   }
 
   updateOptions() {
     this._chart.resetSeries();
     if (this._options.chart.id) {
-      this.ngZone.runOutsideAngular(() => ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options));
+      ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
     } else {
-      this.ngZone.runOutsideAngular(() => this._chart.updateOptions(this._options, false, false));
+      this._chart.updateOptions(this._options, false, false);
     }
   }
 
   render() {
-    this.ngZone.runOutsideAngular(() => this._chart.render());
+    this._chart.render();
   }
 }

@@ -473,9 +473,9 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart n°1',
       series: [
-        { data: {x: values('Field 1'), y: field('count1')} },
-        { data: {x: values('Field 2'), y: field('count2')} },
-        { data: {x: values('Field 3'), y: field('count3')} }
+        { data: {x: values('Field 1'), y: field('count1')}, name: 'Field 1', color: '#2E93fA' },
+        { data: {x: values('Field 2'), y: field('count2')}, name: 'Field 2', color: '#66DA26' },
+        { data: {x: values('Field 3'), y: field('count3')}, name: 'Field 3', color: '#546E7A' }
       ],
       height: 250
     }
@@ -534,21 +534,8 @@ export class AppComponent {
           //color: (o,i)=> o.status >= 500 ? 'red' : o.status >= 400 ? 'yellow' : 'green', 
       ],
       height: 250,
-      pivot: true,
-      continue : true,
-      xorder: 'desc',
-      options: {
-        chart: {
-          stacked: true, //move to barchart
-          toolbar: {
-            show: false
-          }
-        },
-        stroke: {
-          width: 1,
-          colors: ["#fff"]
-        }
-      }
+      stacked: true,
+      xorder: 'asc'
     }
   };
 
@@ -566,18 +553,7 @@ export class AppComponent {
         { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
         { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' }
       ],
-      height: 250,
-      options: {
-        chart: {
-          toolbar: {
-            show: false
-          }
-        },
-        stroke: {
-          width: 1,
-          colors: ["#fff"]
-        }
-      }
+      height: 250
     }
   };
 
@@ -597,18 +573,7 @@ export class AppComponent {
         { data: {x: field('field'), y: field('count4')}, name: 'Sub Field 4' }
       ],
       height: 250,
-      options: {
-        chart: {
-          stacked: true,
-          toolbar: {
-            show: false
-          }
-        },
-        stroke: {
-          width: 1,
-          colors: ["#fff"]
-        }
-      }
+      stacked: true
     }
   };
 
@@ -629,18 +594,7 @@ export class AppComponent {
       ],
       pivot: true,
       height: 250,
-      options: {
-        chart: {
-          stacked: true,
-          toolbar: {
-            show: false
-          }
-        },
-        stroke: {
-          width: 1,
-          colors: ["#fff"]
-        }
-      }
+      stacked: true
     }
   };
 
@@ -677,11 +631,9 @@ export class AppComponent {
 
   funnelExample: { data: any[], config: ChartProvider<XaxisType, number> } = {
     data: [
-      { count: 20, field: 'Field 1' },
-      { count: 60, field: 'Field 2' },
-      { count: 100, field: 'Field 3' },
-      { count: 200, field: 'Field 4' },
-      { count: 240, field: 'Field 5' }
+      { count: 30, field: 'v1' },
+      { count: 90, field: 'v2' },
+      { count: 60, field: 'v3' }
     ],
     config: {
       title: 'Exemple de Funnel Chart n°1',
@@ -716,14 +668,7 @@ export class AppComponent {
       series: [
         { data: {x: field('field'), y: field('count')} }
       ],
-      height: 250,
-      options: {
-        chart: {
-          toolbar: {
-            show: false
-          }
-        }
-      }
+      height: 250
     }
   };
 
@@ -741,19 +686,7 @@ export class AppComponent {
         { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
         { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' }
       ],
-      height: 250,
-      options: {
-        chart: {
-          toolbar: {
-            show: false
-          }
-        },
-        stroke: {
-          width: 5,
-          curve: "straight",
-          dashArray: [0, 8, 5]
-        }
-      }
+      height: 250
     }
   };
 
@@ -770,14 +703,7 @@ export class AppComponent {
       series: [
         { data: {x: field('date'), y: field('count')} }
       ],
-      height: 250,
-      options: {
-        chart: {
-          toolbar: {
-            show: false
-          }
-        }
-      }
+      height: 250
     }
   };
 
