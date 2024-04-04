@@ -1,5 +1,5 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, XaxisType, series, mergeDeep, CommonSerie, distinct, Coordinate2D, pivotSeries, buildChart, CommonChart } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, XaxisType, mergeDeep, CommonSerie, distinct, Coordinate2D, buildChart, CommonChart } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({

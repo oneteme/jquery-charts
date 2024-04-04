@@ -1,5 +1,5 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, DataProvider, SerieProvider, buildChart, distinct, mergeDeep, pivotSeries, series } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -116,21 +116,11 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     }
 
     updateData() {
-        var chartConfig = {...this._chartConfig, pivot: false, continue: false, series: this.flatSeries(this._chartConfig, this.data)}
-        var commonChart = buildChart(this.data, chartConfig);
+        var commonChart = buildSingleSerieChart(this.data, this._chartConfig);
         var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color); 
         console.log("pieCommonChart", commonChart)
         mergeDeep(this._options, { series: commonChart.series.flatMap(s => s.data), labels: commonChart.categories || [], colors: colors || [] });
         console.log("pieCommonChart2", this._options)
-    }
-
-    flatSeries(chartConfig: ChartProvider<string, number>, data: any[]): SerieProvider<string, number>[]  {
-        if(data?.length > 1 && (chartConfig.series?.length > 1 || typeof chartConfig.series[0].name == 'function')) {
-            return chartConfig.series.map(s => ({data: {
-                x: (o,i)=> s.data.x(o,i) + "_" + (typeof s.name == 'string' ? s.name : (<DataProvider<string>>s.name)(o,i)), y: s.data.y }, color: s.color }));
-        } else {
-            return chartConfig.series;
-        }
     }
 
     updateLoading() {
