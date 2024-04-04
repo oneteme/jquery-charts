@@ -82,7 +82,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
         objects.forEach((o,i)=>{
             var name = np(o,i) || ''; //can't use undefined as a map key
             if(!series[name]){ //init serie
-                series[name] = {data: []};
+                series[name] = {data: provider.continue ? [] : new Array(chart.categories.length).fill(defaultValue)};
                 var stack = sp(o, i);
                 var color = cp(o, i);
                 name  && (series[name].name  = name);
