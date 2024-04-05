@@ -13,7 +13,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
 
     private _options: any = {
         chart: {
-            type: 'line',
+            type: 'line'
         },
         series: []
     };
@@ -68,20 +68,20 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                       pan: false,
                       reset: false,
                       customIcons: [{
-                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="20">',
+                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
                         title: 'Graphique précédent',
                         click: function (chart, options, e) {
                           that.customEvent.emit("previous");
                         }
                       },
                       {
-                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="20">',
+                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
                         title: 'Graphique suivant',
                         click: function (chart, options, e) {
                           that.customEvent.emit("next");
                         }
                       }, {
-                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="20">',
+                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
                         title: 'Graphique suivant',
                         click: function (chart, options, e) {
                           that.customEvent.emit("pivot");
@@ -110,7 +110,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     updateData() {
-        var commonChart = buildChart(this.data, this._chartConfig);
+        var commonChart = buildChart(this.data, this._chartConfig, null);
         let type: 'category' | 'datetime' | 'numeric' = 'datetime';
         if (commonChart.continue) {
             var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;

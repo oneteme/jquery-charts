@@ -468,14 +468,14 @@ export class AppComponent {
 
   pieExample: { data: any[], config: ChartProvider<string, number> } = {
     data: [
-      { count1: 30, count2: 70, count3: 20 }
+      { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
-      title: 'Exemple de Pie Chart n°1',
+      title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: values('Field 1'), y: field('count1')}, name: 'Field 1', color: '#2E93fA' },
-        { data: {x: values('Field 2'), y: field('count2')}, name: 'Field 2', color: '#66DA26' },
-        { data: {x: values('Field 3'), y: field('count3')}, name: 'Field 3', color: '#546E7A' }
+        { data: {x: values('2xx'), y: field('count_2xx')}, name: 'Mapper 1', color: '#2E93fA' },
+        { data: {x: values('4xx'), y: field('count_4xx')}, name: 'Mapper 2', color: '#66DA26' },
+        { data: {x: values('5xx'), y: field('count_5xx')}, name: 'Mapper 3', color: '#546E7A' }
       ],
       height: 250
     }
@@ -483,33 +483,144 @@ export class AppComponent {
 
   pieExample2: { data: any[], config: ChartProvider<string, number> } = {
     data: [
-      { count: 40, field: 'Field 1' },
-      { count: 20, field: 'Field 2' },
-      { count: 50, field: 'Field 3' },
-      { count: 80, field: 'Field 4' }
+      { count: 110, field: '2xx' },
+      { count: 160, field: '4xx' },
+      { count: 80, field: '5xx' }
     ],
     config: {
-      title: 'Exemple de Pie Chart n°2',
+      title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count')} },
+        { data: {x: field('field'), y: field('count')}, name: 'Nombre d\'appels' }
       ],
-      height: 250,
+      height: 250
     }
   };
 
   pieExample3: { data: any[], config: ChartProvider<string, number> } = {
+    data: [],
+    config: {
+      title: 'Exemple de Pie Chart',
+      series: [
+        { data: {x: values('2xx'), y: values(110)} },
+        { data: {x: values('4xx'), y: values(160)} },
+        { data: {x: values('5xx'), y: values(80)} }
+      ],
+      height: 250
+    }
+  };
+
+  pieExample4: { data: any[], config: ChartProvider<string, number> } = {
     data: [
-      { count: 40, field: 'Field 1', subField: 'Sub Field 1' },
-      { count: 20, field: 'Field 2', subField: 'Sub Field 1' },
-      { count: 50, field: 'Field 3', subField: 'Sub Field 1' },
-      { count: 80, field: 'Field 4', subField: 'Sub Field 1' }
+      { count: 80, field: 'Api 1', subField: '2xx' },
+      { count: 20, field: 'Api 2', subField: '2xx' },
+      { count: 10, field: 'Api 3', subField: '2xx' },
+      { count: 50, field: 'Api 1', subField: '4xx' },
+      { count: 60, field: 'Api 2', subField: '4xx' },
+      { count: 50, field: 'Api 3', subField: '4xx' },
+      { count: 10, field: 'Api 1', subField: '5xx' },
+      { count: 20, field: 'Api 2', subField: '5xx' },
+      { count: 50, field: 'Api 3', subField: '5xx' }
     ],
     config: {
-      title: 'Exemple de Pie Chart n°3',
+      title: 'Exemple de Pie Chart',
       series: [
         { data: {x: joinFields('_', 'field', 'subField'), y: field('count')} }
       ],
       height: 250
+    }
+  };
+  
+  pieExample5: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count: 80, field: 'Api 1', subField: '2xx' },
+      { count: 20, field: 'Api 2', subField: '2xx' },
+      { count: 10, field: 'Api 3', subField: '2xx' },
+      { count: 50, field: 'Api 1', subField: '4xx' },
+      { count: 60, field: 'Api 2', subField: '4xx' },
+      { count: 50, field: 'Api 3', subField: '4xx' },
+      { count: 10, field: 'Api 1', subField: '5xx' },
+      { count: 20, field: 'Api 2', subField: '5xx' },
+      { count: 50, field: 'Api 3', subField: '5xx' }
+    ],
+    config: {
+      title: 'Exemple de Pie Chart',
+      series: [
+        { data: {x: field('field'), y: field('count')}, name: field('subField') }
+      ],
+      height: 250
+    }
+  };
+
+  pieExample6: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Pie Chart',
+      series: [
+        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
+        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
+        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+      ],
+      height: 250
+    }
+  };
+
+ 
+
+  pieExample7: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Pie Chart',
+      series: [
+        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
+        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
+        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+      ],
+      height: 250,
+      xorder: 'asc'
+    }
+  };
+
+  pieExample8: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Pie Chart',
+      series: [
+        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
+        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
+        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+      ],
+      height: 250,
+      xorder: 'desc'
+    }
+  };
+
+  pieExample9: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Pie Chart',
+      series: [
+        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
+        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
+        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+      ],
+      height: 250,
+      continue: true
     }
   };
   

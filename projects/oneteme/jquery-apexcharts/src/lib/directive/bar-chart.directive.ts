@@ -1,5 +1,5 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, XaxisType, mergeDeep, CommonSerie, distinct, Coordinate2D, buildChart, CommonChart } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, XaxisType, CommonSerie, distinct, Coordinate2D, buildChart, CommonChart, naturalFieldComparator, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 
 @Directive({
@@ -7,21 +7,14 @@ import ApexCharts from "apexcharts";
 })
 export class BarChartDirective<X extends XaxisType> implements ChartView<X, number>, OnDestroy {
   private el: ElementRef = inject(ElementRef);
-  private ngZone: NgZone = inject(NgZone);
 
   private _chart: ApexCharts;
   private _chartConfig: ChartProvider<X, number> = {};
   private _options: any = {
     chart: {
-      type: 'bar',
-      animations: {
-        enabled: false
-      }
+      type: 'bar'
     },
-    series: [],
-    markers: {
-      size: 0
-    }
+    series: []
   };
 
   @Input({ alias: 'type', required: true }) type: 'bar' | 'funnel' | 'pyramid';
@@ -98,9 +91,9 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
 
   updateData() {
     if (this.type == 'funnel') {
-      this._chartConfig.xorder = 'asc';
+      this.data = [...this.data.sort(naturalFieldComparator('asc', this._chartConfig.series[0].data.y))];
     } else if (this.type == 'pyramid') {
-      this._chartConfig.xorder = 'desc';
+      this.data = [...this.data.sort(naturalFieldComparator('desc', this._chartConfig.series[0].data.y))];
     }
     var commonChart = buildChart(this.data, this._chartConfig);
     let type: 'category' | 'datetime' | 'numeric' = 'datetime';
@@ -112,7 +105,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
       type = categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
     }
     console.log("commonChart", commonChart)
-    mergeDeep(this._options, { series: this._chartConfig.stacked ? commonChart.series.map(s => ({ data: s.data, name: s.name, group: s.stack, color: s.color })) : commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
+    mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
   }
 
   updateLoading() {

@@ -7,21 +7,14 @@ import ApexCharts from "apexcharts";
 })
 export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
-    private ngZone: NgZone = inject(NgZone);
 
     private _chart: ApexCharts;
     private _chartConfig: ChartProvider<string, number> = {};
     private _options: any = {
         chart: {
-            type: 'pie',
-            animations: {
-                enabled: false
-            }
+            type: 'pie'
         },
-        series: [],
-        markers: {
-            size: 0
-        }
+        series: []
     };
 
     @Input({ required: true }) type: 'pie' | 'donut' | 'radialBar' | 'polarArea';
@@ -66,7 +59,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                 toolbar: {
                     show: true,
                     tools: {
-                      download: false,
+                      download: true,
                       selection: false,
                       zoom: false,
                       zoomin: false,
@@ -74,20 +67,20 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                       pan: false,
                       reset: false,
                       customIcons: [{
-                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="20">',
+                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
                         title: 'Graphique précédent',
                         click: function (chart, options, e) {
                           that.customEvent.emit("previous");
                         }
                       },
                       {
-                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="20">',
+                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
                         title: 'Graphique suivant',
                         click: function (chart, options, e) {
                           that.customEvent.emit("next");
                         }
                       }, {
-                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="20">',
+                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
                         title: 'Graphique suivant',
                         click: function (chart, options, e) {
                           that.customEvent.emit("pivot");
@@ -116,10 +109,11 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     }
 
     updateData() {
-        var commonChart = buildSingleSerieChart(this.data, this._chartConfig);
+        var commonChart = buildSingleSerieChart(this.data, {...this._chartConfig, continue: false}, null);
+        console.log("buildSingleSerieChart",commonChart);
         var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color); 
         console.log("pieCommonChart", commonChart)
-        mergeDeep(this._options, { series: commonChart.series.flatMap(s => s.data), labels: commonChart.categories || [], colors: colors || [] });
+        mergeDeep(this._options, { series: commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
         console.log("pieCommonChart2", this._options)
     }
 
