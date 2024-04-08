@@ -46,11 +46,12 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
 }
 
 export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartProvider<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
+    let copy = provider;
     if(objects?.length > 1 && (provider.series?.length > 1 || typeof provider.series[0].name == 'function')){
-        provider = {...provider, //pivot & merge => single serie
+        copy = {...provider,
             pivot: false,
             series:provider.series.map(s=>({
-                data:{ 
+                data:{  //pivot & merge => single serie
                     x:<DataProvider<X>> (provider.pivot // TODO change that cast
                         ? combineProviders(joiner(), resolveDataProvider(s.name), s.data.x) 
                         : combineProviders(joiner(), s.data.x, resolveDataProvider(s.name))), 
@@ -61,7 +62,7 @@ export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
             }))
         };
     }
-    return buildChart(objects, provider, defaultValue);
+    return {...buildChart(objects, copy, defaultValue), pivot:provider.pivot};
 }
 
 export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartProvider<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
