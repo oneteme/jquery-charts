@@ -16,6 +16,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
             type: 'line'
         },
         series: []
+        
     };
 
     @Input({ required: true }) type: 'line' | 'area';
@@ -35,20 +36,26 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (changes.isLoading) {
-            this.updateLoading();
-        }
-        if (changes.type && changes.config && changes.data) {
-            if (changes.type.previousValue != changes.type.currentValue) {
+        if (this.type && this.config && this.data) {
+            if (changes.type) {
+                this.updateType();
+            }
+            if (changes.isLoading) {
+                this.updateLoading();
+            }
+            if (changes.config) {
                 this.updateConfig();
             }
-            if (changes.data.previousValue != changes.data.currentValue) {
+            if (changes.config || changes.data) {
                 this.updateData();
             }
             this.updateChart();
         }
     }
 
+    updateType() {
+        mergeDeep(this._options, { chart: { type: this.type } })
+    }
 
     updateConfig() {
         let that = this;
@@ -70,6 +77,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                       customIcons: [{
                         icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
                         title: 'Graphique précédent',
+                        class: 'custom-icon',
                         click: function (chart, options, e) {
                           that.customEvent.emit("previous");
                         }
@@ -77,12 +85,14 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                       {
                         icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
                         title: 'Graphique suivant',
+                        class: 'custom-icon',
                         click: function (chart, options, e) {
                           that.customEvent.emit("next");
                         }
                       }, {
                         icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-                        title: 'Graphique suivant',
+                        title: 'Pivot',
+                        class: 'custom-icon',
                         click: function (chart, options, e) {
                           that.customEvent.emit("pivot");
                         }
@@ -121,7 +131,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
         }
        
         mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
-        console.log("commonChartLine", this._options)
     }
 
     updateLoading() {
@@ -134,25 +143,24 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
 
     updateChart() {
         if (this._chart) {
-            this.updateOptions();
-        } else {
-            this.createChart();
-            this.render();
+            this._chart.destroy();
         }
+        this.createChart();
+        this.render();
     }
 
     createChart() {
         this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
 
-    updateOptions() {
-        this._chart.resetSeries();
-        if (this._options.chart.id) {
-            ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
-        } else {
-            this._chart.updateOptions(this._options, false, false);
-        }
-    }
+    // updateOptions() {
+    //     this._chart.resetSeries();
+    //     if (this._options.chart.id) {
+    //         ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
+    //     } else {
+    //         this._chart.updateOptions(this._options, false, false);
+    //     }
+    // }
 
     render() {
         this._chart.render();

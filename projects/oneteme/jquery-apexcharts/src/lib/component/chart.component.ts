@@ -6,7 +6,8 @@ import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-
     templateUrl: './chart.component.html'
 })
 export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
-    
+    private charts: ChartType[] = ['line', 'pie', 'bar'];
+
     @Input() type: ChartType;
     @Input() config: ChartProvider<X, Y>;
     @Input() data: any[];
@@ -14,15 +15,17 @@ export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
 
 
     change(event: string) {
-        console.log(event);
+        
+        let indexOf = this.charts.indexOf(this.type);
+        console.log(event, indexOf, this.charts[indexOf]);
         if(event == 'previous') {
-            this.type = 'line';
+            this.type = indexOf == 0 ? this.charts[this.charts.length - 1] : this.charts[indexOf - 1];
         }
         if(event == 'next') {
-            this.type = 'pie';
+            this.type = indexOf == this.charts.length - 1 ? this.charts[0] : this.charts[indexOf + 1];
         }
         if(event == 'pivot') {
-            this.type = 'bar';
+            this.config = this.config.pivot ? {...this.config, pivot: false} :  {...this.config, pivot: true};
         }
     }
 }

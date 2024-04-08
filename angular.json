@@ -33,9 +33,11 @@
                 "input": "./projects/oneteme/jquery-apexcharts/src/assets",
                 "output": "./assets/icons"
               }
+              
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "./projects/oneteme/jquery-apexcharts/src/assets/styles/styles.scss"
             ],
             "scripts": []
           },

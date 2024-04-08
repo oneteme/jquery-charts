@@ -49,6 +49,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
             customIcons: [{
               icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
               title: 'Graphique précédent',
+              class: 'custom-icon',
               click: function (chart, options, e) {
                 that.customEvent.emit("previous");
               }
@@ -56,13 +57,15 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
             {
               icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
               title: 'Graphique suivant',
+              class: 'custom-icon',
               click: function (chart, options, e) {
                 that.customEvent.emit("next");
               }
             },
             {
               icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-              title: 'Graphique suivant',
+              title: 'Pivot',
+              class: 'custom-icon',
               click: function (chart, options, e) {
                 that.customEvent.emit("pivot");
               }
@@ -104,8 +107,8 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
       var categ = commonChart.categories[0];
       type = categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
     }
-    console.log("commonChart", commonChart)
-    mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
+    mergeDeep(this._options, { series: commonChart.series.map(s => ({ data: s.data, name: s.name, color: s.color, group: s.stack })), xaxis: { type: type, categories: commonChart.categories || [] } });
+    console.log('commonBarChart', commonChart)
   }
 
   updateLoading() {
@@ -117,14 +120,14 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes.isLoading) {
-      this.updateLoading();
-    }
-    if (changes.type && changes.config && changes.data) {
-      if (changes.type.previousValue != changes.type.currentValue) {
+    if (this.type && this.config && this.data) {
+      if (changes.isLoading) {
+        this.updateLoading();
+      }
+      if (changes.config) {
         this.updateConfig();
       }
-      if (changes.data.previousValue != changes.data.currentValue) {
+      if (changes.config || changes.data) {
         this.updateData();
       }
       this.updateChart();
@@ -139,25 +142,24 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
 
   updateChart() {
     if (this._chart) {
-      this.updateOptions();
-    } else {
-      this.createChart();
-      this.render();
+      this._chart.destroy();
     }
+    this.createChart();
+    this.render();
   }
 
   createChart() {
     this._chart = new ApexCharts(this.el.nativeElement, this._options);
   }
 
-  updateOptions() {
-    this._chart.resetSeries();
-    if (this._options.chart.id) {
-      ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
-    } else {
-      this._chart.updateOptions(this._options, false, false);
-    }
-  }
+  // updateOptions() {
+  //   this._chart.resetSeries();
+  //   if (this._options.chart.id) {
+  //     ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
+  //   } else {
+  //     this._chart.updateOptions(this._options, false, false);
+  //   }
+  // }
 
   render() {
     this._chart.render();

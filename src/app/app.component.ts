@@ -473,9 +473,9 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: values('2xx'), y: field('count_2xx')}, name: 'Mapper 1', color: '#2E93fA' },
-        { data: {x: values('4xx'), y: field('count_4xx')}, name: 'Mapper 2', color: '#66DA26' },
-        { data: {x: values('5xx'), y: field('count_5xx')}, name: 'Mapper 3', color: '#546E7A' }
+        { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Mapper 1', color: '#2E93fA' },
+        { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Mapper 2', color: '#66DA26' },
+        { data: { x: values('5xx'), y: field('count_5xx') }, name: 'Mapper 3', color: '#546E7A' }
       ],
       height: 250
     }
@@ -490,7 +490,7 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count')}, name: 'Nombre d\'appels' }
+        { data: { x: field('field'), y: field('count') }, name: 'Nombre d\'appels' }
       ],
       height: 250
     }
@@ -501,9 +501,9 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: values('2xx'), y: values(110)} },
-        { data: {x: values('4xx'), y: values(160)} },
-        { data: {x: values('5xx'), y: values(80)} }
+        { data: { x: values('2xx'), y: values(110) } },
+        { data: { x: values('4xx'), y: values(160) } },
+        { data: { x: values('5xx'), y: values(80) } }
       ],
       height: 250
     }
@@ -524,12 +524,12 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: joinFields('_', 'field', 'subField'), y: field('count')} }
+        { data: { x: joinFields('_', 'field', 'subField'), y: field('count') } }
       ],
       height: 250
     }
   };
-  
+
   pieExample5: { data: any[], config: ChartProvider<string, number> } = {
     data: [
       { count: 80, field: 'Api 1', subField: '2xx' },
@@ -545,7 +545,7 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count')}, name: field('subField') }
+        { data: { x: field('field'), y: field('count') }, name: field('subField') }
       ],
       height: 250
     }
@@ -560,15 +560,15 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
-        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
-        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
       height: 250
     }
   };
 
- 
+
 
   pieExample7: { data: any[], config: ChartProvider<string, number> } = {
     data: [
@@ -579,9 +579,9 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
-        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
-        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
       height: 250,
       xorder: 'asc'
@@ -597,9 +597,9 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
-        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
-        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
       height: 250,
       xorder: 'desc'
@@ -615,99 +615,217 @@ export class AppComponent {
     config: {
       title: 'Exemple de Pie Chart',
       series: [
-        { data: {x: field('field'), y: field('count_2xx')}, name: '2xx' },
-        { data: {x: field('field'), y: field('count_4xx')}, name: '4xx' },
-        { data: {x: field('field'), y: field('count_5xx')}, name: '5xx' }
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
       height: 250,
       continue: true
     }
   };
-  
-  
-  barExample0: { data: any[], config: ChartProvider<XaxisType, number> } = {
-    data: [
-      { day: '1', status: 200, count: 14, group: '2xx' },
-      { day: '1', status: 202, count:  5, group: '2xx' },
-      { day: '1', status: 400, count: 25, group: '4xx' },
-      { day: '1', status: 404, count: 19, group: '4xx' },
-      { day: '1', status: 500, count:  2, group: '5xx' },
-      { day: '3', status: 200, count: 10, group: '2xx' },
-      { day: '3', status: 202, count: 15, group: '2xx' },
-      { day: '3', status: 400, count:  7, group: '4xx' },
-      { day: '3', status: 404, count:  9, group: '4xx' },
-      { day: '3', status: 500, count: 12, group: '5xx' }
-    ],
-    config: {
-      title: 'Exemple de Bar Chart Classique',
-      series: [
-        { data: {x: field('day'), y: field('count')}, name:(o,i)=> `st-${o['status']}`, stack: field('group')},
-          //color: (o,i)=> o.status >= 500 ? 'red' : o.status >= 400 ? 'yellow' : 'green', 
-      ],
-      height: 250,
-      stacked: true,
-      xorder: 'asc'
-    }
-  };
 
-  barExample1: { data: any[], config: ChartProvider<XaxisType, number> } = {
+
+
+  barExample: { data: any[], config: ChartProvider<string, number> } = {
     data: [
-      { count1: 20, count2: 10, count3: 40, field: 'Field 1' },
-      { count1: 60, count2: 20, count3: 10, field: 'Field 2' },
-      { count1: 10, count2: 50, count3: 20, field: 'Field 3' },
-      { count1: 20, count2: 10, count3: 40, field: 'Field 4' }
+      { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
-      title: 'Exemple de Bar Chart Classique',
+      title: 'Exemple de Bar Chart',
       series: [
-        { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
-        { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
-        { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' }
+        { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Nombre d\'appels' },
+        { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Nombre d\'appels' },
+        { data: { x: values('5xx'), y: field('count_5xx') }, name: 'Nombre d\'appels' }
       ],
       height: 250
     }
   };
 
-  barExample2: { data: any[], config: ChartProvider<XaxisType, number> } = {
+  barExample2: { data: any[], config: ChartProvider<string, number> } = {
     data: [
-      { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
-      { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
-      { count1: 50, count2: 30, count3: 50, count4: 30, field: 'Field 3' },
-      { count1: 80, count2: 40, count3: 80, count4: 40, field: 'Field 4' },
+      { count: 110, field: '2xx' },
+      { count: 160, field: '4xx' },
+      { count: 80, field: '5xx' }
     ],
     config: {
-      title: 'Exemple de Bar Chart Stacked Sans Pivot',
+      title: 'Exemple de Bar Chart',
       series: [
-        { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
-        { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' },
-        { data: {x: field('field'), y: field('count3')}, name: 'Sub Field 3' },
-        { data: {x: field('field'), y: field('count4')}, name: 'Sub Field 4' }
+        { data: { x: field('field'), y: field('count') }, name: 'Nombre d\'appels' }
+      ],
+      height: 250
+    }
+  };
+
+  barExample3: { data: any[], config: ChartProvider<string, number> } = {
+    data: [],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: values('2xx'), y: values(110) } },
+        { data: { x: values('4xx'), y: values(160) } },
+        { data: { x: values('5xx'), y: values(80) } }
+      ],
+      height: 250
+    }
+  };
+
+  barExample4: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count: 80, field: 'Api 1', subField: '2xx' },
+      { count: 20, field: 'Api 2', subField: '2xx' },
+      { count: 10, field: 'Api 3', subField: '2xx' },
+      { count: 50, field: 'Api 1', subField: '4xx' },
+      { count: 60, field: 'Api 2', subField: '4xx' },
+      { count: 50, field: 'Api 3', subField: '4xx' },
+      { count: 10, field: 'Api 1', subField: '5xx' },
+      { count: 20, field: 'Api 2', subField: '5xx' },
+      { count: 50, field: 'Api 3', subField: '5xx' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: joinFields('_', 'field', 'subField'), y: field('count') } }
+      ],
+      height: 250
+    }
+  };
+
+  barExample5: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count: 80, field: 'Api 1', subField: '2xx' },
+      { count: 20, field: 'Api 2', subField: '2xx' },
+      { count: 10, field: 'Api 3', subField: '2xx' },
+      { count: 50, field: 'Api 1', subField: '4xx' },
+      { count: 60, field: 'Api 2', subField: '4xx' },
+      { count: 50, field: 'Api 3', subField: '4xx' },
+      { count: 10, field: 'Api 1', subField: '5xx' },
+      { count: 20, field: 'Api 2', subField: '5xx' },
+      { count: 50, field: 'Api 3', subField: '5xx' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: field('field'), y: field('count') }, name: field('subField') }
+      ],
+      height: 250
+    }
+  };
+
+  barExample6: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
+      ],
+      height: 250
+    }
+  };
+
+  barExample7: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
+      ],
+      height: 250,
+      xorder: 'asc'
+    }
+  };
+
+  barExample8: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
+      ],
+      height: 250,
+      xorder: 'desc'
+    }
+  };
+
+  barExample9: { data: any[], config: ChartProvider<string, number> } = {
+    data: [
+      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
+      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
+      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
+        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
+        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
+      ],
+      height: 250,
+      continue: true
+    }
+  };
+
+  barExample10: { data: any[], config: ChartProvider<XaxisType, number> } = {
+    data: [
+      { day: '1', status: 200, count: 14, group: '2xx' },
+      { day: '1', status: 202, count: 5, group: '2xx' },
+      { day: '1', status: 400, count: 25, group: '4xx' },
+      { day: '1', status: 404, count: 19, group: '4xx' },
+      { day: '1', status: 500, count: 2, group: '5xx' },
+      { day: '3', status: 200, count: 10, group: '2xx' },
+      { day: '3', status: 202, count: 15, group: '2xx' },
+      { day: '3', status: 400, count: 7, group: '4xx' },
+      { day: '3', status: 404, count: 9, group: '4xx' },
+      { day: '3', status: 500, count: 12, group: '5xx' }
+    ],
+    config: {
+      title: 'Exemple de Bar Chart',
+      series: [
+        { data: { x: field('day'), y: field('count') }, name: (o, i) => `st-${o['status']}`, stack: field('group') }, 
       ],
       height: 250,
       stacked: true
     }
   };
 
-  barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
-    data: [
-      { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
-      { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
-      { count1: 50, count2: 30, count3: 50, count4: 30, field: 'Field 3' },
-      { count1: 80, count2: 40, count3: 80, count4: 40, field: 'Field 4' }
-    ],
-    config: {
-      title: 'Exemple de Bar Chart Stacked Avec Pivot',
-      series: [
-        { data: {x: field('field'), y: field('count1')}, name: 'c1' },
-        { data: {x: field('field'), y: field('count2')}, name: 'c2'  },
-        { data: {x: field('field'), y: field('count3')}, name: 'c3'  },
-        { data: {x: field('field'), y: field('count4')}, name: 'c4'  }
-      ],
-      pivot: true,
-      height: 250,
-      stacked: true
-    }
-  };
+
+  // barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
+  //   data: [
+  //     { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
+  //     { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
+  //     { count1: 50, count2: 30, count3: 50, count4: 30, field: 'Field 3' },
+  //     { count1: 80, count2: 40, count3: 80, count4: 40, field: 'Field 4' }
+  //   ],
+  //   config: {
+  //     title: 'Exemple de Bar Chart Stacked Avec Pivot',
+  //     series: [
+  //       { data: { x: field('field'), y: field('count1') }, name: 'c1' },
+  //       { data: { x: field('field'), y: field('count2') }, name: 'c2' },
+  //       { data: { x: field('field'), y: field('count3') }, name: 'c3' },
+  //       { data: { x: field('field'), y: field('count4') }, name: 'c4' }
+  //     ],
+  //     pivot: true,
+  //     height: 250,
+  //     stacked: true
+  //   }
+  // };
 
   // barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
   //   data: [
@@ -747,9 +865,9 @@ export class AppComponent {
       { count: 60, field: 'v3' }
     ],
     config: {
-      title: 'Exemple de Funnel Chart n°1',
+      title: 'Exemple de Bar Chart',
       series: [
-        { data: {x: field('field'), y: field('count')} }
+        { data: { x: field('field'), y: field('count') }, name: 'test' }
       ],
       height: 250,
       options: {
@@ -777,7 +895,7 @@ export class AppComponent {
     config: {
       title: 'Exemple de Line Chart Avec Une Serie',
       series: [
-        { data: {x: field('field'), y: field('count')} }
+        { data: { x: field('field'), y: field('count') } }
       ],
       height: 250
     }
@@ -794,8 +912,8 @@ export class AppComponent {
     config: {
       title: 'Exemple de Line Chart Avec Plusieurs Series',
       series: [
-        { data: {x: field('field'), y: field('count1')}, name: 'Sub Field 1' },
-        { data: {x: field('field'), y: field('count2')}, name: 'Sub Field 2' }
+        { data: { x: field('field'), y: field('count1') }, name: 'Sub Field 1' },
+        { data: { x: field('field'), y: field('count2') }, name: 'Sub Field 2' }
       ],
       height: 250
     }
@@ -812,7 +930,7 @@ export class AppComponent {
     config: {
       title: 'Exemple d\'Area Chart Avec Une Serie',
       series: [
-        { data: {x: field('date'), y: field('count')} }
+        { data: { x: field('date'), y: field('count') } }
       ],
       height: 250
     }
@@ -820,5 +938,8 @@ export class AppComponent {
 
   ngOnInit() {
 
+  }
+
+  ngAfterViewInit() {
   }
 }
