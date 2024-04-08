@@ -48,12 +48,15 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
 export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(objects: any[], provider: ChartProvider<X,Y>, defaultValue?: Y) : CommonChart<X,Y|Coordinate2D> {
     if(objects?.length > 1 && (provider.series?.length > 1 || typeof provider.series[0].name == 'function')){
         provider = {...provider, //pivot & merge => single serie
+            pivot: false,
             series:provider.series.map(s=>({
                 data:{ 
-                    x:<DataProvider<X>> combineProviders(joiner(), s.data.x, resolveDataProvider(s.name)), // TODO change cast
+                    x:<DataProvider<X>> (provider.pivot // TODO change that cast
+                        ? combineProviders(joiner(), resolveDataProvider(s.name), s.data.x) 
+                        : combineProviders(joiner(), s.data.x, resolveDataProvider(s.name))), 
                     y:s.data.y
                 },
-                color: s.color
+                color: s.color,
                 //no unit
             }))
         };
