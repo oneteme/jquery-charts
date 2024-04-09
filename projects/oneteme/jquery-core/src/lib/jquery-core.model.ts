@@ -83,15 +83,18 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
         var np = resolveDataProvider(m.name);
         var sp = resolveDataProvider(m.stack);
         var cp = resolveDataProvider(m.color);
+        var tp = resolveDataProvider(m.type);
         objects.forEach((o,i)=>{
             var name = np(o,i) || ''; //can't use undefined as a map key
             if(!series[name]){ //init serie
                 series[name] = {data: provider.continue ? [] : new Array(chart.categories.length).fill(defaultValue)};
                 var stack = sp(o, i);
                 var color = cp(o, i);
+                var type  = tp(0, i); 
                 name  && (series[name].name  = name);
                 stack && (series[name].stack = stack);
-                color && (series[name].color = color);            
+                color && (series[name].color = color);
+                type  && (series[name].type  = type);    
             }
             if(provider.continue){
                 series[name].data.push({x: m.data.x(o,i), y: requireNonUndefined(m.data.y(o,i), defaultValue)});
@@ -166,10 +169,10 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> { //rm SerieProvider
     data: CoordinateProvider<X,Y>; // | [X,Y]
     name ?: string | DataProvider<string>;
-    stack?: string | DataProvider<string>; //one time at init
-    color?: string | DataProvider<string>; //one time at init
+    stack?: string | DataProvider<string>; //first time at init
+    color?: string | DataProvider<string>; //first time at init
+    type ?: string | DataProvider<string>; //first time at init
     unit?: string;
-    //type
 }
 
 export declare type Coordinate2D = {x: XaxisType, y: YaxisType};
