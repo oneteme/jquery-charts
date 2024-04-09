@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ChartProvider, XaxisType, YaxisType, field, joinFields, values } from '@oneteme/jquery-core';
+import { ChartProvider, XaxisType, YaxisType, field, joinFields, rangeFields, values } from '@oneteme/jquery-core';
 
 @Component({
   selector: 'app-root',
@@ -471,13 +471,11 @@ export class AppComponent {
       { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Mapper 1', color: '#2E93fA' },
         { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Mapper 2', color: '#66DA26' },
         { data: { x: values('5xx'), y: field('count_5xx') }, name: 'Mapper 3', color: '#546E7A' }
-      ],
-      height: 250
+      ]
     }
   };
 
@@ -488,24 +486,20 @@ export class AppComponent {
       { count: 80, field: '5xx' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: field('field'), y: field('count') }, name: 'Nombre d\'appels' }
-      ],
-      height: 250
+      ]
     }
   };
 
   pieExample3: { data: any[], config: ChartProvider<string, number> } = {
     data: [],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: values('2xx'), y: values(110) } },
         { data: { x: values('4xx'), y: values(160) } },
         { data: { x: values('5xx'), y: values(80) } }
-      ],
-      height: 250
+      ]
     }
   };
 
@@ -522,11 +516,9 @@ export class AppComponent {
       { count: 50, field: 'Api 3', subField: '5xx' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: joinFields('_', 'field', 'subField'), y: field('count') } }
-      ],
-      height: 250
+      ]
     }
   };
 
@@ -543,11 +535,9 @@ export class AppComponent {
       { count: 50, field: 'Api 3', subField: '5xx' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: field('field'), y: field('count') }, name: field('subField') }
-      ],
-      height: 250
+      ]
     }
   };
 
@@ -558,17 +548,13 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
-      ],
-      height: 250
+      ]
     }
   };
-
-
 
   pieExample7: { data: any[], config: ChartProvider<string, number> } = {
     data: [
@@ -577,13 +563,11 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
-      height: 250,
       xorder: 'asc'
     }
   };
@@ -595,13 +579,11 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
-      height: 250,
       xorder: 'desc'
     }
   };
@@ -613,13 +595,11 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Pie Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
-      height: 250,
       continue: true
     }
   };
@@ -631,7 +611,6 @@ export class AppComponent {
       { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Nombre d\'appels' },
         { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Nombre d\'appels' },
@@ -648,7 +627,6 @@ export class AppComponent {
       { count: 80, field: '5xx' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count') }, name: 'Nombre d\'appels' }
       ],
@@ -659,7 +637,6 @@ export class AppComponent {
   barExample3: { data: any[], config: ChartProvider<string, number> } = {
     data: [],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: values('2xx'), y: values(110) } },
         { data: { x: values('4xx'), y: values(160) } },
@@ -682,7 +659,6 @@ export class AppComponent {
       { count: 50, field: 'Api 3', subField: '5xx' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: joinFields('_', 'field', 'subField'), y: field('count') } }
       ],
@@ -703,7 +679,6 @@ export class AppComponent {
       { count: 50, field: 'Api 3', subField: '5xx' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count') }, name: field('subField') }
       ],
@@ -718,7 +693,6 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
@@ -735,7 +709,6 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
@@ -753,7 +726,6 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
@@ -771,7 +743,6 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
@@ -796,7 +767,6 @@ export class AppComponent {
       { day: '3', status: 500, count: 12, group: '5xx' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('day'), y: field('count') }, name: (o, i) => `st-${o['status']}`, stack: field('group') }, 
       ],
@@ -812,7 +782,6 @@ export class AppComponent {
       { count: 60, field: 'v3' }
     ],
     config: {
-      title: 'Exemple de Bar Chart',
       series: [
         { data: { x: field('field'), y: field('count') }, name: 'test' }
       ],
@@ -844,7 +813,6 @@ export class AppComponent {
       { count: 44, field: 'CDE' }
     ],
     config: {
-      title: 'Exemple de TreeMap Chart',
       series: [
         { data: { x: field('field'), y: field('count') } }
       ],
@@ -865,7 +833,6 @@ export class AppComponent {
       { count: 44, field: 'CDE', categ: 'Mobile' }
     ],
     config: {
-      title: 'Exemple de TreeMap Chart',
       series: [
         { data: { x: field('field'), y: field('count') }, name: field('categ') }
       ],
@@ -878,18 +845,54 @@ export class AppComponent {
       { count: 10, field: 'ABC', categ: 'Desktops' },
       { count: 30, field: 'DEF', categ: 'Desktops' },
       { count: 20, field: 'XYZ', categ: 'Desktops' },
-      { count: 60, field: 'ABC', categ: 'Mobile' },
-      { count: 10, field: 'DEF', categ: 'Mobile' },
-      { count: 31, field: 'XYZ', categ: 'Mobile' }
+      { count: 60, field: 'ABCD', categ: 'Mobile' },
+      { count: 10, field: 'DEFG', categ: 'Mobile' },
+      { count: 31, field: 'WXYZ', categ: 'Mobile' },
+      { count: 70, field: 'PQR', categ: 'Mobile' },
+      { count: 30, field: 'MNO', categ: 'Mobile' },
+      { count: 44, field: 'CDE', categ: 'Mobile' }
     ],
     config: {
-      title: 'Exemple de HeatMap Chart',
+      series: [
+        { data: { x: field('field'), y: field('count') }, name: field('categ') }
+      ],
+      height: 250,
+      pivot: true
+    }
+  }
+
+  heatmapExample: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
+    data: [
+      { count: 10, field: 'ABC', categ: 'Desktops' },
+      { count: 30, field: 'DEF', categ: 'Desktops' },
+      { count: 20, field: 'XYZ', categ: 'Desktops' },
+      { count: 60, field: 'ABC', categ: 'Mobile' },
+      { count: 10, field: 'DEF', categ: 'Mobile' },
+      { count: 31, field: 'XYZ', categ: 'Mobile' },
+    ],
+    config: {
       series: [
         { data: { x: field('field'), y: field('count') }, name: field('categ') }
       ],
       height: 250
     }
   }
+
+  rangeExample: { data: any[], config: ChartProvider<XaxisType, number[]> } = {
+    data: [
+      { min: 10, max: 30, field: '2020' },
+      { min: 20, max: 25, field: '2021' },
+      { min: 15, max: 50, field: '2022' },
+      { min: 30, max: 50, field: '2023' },
+      { min: 25, max: 30, field: '2024' }
+    ],
+    config: {
+      series: [
+        { data: { x: field('field'), y: rangeFields('min', 'max') } }
+      ],
+      height: 250
+    }
+  };
 
   lineExample1: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
     data: [

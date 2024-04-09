@@ -1,26 +1,26 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
-import { asapScheduler } from "rxjs";
 
 @Directive({
-    selector: '[pie-chart]'
+    selector: '[rangearea-chart]'
 })
-export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
+export class RangeareaChartDirective<X extends XaxisType> implements ChartView<X, number[]>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartProvider<string, number> = {};
+    private _chartConfig: ChartProvider<X, number[]> = {};
+
     private _options: any = {
         chart: {
-            type: 'pie'
+            type: 'rangeArea'
         },
         series: []
     };
 
-    @Input({ required: true }) type: 'pie' | 'donut' | 'radialBar' | 'polarArea' | 'radar';
+    @Input({ required: true }) type: 'rangeArea';
 
-    @Input({ required: true }) config: ChartProvider<string, number>;
+    @Input({ required: true }) config: ChartProvider<X, number[]>;
 
     @Input({ required: true }) data: any[];
 
@@ -49,10 +49,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                 this.updateData();
             }
             this.updateChart();
-            console.log(this.data)
         }
-
-        console.log(this.data)
     }
 
     updateType() {
@@ -121,17 +118,19 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                 title: {
                     text: this._chartConfig.ytitle
                 }
-            },
-
+            }
         }, this._chartConfig.options);
     }
 
     updateData() {
-        var chartConfig = { ...this._chartConfig, continue: false };
-        var commonChart = this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
-        var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color);
-        mergeDeep(this._options, { series: this.type == 'radar' ? commonChart.series : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
-        console.log('commonPieChart', this.type, commonChart, this._options)
+        var commonChart = buildChart(this.data, {...this._chartConfig, continue: true}, null);
+        console.log('rangearea', commonChart)
+        let type: 'category' | 'datetime' | 'numeric' = 'datetime';
+        if (commonChart.continue) {
+            var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
+            type = x instanceof Date ? 'datetime' : typeof x == 'number' ? 'numeric' : 'category';
+        } 
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type } });
     }
 
     updateLoading() {
@@ -154,16 +153,8 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
         this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
 
-    // updateOptions() {
-    //     this._chart.resetSeries();
-    //     if (this._options.chart.id) {
-    //         ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
-    //     } else {
-    //         this._chart.updateOptions(this._options, false, false);
-    //     }
-    // }
-
     render() {
         this._chart.render();
     }
+
 }

@@ -10,4 +10,6 @@
     <div *ngSwitchCase="'pyramid'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
     <div *ngSwitchCase="'treemap'" treemap-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
     <div *ngSwitchCase="'heatmap'" treemap-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+    <div *ngSwitchCase="'rangeArea'" rangearea-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+    <div *ngSwitchCase="'radar'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
 </div>
