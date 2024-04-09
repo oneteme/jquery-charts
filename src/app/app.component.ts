@@ -805,59 +805,6 @@ export class AppComponent {
     }
   };
 
-
-  // barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
-  //   data: [
-  //     { count1: 20, count2: 60, count3: 20, count4: 60, field: 'Field 1' },
-  //     { count1: 30, count2: 100, count3: 30, count4: 100, field: 'Field 2' },
-  //     { count1: 50, count2: 30, count3: 50, count4: 30, field: 'Field 3' },
-  //     { count1: 80, count2: 40, count3: 80, count4: 40, field: 'Field 4' }
-  //   ],
-  //   config: {
-  //     title: 'Exemple de Bar Chart Stacked Avec Pivot',
-  //     series: [
-  //       { data: { x: field('field'), y: field('count1') }, name: 'c1' },
-  //       { data: { x: field('field'), y: field('count2') }, name: 'c2' },
-  //       { data: { x: field('field'), y: field('count3') }, name: 'c3' },
-  //       { data: { x: field('field'), y: field('count4') }, name: 'c4' }
-  //     ],
-  //     pivot: true,
-  //     height: 250,
-  //     stacked: true
-  //   }
-  // };
-
-  // barExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
-  //   data: [
-  //     { count1: 20, field: 'Field 1', subField: 'Sub Field 1' },
-  //     { count1: 60, field: 'Field 1', subField: 'Sub Field 2' },
-  //     { count1: 20, field: 'Field 1', subField: 'Sub Field 3' },
-  //     { count1: 60, field: 'Field 1', subField: 'Sub Field 4' },
-  //     { count1: 30, field: 'Field 2', subField: 'Sub Field 1' },
-  //     { count1: 50, field: 'Field 3', subField: 'Sub Field 1' },
-  //     { count1: 80, field: 'Field 4', subField: 'Sub Field 1' }
-  //   ],
-  //   config: {
-  //     title: 'Exemple de Bar Chart n°2',
-  //     mappers: [
-  //       { data: {x: field('field'), y: field('count1')} }
-  //     ],
-  //     options: {
-  //       chart: {
-  //         height: 250,
-  //         stacked: true,
-  //         toolbar: {
-  //           show: false
-  //         }
-  //       },
-  //       stroke: {
-  //         width: 1,
-  //         colors: ["#fff"]
-  //       }
-  //     }
-  //   }
-  // };
-
   funnelExample: { data: any[], config: ChartProvider<XaxisType, number> } = {
     data: [
       { count: 30, field: 'v1' },
@@ -881,6 +828,66 @@ export class AppComponent {
           }
         }
       }
+    }
+  }
+
+  treemapExample: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
+    data: [
+      { count: 10, field: 'ABC' },
+      { count: 30, field: 'DEF' },
+      { count: 20, field: 'XYZ' },
+      { count: 60, field: 'ABCD' },
+      { count: 10, field: 'DEFG' },
+      { count: 31, field: 'WXYZ' },
+      { count: 70, field: 'PQR' },
+      { count: 30, field: 'MNO' },
+      { count: 44, field: 'CDE' }
+    ],
+    config: {
+      title: 'Exemple de TreeMap Chart',
+      series: [
+        { data: { x: field('field'), y: field('count') } }
+      ],
+      height: 250
+    }
+  }
+
+  treemapExample2: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
+    data: [
+      { count: 10, field: 'ABC', categ: 'Desktops' },
+      { count: 30, field: 'DEF', categ: 'Desktops' },
+      { count: 20, field: 'XYZ', categ: 'Desktops' },
+      { count: 60, field: 'ABCD', categ: 'Mobile' },
+      { count: 10, field: 'DEFG', categ: 'Mobile' },
+      { count: 31, field: 'WXYZ', categ: 'Mobile' },
+      { count: 70, field: 'PQR', categ: 'Mobile' },
+      { count: 30, field: 'MNO', categ: 'Mobile' },
+      { count: 44, field: 'CDE', categ: 'Mobile' }
+    ],
+    config: {
+      title: 'Exemple de TreeMap Chart',
+      series: [
+        { data: { x: field('field'), y: field('count') }, name: field('categ') }
+      ],
+      height: 250
+    }
+  }
+
+  treemapExample3: { data: any[], config: ChartProvider<XaxisType, YaxisType> } = {
+    data: [
+      { count: 10, field: 'ABC', categ: 'Desktops' },
+      { count: 30, field: 'DEF', categ: 'Desktops' },
+      { count: 20, field: 'XYZ', categ: 'Desktops' },
+      { count: 60, field: 'ABC', categ: 'Mobile' },
+      { count: 10, field: 'DEF', categ: 'Mobile' },
+      { count: 31, field: 'XYZ', categ: 'Mobile' }
+    ],
+    config: {
+      title: 'Exemple de HeatMap Chart',
+      series: [
+        { data: { x: field('field'), y: field('count') }, name: field('categ') }
+      ],
+      height: 250
     }
   }
 

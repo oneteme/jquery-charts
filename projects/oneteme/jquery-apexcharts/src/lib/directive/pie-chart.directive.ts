@@ -16,7 +16,6 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
             type: 'pie'
         },
         series: []
-        
     };
 
     @Input({ required: true }) type: 'pie' | 'donut' | 'radialBar' | 'polarArea';
@@ -52,7 +51,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
             this.updateChart();
             console.log(this.data)
         }
-        
+
         console.log(this.data)
     }
 
@@ -103,8 +102,8 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                     }
                 },
                 events: {
-                    mouseMove: function(e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility="visible" },
-                    mouseLeave: function(e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility="hidden" }
+                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
+                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
                 }
             },
             title: {

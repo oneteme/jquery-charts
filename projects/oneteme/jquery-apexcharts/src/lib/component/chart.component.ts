@@ -6,7 +6,7 @@ import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-
     templateUrl: './chart.component.html'
 })
 export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
-    private charts: ChartType[] = ['line', 'pie', 'bar'];
+    private charts: ChartType[] = ['line', 'pie', 'bar', 'treemap'];
 
     @Input() type: ChartType;
     @Input() config: ChartProvider<X, Y>;

@@ -5,6 +5,7 @@ import { BarChartDirective } from './directive/bar-chart.directive';
 import { ChartComponent } from './component/chart.component';
 import { LineChartDirective } from './directive/line-chart.directive';
 import { PieChartDirective } from './directive/pie-chart.directive';
+import { HeatmapChartDirective } from './directive/heatmap-chart.directive';
 
 @NgModule({
   declarations: [
@@ -12,6 +13,7 @@ import { PieChartDirective } from './directive/pie-chart.directive';
     LineChartDirective,
     PieChartDirective,
     TreemapChartDirective,
+    HeatmapChartDirective,
     ChartComponent
   ],
   imports: [
@@ -22,6 +24,7 @@ import { PieChartDirective } from './directive/pie-chart.directive';
     LineChartDirective,
     PieChartDirective,
     TreemapChartDirective,
+    HeatmapChartDirective,
     ChartComponent
   ]
 })

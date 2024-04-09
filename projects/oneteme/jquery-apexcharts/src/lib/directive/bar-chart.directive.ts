@@ -71,6 +71,10 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
               }
             }]
           }
+        },
+        events: {
+          mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
+          mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
         }
       },
       title: {

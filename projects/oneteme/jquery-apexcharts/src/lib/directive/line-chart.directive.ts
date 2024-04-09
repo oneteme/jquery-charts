@@ -16,7 +16,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
             type: 'line'
         },
         series: []
-        
     };
 
     @Input({ required: true }) type: 'line' | 'area';
@@ -67,38 +66,42 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                 toolbar: {
                     show: true,
                     tools: {
-                      download: false,
-                      selection: false,
-                      zoom: false,
-                      zoomin: false,
-                      zoomout: false,
-                      pan: false,
-                      reset: false,
-                      customIcons: [{
-                        icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
-                        title: 'Graphique précédent',
-                        class: 'custom-icon',
-                        click: function (chart, options, e) {
-                          that.customEvent.emit("previous");
-                        }
-                      },
-                      {
-                        icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
-                        title: 'Graphique suivant',
-                        class: 'custom-icon',
-                        click: function (chart, options, e) {
-                          that.customEvent.emit("next");
-                        }
-                      }, {
-                        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-                        title: 'Pivot',
-                        class: 'custom-icon',
-                        click: function (chart, options, e) {
-                          that.customEvent.emit("pivot");
-                        }
-                      }]
+                        download: false,
+                        selection: false,
+                        zoom: false,
+                        zoomin: false,
+                        zoomout: false,
+                        pan: false,
+                        reset: false,
+                        customIcons: [{
+                            icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
+                            title: 'Graphique précédent',
+                            class: 'custom-icon',
+                            click: function (chart, options, e) {
+                                that.customEvent.emit("previous");
+                            }
+                        },
+                        {
+                            icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
+                            title: 'Graphique suivant',
+                            class: 'custom-icon',
+                            click: function (chart, options, e) {
+                                that.customEvent.emit("next");
+                            }
+                        }, {
+                            icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
+                            title: 'Pivot',
+                            class: 'custom-icon',
+                            click: function (chart, options, e) {
+                                that.customEvent.emit("pivot");
+                            }
+                        }]
                     }
-                  }
+                },
+                events: {
+                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
+                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
+                }
             },
             title: {
                 text: this._chartConfig.title
@@ -129,7 +132,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
             var categ = commonChart.categories[0];
             type = categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
         }
-       
         mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type, categories: commonChart.categories || [] } });
     }
 
