@@ -8,6 +8,6 @@ export * from './lib/directive/line-chart.directive';
 export * from './lib/directive/pie-chart.directive';
 export * from './lib/directive/treemap-chart.directive';
 export * from './lib/directive/heatmap-chart.directive';
-export * from './lib/directive/rangearea-chart.directive';
+export * from './lib/directive/range-chart.directive';
 export * from './lib/component/chart.component';
 

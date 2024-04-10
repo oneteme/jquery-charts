@@ -1,38 +1,3 @@
-<!-- <div style="display: flex; justify-content: space-between;">
-  <chart type="pie" [config]="pieExample.config" [data]="pieExample.data" />
-  <chart type="pie" [config]="pieExample2.config" [data]="pieExample2.data" />
-  <chart type="pie" [config]="pieExample3.config" [data]="pieExample3.data" />
-</div>
-<div style="display: flex; justify-content: space-between;">
-  <chart type="donut" [config]="donutExample1.config" [data]="donutExample1.data" />
-  <chart type="donut" [config]="donutExample2.config" [data]="donutExample2.data" />
-  <chart type="donut" [config]="donutExample3.config" [data]="donutExample3.data" />
-</div>
-<div style="display: flex; justify-content: space-between;">
-  <chart type="polarArea" [config]="polarAreaExample1.config" [data]="polarAreaExample1.data" />
-  <chart type="polarArea" [config]="polarAreaExample2.config" [data]="polarAreaExample2.data" />
-  <chart type="polarArea" [config]="polarAreaExample3.config" [data]="polarAreaExample3.data" />
-</div>
-<div style="display: flex; justify-content: space-between;">
-  <chart type="radialBar" [config]="polarAreaExample1.config" [data]="polarAreaExample1.data" />
-  <chart type="radialBar" [config]="polarAreaExample2.config" [data]="polarAreaExample2.data" />
-  <chart type="radialBar" [config]="polarAreaExample3.config" [data]="polarAreaExample3.data" />
-</div>
-
-<div style="display: flex; justify-content: space-between;">
-  <chart style="width: 33%;" type="line" [config]="lineExample1.config" [data]="lineExample1.data" />
-  <chart style="width: 33%;" type="line" [config]="lineExample2.config" [data]="lineExample2.data" />
-  <chart style="width: 33%;" type="line" [config]="lineExample3.config" [data]="lineExample3.data" />
-</div>
-<chart type="area" [config]="areaExample1.config" [data]="areaExample1.data" />
-<chart type="bar" [config]="barExample1.config" [data]="barExample1.data" />
-<div style="display: flex; justify-content: space-between;">
-  <chart style="width: 49%;" type="bar" [config]="barExample2.config" [data]="barExample2.data" />
-  <chart style="width: 49%;" type="bar" [config]="barExample3.config" [data]="barExample3.data" />
-</div>
-<chart type="funnel" [config]="funnelExample.config" [data]="funnelExample.data" />
-<chart type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data"/> -->
-<!-- <div treemap-chart></div> -->
 <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
   <div class="mat-divider"></div>
   <span style="margin-right: 0.5em; margin-left: 0.5em;">
@@ -81,19 +46,19 @@
   <div class="mat-divider"></div>
 </div>
 <div style="display: flex; justify-content: space-between; margin-bottom: 1em;">
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample.config" [data]="pieExample.data" />
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample2.config" [data]="pieExample2.data" />
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample3.config" [data]="pieExample3.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample.config" [data]="pieExample.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample2.config" [data]="pieExample2.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample3.config" [data]="pieExample3.data" />
 </div>
 <div style="display: flex; justify-content: space-between; margin-bottom: 1em;">
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample4.config" [data]="pieExample4.data" />
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample5.config" [data]="pieExample5.data" />
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample6.config" [data]="pieExample6.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample4.config" [data]="pieExample4.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample5.config" [data]="pieExample5.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample6.config" [data]="pieExample6.data" />
 </div>
 <div style="display: flex; justify-content: space-between; margin-bottom: 1em;">
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample7.config" [data]="pieExample7.data" />
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample8.config" [data]="pieExample8.data" />
-  <chart style="width: 24%;" type="polarArea" [config]="pieExample9.config" [data]="pieExample9.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample7.config" [data]="pieExample7.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample8.config" [data]="pieExample8.data" />
+  <chart style="width: 24%;" type="polar" [config]="pieExample9.config" [data]="pieExample9.data" />
 </div>
 <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
   <div class="mat-divider"></div>
@@ -142,6 +107,54 @@
 </div>
 <div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
   <div class="mat-divider"></div>
+  <span style="margin-right: 0.5em; margin-left: 0.5em;"><h3>Line Chart</h3></span>
+  <div class="mat-divider"></div>
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="line" [config]="lineExample.config" [data]="lineExample.data" />
+  <chart style="width: 24%" type="line" [config]="lineExample2.config" [data]="lineExample2.data" />
+  <chart style="width: 24%" type="line" [config]="lineExample3.config" [data]="lineExample3.data" />
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="line" [config]="lineExample4.config" [data]="lineExample4.data" />
+  <chart style="width: 24%" type="line" [config]="lineExample5.config" [data]="lineExample5.data" />
+  <chart style="width: 24%" type="line" [config]="lineExample6.config" [data]="lineExample6.data" />
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="line" [config]="lineExample7.config" [data]="lineExample7.data" />
+  <chart style="width: 24%" type="line" [config]="lineExample8.config" [data]="lineExample8.data" />
+  <chart style="width: 24%" type="line" [config]="lineExample9.config" [data]="lineExample9.data" />
+</div>
+<div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
+  <div class="mat-divider"></div>
+  <span style="margin-right: 0.5em; margin-left: 0.5em;"><h3>Area Chart</h3></span>
+  <div class="mat-divider"></div>
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="area" [config]="lineExample.config" [data]="lineExample.data" />
+  <chart style="width: 24%" type="area" [config]="lineExample2.config" [data]="lineExample2.data" />
+  <chart style="width: 24%" type="area" [config]="lineExample3.config" [data]="lineExample3.data" />
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="area" [config]="lineExample4.config" [data]="lineExample4.data" />
+  <chart style="width: 24%" type="area" [config]="lineExample5.config" [data]="lineExample5.data" />
+  <chart style="width: 24%" type="area" [config]="lineExample6.config" [data]="lineExample6.data" />
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="area" [config]="lineExample7.config" [data]="lineExample7.data" />
+  <chart style="width: 24%" type="area" [config]="lineExample8.config" [data]="lineExample8.data" />
+  <chart style="width: 24%" type="area" [config]="lineExample9.config" [data]="lineExample9.data" />
+</div>
+<div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
+  <div class="mat-divider"></div>
+  <span style="margin-right: 0.5em; margin-left: 0.5em;"><h3>Combo Chart</h3></span>
+  <div class="mat-divider"></div>
+</div>
+<div style="display: flex; justify-content: space-between;">
+  <chart style="width: 24%" type="line" [config]="comboExample.config" [data]="comboExample.data" />
+</div>
+<div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
+  <div class="mat-divider"></div>
   <span style="margin-right: 0.5em; margin-left: 0.5em;"><h3>TreeMap Chart</h3></span>
   <div class="mat-divider"></div>
 </div>
@@ -166,16 +179,11 @@
 <div style="display: flex; justify-content: space-between;">
   <chart style="width: 24%" type="rangeArea" [config]="rangeExample.config" [data]="rangeExample.data" />
 </div>
-<!-- <div style="display: flex; justify-content: space-between;">
-  <chart style="width: 49%" type="bar" [config]="barExample3.config" [data]="barExample3.data" />
-  <chart style="width: 49%" type="bar" [config]="barExample0.config" [data]="barExample0.data" />
+<div style="display: flex; flex-direction: row; justify-content: center; align-items: center; align-content: center;">
+  <div class="mat-divider"></div>
+  <span style="margin-right: 0.5em; margin-left: 0.5em;"><h3>RangeBar Chart</h3></span>
+  <div class="mat-divider"></div>
 </div>
 <div style="display: flex; justify-content: space-between;">
-  <chart  style="width: 49%" type="funnel" [config]="funnelExample.config" [data]="funnelExample.data" />
-  <chart  style="width: 49%" type="pyramid" [config]="funnelExample.config" [data]="funnelExample.data" /> 
+  <chart style="width: 24%" type="rangeBar" [config]="rangeExample.config" [data]="rangeExample.data" />
 </div>
-<div style="display: flex; justify-content: space-between;">
-  <chart style="width: 33%;" type="line" [config]="lineExample1.config" [data]="lineExample1.data" />
-  <chart style="width: 33%;" type="line" [config]="lineExample2.config" [data]="lineExample2.data" />
-  <chart style="width: 33%;" type="area" [config]="areaExample1.config" [data]="areaExample1.data" />
-</div> -->

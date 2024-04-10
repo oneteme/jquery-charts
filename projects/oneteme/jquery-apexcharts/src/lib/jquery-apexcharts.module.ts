@@ -6,7 +6,16 @@ import { ChartComponent } from './component/chart.component';
 import { LineChartDirective } from './directive/line-chart.directive';
 import { PieChartDirective } from './directive/pie-chart.directive';
 import { HeatmapChartDirective } from './directive/heatmap-chart.directive';
-import { RangeareaChartDirective } from './directive/rangearea-chart.directive';
+import { RangeChartDirective } from './directive/range-chart.directive';
+import ApexCharts from "apexcharts";
+
+declare global {
+  interface Window {
+    ApexCharts: any;
+  }
+}
+
+window.ApexCharts = ApexCharts;
 
 @NgModule({
   declarations: [
@@ -15,7 +24,7 @@ import { RangeareaChartDirective } from './directive/rangearea-chart.directive';
     PieChartDirective,
     TreemapChartDirective,
     HeatmapChartDirective,
-    RangeareaChartDirective,
+    RangeChartDirective,
     ChartComponent
   ],
   imports: [
@@ -27,7 +36,7 @@ import { RangeareaChartDirective } from './directive/rangearea-chart.directive';
     PieChartDirective,
     TreemapChartDirective,
     HeatmapChartDirective,
-    RangeareaChartDirective,
+    RangeChartDirective,
     ChartComponent
   ]
 })

@@ -43,10 +43,7 @@ export class TreemapChartDirective implements ChartView<string, number>, OnChang
                 this.updateData();
             }
             this.updateChart();
-            console.log(this.data)
         }
-        
-        console.log(this.data)
     }
 
     ngOnDestroy(): void {
@@ -128,7 +125,6 @@ export class TreemapChartDirective implements ChartView<string, number>, OnChang
     updateData() {
         var commonChart = buildChart(this.data, { ...this._chartConfig, continue: true }, null);
         mergeDeep(this._options, { series: commonChart.series });        
-        console.log('commonPieChart', commonChart);
     }
 
     updateLoading() {

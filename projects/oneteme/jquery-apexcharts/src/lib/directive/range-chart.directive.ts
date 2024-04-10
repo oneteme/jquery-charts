@@ -3,9 +3,9 @@ import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, Xaxis
 import ApexCharts from "apexcharts";
 
 @Directive({
-    selector: '[rangearea-chart]'
+    selector: '[range-chart]'
 })
-export class RangeareaChartDirective<X extends XaxisType> implements ChartView<X, number[]>, OnChanges, OnDestroy {
+export class RangeChartDirective<X extends XaxisType> implements ChartView<X, number[]>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
 
     private _chart: ApexCharts;
@@ -18,11 +18,13 @@ export class RangeareaChartDirective<X extends XaxisType> implements ChartView<X
         series: []
     };
 
-    @Input({ required: true }) type: 'rangeArea';
+    @Input({ required: true }) type: 'rangeArea' | 'rangeBar' | 'rangeColumn';
 
     @Input({ required: true }) config: ChartProvider<X, number[]>;
 
     @Input({ required: true }) data: any[];
+
+    @Input() canPivot: boolean = true;
 
     @Input() isLoading: boolean = false;
 
@@ -53,12 +55,38 @@ export class RangeareaChartDirective<X extends XaxisType> implements ChartView<X
     }
 
     updateType() {
-        mergeDeep(this._options, { chart: { type: this.type } })
+        mergeDeep(this._options, { chart: { type: this.type == 'rangeColumn' ? 'rangeBar' : this.type } })
     }
 
     updateConfig() {
         let that = this;
         this._chartConfig = this.config;
+        var customIcons = [{
+            icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
+            title: 'Graphique précédent',
+            class: 'custom-icon',
+            click: function (chart, options, e) {
+                that.customEvent.emit("previous");
+            }
+        },
+        {
+            icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
+            title: 'Graphique suivant',
+            class: 'custom-icon',
+            click: function (chart, options, e) {
+                that.customEvent.emit("next");
+            }
+        }];
+        if (this.canPivot) {
+            customIcons.push({
+                icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
+                title: 'Pivot',
+                class: 'custom-icon',
+                click: function (chart, options, e) {
+                    that.customEvent.emit("pivot");
+                }
+            });
+        }
         mergeDeep(this._options, {
             chart: {
                 height: this._chartConfig.height ?? '100%',
@@ -73,29 +101,7 @@ export class RangeareaChartDirective<X extends XaxisType> implements ChartView<X
                         zoomout: false,
                         pan: false,
                         reset: false,
-                        customIcons: [{
-                            icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
-                            title: 'Graphique précédent',
-                            class: 'custom-icon',
-                            click: function (chart, options, e) {
-                                that.customEvent.emit("previous");
-                            }
-                        },
-                        {
-                            icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
-                            title: 'Graphique suivant',
-                            class: 'custom-icon',
-                            click: function (chart, options, e) {
-                                that.customEvent.emit("next");
-                            }
-                        }, {
-                            icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-                            title: 'Pivot',
-                            class: 'custom-icon',
-                            click: function (chart, options, e) {
-                                that.customEvent.emit("pivot");
-                            }
-                        }]
+                        customIcons: customIcons
                     }
                 },
                 events: {
@@ -119,17 +125,22 @@ export class RangeareaChartDirective<X extends XaxisType> implements ChartView<X
                     text: this._chartConfig.ytitle
                 }
             }
-        }, this._chartConfig.options);
+        }, this.type == 'rangeBar' ? {
+            plotOptions: {
+                bar: {
+                    horizontal: true
+                }
+            }
+        } : {}, this._chartConfig.options);
     }
 
     updateData() {
-        var commonChart = buildChart(this.data, {...this._chartConfig, continue: true}, null);
-        console.log('rangearea', commonChart)
+        var commonChart = buildChart(this.data, { ...this._chartConfig, continue: true, pivot: !this.canPivot ? false: this._chartConfig.pivot }, null);
         let type: 'category' | 'datetime' | 'numeric' = 'datetime';
         if (commonChart.continue) {
             var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
             type = x instanceof Date ? 'datetime' : typeof x == 'number' ? 'numeric' : 'category';
-        } 
+        }
         mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type } });
     }
 

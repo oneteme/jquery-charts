@@ -6,7 +6,23 @@ import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-
     templateUrl: './chart.component.html'
 })
 export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
-    private charts: ChartType[] = ['line', 'pie', 'bar', 'treemap', 'heatmap'];
+    private _charts: {[key: ChartType]: ChartType[] } = {
+        'pie': ['pie', 'donut', 'polar', 'radar'],
+        'donut': ['pie', 'donut', 'polar', 'radar'],
+        'polar': ['pie', 'donut', 'polar', 'radar'],
+        'radar': ['pie', 'donut', 'polar', 'radar'],
+        'line': ['line', 'area'],
+        'area': ['line', 'area'],
+        'bar': ['bar', 'column', 'heatmap', 'treemap'],
+        'funnel': ['funnel', 'pyramid'],
+        'pyramid': ['funnel', 'pyramid'],
+        'rangeArea': ['rangeArea', 'rangeBar', 'rangeColumn'],
+        'rangeBar': ['rangeArea', 'rangeBar', 'rangeColumn'],
+        'treemap': ['bar', 'column', 'heatmap', 'treemap'],  
+        'heatmap': ['bar', 'column', 'heatmap', 'treemap']
+    };
+
+    private initialType: ChartType;
 
     @Input() type: ChartType;
     @Input() config: ChartProvider<X, Y>;
@@ -15,17 +31,24 @@ export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
 
 
     change(event: string) {
-        
-        let indexOf = this.charts.indexOf(this.type);
-        console.log(event, indexOf, this.charts[indexOf]);
-        if(event == 'previous') {
-            this.type = indexOf == 0 ? this.charts[this.charts.length - 1] : this.charts[indexOf - 1];
+        if(!this.initialType) {
+            this.initialType = this.type;
         }
-        if(event == 'next') {
-            this.type = indexOf == this.charts.length - 1 ? this.charts[0] : this.charts[indexOf + 1];
+        let charts = this._charts[this.initialType];
+        let indexOf = charts.indexOf(this.type);
+        if(indexOf != -1) {
+            if(event == 'previous') {
+                this.type = indexOf == 0 ? charts[charts.length - 1]: charts[indexOf - 1];
+                return;
+            }
+            if(event == 'next') {
+                this.type = indexOf == charts.length - 1 ? charts[0]: charts[indexOf + 1];
+                return;
+            }
         }
         if(event == 'pivot') {
             this.config = this.config.pivot ? {...this.config, pivot: false} :  {...this.config, pivot: true};
+            return;
         }
     }
 }

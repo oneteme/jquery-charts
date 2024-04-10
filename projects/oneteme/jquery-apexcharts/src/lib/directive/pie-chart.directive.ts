@@ -1,5 +1,5 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
+import { ChartProvider, ChartType, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import { asapScheduler } from "rxjs";
 
@@ -8,6 +8,14 @@ import { asapScheduler } from "rxjs";
 })
 export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
+
+    private typeMapping: {[key: ChartType]: ChartType} = {
+        'pie': 'pie',
+        'donut': 'donut',
+        'radial': 'radialBar',
+        'polar': 'polarArea',
+        'radar': 'radar'
+    }
 
     private _chart: ApexCharts;
     private _chartConfig: ChartProvider<string, number> = {};
@@ -49,14 +57,11 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                 this.updateData();
             }
             this.updateChart();
-            console.log(this.data)
         }
-
-        console.log(this.data)
     }
 
     updateType() {
-        mergeDeep(this._options, { chart: { type: this.type } })
+        mergeDeep(this._options, { chart: { type: this.typeMapping[this.type] } })
     }
 
     updateConfig() {
@@ -131,7 +136,6 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
         var commonChart = this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
         var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color);
         mergeDeep(this._options, { series: this.type == 'radar' ? commonChart.series : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
-        console.log('commonPieChart', this.type, commonChart, this._options)
     }
 
     updateLoading() {

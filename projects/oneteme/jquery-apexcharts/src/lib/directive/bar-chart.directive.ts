@@ -17,11 +17,13 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
     series: []
   };
 
-  @Input({ alias: 'type', required: true }) type: 'bar' | 'funnel' | 'pyramid';
+  @Input({ alias: 'type', required: true }) type: 'bar' | 'column' | 'funnel' | 'pyramid';
 
   @Input({ alias: 'config', required: true }) config: ChartProvider<X, number>;
 
   @Input({ required: true }) data: any[];
+
+  @Input() canPivot: boolean = true;
 
   @Input() isLoading: boolean = false;
 
@@ -30,7 +32,32 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   updateConfig() {
     let that = this;
     this._chartConfig = this.config;
-
+    var customIcons = [{
+      icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
+      title: 'Graphique précédent',
+      class: 'custom-icon',
+      click: function (chart, options, e) {
+        that.customEvent.emit("previous");
+      }
+    },
+    {
+      icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
+      title: 'Graphique suivant',
+      class: 'custom-icon',
+      click: function (chart, options, e) {
+        that.customEvent.emit("next");
+      }
+    }];
+    if (this.canPivot) {
+      customIcons.push({
+        icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
+        title: 'Pivot',
+        class: 'custom-icon',
+        click: function (chart, options, e) {
+          that.customEvent.emit("pivot");
+        }
+      });
+    }
     mergeDeep(this._options, {
       chart: {
         height: this._chartConfig.height ?? '100%',
@@ -46,30 +73,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
             zoomout: false,
             pan: false,
             reset: false,
-            customIcons: [{
-              icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
-              title: 'Graphique précédent',
-              class: 'custom-icon',
-              click: function (chart, options, e) {
-                that.customEvent.emit("previous");
-              }
-            },
-            {
-              icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
-              title: 'Graphique suivant',
-              class: 'custom-icon',
-              click: function (chart, options, e) {
-                that.customEvent.emit("next");
-              }
-            },
-            {
-              icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-              title: 'Pivot',
-              class: 'custom-icon',
-              click: function (chart, options, e) {
-                that.customEvent.emit("pivot");
-              }
-            }]
+            customIcons: customIcons
           }
         },
         events: {
@@ -93,16 +97,23 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
           text: this._chartConfig.ytitle
         }
       }
-    }, this._chartConfig.options);
+    }, this.type == 'bar' ? {
+      plotOptions: {
+        bar: {
+          horizontal: true
+        }
+      }
+    } : {}, this._chartConfig.options);
   }
 
   updateData() {
+    var data = [...this.data];
     if (this.type == 'funnel') {
-      this.data = [...this.data.sort(naturalFieldComparator('asc', this._chartConfig.series[0].data.y))];
+      data = data.sort(naturalFieldComparator('asc', this._chartConfig.series[0].data.y));
     } else if (this.type == 'pyramid') {
-      this.data = [...this.data.sort(naturalFieldComparator('desc', this._chartConfig.series[0].data.y))];
+      data = data.sort(naturalFieldComparator('desc', this._chartConfig.series[0].data.y));
     }
-    var commonChart = buildChart(this.data, this._chartConfig);
+    var commonChart = buildChart(data, { ...this._chartConfig, pivot: !this.canPivot ? false : this._chartConfig.pivot });
     let type: 'category' | 'datetime' | 'numeric' = 'datetime';
     if (commonChart.continue) {
       var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
@@ -112,7 +123,6 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
       type = categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
     }
     mergeDeep(this._options, { series: commonChart.series.map(s => ({ data: s.data, name: s.name, color: s.color, group: s.stack })), xaxis: { type: type, categories: commonChart.categories || [] } });
-    console.log('commonBarChart', commonChart)
   }
 
   updateLoading() {
@@ -125,6 +135,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.type && this.config && this.data) {
+
       if (changes.isLoading) {
         this.updateLoading();
       }
