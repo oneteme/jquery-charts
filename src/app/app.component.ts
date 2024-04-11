@@ -590,15 +590,36 @@ export class AppComponent {
     ],
     config: {
       series: [
-        { data: { x: field('field'), y: combineFields((args) => args.reduce((acc, o) => {
-          acc += o;
-          return acc;
-        }), ['count_2xx', 'count_4xx', 'count_5xx']) }, name: 'Nombre d\'appels', type: 'column' },
+        {
+          data: {
+            x: field('field'), y: combineFields((args) => args.reduce((acc, o) => {
+              acc += o;
+              return acc;
+            }), ['count_2xx', 'count_4xx', 'count_5xx'])
+          }, name: 'Nombre d\'appels', type: 'column'
+        },
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx', type: 'line' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx', type: 'line' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx', type: 'line' }
       ],
-      height: 250
+      height: 250,
+      options: {
+        dataLabels: {
+          enabled: true,
+          enabledOnSeries: [1, 2, 3]
+        },
+        yaxis: [{
+          title: {
+            text: 'Website Blog',
+          },
+
+        }, {
+          opposite: true,
+          title: {
+            text: 'Social Media'
+          }
+        }]
+      }
     }
   };
 

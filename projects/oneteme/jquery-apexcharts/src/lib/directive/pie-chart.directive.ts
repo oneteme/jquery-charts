@@ -2,6 +2,7 @@ import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestro
 import { ChartProvider, ChartType, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import { asapScheduler } from "rxjs";
+import { customIcons } from "./utils";
 
 @Directive({
     selector: '[pie-chart]'
@@ -81,29 +82,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                         zoomout: false,
                         pan: false,
                         reset: false,
-                        customIcons: [{
-                            icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
-                            title: 'Graphique précédent',
-                            class: 'custom-icon',
-                            click: function (chart, options, e) {
-                                that.customEvent.emit("previous");
-                            }
-                        },
-                        {
-                            icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
-                            title: 'Graphique suivant',
-                            class: 'custom-icon',
-                            click: function (chart, options, e) {
-                                that.customEvent.emit("next");
-                            }
-                        }, {
-                            icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-                            title: 'Pivot',
-                            class: 'custom-icon',
-                            click: function (chart, options, e) {
-                                that.customEvent.emit("pivot");
-                            }
-                        }]
+                        customIcons: customIcons(arg => that.customEvent.emit(arg), true)
                     }
                 },
                 events: {

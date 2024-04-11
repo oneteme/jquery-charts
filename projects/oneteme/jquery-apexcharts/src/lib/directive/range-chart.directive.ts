@@ -1,6 +1,7 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
 import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
+import { customIcons, getType } from "./utils";
 
 @Directive({
     selector: '[range-chart]'
@@ -61,32 +62,6 @@ export class RangeChartDirective<X extends XaxisType> implements ChartView<X, nu
     updateConfig() {
         let that = this;
         this._chartConfig = this.config;
-        var customIcons = [{
-            icon: '<img src="/assets/icons/arrow_back_ios.svg" width="15">',
-            title: 'Graphique précédent',
-            class: 'custom-icon',
-            click: function (chart, options, e) {
-                that.customEvent.emit("previous");
-            }
-        },
-        {
-            icon: '<img src="/assets/icons/arrow_forward_ios.svg" width="15">',
-            title: 'Graphique suivant',
-            class: 'custom-icon',
-            click: function (chart, options, e) {
-                that.customEvent.emit("next");
-            }
-        }];
-        if (this.canPivot) {
-            customIcons.push({
-                icon: '<img src="/assets/icons/pivot_table_chart.svg" width="15">',
-                title: 'Pivot',
-                class: 'custom-icon',
-                click: function (chart, options, e) {
-                    that.customEvent.emit("pivot");
-                }
-            });
-        }
         mergeDeep(this._options, {
             chart: {
                 height: this._chartConfig.height ?? '100%',
@@ -101,7 +76,7 @@ export class RangeChartDirective<X extends XaxisType> implements ChartView<X, nu
                         zoomout: false,
                         pan: false,
                         reset: false,
-                        customIcons: customIcons
+                        customIcons: customIcons(arg => that.customEvent.emit(arg), true)
                     }
                 },
                 events: {
@@ -136,12 +111,7 @@ export class RangeChartDirective<X extends XaxisType> implements ChartView<X, nu
 
     updateData() {
         var commonChart = buildChart(this.data, { ...this._chartConfig, continue: true, pivot: !this.canPivot ? false: this._chartConfig.pivot }, null);
-        let type: 'category' | 'datetime' | 'numeric' = 'datetime';
-        if (commonChart.continue) {
-            var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
-            type = x instanceof Date ? 'datetime' : typeof x == 'number' ? 'numeric' : 'category';
-        }
-        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: type } });
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });
     }
 
     updateLoading() {

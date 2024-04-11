@@ -5,7 +5,7 @@ import { BarChartDirective } from './directive/bar-chart.directive';
 import { ChartComponent } from './component/chart.component';
 import { LineChartDirective } from './directive/line-chart.directive';
 import { PieChartDirective } from './directive/pie-chart.directive';
-import { HeatmapChartDirective } from './directive/heatmap-chart.directive';
+import { TestChartDirective } from './directive/test-chart.directive';
 import { RangeChartDirective } from './directive/range-chart.directive';
 import ApexCharts from "apexcharts";
 
@@ -23,7 +23,7 @@ window.ApexCharts = ApexCharts;
     LineChartDirective,
     PieChartDirective,
     TreemapChartDirective,
-    HeatmapChartDirective,
+    TestChartDirective,
     RangeChartDirective,
     ChartComponent
   ],
@@ -35,7 +35,7 @@ window.ApexCharts = ApexCharts;
     LineChartDirective,
     PieChartDirective,
     TreemapChartDirective,
-    HeatmapChartDirective,
+    TestChartDirective,
     RangeChartDirective,
     ChartComponent
   ]
