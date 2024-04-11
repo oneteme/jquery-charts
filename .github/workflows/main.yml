@@ -15,7 +15,11 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@oneteme'
       - run: npm install  
-      - run: npm run build jquery-core
+      - run: npm run build "@oneteme/jquery-core"
       - run: npm publish ./dist/oneteme/jquery-core --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }})
+      - run: npm run build "@oneteme/jquery-apexcharts"
+      - run: npm publish ./dist/oneteme/jquery-apexcharts --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }})
