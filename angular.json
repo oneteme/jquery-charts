@@ -159,7 +159,7 @@
               "tsConfig": "projects/oneteme/jquery-apexcharts/tsconfig.lib.json"
             }
           },
-          "defaultConfiguration": "development"
+          "defaultConfiguration": "production"
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",

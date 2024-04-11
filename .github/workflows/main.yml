@@ -14,7 +14,7 @@ jobs:
           node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
           scope: '@oneteme'
-      - run: npm config ls
+      - run: ping registry.npmjs.org
       - run: npm install  
       - run: npm run build '@oneteme/jquery-core'
       - run: npm publish ./dist/oneteme/jquery-core --access public
