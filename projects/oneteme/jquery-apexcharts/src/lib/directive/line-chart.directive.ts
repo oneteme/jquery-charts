@@ -64,6 +64,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
             chart: {
                 height: this._chartConfig.height ?? '100%',
                 width: this._chartConfig.width ?? '100%',
+                stacked: this._chartConfig.stacked,
                 toolbar: {
                     show: true,
                     tools: {

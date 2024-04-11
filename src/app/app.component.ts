@@ -450,6 +450,7 @@ export class AppComponent {
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' }
       ],
       height: 250,
+      stacked: true,
       xorder: 'asc'
     }
   };
