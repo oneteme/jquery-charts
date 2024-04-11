@@ -1,6 +1,17 @@
 {
   "name": "@oneteme/jquery-charts",
   "version": "0.0.2",
+  "private": false,
+  "homepage": "https://github.com/oneteme/jquery-charts",
+  "bugs": "https://github.com/oneteme/jquery-charts/issues",
+  "author": {
+    "name": "u$f",
+    "url": "https://oneteme.github.io/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oneteme/jquery-charts.git"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -8,7 +19,6 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
-  "private": false,
   "dependencies": {
     "@angular/animations": "^16.1.0",
     "@angular/common": "^16.1.0",
