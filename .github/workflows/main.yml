@@ -1,4 +1,4 @@
-name: Jquery Core Pipeline
+name: publish libraries
 on:
   push:
     branches: [ "main" ]

@@ -1,8 +1,6 @@
-# Simple workflow for deploying static content to GitHub Pages
-name: Deploy dynamic content to Pages
+name: deploy demo
 
 on:
-  # Runs on pushes targeting the default branch
   push:
     branches: ["main"]
 
@@ -31,10 +29,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20.x'
-          registry-url: 'https://registry.npmjs.org'
-          scope: '@oneteme'
       - run: npm install
       - run: npm run build-pg
       - uses: actions/configure-pages@v5
