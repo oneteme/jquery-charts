@@ -19,7 +19,7 @@ jobs:
       - run: npm config ls
       - run: npm publish ./dist/oneteme/jquery-core --access public
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - run: npm run build '@oneteme/jquery-apexcharts'
       - run: npm publish ./dist/oneteme/jquery-apexcharts --access public
         env:
