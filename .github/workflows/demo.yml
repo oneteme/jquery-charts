@@ -36,7 +36,7 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
           scope: '@oneteme'
       - run: npm install
-      - run: npm run build-all
+      - run: npm run build-pg
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
