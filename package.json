@@ -8,6 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oneteme/jquery-charts.git"
+  },
   "private": false,
   "dependencies": {
     "@angular/animations": "^16.1.0",
