@@ -27,10 +27,17 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "./projects/oneteme/jquery-apexcharts/src/assets",
+                "output": "./assets/icons"
+              }
+              
             ],
             "styles": [
-              "src/styles.scss"
+              "src/styles.scss",
+              "./projects/oneteme/jquery-apexcharts/src/assets/styles/styles.scss"
             ],
             "scripts": []
           },
@@ -119,7 +126,7 @@
               "tsConfig": "projects/oneteme/jquery-core/tsconfig.lib.json"
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",
@@ -152,7 +159,7 @@
               "tsConfig": "projects/oneteme/jquery-apexcharts/tsconfig.lib.json"
             }
           },
-          "defaultConfiguration": "production"
+          "defaultConfiguration": "development"
         },
         "test": {
           "builder": "@angular-devkit/build-angular:karma",

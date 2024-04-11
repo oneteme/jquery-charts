@@ -1,39 +1,32 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep } from "@oneteme/jquery-core";
+import { ChartProvider, ChartView, buildChart, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import { customIcons, getType } from "./utils";
 
 @Directive({
-    selector: '[line-chart]'
+    selector: '[treemap-chart]'
 })
-export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnChanges, OnDestroy {
+export class TreemapChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartProvider<X, Y> = {};
-
+    private _chartConfig: ChartProvider<string, number> = {};
     private _options: any = {
         chart: {
-            type: 'line'
+            type: 'treemap'
         },
         series: []
     };
 
-    @Input({ required: true }) type: 'line' | 'area';
+    @Input({ required: true }) type: 'treemap' | 'heatmap';
 
-    @Input({ required: true }) config: ChartProvider<X, Y>;
+    @Input({ required: true }) config: ChartProvider<string, number>;
 
     @Input({ required: true }) data: any[];
 
     @Input() isLoading: boolean = false;
 
     @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
-
-    ngOnDestroy(): void {
-        if (this._chart) {
-            this._chart.destroy();
-        }
-    }
 
     ngOnChanges(changes: SimpleChanges): void {
         if (this.type && this.config && this.data) {
@@ -53,6 +46,12 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
         }
     }
 
+    ngOnDestroy(): void {
+        if (this._chart) {
+            this._chart.destroy();
+        }
+    }
+
     updateType() {
         mergeDeep(this._options, { chart: { type: this.type } })
     }
@@ -64,7 +63,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
             chart: {
                 height: this._chartConfig.height ?? '100%',
                 width: this._chartConfig.width ?? '100%',
-                stacked: this._chartConfig.stacked,
                 toolbar: {
                     show: true,
                     tools: {
@@ -79,8 +77,8 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                     }
                 },
                 events: {
-                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
-                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
+                    mouseMove: function(e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility="visible" },
+                    mouseLeave: function(e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility="hidden" }
                 }
             },
             title: {
@@ -103,8 +101,8 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     updateData() {
-        var commonChart = buildChart(this.data, this._chartConfig, null);
-        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart), categories: commonChart.categories || [] } });
+        var commonChart = buildChart(this.data, { ...this._chartConfig, continue: true }, null);
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });        
     }
 
     updateLoading() {
@@ -127,17 +125,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
         this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
 
-    // updateOptions() {
-    //     this._chart.resetSeries();
-    //     if (this._options.chart.id) {
-    //         ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
-    //     } else {
-    //         this._chart.updateOptions(this._options, false, false);
-    //     }
-    // }
-
     render() {
         this._chart.render();
     }
-
 }

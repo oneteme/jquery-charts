@@ -3,3 +3,4 @@
  */
 
 export * from './lib/jquery-core.model';
+export * from './lib/utils';

@@ -1,102 +1,41 @@
-import { Directive, ElementRef, Input, NgZone, OnDestroy, inject } from "@angular/core";
-import { ChartConfig, ChartView, DataSet, mergeDeep } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartType, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
+import { asapScheduler } from "rxjs";
+import { customIcons } from "./utils";
 
 @Directive({
     selector: '[pie-chart]'
 })
-export class PieChartDirective implements ChartView, OnDestroy {
+export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
-    private ngZone: NgZone = inject(NgZone);
+
+    private typeMapping: {[key: ChartType]: ChartType} = {
+        'pie': 'pie',
+        'donut': 'donut',
+        'radial': 'radialBar',
+        'polar': 'polarArea',
+        'radar': 'radar'
+    }
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartConfig = {};
+    private _chartConfig: ChartProvider<string, number> = {};
     private _options: any = {
         chart: {
-            type: 'pie', // default value
-            animations: {
-                enabled: false
-            }
+            type: 'pie'
         },
-        series: [],
-        markers: {
-            size: 0
-        }
+        series: []
     };
-    private _isDataLoaded: boolean;
 
-    @Input() set type(value: 'pie' | 'donut' | 'radialBar' | 'polarArea') {
-        if (value) {
-            mergeDeep(this._options, {
-                chart: { type: value }
-            });
-            this.updateChart(this._isDataLoaded);
-        }
-    }
+    @Input({ required: true }) type: 'pie' | 'donut' | 'radialBar' | 'polarArea' | 'radar';
 
-    @Input() set config(object: ChartConfig) {
-        if (object) {
-            this._chartConfig = object;
-            mergeDeep(this._options, {
-                title: {
-                    text: this._chartConfig.title
-                },
-                subtitle: {
-                    text: this._chartConfig.subtitle
-                },
-                xaxis: {
-                    title: {
-                        text: this._chartConfig.xtitle
-                    }
-                },
-                yaxis: {
-                    title: {
-                        text: this._chartConfig.ytitle
-                    }
-                }
-            }, this._chartConfig.options);
-            this.updateChart(this._isDataLoaded);
-        }
-    }
+    @Input({ required: true }) config: ChartProvider<string, number>;
 
-    /* 
-        exemple 1 : [{count1: 2, count3: 3, count4: 5}] => 3 yDim
-        exemple 2 : [{count: 2, user: ""}, {count: 4, user: ""}] => 1yDim et 1xDim
-        exemple 3 : [{count: 2, user: "1", status: "200"}, {count: 4, user: "1", status: "400"}] => 1yDim et 2xDim
-        exemple 4 : [{count: 2, count2: 2, user: "1"}, {count: 4, count2: 2, user: "2"}] => 2yDim et 1xDim
-        exemple 5 : [{count: 2, count2: 2, user: "1", status: "200"}, {count: 4, count2: 2, user: "1", status: "400"}] => 2yDim et 2xDim (TODO)
-    */
-    @Input() set data(objects: any[]) {
-        this._isDataLoaded = false;
-        let series: number[] = [];
-        let labels: string[] = [];
-        let colors: string[] = [];
-        if (objects && objects.length) {
-            console.log('data pie chart 2', objects);
-            let category = this._chartConfig.category;
-            let mappers = this._chartConfig.mappers;
+    @Input({ required: true }) data: any[];
 
-            if (category && mappers.length > 1) {
-                throw Error('Plusieurs dimensions impossible');
-            } else {
-                let dataSet = category?.mapper ? new DataSet(objects, category.mapper) : new DataSet(objects, 'label', mappers);
-                let data = dataSet.data(mappers, 0);
-                series = data.flatMap(d => d.data);
-                labels = dataSet.labels;
-                colors = data.filter(d => d.mapper.color).map(d => d.mapper.color);
-            }
-            this._isDataLoaded = true;
-        }
-        mergeDeep(this._options, { series: series, labels: labels, colors: colors });
-        this.updateChart();
-    }
+    @Input() isLoading: boolean = false;
 
-    @Input() set isLoading(val: boolean) {
-        mergeDeep(this._options, {
-            noData: { text: val ? 'Loading...' : 'Aucune donnée' }
-        });
-        this.updateChart();
-    }
+    @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
 
     ngOnDestroy(): void {
         if (this._chart) {
@@ -104,31 +43,110 @@ export class PieChartDirective implements ChartView, OnDestroy {
         }
     }
 
-    updateChart(refresh : boolean = true) {
-        if (this._chart) {
-            if(refresh){
-                this.updateOptions();
+    ngOnChanges(changes: SimpleChanges): void {
+        if (this.type && this.config && this.data) {
+            if (changes.type) {
+                this.updateType();
             }
-        } else {
-            this.createChart();
-            this.render();
+            if (changes.isLoading) {
+                this.updateLoading();
+            }
+            if (changes.config) {
+                this.updateConfig();
+            }
+            if (changes.config || changes.data) {
+                this.updateData();
+            }
+            this.updateChart();
         }
+    }
+
+    updateType() {
+        mergeDeep(this._options, { chart: { type: this.typeMapping[this.type] } })
+    }
+
+    updateConfig() {
+        let that = this;
+        this._chartConfig = this.config;
+        mergeDeep(this._options, {
+            chart: {
+                height: this._chartConfig.height ?? '100%',
+                width: this._chartConfig.width ?? '100%',
+                toolbar: {
+                    show: true,
+                    tools: {
+                        download: false,
+                        selection: false,
+                        zoom: false,
+                        zoomin: false,
+                        zoomout: false,
+                        pan: false,
+                        reset: false,
+                        customIcons: customIcons(arg => that.customEvent.emit(arg), true)
+                    }
+                },
+                events: {
+                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
+                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
+                }
+            },
+            title: {
+                text: this._chartConfig.title
+            },
+            subtitle: {
+                text: this._chartConfig.subtitle
+            },
+            xaxis: {
+                title: {
+                    text: this._chartConfig.xtitle
+                }
+            },
+            yaxis: {
+                title: {
+                    text: this._chartConfig.ytitle
+                }
+            },
+
+        }, this._chartConfig.options);
+    }
+
+    updateData() {
+        var chartConfig = { ...this._chartConfig, continue: false };
+        var commonChart = this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
+        var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color);
+        mergeDeep(this._options, { series: this.type == 'radar' ? commonChart.series : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
+    }
+
+    updateLoading() {
+        mergeDeep(this._options, {
+            noData: {
+                text: this.isLoading ? 'Loading...' : 'Aucune donnée'
+            }
+        });
+    }
+
+    updateChart() {
+        if (this._chart) {
+            this._chart.destroy();
+        }
+        this.createChart();
+        this.render();
     }
 
     createChart() {
-        this.ngZone.runOutsideAngular(() => this._chart = new ApexCharts(this.el.nativeElement, this._options));
+        this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
 
-    updateOptions() {
-        this._chart.resetSeries();
-        if (this._options.chart.id) {
-            this.ngZone.runOutsideAngular(() => ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options));
-        } else {
-            this.ngZone.runOutsideAngular(() => this._chart.updateOptions(this._options, false, false));
-        }
-    }
+    // updateOptions() {
+    //     this._chart.resetSeries();
+    //     if (this._options.chart.id) {
+    //         ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
+    //     } else {
+    //         this._chart.updateOptions(this._options, false, false);
+    //     }
+    // }
 
     render() {
-        this.ngZone.runOutsideAngular(() => this._chart.render());
+        this._chart.render();
     }
 }

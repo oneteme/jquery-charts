@@ -4,26 +4,28 @@ import ApexCharts from "apexcharts";
 import { customIcons, getType } from "./utils";
 
 @Directive({
-    selector: '[line-chart]'
+    selector: '[range-chart]'
 })
-export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnChanges, OnDestroy {
+export class RangeChartDirective<X extends XaxisType> implements ChartView<X, number[]>, OnChanges, OnDestroy {
     private el: ElementRef = inject(ElementRef);
 
     private _chart: ApexCharts;
-    private _chartConfig: ChartProvider<X, Y> = {};
+    private _chartConfig: ChartProvider<X, number[]> = {};
 
     private _options: any = {
         chart: {
-            type: 'line'
+            type: 'rangeArea'
         },
         series: []
     };
 
-    @Input({ required: true }) type: 'line' | 'area';
+    @Input({ required: true }) type: 'rangeArea' | 'rangeBar' | 'rangeColumn';
 
-    @Input({ required: true }) config: ChartProvider<X, Y>;
+    @Input({ required: true }) config: ChartProvider<X, number[]>;
 
     @Input({ required: true }) data: any[];
+
+    @Input() canPivot: boolean = true;
 
     @Input() isLoading: boolean = false;
 
@@ -54,7 +56,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     updateType() {
-        mergeDeep(this._options, { chart: { type: this.type } })
+        mergeDeep(this._options, { chart: { type: this.type == 'rangeColumn' ? 'rangeBar' : this.type } })
     }
 
     updateConfig() {
@@ -64,7 +66,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
             chart: {
                 height: this._chartConfig.height ?? '100%',
                 width: this._chartConfig.width ?? '100%',
-                stacked: this._chartConfig.stacked,
                 toolbar: {
                     show: true,
                     tools: {
@@ -99,12 +100,18 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                     text: this._chartConfig.ytitle
                 }
             }
-        }, this._chartConfig.options);
+        }, this.type == 'rangeBar' ? {
+            plotOptions: {
+                bar: {
+                    horizontal: true
+                }
+            }
+        } : {}, this._chartConfig.options);
     }
 
     updateData() {
-        var commonChart = buildChart(this.data, this._chartConfig, null);
-        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart), categories: commonChart.categories || [] } });
+        var commonChart = buildChart(this.data, { ...this._chartConfig, continue: true, pivot: !this.canPivot ? false: this._chartConfig.pivot }, null);
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });
     }
 
     updateLoading() {
@@ -126,15 +133,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     createChart() {
         this._chart = new ApexCharts(this.el.nativeElement, this._options);
     }
-
-    // updateOptions() {
-    //     this._chart.resetSeries();
-    //     if (this._options.chart.id) {
-    //         ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
-    //     } else {
-    //         this._chart.updateOptions(this._options, false, false);
-    //     }
-    // }
 
     render() {
         this._chart.render();

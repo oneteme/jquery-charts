@@ -1,98 +1,119 @@
-import { Directive, ElementRef, Input, NgZone, OnDestroy, inject } from "@angular/core";
-import { ChartConfig, ChartView, DataSet, mergeDeep } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, XaxisType, CommonSerie, distinct, Coordinate2D, buildChart, CommonChart, naturalFieldComparator, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
+import { customIcons, getType } from "./utils";
 
 @Directive({
   selector: '[bar-chart]'
 })
-export class BarChartDirective implements ChartView, OnDestroy {
+export class BarChartDirective<X extends XaxisType> implements ChartView<X, number>, OnDestroy {
   private el: ElementRef = inject(ElementRef);
-  private ngZone: NgZone = inject(NgZone);
 
   private _chart: ApexCharts;
-  private _chartConfig: ChartConfig = {};
+  private _chartConfig: ChartProvider<X, number> = {};
   private _options: any = {
     chart: {
-      type: 'bar',
-      animations: {
-        enabled: false
-      }
+      type: 'bar'
     },
-    series: [],
-    markers: {
-      size: 0
-    }
+    series: []
   };
 
-  private _isDataLoaded: boolean;
+  @Input({ alias: 'type', required: true }) type: 'bar' | 'column' | 'funnel' | 'pyramid';
 
-  @Input() set type(value: 'bar') {
-    if (value) {
-      mergeDeep(this._options, {
-        chart: { type: value }
-      });
-      this.updateChart(this._isDataLoaded);
-    }
-  }
+  @Input({ alias: 'config', required: true }) config: ChartProvider<X, number>;
 
-  @Input() set config(object: ChartConfig) {
-    if (object) {
-      this._chartConfig = object;
-      mergeDeep(this._options, {
-        title: {
-          text: this._chartConfig.title
-        },
-        subtitle: {
-          text: this._chartConfig.subtitle
-        },
-        xaxis: {
-          title: {
-            text: this._chartConfig.xtitle
+  @Input({ required: true }) data: any[];
+
+  @Input() canPivot: boolean = true;
+
+  @Input() isLoading: boolean = false;
+
+  @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
+
+  updateConfig() {
+    let that = this;
+    this._chartConfig = this.config;
+    mergeDeep(this._options, {
+      chart: {
+        height: this._chartConfig.height ?? '100%',
+        width: this._chartConfig.width ?? '100%',
+        stacked: this._chartConfig.stacked,
+        toolbar: {
+          show: true,
+          tools: {
+            download: false,
+            selection: false,
+            zoom: false,
+            zoomin: false,
+            zoomout: false,
+            pan: false,
+            reset: false,
+            customIcons: customIcons((arg) => that.customEvent.emit(arg), this.canPivot)
           }
         },
-        yaxis: {
-          title: {
-            text: this._chartConfig.ytitle
-          }
+        events: {
+          mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
+          mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
         }
-      }, this._chartConfig.options);
-      this.updateChart(this._isDataLoaded);
-    }
+      },
+      title: {
+        text: this._chartConfig.title
+      },
+      subtitle: {
+        text: this._chartConfig.subtitle
+      },
+      xaxis: {
+        title: {
+          text: this._chartConfig.xtitle
+        }
+      },
+      yaxis: {
+        title: {
+          text: this._chartConfig.ytitle
+        }
+      }
+    }, this.type == 'bar' ? {
+      plotOptions: {
+        bar: {
+          horizontal: true
+        }
+      }
+    } : {}, this._chartConfig.options);
   }
 
-  @Input() set data(objects: any[]) {
-    this._isDataLoaded = false;
-    let series: any[] = [];
-    let categories: string[] = [];
-    let type: 'category' | 'datetime' | 'numeric' = 'datetime';
-    if (objects && objects.length) {
-      let category = this._chartConfig.category;
-      let mappers = this._chartConfig.mappers;
-
-      let dataSet = new DataSet(objects, category?.mapper);
-
-      categories = dataSet.labels;
-      type = category.type === 'date' ? 'datetime' :
-        category.type === 'string' ? 'category' : 'numeric';
-
-      series = dataSet.data(mappers, 0).map(d => {
-        return { name: d.name, color: d.mapper.color, group: d.group, data: d.data };
-      });
-      // console.log("dataset", dataSet, categories, series);
-      this._isDataLoaded = true;
+  updateData() {
+    var data = [...this.data];
+    if (this.type == 'funnel') {
+      data = data.sort(naturalFieldComparator('asc', this._chartConfig.series[0].data.y));
+    } else if (this.type == 'pyramid') {
+      data = data.sort(naturalFieldComparator('desc', this._chartConfig.series[0].data.y));
     }
-    mergeDeep(this._options, { series: series, xaxis: { type: type, categories: categories } });
-    this.updateChart();
+    var commonChart = buildChart(data, { ...this._chartConfig, pivot: !this.canPivot ? false : this._chartConfig.pivot });
+    mergeDeep(this._options, { series: commonChart.series.map(s => ({ data: s.data, name: s.name, color: s.color, group: s.stack })), xaxis: { type: getType(commonChart), categories: commonChart.categories || [] } });
   }
 
-  @Input() set isLoading(val: boolean) {
+  updateLoading() {
     mergeDeep(this._options, {
       noData: {
-        text: val ? 'Loading...' : 'Aucune donnée'
+        text: this.isLoading ? 'Loading...' : 'Aucune donnée'
       }
     });
+  }
 
-    this.updateChart();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (this.type && this.config && this.data) {
+
+      if (changes.isLoading) {
+        this.updateLoading();
+      }
+      if (changes.config) {
+        this.updateConfig();
+      }
+      if (changes.config || changes.data) {
+        this.updateData();
+      }
+      this.updateChart();
+    }
   }
 
   ngOnDestroy(): void {
@@ -101,31 +122,29 @@ export class BarChartDirective implements ChartView, OnDestroy {
     }
   }
 
-  updateChart(refresh: boolean = true) {
+  updateChart() {
     if (this._chart) {
-      if (refresh) {
-        this.updateOptions();
-      }
-    } else {
-      this.createChart();
-      this.render();
+      this._chart.destroy();
     }
+    this.createChart();
+    this.render();
   }
 
   createChart() {
-    this.ngZone.runOutsideAngular(() => this._chart = new ApexCharts(this.el.nativeElement, this._options));
+    this._chart = new ApexCharts(this.el.nativeElement, this._options);
   }
 
-  updateOptions() {
-    this._chart.resetSeries();
-    if (this._options.chart.id) {
-      this.ngZone.runOutsideAngular(() => ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options));
-    } else {
-      this.ngZone.runOutsideAngular(() => this._chart.updateOptions(this._options, false, false));
-    }
-  }
+  // updateOptions() {
+  //   this._chart.resetSeries();
+  //   if (this._options.chart.id) {
+  //     ApexCharts.exec(this._options.chart.id, 'updateOptions', this._options);
+  //   } else {
+  //     this._chart.updateOptions(this._options, false, false);
+  //   }
+  // }
 
   render() {
-    this.ngZone.runOutsideAngular(() => this._chart.render());
+    this._chart.render();
   }
 }
+
