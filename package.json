@@ -1,5 +1,5 @@
 {
-  "name": "jquery-charts-demo",
+  "name": "@oneteme/jquery-charts",
   "version": "0.0.1",
   "scripts": {
     "ng": "ng",
