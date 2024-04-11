@@ -5,7 +5,6 @@
     "declarationMap": false
   },
   "angularCompilerOptions": {
-    "enableIvy": false, /*Trying to publish a package that has been compiled by Ivy in full compilation mode. This is not allowed*/
     "compilationMode": "partial"
   }
 }
