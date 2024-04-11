@@ -16,12 +16,12 @@ jobs:
           scope: '@oneteme'
       - run: npm install  
       - run: |
-          npm run build "@oneteme/jquery-core"
+          npm run build '@oneteme/jquery-core'
           npm publish ./dist/oneteme/jquery-core --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }})
       - run: |
-          npm run build "@oneteme/jquery-apexcharts"
+          npm run build '@oneteme/jquery-apexcharts'
           npm publish ./dist/oneteme/jquery-apexcharts --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }})
