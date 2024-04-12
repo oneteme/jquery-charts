@@ -1,4 +1,4 @@
-name: deploy demo
+name: deploy stagin demo
 
 on:
   push:
@@ -23,7 +23,7 @@ jobs:
   # Single deploy job since we're just deploying
   deploy:
     environment:
-      name: github-pages
+      name: test
       url: ${{ steps.deployment.outputs.page_url }}/staging
     runs-on: ubuntu-latest
     steps:
