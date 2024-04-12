@@ -24,7 +24,7 @@ jobs:
   deploy:
     environment:
       name: test
-      url: ${{ steps.deployment.outputs.page_url }}/staging
+      url: ${{ steps.deployment.outputs.page_url }}staging
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
