@@ -17,7 +17,7 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
-    "build-pg": "ng build \"@oneteme/jquery-core\" && npm run build \"@oneteme/jquery-apexcharts\" && ng build --base-href jquery-chart", 
+    "build-all": "ng build \"@oneteme/jquery-core\" && npm run build \"@oneteme/jquery-apexcharts\" && ng build", 
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
