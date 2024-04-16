@@ -79,8 +79,14 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                     }
                 },
                 events: {
-                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
-                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
+                    mouseMove: function (e, c, config) { 
+                        var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+                        toolbar ? toolbar.style.visibility = "visible" : null;
+                    },
+                    mouseLeave: function (e, c, config) { 
+                        var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+                        toolbar ? toolbar.style.visibility = "hidden" : null;
+                    }
                 }
             },
             title: {
@@ -103,8 +109,8 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     updateData() {
-        var commonChart = buildChart(this.data, this._chartConfig, null);
-        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart), categories: commonChart.categories || [] } });
+        var commonChart = buildChart(this.data, {...this._chartConfig, continue: true}, null);
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });
     }
 
     updateLoading() {

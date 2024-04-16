@@ -14,12 +14,14 @@ export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
         'line': ['line', 'area'],
         'area': ['line', 'area'],
         'bar': ['bar', 'column', 'heatmap', 'treemap'],
+        'column': ['bar', 'column', 'heatmap', 'treemap'],
+        'heatmap': ['bar', 'column', 'heatmap', 'treemap'],
+        'treemap': ['bar', 'column', 'heatmap', 'treemap'],
         'funnel': ['funnel', 'pyramid'],
         'pyramid': ['funnel', 'pyramid'],
         'rangeArea': ['rangeArea', 'rangeBar', 'rangeColumn'],
         'rangeBar': ['rangeArea', 'rangeBar', 'rangeColumn'],
-        'treemap': ['bar', 'column', 'heatmap', 'treemap'],  
-        'heatmap': ['bar', 'column', 'heatmap', 'treemap']
+        'rangeColumn': ['rangeArea', 'rangeBar', 'rangeColumn']
     };
 
     private initialType: ChartType;
