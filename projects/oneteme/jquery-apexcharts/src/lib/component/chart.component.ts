@@ -1,7 +1,22 @@
+import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-core";
+import { BarChartDirective } from "../directive/bar-chart.directive";
+import { LineChartDirective } from "../directive/line-chart.directive";
+import { PieChartDirective } from "../directive/pie-chart.directive";
+import { RangeChartDirective } from "../directive/range-chart.directive";
+import { TreemapChartDirective } from "../directive/treemap-chart.directive";
 
 @Component({
+    standalone: true,
+    imports: [
+        CommonModule,
+        BarChartDirective,
+        LineChartDirective,
+        PieChartDirective,
+        RangeChartDirective,
+        TreemapChartDirective
+    ],
     selector: 'chart', 
     templateUrl: './chart.component.html'
 })

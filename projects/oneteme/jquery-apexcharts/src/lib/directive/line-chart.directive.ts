@@ -1,9 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, XaxisType, YaxisType, buildChart, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import { customIcons, getType } from "./utils";
 
 @Directive({
+    standalone: true,
     selector: '[line-chart]'
 })
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnChanges, OnDestroy {

@@ -1,7 +1,7 @@
 import { Directive, ElementRef, inject } from "@angular/core";
-import { ChartView } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 @Directive({
+    standalone: true,
     selector: '[test-chart]'
 })
 export class TestChartDirective {

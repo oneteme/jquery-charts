@@ -1,9 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, XaxisType, CommonSerie, distinct, Coordinate2D, buildChart, CommonChart, naturalFieldComparator, mergeDeep } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, XaxisType, buildChart, naturalFieldComparator, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import { customIcons, getType } from "./utils";
 
 @Directive({
+  standalone: true,
   selector: '[bar-chart]'
 })
 export class BarChartDirective<X extends XaxisType> implements ChartView<X, number>, OnDestroy {

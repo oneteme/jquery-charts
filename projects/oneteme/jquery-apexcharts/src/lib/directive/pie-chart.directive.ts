@@ -1,10 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartType, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
-import ApexCharts from "apexcharts";
-import { asapScheduler } from "rxjs";
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartType, ChartView, buildChart, buildSingleSerieChart, mergeDeep } from "@oneteme/jquery-core";
 import { customIcons } from "./utils";
+import ApexCharts from "apexcharts";
 
 @Directive({
+    standalone: true,
     selector: '[pie-chart]'
 })
 export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
