@@ -1,9 +1,11 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
 import { ChartProvider, ChartView, buildChart, mergeDeep } from "@oneteme/jquery-core";
-import ApexCharts from "apexcharts";
 import { customIcons, getType } from "./utils";
 
+import ApexCharts from "apexcharts";
+
 @Directive({
+    standalone: true,
     selector: '[treemap-chart]'
 })
 export class TreemapChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {

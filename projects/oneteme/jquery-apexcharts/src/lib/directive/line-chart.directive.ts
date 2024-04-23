@@ -1,9 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep } from "@oneteme/jquery-core";
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, XaxisType, YaxisType, buildChart, mergeDeep } from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import { customIcons, getType } from "./utils";
 
 @Directive({
+    standalone: true,
     selector: '[line-chart]'
 })
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnChanges, OnDestroy {
@@ -79,8 +80,14 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
                     }
                 },
                 events: {
-                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
-                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
+                    mouseMove: function (e, c, config) { 
+                        var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+                        toolbar ? toolbar.style.visibility = "visible" : null;
+                    },
+                    mouseLeave: function (e, c, config) { 
+                        var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+                        toolbar ? toolbar.style.visibility = "hidden" : null;
+                    }
                 }
             },
             title: {
@@ -103,8 +110,8 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
 
     updateData() {
-        var commonChart = buildChart(this.data, this._chartConfig, null);
-        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart), categories: commonChart.categories || [] } });
+        var commonChart = buildChart(this.data, {...this._chartConfig, continue: true}, null);
+        mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });
     }
 
     updateLoading() {

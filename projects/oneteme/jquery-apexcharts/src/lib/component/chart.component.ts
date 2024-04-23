@@ -1,7 +1,22 @@
+import { CommonModule } from "@angular/common";
 import { Component, Input } from "@angular/core";
 import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-core";
+import { BarChartDirective } from "../directive/bar-chart.directive";
+import { LineChartDirective } from "../directive/line-chart.directive";
+import { PieChartDirective } from "../directive/pie-chart.directive";
+import { RangeChartDirective } from "../directive/range-chart.directive";
+import { TreemapChartDirective } from "../directive/treemap-chart.directive";
 
 @Component({
+    standalone: true,
+    imports: [
+        CommonModule,
+        BarChartDirective,
+        LineChartDirective,
+        PieChartDirective,
+        RangeChartDirective,
+        TreemapChartDirective
+    ],
     selector: 'chart', 
     templateUrl: './chart.component.html'
 })
@@ -14,12 +29,14 @@ export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
         'line': ['line', 'area'],
         'area': ['line', 'area'],
         'bar': ['bar', 'column', 'heatmap', 'treemap'],
+        'column': ['bar', 'column', 'heatmap', 'treemap'],
+        'heatmap': ['bar', 'column', 'heatmap', 'treemap'],
+        'treemap': ['bar', 'column', 'heatmap', 'treemap'],
         'funnel': ['funnel', 'pyramid'],
         'pyramid': ['funnel', 'pyramid'],
         'rangeArea': ['rangeArea', 'rangeBar', 'rangeColumn'],
         'rangeBar': ['rangeArea', 'rangeBar', 'rangeColumn'],
-        'treemap': ['bar', 'column', 'heatmap', 'treemap'],  
-        'heatmap': ['bar', 'column', 'heatmap', 'treemap']
+        'rangeColumn': ['rangeArea', 'rangeBar', 'rangeColumn']
     };
 
     private initialType: ChartType;

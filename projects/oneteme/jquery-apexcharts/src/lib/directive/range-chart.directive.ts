@@ -1,9 +1,11 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartView, CommonChart, CommonSerie, Coordinate2D, XaxisType, YaxisType, buildChart, distinct, mergeDeep } from "@oneteme/jquery-core";
-import ApexCharts from "apexcharts";
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartView, XaxisType, buildChart, mergeDeep } from "@oneteme/jquery-core";
 import { customIcons, getType } from "./utils";
 
+import ApexCharts from "apexcharts";
+
 @Directive({
+    standalone: true,
     selector: '[range-chart]'
 })
 export class RangeChartDirective<X extends XaxisType> implements ChartView<X, number[]>, OnChanges, OnDestroy {

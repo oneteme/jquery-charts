@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppComponent } from './app.component';
-import { JqueryApexchartsModule } from '@oneteme/jquery-apexcharts';
+import { ChartComponent } from '@oneteme/jquery-apexcharts';
 
 @NgModule({
   declarations: [
@@ -10,7 +10,7 @@ import { JqueryApexchartsModule } from '@oneteme/jquery-apexcharts';
   ],
   imports: [
     BrowserModule,
-    JqueryApexchartsModule
+    ChartComponent
   ],
   providers: [],
   bootstrap: [AppComponent]

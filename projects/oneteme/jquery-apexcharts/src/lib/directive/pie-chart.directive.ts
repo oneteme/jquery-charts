@@ -1,10 +1,10 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
-import { ChartProvider, ChartType, ChartView, DataProvider, SerieProvider, buildChart, buildSingleSerieChart, distinct, mergeDeep } from "@oneteme/jquery-core";
-import ApexCharts from "apexcharts";
-import { asapScheduler } from "rxjs";
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges, inject } from "@angular/core";
+import { ChartProvider, ChartType, ChartView, buildChart, buildSingleSerieChart, mergeDeep } from "@oneteme/jquery-core";
 import { customIcons } from "./utils";
+import ApexCharts from "apexcharts";
 
 @Directive({
+    standalone: true,
     selector: '[pie-chart]'
 })
 export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
@@ -86,8 +86,14 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
                     }
                 },
                 events: {
-                    mouseMove: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "visible" },
-                    mouseLeave: function (e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility = "hidden" }
+                    mouseMove: function (e, c, config) { 
+                        var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+                        toolbar ? toolbar.style.visibility = "visible" : null;
+                    },
+                    mouseLeave: function (e, c, config) { 
+                        var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+                        toolbar ? toolbar.style.visibility = "hidden" : null;
+                    }
                 }
             },
             title: {
@@ -111,10 +117,11 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     }
 
     updateData() {
+        
         var chartConfig = { ...this._chartConfig, continue: false };
-        var commonChart = this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
+        var commonChart = this.data.length != 1 && this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
         var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color);
-        mergeDeep(this._options, { series: this.type == 'radar' ? commonChart.series : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
+        mergeDeep(this._options, { series: this.data.length != 1 && this.type == 'radar' ? commonChart.series : this.type == 'radar' ? [{ name: 'Series 1', data: commonChart.series.flatMap(s => s.data.filter(d => d != null))}] : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
     }
 
     updateLoading() {
