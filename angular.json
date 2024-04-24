@@ -72,10 +72,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "jquery-charts:build:production"
+              "buildTarget": "jquery-charts:build:production"
             },
             "development": {
-              "browserTarget": "jquery-charts:build:development"
+              "buildTarget": "jquery-charts:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -83,7 +83,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "jquery-charts:build"
+            "buildTarget": "jquery-charts:build"
           }
         },
         "test": {
