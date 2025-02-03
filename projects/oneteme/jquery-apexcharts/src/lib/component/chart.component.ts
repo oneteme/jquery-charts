@@ -46,7 +46,6 @@ export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
     @Input() data: any[];
     @Input() isLoading: boolean;
 
-
     change(event: string) {
         if(!this.initialType) {
             this.initialType = this.type;

@@ -21,15 +21,6 @@ export class AppComponent {
     data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
     config: {
 
-      // Permettait de désactiver la toolbar pour un graph (avant c'etait par défaut à true dans les directives : show: true)
-
-      // options: {
-      //   chart: {
-      //     toolbar: { show: false },
-      //   },
-      // },
-
-      // methode simplifiée ajouter la toolbar ou non (par défaut à false comme demandé dans le fix mais voir avec Youssef. Dans les directives, si une valeur par defaut est indiquée pour showToolbar, alors show prend cette valeur sinon false)
       showToolbar: true,
 
       series: [

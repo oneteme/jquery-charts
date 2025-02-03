@@ -47,6 +47,8 @@ export class TreemapChartDirective
 
   @Input() isLoading: boolean = false;
 
+  @Input({ required: false }) showToolbar?: boolean;
+
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> =
     new EventEmitter();
 
@@ -88,7 +90,6 @@ export class TreemapChartDirective
           height: this._chartConfig.height ?? '100%',
           width: this._chartConfig.width ?? '100%',
           toolbar: {
-            // show: true,
             show: this._chartConfig.showToolbar ?? false,
             tools: {
               download: false,

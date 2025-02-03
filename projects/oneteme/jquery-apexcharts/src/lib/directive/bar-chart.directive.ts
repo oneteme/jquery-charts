@@ -53,6 +53,8 @@ export class BarChartDirective<X extends XaxisType>
 
   @Input() isLoading: boolean = false;
 
+  @Input({ required: false }) showToolbar?: boolean;
+
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> =
     new EventEmitter();
 
@@ -67,7 +69,6 @@ export class BarChartDirective<X extends XaxisType>
           width: this._chartConfig.width ?? '100%',
           stacked: this._chartConfig.stacked,
           toolbar: {
-            // show: true,
             show: this._chartConfig.showToolbar ?? false,
             tools: {
               download: false,

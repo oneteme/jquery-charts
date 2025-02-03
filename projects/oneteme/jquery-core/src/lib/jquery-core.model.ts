@@ -170,7 +170,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm 
     xorder?: Sort;
     series?: SerieProvider<X,Y>[];
     options?: any;
-    showToolbar?: boolean; 
+    showToolbar?: boolean;
 }
 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> { //rm SerieProvider
