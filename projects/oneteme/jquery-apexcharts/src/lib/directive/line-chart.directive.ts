@@ -49,8 +49,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
 
   @Input() isLoading: boolean = false;
 
-  @Input({ required: false }) showToolbar?: boolean;
-
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> =
     new EventEmitter();
 

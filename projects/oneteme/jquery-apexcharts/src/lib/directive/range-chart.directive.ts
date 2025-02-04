@@ -51,8 +51,6 @@ export class RangeChartDirective<X extends XaxisType>
 
   @Input() isLoading: boolean = false;
 
-  @Input({ required: false }) showToolbar?: boolean;
-
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> =
     new EventEmitter();
 

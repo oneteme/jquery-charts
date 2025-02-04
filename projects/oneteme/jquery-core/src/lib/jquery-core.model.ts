@@ -256,5 +256,4 @@ export interface ChartView<X extends XaxisType, Y extends YaxisType> {
     data: any[];
     isLoading: boolean;
     canPivot?: boolean;
-    showToolbar?: boolean;
 }
