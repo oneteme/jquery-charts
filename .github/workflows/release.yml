@@ -1,0 +1,53 @@
+name: tag release
+on: 
+  workflow_dispatch:
+    inputs:
+      package:
+        type: choice
+        description: library to deploy
+        options: 
+        - jquery-core
+        - jquery-apexcharts
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - uses: oneteme/automation-scripts/.github/actions/sonar-npm-scan@main
+      env:
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        registry-url: 'https://registry.npmjs.org'
+        scope: '@oneteme'
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
+      with:
+        package: 'inspect-ng-collector'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
+      with:
+        path: './projects/oneteme/inspect-ng-collector/package.json'
+      id: prj_ver
+    outputs:
+      version: ${{ steps.prj_ver.outputs.version }}
+  release:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: oneteme/automation-scripts/.github/actions/create-release-notes@main
+      with:
+        version: ${{ needs.deploy.outputs.version }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
