@@ -2,12 +2,12 @@ name: tag release
 on: 
   workflow_dispatch:
     inputs:
-      package:
-        type: choice
-        description: library to deploy
-        options: 
-        - jquery-core
-        - jquery-apexcharts
+      core:
+        type: boolean
+        description: deploy jquery-core library
+      apexcharts:
+        type: boolean
+        description: deploy jquery-apexcharts library
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,15 +32,20 @@ jobs:
         registry-url: 'https://registry.npmjs.org'
         scope: '@oneteme'
     - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
+      if: ${{ inputs.core }}
       with:
-        package: 'inspect-ng-collector'
+        package: 'jqeury-core'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
+      if: ${{ inputs.apexcharts }}
       with:
-        path: './projects/oneteme/inspect-ng-collector/package.json'
+        package: 'jqeury-apexcharts'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main 
       id: prj_ver
-    outputs:
+    outputs:  # take global project version
       version: ${{ steps.prj_ver.outputs.version }}
   release:
     needs: deploy
