@@ -16,8 +16,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "build-all": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build", 
+    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build", 
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
