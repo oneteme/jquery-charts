@@ -23,7 +23,6 @@ import {asapScheduler} from "rxjs";
   selector: '[bar-chart]'
 })
 export class BarChartDirective<X extends XaxisType> implements ChartView<X, number>, OnDestroy, OnChanges {
-  private detector = inject(ChangeDetectorRef);
   private el: ElementRef = inject(ElementRef);
   private ngZone = inject(NgZone);
 
@@ -111,7 +110,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
             zoomout: false,
             pan: false,
             reset: false,
-            customIcons: customIcons((arg) => { that.customEvent.emit(arg); that.detector.detectChanges() }, this.canPivot)
+            customIcons: customIcons((arg) => { that.ngZone.run(() => that.customEvent.emit(arg)) }, this.canPivot)
           }
         },
         events: {

@@ -22,7 +22,6 @@ import {asapScheduler} from "rxjs";
   selector: '[pie-chart]'
 })
 export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
-  private detector = inject(ChangeDetectorRef);
   private el: ElementRef = inject(ElementRef);
   private ngZone = inject(NgZone);
 
@@ -117,7 +116,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
             zoomout: false,
             pan: false,
             reset: false,
-            customIcons: customIcons(arg => { that.customEvent.emit(arg); that.detector.detectChanges()}, true)
+            customIcons: customIcons(arg => { that.ngZone.run(() => that.customEvent.emit(arg))}, true)
           }
         },
         events: {
