@@ -34,13 +34,13 @@ jobs:
     - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
       if: ${{ inputs.core }}
       with:
-        package: 'jqeury-core'
+        package: 'jquery-core'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
       if: ${{ inputs.apexcharts }}
       with:
-        package: 'jqeury-apexcharts'
+        package: 'jquery-apexcharts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main 
