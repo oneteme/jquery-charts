@@ -70,7 +70,6 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
 
   private createElement() {
     this.updateConfig();
-    this.updateType();
     this.updateLoading();
     this.updateData();
 
