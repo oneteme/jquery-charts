@@ -1,0 +1,48 @@
+.chart-group {
+  padding: 1.5rem;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    
+    h3 {
+      font-size: 1.25rem;
+      font-weight: bold;
+      margin: 0 1rem;
+    }
+    
+    .divider {
+      flex-grow: 1;
+      height: 1px;
+      background-color: #e0e0e0;
+    }
+  }
+}
+
+// .chart-grid {
+//   display: grid;
+//   grid-template-columns: repeat(3, 1fr);
+//   gap: 1.5rem;
+// }
+
+// .chart-container {
+//   width: 100%;
+  
+//   ::ng-deep chart {
+//     width: 100%;
+//   }
+// }
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.chart-container {
+  min-height: 300px;
+  width: 100%;
+}

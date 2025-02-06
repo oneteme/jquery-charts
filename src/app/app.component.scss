@@ -1,8 +1,14 @@
-.mat-divider {
-    color: rgb(196, 198, 208);
-    border-color: rgb(196, 198, 208);
-    border-top-width: 1px;
-    border-top-style: solid;
-    margin: 0.5em 0 0.5em 0;
-    flex: 1 1 0%
-}
+// .mat-divider {
+//     color: rgb(196, 198, 208);
+//     border-color: rgb(196, 198, 208);
+//     border-top-width: 1px;
+//     border-top-style: solid;
+//     margin: 0.5em 0 0.5em 0;
+//     flex: 1 1 0%
+// }
+
+.app-container {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }

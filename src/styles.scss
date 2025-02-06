@@ -1,1 +1,59 @@
 /* You can add global styles to this file, and also import other style files */
+
+// Reset SCSS
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Arial', sans-serif;
+  line-height: 1.6;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+// Supprime les styles par défaut des listes
+ul, ol {
+  list-style: none;
+}
+
+// Suppression du style des liens
+a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.3s ease-in-out;
+
+  &:hover {
+    color: #007bff;
+  }
+}
+
+// Réinitialisation des boutons
+button {
+  all: unset;
+  cursor: pointer;
+}
+
+// Images responsives
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+// Supprime les bordures par défaut sur les éléments de formulaire
+input, textarea, select, button {
+  border: none;
+  outline: none;
+}
+
+// Ajoute un style de focus accessible
+:focus {
+  outline: 2px solid #007bff;
+  outline-offset: 2px;
+}
