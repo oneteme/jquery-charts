@@ -1,16 +1,11 @@
-import { CommonModule } from "@angular/common";
-import {ChangeDetectorRef, Component, inject, Input} from "@angular/core";
-import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-core";
-import { BarChartDirective } from "../directive/bar-chart.directive";
-import { LineChartDirective } from "../directive/line-chart.directive";
-import { PieChartDirective } from "../directive/pie-chart.directive";
-import { RangeChartDirective } from "../directive/range-chart.directive";
-import { TreemapChartDirective } from "../directive/treemap-chart.directive";
-import {PieChartComponent} from "./pie-chart.component";
-import {LineChartComponent} from "./line-chart.component";
-import {BarChartComponent} from "./bar-chart.component";
-import {RangeChartComponent} from "./range-chart.component";
-import {TreemapChartComponent} from "./treemap-chart.component";
+import {CommonModule} from "@angular/common";
+import {Component, Input} from "@angular/core";
+import {ChartProvider, ChartType, XaxisType, YaxisType} from "@oneteme/jquery-core";
+import {BarChartDirective} from "../directive/bar-chart.directive";
+import {LineChartDirective} from "../directive/line-chart.directive";
+import {PieChartDirective} from "../directive/pie-chart.directive";
+import {RangeChartDirective} from "../directive/range-chart.directive";
+import {TreemapChartDirective} from "../directive/treemap-chart.directive";
 
 @Component({
     standalone: true,
