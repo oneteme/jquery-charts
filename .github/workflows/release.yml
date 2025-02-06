@@ -59,6 +59,8 @@ jobs:
   pages:
     # needs: release
     runs-on: ubuntu-latest
+    permissions: # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+      id-token: write
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
