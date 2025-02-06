@@ -68,18 +68,23 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
     this.createElement();
   }
 
-  private async createElement() {
+  private createElement() {
     this.updateConfig();
+    this.updateType();
     this.updateLoading();
     this.updateData();
 
-    this.destroy();
+    if(this.chartInstance() != null) {
+      this.updateOptions(this._options, true, true, false);
+    } else {
+      this.destroy();
 
-    const chartInstance = this.ngZone.runOutsideAngular(
-      () => new ApexCharts(this.el.nativeElement, this._options)
-    );
-    this.chartInstance.set(chartInstance);
-    this.render();
+      const chartInstance = this.ngZone.runOutsideAngular(
+        () => new ApexCharts(this.el.nativeElement, this._options)
+      );
+      this.chartInstance.set(chartInstance);
+      this.render();
+    }
   }
 
   private render() {
@@ -165,6 +170,10 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
         text: this.isLoading ? 'Loading...' : 'Aucune donnée'
       }
     });
+  }
+
+  private updateType() {
+    mergeDeep(this._options, { chart: { type: this.type } });
   }
 
   private updateOptions(

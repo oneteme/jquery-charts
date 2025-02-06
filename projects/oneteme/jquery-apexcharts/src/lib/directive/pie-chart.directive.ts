@@ -74,19 +74,23 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     this.createElement();
   }
 
-  private async createElement() {
+  private createElement() {
     this.updateConfig();
     this.updateType();
     this.updateLoading();
     this.updateData();
 
-    this.destroy();
+    if(this.chartInstance() != null) {
+      this.updateOptions(this._options, true, true, false);
+    } else {
+      this.destroy();
 
-    const chartInstance = this.ngZone.runOutsideAngular(
-      () => new ApexCharts(this.el.nativeElement, this._options)
-    );
-    this.chartInstance.set(chartInstance);
-    this.render();
+      const chartInstance = this.ngZone.runOutsideAngular(
+        () => new ApexCharts(this.el.nativeElement, this._options)
+      );
+      this.chartInstance.set(chartInstance);
+      this.render();
+    }
   }
 
   private render() {

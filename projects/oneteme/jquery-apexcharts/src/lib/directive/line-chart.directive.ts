@@ -45,6 +45,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
 
   ngOnChanges(changes: SimpleChanges): void {
+    console.log("onChanges", changes)
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
     });
@@ -58,6 +59,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     const shouldUpdateSeries =
       Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
     if (shouldUpdateSeries) {
+      console.log("shouldUpdateSeries", this.type, this.config, this.data, this.isLoading)
       this.updateLoading();
       this.updateData();
       this.updateOptions(this._options, true, true, false);
@@ -67,19 +69,23 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     this.createElement();
   }
 
-  private async createElement() {
+  private createElement() {
     this.updateConfig();
     this.updateType();
     this.updateLoading();
     this.updateData();
 
-    this.destroy();
+    if(this.chartInstance() != null) {
+      this.updateOptions(this._options, true, true, false);
+    } else {
+      this.destroy();
 
-    const chartInstance = this.ngZone.runOutsideAngular(
-      () => new ApexCharts(this.el.nativeElement, this._options)
-    );
-    this.chartInstance.set(chartInstance);
-    this.render();
+      const chartInstance = this.ngZone.runOutsideAngular(
+        () => new ApexCharts(this.el.nativeElement, this._options)
+      );
+      this.chartInstance.set(chartInstance);
+      this.render();
+    }
   }
 
   private render() {
