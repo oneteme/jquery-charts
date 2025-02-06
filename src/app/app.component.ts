@@ -12,6 +12,7 @@ export class AppComponent {
       { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Mapper 1', color: '#2E93fA' },
         { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Mapper 2', color: '#66DA26' },

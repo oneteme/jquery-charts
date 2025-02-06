@@ -34,7 +34,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     'radar': 'radar'
   }
 
-  private _chartConfig: ChartProvider<string, number> = {};
+  private _chartConfig: ChartProvider<string, number> = {showToolbar: false};
   private _options: any = {
     chart: {
       type: 'pie'
@@ -110,7 +110,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
         height: this._chartConfig.height ?? '100%',
         width: this._chartConfig.width ?? '100%',
         toolbar: {
-          show: true,
+          show: this._chartConfig.showToolbar ?? false,
           tools: {
             download: false,
             selection: false,
