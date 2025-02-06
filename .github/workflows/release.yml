@@ -65,3 +65,5 @@ jobs:
       with:
         node-version: 20
     - uses: oneteme/automation-scripts/.github/actions/npm-github-page@main
+      with:
+        app-name: 'jquery-charts'
