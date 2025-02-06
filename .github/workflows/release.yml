@@ -4,10 +4,10 @@ on:
     inputs:
       core:
         type: boolean
-        description: deploy jquery-core library
+        description: publish jquery-core library
       apexcharts:
         type: boolean
-        description: deploy jquery-apexcharts library
+        description: publish jquery-apexcharts library
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,13 +34,13 @@ jobs:
     - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
       if: ${{ inputs.core }}
       with:
-        package: 'jqeury-core'
+        package: 'jquery-core'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
       if: ${{ inputs.apexcharts }}
       with:
-        package: 'jqeury-apexcharts'
+        package: 'jquery-apexcharts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main 
@@ -56,3 +56,17 @@ jobs:
         version: ${{ needs.deploy.outputs.version }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  pages:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions: # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+      pages: write
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
+      with:
+        app-name: 'jquery-charts'
