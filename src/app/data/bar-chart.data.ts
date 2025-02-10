@@ -1,7 +1,9 @@
 import { field, values, joinFields, XaxisType } from '@oneteme/jquery-core';
-import { ChartData } from '../models/chart.model';
+import { ChartData } from '../core/models/chart.model';
 
-export const BAR_CHART_DATA: { [key: string]: ChartData<string, number> | ChartData<XaxisType, number> } = {
+export const BAR_CHART_DATA: {
+  [key: string]: ChartData<string, number> | ChartData<XaxisType, number>;
+} = {
   barExample: {
     data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
     config: {

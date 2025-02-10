@@ -1,0 +1,101 @@
+<div class="documentation-container">
+  <div class="doc-nav">
+    <ul>
+      <li [class.active]="currentSection === 'getting-started'"
+          (click)="selectSection('getting-started')">
+        Installation & Démarrage
+      </li>
+      <li [class.active]="currentSection === 'configuration'"
+          (click)="selectSection('configuration')">
+        Configuration
+      </li>
+      <li [class.active]="currentSection === 'charts'"
+          (click)="selectSection('charts')">
+        Types de Graphiques
+      </li>
+    </ul>
+  </div>
+
+  <div class="doc-content">
+    <section *ngIf="currentSection === 'getting-started'">
+      <h2>Installation & Démarrage</h2>
+
+      <div class="step">
+        <h3>1. Création du projet Angular</h3>
+        <p>Si vous n'avez pas encore de projet Angular, créez-en un :</p>
+        <div class="code-block">
+          <pre><code>ng new my-chart-app
+cd my-chart-app</code></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>2. Installation des dépendances</h3>
+        <p>Installez les packages nécessaires :</p>
+        <div class="code-block">
+          <pre><code>npm install &#64;oneteme/jquery-charts
+npm install &#64;oneteme/jquery-core
+npm install apexcharts</code></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>3. Configuration du module</h3>
+        <p>Dans votre app.module.ts, importez ChartComponent :</p>
+        <div class="code-block">
+<pre><code>import {{ '{' }} ChartComponent {{ '}' }} from '&#64;oneteme/jquery-apexcharts';
+
+&#64;NgModule({{ '{' }}
+  imports: [
+    BrowserModule,
+    ChartComponent
+  ]
+{{ '}' }})</code></pre>
+        </div>
+      </div>
+
+      <div class="step">
+        <h3>4. Utilisation dans un composant</h3>
+        <p>Exemple d'utilisation simple :</p>
+        <div class="code-block">
+          <pre><code>&lt;chart 
+  [type]="'pie'" 
+  [config]="config" 
+  [data]="data"
+&gt;&lt;/chart&gt;</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <section *ngIf="currentSection === 'configuration'">
+      <h2>Configuration</h2>
+      <h3>Structure de base</h3>
+      <div class="code-block">
+        <pre><code>{{ '{' }}
+  config: {{ '{' }}
+    series: [{{ '{' }}
+      data: {{ '{' }} 
+        x: field('name'), 
+        y: field('value') 
+      {{ '}' }}
+    {{ '}' }}],
+    height: 250
+  {{ '}' }}
+{{ '}' }}</code></pre>
+      </div>
+    </section>
+
+    <section *ngIf="currentSection === 'charts'">
+      <h2>Types de Graphiques</h2>
+      <div class="chart-types">
+        <div class="chart-type">
+          <h3>Pie Charts</h3>
+          <p>Pour les données circulaires et proportionnelles</p>
+          <div class="code-block">
+            <pre><code>type: 'pie' | 'donut' | 'polar' | 'radar'</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

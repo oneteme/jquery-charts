@@ -1,7 +1,9 @@
 import { field, XaxisType } from '@oneteme/jquery-core';
-import { ChartData } from '../models/chart.model';
+import { ChartData } from '../core/models/chart.model';
 
-export const FUNNEL_CHART_DATA: { [key: string]: ChartData<XaxisType, number> } = {
+export const FUNNEL_CHART_DATA: {
+  [key: string]: ChartData<XaxisType, number>;
+} = {
   funnelExample: {
     data: [
       { count: 30, field: 'v1' },

@@ -1,5 +1,5 @@
 import { field, values, joinFields } from '@oneteme/jquery-core';
-import { ChartData } from '../models/chart.model';
+import { ChartData } from '../core/models/chart.model';
 
 export const LINE_CHART_DATA: { [key: string]: ChartData<string, number> } = {
   lineExample: {

@@ -29,7 +29,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
   private readonly typeMapping: {[key: string]: ChartType} = {
     'pie': 'pie',
     'donut': 'donut',
-    'radial': 'radialBar',
+    'radialBar': 'radialBar',
     'polar': 'polarArea',
     'radar': 'radar'
   }
@@ -75,6 +75,8 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
   }
 
   private createElement() {
+    try {
+
     this.updateConfig();
     this.updateType();
     this.updateLoading();
@@ -91,7 +93,10 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
       this.chartInstance.set(chartInstance);
       this.render();
     }
+  } catch (error) {
+    console.error('Erreur lors de la création du pie chart:', error);
   }
+}
 
   private render() {
     return this.ngZone.runOutsideAngular(() => this.chartInstance()?.render());
@@ -169,6 +174,9 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
     var chartConfig = { ...this._chartConfig, continue: false };
     var commonChart = this.data.length != 1 && this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
     var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color);
+    // console.log('Data:', this.data);
+    // console.log('Chart Config:', chartConfig);
+    // console.log('Common Chart:', commonChart);
     mergeDeep(this._options, { series: this.data.length != 1 && this.type == 'radar' ? commonChart.series : this.type == 'radar' ? [{ name: 'Series 1', data: commonChart.series.flatMap(s => s.data.filter(d => d != null))}] : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
   }
 

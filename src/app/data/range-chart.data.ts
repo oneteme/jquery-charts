@@ -1,5 +1,5 @@
 import { field, rangeFields, XaxisType } from '@oneteme/jquery-core';
-import { ChartData } from '../models/chart.model';
+import { ChartData } from '../core/models/chart.model';
 
 export const RANGE_CHART_DATA: {
   [key: string]: ChartData<XaxisType, number[]>;

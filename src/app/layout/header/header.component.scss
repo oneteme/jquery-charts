@@ -1,0 +1,120 @@
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 99;
+  height: 80px;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+
+    .logo {
+      height: 55px;
+      border-radius: 10px;
+      width: auto;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      font-weight: 500;
+      color: #2c3e50;
+      position: relative;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        width: 0;
+        height: 1px;
+        background: #2c3e50;
+        transition: width 0.3s ease;
+      }
+    }
+
+    &:hover {
+      h1::after {
+        width: 100%;
+      }
+    }
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  
+    .download-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.2rem;
+      background: transparent;
+      color: #2c3e50;
+      border: 1px solid #2c3e50;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+  
+      .version {
+        font-size: 0.8rem;
+        opacity: 0.6;
+        font-weight: normal;
+      }
+  
+      &:hover {
+        background: #2c3e50;
+        color: white;
+      }
+    }
+  
+    .doc-btn {
+      display: flex;
+      align-items: center;
+      padding: 0.6rem 1.2rem;
+      background: #f8f9fa;
+      color: #2c3e50;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      transition: all 0.2s ease;
+  
+      &:hover {
+        background: #e9ecef;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    left: 0;
+    padding: 1rem;
+
+    .header-left {
+      h1 {
+        font-size: 1.2rem;
+      }
+    }
+    .header-right {
+      gap: 0.5rem;
+  
+      .download-btn, .doc-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.8rem;
+      }
+    }
+  }
+}

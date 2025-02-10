@@ -1,10 +1,11 @@
 import { field, values, joinFields } from '@oneteme/jquery-core';
-import { ChartData } from '../models/chart.model';
+import { ChartData } from '../core/models/chart.model';
 
 export const PIE_CHART_DATA: { [key: string]: ChartData<string, number> } = {
   pieExample: {
     data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
     config: {
+      showToolbar: true,
       series: [
         {
           data: { x: values('2xx'), y: field('count_2xx') },
@@ -22,6 +23,7 @@ export const PIE_CHART_DATA: { [key: string]: ChartData<string, number> } = {
           color: '#546E7A',
         },
       ],
+      height: 250,
     },
   },
   pieExample2: {

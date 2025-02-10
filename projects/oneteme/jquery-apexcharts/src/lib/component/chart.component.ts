@@ -23,16 +23,16 @@ import {TreemapChartDirective} from "../directive/treemap-chart.directive";
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     protected _charts: {[key: ChartType]: { possibleType: ChartType[], canPivot?: boolean } } = {
         'pie': {
-          possibleType: ['pie', 'donut', 'polar', 'radar']
+          possibleType: ['pie', 'donut', 'polar', 'radar', 'radialBar']
         },
         'donut': {
-          possibleType:['pie', 'donut', 'polar', 'radar']
+          possibleType:['pie', 'donut', 'polar', 'radar', 'radialBar']
         },
         'polar': {
-          possibleType: ['pie', 'donut', 'polar', 'radar']
+          possibleType: ['pie', 'donut', 'polar', 'radar', 'radialBar']
         },
         'radar': {
-          possibleType: ['pie', 'donut', 'polar', 'radar']
+          possibleType: ['pie', 'donut', 'polar', 'radar', 'radialBar']
         },
         'line': {possibleType: ['line', 'area']},
         'area': {possibleType: ['line', 'area']},
@@ -50,6 +50,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     _type: ChartType;
 
     @Input({alias: "type", required: true}) set value(type: ChartType) {
+      console.log('Setting chart type:', type);
       this._type = type;
     }
     @Input({required: true}) config: ChartProvider<X, Y>;

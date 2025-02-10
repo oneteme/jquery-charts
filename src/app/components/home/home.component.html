@@ -1,0 +1,40 @@
+<div class="welcome-container">
+  <h1>Jquery-Charts (Demo)</h1>
+  
+  <div class="project-description">
+    <p>Une surcouche permettant de simplifier la création de graphiques avec différentes bibliothèques</p>
+  </div>
+
+  <div class="library-selector">
+    <label>Bibliothèque de graphiques :</label>
+    <div class="toggle-container">
+      <button 
+        [class.active]="selectedLibrary === 'apexcharts'"
+        (click)="selectLibrary('apexcharts')"
+      >ApexCharts</button>
+      <button 
+        [class.disabled]="true"
+        title="Bientôt disponible"
+      >HighCharts</button>
+    </div>
+  </div>
+
+  <div class="welcome-content">
+    <div class="feature-card">
+      <h3>Surcouche Angular Intuitive</h3>
+      <p>Basée sur ApexCharts (et bientôt HighCharts) pour combiner puissance et simplicité</p>
+    </div>
+    <div class="feature-card">
+      <h3>Configuration Simplifiée</h3>
+      <p>Créez des graphiques personnalisés avec une syntaxe <u>unifiée</u> et intuitive</p>
+    </div>
+    <div class="feature-card">
+      <h3>Documentation Interactive</h3>
+      <p>Exemple de code sous chaque graphique pour une meilleure compréhension</p>
+    </div>
+  </div>
+
+  <div class="get-started">
+    <p>Explorez les différents types de graphiques disponibles et leur configuration</p>
+  </div>
+</div>

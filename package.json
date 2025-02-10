@@ -16,7 +16,9 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build", 
+    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build",
+    "watchJC": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
+    "watchJA": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -30,6 +32,7 @@
     "@angular/platform-browser-dynamic": "^16.1.0",
     "@angular/router": "^16.1.0",
     "apexcharts": "^3.44.0",
+    "highlight.js": "^11.11.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"

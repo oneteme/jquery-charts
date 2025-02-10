@@ -1,17 +1,10 @@
 <div class="app-container">
-  <app-sidebar
+  <app-header (goToHome)="onChartTypeSelected(null)"></app-header>
+  <app-sidebar 
     [chartTypes]="chartTypes"
-    (selectChartType)="onChartTypeSelected($event)"
-  >
+    (selectChartType)="onChartTypeSelected($event)">
   </app-sidebar>
-
   <main>
-    <app-chart-group
-      *ngFor="let chartType of visibleChartTypes"
-      [title]="chartType.title"
-      [type]="chartType.type"
-      [rows]="chartType.rows"
-    >
-    </app-chart-group>
+    <router-outlet></router-outlet>
   </main>
 </div>

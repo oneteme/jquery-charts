@@ -1,8 +1,5 @@
-import {
-  field,
-  combineFields,
-} from '@oneteme/jquery-core';
-import { ChartData } from '../models/chart.model';
+import { field, combineFields } from '@oneteme/jquery-core';
+import { ChartData } from '../core/models/chart.model';
 
 export const COMBO_CHART_DATA: {
   [key: string]: ChartData<string, number> | ChartData<string, number>;
