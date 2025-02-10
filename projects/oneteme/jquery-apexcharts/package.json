@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-apexcharts",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "jquery apexcharts lib",
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
@@ -9,10 +9,10 @@
     "url": "https://github.com/oneteme/jquery-charts.git"
   },
   "peerDependencies": {
-    "@angular/common": "^16.1.0",
-    "@angular/core": "^16.1.0",
+    "@angular/common": ">=16.1.0",
+    "@angular/core": ">=16.1.0",
     "apexcharts": "^3.44.0",
-    "@oneteme/jquery-core": "^0.0.6"
+    "@oneteme/jquery-core": "^1.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

@@ -1,13 +1,13 @@
 {
   "name": "@oneteme/jquery-charts",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "jquery charts project",
   "private": false,
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
   "author": {
     "name": "u$f",
-    "url": "https://oneteme.github.io/"
+    "url": "https://oneteme.github.io/jquery-charts/"
   },
   "repository": {
     "type": "git",
@@ -16,8 +16,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "build-all": "ng build \"@oneteme/jquery-core\" && npm run build \"@oneteme/jquery-apexcharts\" && ng build", 
+    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build", 
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

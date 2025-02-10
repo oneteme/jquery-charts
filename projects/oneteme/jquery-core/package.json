@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-core",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "jquery core lib",
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
@@ -9,8 +9,8 @@
     "url": "https://github.com/oneteme/jquery-charts.git"
   },
   "peerDependencies": {
-    "@angular/common": "^16.1.0",
-    "@angular/core": "^16.1.0"
+    "@angular/common": ">=16.1.0",
+    "@angular/core": ">=16.1.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

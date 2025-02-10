@@ -1,8 +1,10 @@
 import { CommonChart, Coordinate2D, XaxisType, YaxisType } from "@oneteme/jquery-core";
+import { ICONS } from '../../assets/icons/icons';
+
 
 export function customIcons(event: (arg: 'previous' | 'next' | 'pivot') => void, canPivot: boolean): any[] {
   var customIcons = [{
-    icon: '<img src="assets/icons/arrow_back_ios.svg" width="15">',
+    icon: ICONS.previous,
     title: 'Graphique précédent',
     class: 'custom-icon',
     click: function (chart, options, e) {
@@ -10,16 +12,17 @@ export function customIcons(event: (arg: 'previous' | 'next' | 'pivot') => void,
     }
   },
   {
-    icon: '<img src="assets/icons/arrow_forward_ios.svg" width="15">',
+    icon: ICONS.next,
     title: 'Graphique suivant',
     class: 'custom-icon',
     click: function (chart, options, e) {
       event("next");
     }
   }];
+
   if (canPivot) {
     customIcons.push({
-      icon: '<img src="assets/icons/pivot_table_chart.svg" width="15">',
+      icon: ICONS.pivot,
       title: 'Pivot',
       class: 'custom-icon',
       click: function (chart, options, e) {
