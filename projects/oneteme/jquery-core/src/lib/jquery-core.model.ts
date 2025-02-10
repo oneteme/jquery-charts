@@ -202,7 +202,7 @@ export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordina
     stacked?: boolean;
     xorder?: Sort;
     options?: any;
-    // showToolbar?: boolean;
+    showToolbar?: boolean;
 }
 
 export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
