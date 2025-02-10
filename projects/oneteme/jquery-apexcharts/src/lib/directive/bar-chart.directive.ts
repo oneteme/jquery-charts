@@ -27,7 +27,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
 
   private readonly chartInstance = signal<ApexCharts | null>(null);
 
-  private _chartConfig: ChartProvider<X, number> = {};
+  private _chartConfig: ChartProvider<X, number> = {showToolbar: false};
   private _options: any = {
     chart: {
       type: 'bar'
@@ -104,7 +104,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
         width: this._chartConfig.width ?? '100%',
         stacked: this._chartConfig.stacked,
         toolbar: {
-          show: true,
+          show: this._chartConfig.showToolbar ?? false,
           tools: {
             download: false,
             selection: false,

@@ -26,7 +26,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
 
   private readonly chartInstance = signal<ApexCharts | null>(null);
 
-  private _chartConfig: ChartProvider<X, Y> = {};
+  private _chartConfig: ChartProvider<X, Y> = {showToolbar: false};
 
   private _options: any = {
     chart: {
@@ -104,7 +104,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
         width: this._chartConfig.width ?? '100%',
         stacked: this._chartConfig.stacked,
         toolbar: {
-          show: true,
+          show: this._chartConfig.showToolbar ?? false,
           tools: {
             download: false,
             selection: false,

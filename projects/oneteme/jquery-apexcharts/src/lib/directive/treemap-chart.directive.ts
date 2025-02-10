@@ -27,7 +27,7 @@ export class TreemapChartDirective implements ChartView<string, number>, OnChang
 
   private readonly chartInstance = signal<ApexCharts | null>(null);
 
-  private _chartConfig: ChartProvider<string, number> = {};
+  private _chartConfig: ChartProvider<string, number> = {showToolbar: false};
   private _options: any = {
     chart: {
       type: 'treemap'
@@ -104,7 +104,7 @@ export class TreemapChartDirective implements ChartView<string, number>, OnChang
         height: this._chartConfig.height ?? '100%',
         width: this._chartConfig.width ?? '100%',
         toolbar: {
-          show: true,
+          show: this._chartConfig.showToolbar ?? false,
           tools: {
             download: false,
             selection: false,

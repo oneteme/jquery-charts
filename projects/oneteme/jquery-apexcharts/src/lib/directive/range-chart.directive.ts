@@ -27,7 +27,7 @@ export class RangeChartDirective<X extends XaxisType> implements ChartView<X, nu
 
   private readonly chartInstance = signal<ApexCharts | null>(null);
 
-  private _chartConfig: ChartProvider<X, number[]> = {};
+  private _chartConfig: ChartProvider<X, number[]> = {showToolbar: false};
 
   private _options: any = {
     chart: {
@@ -106,7 +106,7 @@ export class RangeChartDirective<X extends XaxisType> implements ChartView<X, nu
         height: this._chartConfig.height ?? '100%',
         width: this._chartConfig.width ?? '100%',
         toolbar: {
-          show: true,
+          show: this._chartConfig.showToolbar ?? false,
           tools: {
             download: false,
             selection: false,
