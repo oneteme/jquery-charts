@@ -121,7 +121,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
 function newChart<X extends XaxisType, Y extends YaxisType>(provider: ChartProvider<X,Y>) : CommonChart<X,Y>{
     return Object.entries(provider)
     .filter(e=> ['series'].indexOf(e[0])<0)
-    .reduce((acc,e)=>{acc[e[0]] = e[1]; return acc;}, {series:[], showToolbar: provider.showToolbar})
+    .reduce((acc,e)=>{acc[e[0]] = e[1]; return acc;}, {series:[]});
 }
 
 function resolveDataProvider<T>(provider?: T | DataProvider<T>, defaultValue?: T): DataProvider<T> {
@@ -202,7 +202,7 @@ export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordina
     stacked?: boolean;
     xorder?: Sort;
     options?: any;
-    showToolbar?: boolean;
+    // showToolbar?: boolean;
 }
 
 export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
