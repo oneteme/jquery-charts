@@ -15,7 +15,7 @@ import { Router } from '@angular/router';
         </button>
         <button class="download-btn" (click)="goToInstall()">
           <span>Installer</span>
-          <span class="version">v0.0.0</span>
+          <span class="version">v1.0.0</span>
         </button>
       </div>
     </header>
@@ -37,7 +37,6 @@ export class HeaderComponent {
   }
 
   goToInstall() {
-    // Pour le moment on redirige vers rien du tout
-    this.router.navigate(['/']);
+    window.open('https://www.npmjs.com/package/@oneteme/jquery-apexcharts', '_blank');
   }
 }

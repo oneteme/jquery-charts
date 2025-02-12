@@ -155,8 +155,7 @@ export const PIE_CHART_DATA: { [key: string]: ChartData<string, number> } = {
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
-      // continue: true,
-      // n'a pas l'air de fonctionner, poser la question à Antonin
+      continue: true,
     },
   },
 };

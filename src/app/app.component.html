@@ -2,6 +2,7 @@
   <app-header (goToHome)="onChartTypeSelected(null)"></app-header>
   <app-sidebar 
     [chartTypes]="chartTypes"
+    [selectedType]="selectedChartType"
     (selectChartType)="onChartTypeSelected($event)">
   </app-sidebar>
   <main>

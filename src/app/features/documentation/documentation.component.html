@@ -1,16 +1,22 @@
 <div class="documentation-container">
   <div class="doc-nav">
     <ul>
-      <li [class.active]="currentSection === 'getting-started'"
-          (click)="selectSection('getting-started')">
+      <li
+        [class.active]="currentSection === 'getting-started'"
+        (click)="selectSection('getting-started')"
+      >
         Installation & Démarrage
       </li>
-      <li [class.active]="currentSection === 'configuration'"
-          (click)="selectSection('configuration')">
+      <li
+        [class.active]="currentSection === 'configuration'"
+        (click)="selectSection('configuration')"
+      >
         Configuration
       </li>
-      <li [class.active]="currentSection === 'charts'"
-          (click)="selectSection('charts')">
+      <li
+        [class.active]="currentSection === 'charts'"
+        (click)="selectSection('charts')"
+      >
         Types de Graphiques
       </li>
     </ul>
@@ -35,6 +41,8 @@ cd my-chart-app</code></pre>
         <div class="code-block">
           <pre><code>npm install &#64;oneteme/jquery-charts
 npm install &#64;oneteme/jquery-core
+
+<i>Si vous utilisez Apexcharts</i>
 npm install apexcharts</code></pre>
         </div>
       </div>
@@ -43,7 +51,7 @@ npm install apexcharts</code></pre>
         <h3>3. Configuration du module</h3>
         <p>Dans votre app.module.ts, importez ChartComponent :</p>
         <div class="code-block">
-<pre><code>import {{ '{' }} ChartComponent {{ '}' }} from '&#64;oneteme/jquery-apexcharts';
+          <pre><code>import {{ '{' }} ChartComponent {{ '}' }} from '&#64;oneteme/jquery-apexcharts';
 
 &#64;NgModule({{ '{' }}
   imports: [

@@ -1,0 +1,17 @@
+npm install --save-dev concurrently
+
+"scripts": {
+  "ng": "ng",
+  "start": "ng serve",
+  "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build",
+  "watch-lib1": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
+  "watch-lib2": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
+  "watch": "ng build --watch --configuration development",
+  // watch pas nécessaire dans le cas ou un server local tourne
+  "watchAll": "concurrently \"npm run watch-lib2\" \"npm run watch-lib2\" \"npm run watch\"",
+  "dev": "concurrently \"npm run watch-lib1\" \"npm run watch-lib2\" \"npm run start\"",
+  "test": "ng test"
+}
+
+npm run watchAll
+npm run start

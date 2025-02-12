@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { COMBO_CHART_DATA, PIE_CHART_DATA } from './data/_index';
 import { BAR_CHART_DATA } from './data/bar-chart.data';
@@ -8,14 +8,13 @@ import { TREEMAP_CHART_DATA } from './data/treemap-chart.data';
 import { HEATMAP_CHART_DATA } from './data/heatmap-chart.data';
 import { RANGE_CHART_DATA } from './data/range-chart.data';
 import { ChartService } from './core/services/chart.service';
-// import { buildChart } from '@oneteme/jquery-core';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   constructor(private router: Router, private chartService: ChartService) {}
 
   selectedChartType: string | null = null;
@@ -82,16 +81,6 @@ export class AppComponent {
 
   // COMBO CHARTS
   comboExample = COMBO_CHART_DATA.comboExample;
-
-  onChartTypeSelected(type: string | null) {
-    this.selectedChartType = type;
-    this.updateVisibleCharts(type);
-    if (type) {
-      this.router.navigate(['/charts']);
-    } else {
-      this.router.navigate(['/home']);
-    }
-  }
 
   private updateVisibleCharts(selectedType: string) {
     switch (selectedType) {
@@ -343,6 +332,18 @@ export class AppComponent {
   }
 
   ngOnInit() {
-    this.updateVisibleCharts(this.selectedChartType);
+    if (this.router.url === '/charts') {
+      this.onChartTypeSelected('Pie Chart');
+    }
+  }
+
+  onChartTypeSelected(type: string | null) {
+    this.selectedChartType = type;
+    if (type) {
+      this.updateVisibleCharts(type);
+      this.router.navigate(['/charts']);
+    } else {
+      this.router.navigate(['/home']);
+    }
   }
 }

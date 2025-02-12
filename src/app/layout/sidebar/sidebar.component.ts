@@ -1,4 +1,5 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-sidebar',
@@ -28,9 +29,11 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 })
 export class SidebarComponent {
   @Input() chartTypes: string[] = [];
+  @Input() selectedType: string | null = null;
   @Output() selectChartType = new EventEmitter<string>();
+
+  constructor(private router: Router) {}
   
-  selectedType: string = '';
   isMenuOpen = false;
 
   toggleMenu() {
@@ -38,10 +41,16 @@ export class SidebarComponent {
   }
 
   onSelect(type: string) {
-    this.selectedType = type;
     this.selectChartType.emit(type);
     if (window.innerWidth <= 768) {
       this.toggleMenu();
+    }
+  }
+
+  ngOnInit() {
+    if (this.router.url === '/charts' && !this.selectedType) {
+      this.selectedType = 'Pie Chart';
+      this.selectChartType.emit(this.selectedType);
     }
   }
 }

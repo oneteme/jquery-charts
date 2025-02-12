@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { ChartService } from '../../core/services/chart.service';
+import { ChartService } from '../../../../core/services/chart.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -9,17 +9,20 @@ import { Subscription } from 'rxjs';
       <app-chart-group
         [title]="chartType.title"
         [type]="chartType.type"
-        [rows]="chartType.rows">
+        [rows]="chartType.rows"
+      >
       </app-chart-group>
     </div>
   `,
-  styles: [`
-    :host {
-      display: block;
-      width: 100%;
-      padding: 2rem;
-    }
-  `]
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100%;
+        padding: 2rem;
+      }
+    `,
+  ],
 })
 export class ChartViewComponent implements OnInit, OnDestroy {
   visibleChartTypes: any[] = [];
@@ -37,7 +40,7 @@ export class ChartViewComponent implements OnInit, OnDestroy {
         console.log('First chart rows:', charts[0]?.rows);
         this.visibleChartTypes = charts;
       },
-      error: (error) => console.error('Error receiving charts:', error)
+      error: (error) => console.error('Error receiving charts:', error),
     });
   }
 
