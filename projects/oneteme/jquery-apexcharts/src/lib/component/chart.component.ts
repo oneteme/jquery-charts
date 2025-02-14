@@ -1,71 +1,78 @@
-import { CommonModule } from "@angular/common";
-import { Component, Input } from "@angular/core";
-import { ChartProvider, ChartType, XaxisType, YaxisType } from "@oneteme/jquery-core";
-import { BarChartDirective } from "../directive/bar-chart.directive";
-import { LineChartDirective } from "../directive/line-chart.directive";
-import { PieChartDirective } from "../directive/pie-chart.directive";
-import { RangeChartDirective } from "../directive/range-chart.directive";
-import { TreemapChartDirective } from "../directive/treemap-chart.directive";
+import {CommonModule} from "@angular/common";
+import {Component, Input} from "@angular/core";
+import {ChartProvider, ChartType, XaxisType, YaxisType} from "@oneteme/jquery-core";
+import {BarChartDirective} from "../directive/bar-chart.directive";
+import {LineChartDirective} from "../directive/line-chart.directive";
+import {PieChartDirective} from "../directive/pie-chart.directive";
+import {RangeChartDirective} from "../directive/range-chart.directive";
+import {TreemapChartDirective} from "../directive/treemap-chart.directive";
 
 @Component({
     standalone: true,
     imports: [
-        CommonModule,
-        BarChartDirective,
-        LineChartDirective,
-        PieChartDirective,
-        RangeChartDirective,
-        TreemapChartDirective
+      CommonModule,
+      PieChartDirective,
+      BarChartDirective,
+      LineChartDirective,
+      RangeChartDirective,
+      TreemapChartDirective
     ],
-    selector: 'chart', 
+    selector: 'chart',
     templateUrl: './chart.component.html'
 })
-export class  ChartComponent<X extends XaxisType, Y extends YaxisType> {
-    private _charts: {[key: ChartType]: ChartType[] } = {
-        'pie': ['pie', 'donut', 'polar', 'radar'],
-        'donut': ['pie', 'donut', 'polar', 'radar'],
-        'polar': ['pie', 'donut', 'polar', 'radar'],
-        'radar': ['pie', 'donut', 'polar', 'radar'],
-        'line': ['line', 'area'],
-        'area': ['line', 'area'],
-        'bar': ['bar', 'column', 'heatmap', 'treemap'],
-        'column': ['bar', 'column', 'heatmap', 'treemap'],
-        'heatmap': ['bar', 'column', 'heatmap', 'treemap'],
-        'treemap': ['bar', 'column', 'heatmap', 'treemap'],
-        'funnel': ['funnel', 'pyramid'],
-        'pyramid': ['funnel', 'pyramid'],
-        'rangeArea': ['rangeArea', 'rangeBar', 'rangeColumn'],
-        'rangeBar': ['rangeArea', 'rangeBar', 'rangeColumn'],
-        'rangeColumn': ['rangeArea', 'rangeBar', 'rangeColumn']
+export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
+    protected _charts: {[key: ChartType]: { possibleType: ChartType[], canPivot?: boolean } } = {
+        'pie': {
+          possibleType: ['pie', 'donut', 'polar', 'radar']
+        },
+        'donut': {
+          possibleType:['pie', 'donut', 'polar', 'radar']
+        },
+        'polar': {
+          possibleType: ['pie', 'donut', 'polar', 'radar']
+        },
+        'radar': {
+          possibleType: ['pie', 'donut', 'polar', 'radar']
+        },
+        'line': {possibleType: ['line', 'area']},
+        'area': {possibleType: ['line', 'area']},
+        'bar': {possibleType: ['bar', 'column', 'heatmap', 'treemap']},
+        'column': {possibleType: ['bar', 'column', 'heatmap', 'treemap']},
+        'heatmap': {possibleType: ['bar', 'column', 'heatmap', 'treemap']},
+        'treemap': {possibleType: ['bar', 'column', 'heatmap', 'treemap']},
+        'funnel': {possibleType: ['funnel', 'pyramid'], canPivot: false},
+        'pyramid': {possibleType: ['funnel', 'pyramid'], canPivot: false},
+        'rangeArea': {possibleType: ['rangeArea', 'rangeBar', 'rangeColumn'], canPivot: false},
+        'rangeBar': {possibleType: ['rangeArea', 'rangeBar', 'rangeColumn']},
+        'rangeColumn': {possibleType: ['rangeArea', 'rangeBar', 'rangeColumn']}
     };
 
-    private initialType: ChartType;
+    _type: ChartType;
 
-    @Input() type: ChartType;
-    @Input() config: ChartProvider<X, Y>;
-    @Input() data: any[];
+    @Input({alias: "type", required: true}) set value(type: ChartType) {
+      this._type = type;
+    }
+    @Input({required: true}) config: ChartProvider<X, Y>;
+    @Input({required: true}) data: any[];
     @Input() isLoading: boolean;
 
 
     change(event: string) {
-        if(!this.initialType) {
-            this.initialType = this.type;
-        }
-        let charts = this._charts[this.initialType];
-        let indexOf = charts.indexOf(this.type);
-        if(indexOf != -1) {
-            if(event == 'previous') {
-                this.type = indexOf == 0 ? charts[charts.length - 1]: charts[indexOf - 1];
-                return;
-            }
-            if(event == 'next') {
-                this.type = indexOf == charts.length - 1 ? charts[0]: charts[indexOf + 1];
-                return;
-            }
-        }
-        if(event == 'pivot') {
-            this.config = this.config.pivot ? {...this.config, pivot: false} :  {...this.config, pivot: true};
-            return;
-        }
+      let charts = this._charts[this._type].possibleType;
+      let indexOf = charts.indexOf(this._type);
+      if(indexOf != -1) {
+          if(event == 'previous') {
+              this._type = indexOf == 0 ? charts[charts.length - 1]: charts[indexOf - 1];
+              return;
+          }
+          if(event == 'next') {
+              this._type = indexOf == charts.length - 1 ? charts[0]: charts[indexOf + 1];
+              return;
+          }
+      }
+      if(event == 'pivot') {
+          this.config = this.config.pivot ? {...this.config, pivot: false} :  {...this.config, pivot: true};
+          return;
+      }
     }
 }

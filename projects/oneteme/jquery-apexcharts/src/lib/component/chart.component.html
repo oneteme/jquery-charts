@@ -1,18 +1,5 @@
-<div [ngSwitch]="type">
-    <div *ngSwitchCase="'line'" line-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'area'" line-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'pie'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'donut'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'polar'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'radial'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div> 
-    <div *ngSwitchCase="'radar'" pie-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'bar'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'column'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'funnel'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" [canPivot]="false" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'pyramid'" bar-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" [canPivot]="false" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'treemap'" treemap-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'heatmap'" treemap-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'rangeArea'" range-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" [canPivot]="false" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'rangeBar'" range-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-    <div *ngSwitchCase="'rangeColumn'" range-chart [type]="type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-</div>
+<div line-chart *ngIf="_type == 'line' || _type == 'area'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+<div pie-chart *ngIf="_type == 'donut' || _type == 'polar' || _type == 'radial' || _type == 'radar' || _type == 'pie'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+<div bar-chart *ngIf="_type == 'bar' || _type == 'column' || _type == 'funnel' || _type == 'pyramid'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
+<div treemap-chart *ngIf="_type == 'treemap' || _type == 'heatmap'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+<div range-chart *ngIf="_type == 'rangeArea' || _type == 'rangeBar' || _type == 'rangeColumn'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
