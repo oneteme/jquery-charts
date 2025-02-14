@@ -7,12 +7,16 @@
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
   "author": {
     "name": "u$f",
-    "url": "https://oneteme.github.io/jquery-charts/"
+    "url": "https://jquery.oneteme.org/"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/oneteme/jquery-charts.git"
   },
+  "contributors": [
+    {"name": "antonin77"},
+    {"name": "NairodP"}
+  ],
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

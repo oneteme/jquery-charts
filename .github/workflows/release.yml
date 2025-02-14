@@ -8,6 +8,9 @@ on:
       apexcharts:
         type: boolean
         description: publish jquery-apexcharts library
+      highcharts:
+        type: boolean
+        description: publish jquery-highcharts library
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,7 +21,8 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-    - uses: oneteme/automation-scripts/.github/actions/sonar-npm-scan@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main #see package.json: scripts.build
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
   deploy:
@@ -31,16 +35,23 @@ jobs:
         node-version: 20
         registry-url: 'https://registry.npmjs.org'
         scope: '@oneteme'
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       if: ${{ inputs.core }}
       with:
-        package: 'jquery-core'
+        project: 'jquery-core'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       if: ${{ inputs.apexcharts }}
       with:
-        package: 'jquery-apexcharts'
+        project: 'jquery-apexcharts'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+      if: ${{ inputs.highcharts }}
+      with:
+        project: 'jquery-highcharts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main 
@@ -51,7 +62,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-    - uses: oneteme/automation-scripts/.github/actions/create-release-notes@main
+    - uses: oneteme/automation-scripts/.github/actions/github-release-notes@main
       with:
         version: ${{ needs.deploy.outputs.version }}
       env:
@@ -67,6 +78,9 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
+    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
+      with:
+        base-href: 'jquery-charts'
     - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
       with:
-        app-name: 'jquery-charts'
+        project: 'jquery-charts'
