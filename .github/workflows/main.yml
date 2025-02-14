@@ -24,7 +24,8 @@ jobs:
     outputs:
       version: ${{ steps.prj_ver.outputs.version }}
 # deploy: cannot override package
-  release:
+  release: #!PR
+    if: github.ref_name == 'main'
     needs: build
     runs-on: ubuntu-latest
     steps:
