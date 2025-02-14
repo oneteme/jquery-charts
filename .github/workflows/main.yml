@@ -19,6 +19,10 @@ jobs:
     - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main #see package.json: scripts.build
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
+      id: prj_ver
+    outputs:
+      version: ${{ steps.prj_ver.outputs.version }}
 # deploy: cannot override package
   release:
     needs: build
