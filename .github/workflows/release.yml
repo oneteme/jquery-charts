@@ -62,7 +62,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-    - uses: oneteme/automation-scripts/.github/actions/create-release-notes@main
+    - uses: oneteme/automation-scripts/.github/actions/github-release-notes@main
       with:
         version: ${{ needs.deploy.outputs.version }}
       env:
