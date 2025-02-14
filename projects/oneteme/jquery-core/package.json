@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-core",
-  "version": "1.0.0",
+  "version": "1.0.0-test",
   "description": "jquery core lib",
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
