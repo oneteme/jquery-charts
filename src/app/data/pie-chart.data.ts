@@ -1,7 +1,7 @@
 import { field, values, joinFields } from '@oneteme/jquery-core';
-import { ChartData } from '../core/models/chart.model';
+import { ChartDataCollection, PieChartData } from '../core/models/chart.model';
 
-export const PIE_CHART_DATA: { [key: string]: ChartData<string, number> } = {
+export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
   pieExample: {
     data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
     config: {

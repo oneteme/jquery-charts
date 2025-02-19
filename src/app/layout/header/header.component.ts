@@ -28,7 +28,6 @@ export class HeaderComponent {
   constructor(private router: Router) {}
 
   goHome() {
-    this.goToHome.emit();
     this.router.navigate(['/home']);
   }
 

@@ -29,7 +29,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
   private readonly typeMapping: {[key: string]: ChartType} = {
     'pie': 'pie',
     'donut': 'donut',
-    'radialBar': 'radialBar',
+    'radial': 'radialBar',
     'polar': 'polarArea',
     'radar': 'radar'
   }

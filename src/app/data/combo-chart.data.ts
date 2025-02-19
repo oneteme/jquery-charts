@@ -1,9 +1,7 @@
 import { field, combineFields } from '@oneteme/jquery-core';
-import { ChartData } from '../core/models/chart.model';
+import { ChartDataCollection, ComboChartData } from '../core/models/chart.model';
 
-export const COMBO_CHART_DATA: {
-  [key: string]: ChartData<string, number> | ChartData<string, number>;
-} = {
+export const COMBO_CHART_DATA: ChartDataCollection<ComboChartData> = {
   comboExample: {
     data: [
       { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },

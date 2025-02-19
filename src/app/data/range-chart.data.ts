@@ -1,9 +1,7 @@
-import { field, rangeFields, XaxisType } from '@oneteme/jquery-core';
-import { ChartData } from '../core/models/chart.model';
+import { field, rangeFields } from '@oneteme/jquery-core';
+import { ChartDataCollection, RangeChartData } from '../core/models/chart.model';
 
-export const RANGE_CHART_DATA: {
-  [key: string]: ChartData<XaxisType, number[]>;
-} = {
+export const RANGE_CHART_DATA: ChartDataCollection<RangeChartData> = {
   rangeExample: {
     data: [
       { min: 10, max: 30, field: '2020' },

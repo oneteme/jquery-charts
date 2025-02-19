@@ -1,9 +1,7 @@
-import { field, XaxisType, YaxisType } from '@oneteme/jquery-core';
-import { ChartData } from '../core/models/chart.model';
+import { field } from '@oneteme/jquery-core';
+import { ChartDataCollection, HeatmapChartData } from '../core/models/chart.model';
 
-export const HEATMAP_CHART_DATA: {
-  [key: string]: ChartData<XaxisType, YaxisType>;
-} = {
+export const HEATMAP_CHART_DATA: ChartDataCollection<HeatmapChartData> = {
   heatmapExample: {
     data: [
       { count: 10, field: 'ABC', categ: 'Desktops' },

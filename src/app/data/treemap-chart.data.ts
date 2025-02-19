@@ -1,9 +1,7 @@
-import { field, XaxisType, YaxisType } from '@oneteme/jquery-core';
-import { ChartData } from '../core/models/chart.model';
+import { field } from '@oneteme/jquery-core';
+import { ChartDataCollection, TreemapChartData } from '../core/models/chart.model';
 
-export const TREEMAP_CHART_DATA: {
-  [key: string]: ChartData<XaxisType, YaxisType>;
-} = {
+export const TREEMAP_CHART_DATA: ChartDataCollection<TreemapChartData> = {
   treemapExample: {
     data: [
       { count: 10, field: 'ABC' },

@@ -1,14 +1,15 @@
-import { Component, OnInit } from '@angular/core';
-import { NavigationEnd, Router } from '@angular/router';
-import { COMBO_CHART_DATA, PIE_CHART_DATA } from './data/_index';
-import { BAR_CHART_DATA } from './data/bar-chart.data';
-import { FUNNEL_CHART_DATA } from './data/funnel-chart.data';
-import { LINE_CHART_DATA } from './data/line-chart.data';
-import { TREEMAP_CHART_DATA } from './data/treemap-chart.data';
-import { HEATMAP_CHART_DATA } from './data/heatmap-chart.data';
-import { RANGE_CHART_DATA } from './data/range-chart.data';
-import { ChartService } from './core/services/chart.service';
-import { filter } from 'rxjs';
+import { Component, HostListener, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import {
+  PIE_CHART_DATA,
+  BAR_CHART_DATA,
+  LINE_CHART_DATA,
+  TREEMAP_CHART_DATA,
+  HEATMAP_CHART_DATA,
+  RANGE_CHART_DATA,
+  FUNNEL_CHART_DATA,
+} from './data/_index';
+import hljs from 'highlight.js';
 
 @Component({
   selector: 'app-root',
@@ -16,28 +17,20 @@ import { filter } from 'rxjs';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-
-  constructor(private router: Router, private chartService: ChartService) {
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      this.showSidebar = !event.url.includes('/documentation');
-    });
-  }
-  
   showSidebar = true;
   selectedChartType: string | null = null;
+
   chartTypes = [
     'Pie Chart',
     'Bar Chart',
     'Line Chart',
-    // 'Area Chart',
     'Treemap Chart',
     'Heatmap Chart',
     'Range Chart',
     'Funnel Chart',
   ];
-  visibleChartTypes = [];
+
+  // Pie Charts
   pieExample = PIE_CHART_DATA.pieExample;
   pieExample2 = PIE_CHART_DATA.pieExample2;
   pieExample3 = PIE_CHART_DATA.pieExample3;
@@ -47,6 +40,8 @@ export class AppComponent implements OnInit {
   pieExample7 = PIE_CHART_DATA.pieExample7;
   pieExample8 = PIE_CHART_DATA.pieExample8;
   pieExample9 = PIE_CHART_DATA.pieExample9;
+
+  // Bar Charts
   barExample = BAR_CHART_DATA.barExample;
   barExample2 = BAR_CHART_DATA.barExample2;
   barExample3 = BAR_CHART_DATA.barExample3;
@@ -57,6 +52,8 @@ export class AppComponent implements OnInit {
   barExample8 = BAR_CHART_DATA.barExample8;
   barExample9 = BAR_CHART_DATA.barExample9;
   barExample10 = BAR_CHART_DATA.barExample10;
+
+  // Line Charts
   lineExample = LINE_CHART_DATA.lineExample;
   lineExample2 = LINE_CHART_DATA.lineExample2;
   lineExample3 = LINE_CHART_DATA.lineExample3;
@@ -66,260 +63,26 @@ export class AppComponent implements OnInit {
   lineExample7 = LINE_CHART_DATA.lineExample7;
   lineExample8 = LINE_CHART_DATA.lineExample8;
   lineExample9 = LINE_CHART_DATA.lineExample9;
+
+  // Autres types de graphiques
   treemapExample = TREEMAP_CHART_DATA.treemapExample;
   treemapExample2 = TREEMAP_CHART_DATA.treemapExample2;
   treemapExample3 = TREEMAP_CHART_DATA.treemapExample3;
   heatmapExample = HEATMAP_CHART_DATA.heatmapExample;
   rangeExample = RANGE_CHART_DATA.rangeExample;
   funnelExample = FUNNEL_CHART_DATA.funnelExample;
-  comboExample = COMBO_CHART_DATA.comboExample;
 
-  private updateVisibleCharts(selectedType: string) {
-    switch (selectedType) {
-      case 'Pie Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Pie Charts Examples',
-            type: 'pie',
-            rows: [
-              [
-                { config: this.pieExample.config, data: this.pieExample.data },
-                {
-                  config: this.pieExample2.config,
-                  data: this.pieExample2.data,
-                },
-                {
-                  config: this.pieExample3.config,
-                  data: this.pieExample3.data,
-                },
-              ],
-              [
-                {
-                  config: this.pieExample4.config,
-                  data: this.pieExample4.data,
-                },
-                {
-                  config: this.pieExample5.config,
-                  data: this.pieExample5.data,
-                },
-                {
-                  config: this.pieExample6.config,
-                  data: this.pieExample6.data,
-                },
-              ],
-              [
-                {
-                  config: this.pieExample7.config,
-                  data: this.pieExample7.data,
-                },
-                {
-                  config: this.pieExample8.config,
-                  data: this.pieExample8.data,
-                },
-                {
-                  config: this.pieExample9.config,
-                  data: this.pieExample9.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
+  constructor(public router: Router) {}
 
-      case 'Bar Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Bar Charts Examples',
-            type: 'bar',
-            rows: [
-              [
-                { config: this.barExample.config, data: this.barExample.data },
-                {
-                  config: this.barExample2.config,
-                  data: this.barExample2.data,
-                },
-                {
-                  config: this.barExample3.config,
-                  data: this.barExample3.data,
-                },
-              ],
-              [
-                {
-                  config: this.barExample4.config,
-                  data: this.barExample4.data,
-                },
-                {
-                  config: this.barExample5.config,
-                  data: this.barExample5.data,
-                },
-                {
-                  config: this.barExample6.config,
-                  data: this.barExample6.data,
-                },
-              ],
-              [
-                {
-                  config: this.barExample7.config,
-                  data: this.barExample7.data,
-                },
-                {
-                  config: this.barExample8.config,
-                  data: this.barExample8.data,
-                },
-                {
-                  config: this.barExample9.config,
-                  data: this.barExample9.data,
-                },
-              ],
-              [
-                {
-                  config: this.barExample10.config,
-                  data: this.barExample10.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
+  getHighlightedCode(example: any): string {
+    const code = JSON.stringify(example, null, 2)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
 
-      case 'Line Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Line Charts Examples',
-            type: 'line',
-            rows: [
-              [
-                {
-                  config: this.lineExample.config,
-                  data: this.lineExample.data,
-                },
-                {
-                  config: this.lineExample2.config,
-                  data: this.lineExample2.data,
-                },
-                {
-                  config: this.lineExample3.config,
-                  data: this.lineExample3.data,
-                },
-              ],
-              [
-                {
-                  config: this.lineExample4.config,
-                  data: this.lineExample4.data,
-                },
-                {
-                  config: this.lineExample5.config,
-                  data: this.lineExample5.data,
-                },
-                {
-                  config: this.lineExample6.config,
-                  data: this.lineExample6.data,
-                },
-              ],
-              [
-                {
-                  config: this.lineExample7.config,
-                  data: this.lineExample7.data,
-                },
-                {
-                  config: this.lineExample8.config,
-                  data: this.lineExample8.data,
-                },
-                {
-                  config: this.lineExample9.config,
-                  data: this.lineExample9.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
-
-      case 'Treemap Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Treemap Charts Examples',
-            type: 'treemap',
-            rows: [
-              [
-                {
-                  config: this.treemapExample.config,
-                  data: this.treemapExample.data,
-                },
-                {
-                  config: this.treemapExample2.config,
-                  data: this.treemapExample2.data,
-                },
-                {
-                  config: this.treemapExample3.config,
-                  data: this.treemapExample3.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
-
-      case 'Heatmap Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Heatmap Charts Examples',
-            type: 'heatmap',
-            rows: [
-              [
-                {
-                  config: this.heatmapExample.config,
-                  data: this.heatmapExample.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
-
-      case 'Range Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Range Charts Examples',
-            type: 'rangeArea',
-            rows: [
-              [
-                {
-                  config: this.rangeExample.config,
-                  data: this.rangeExample.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
-
-      case 'Funnel Chart':
-        this.visibleChartTypes = [
-          {
-            title: 'Funnel Charts Examples',
-            type: 'funnel',
-            rows: [
-              [
-                {
-                  config: this.funnelExample.config,
-                  data: this.funnelExample.data,
-                },
-              ],
-            ],
-          },
-        ];
-        this.chartService.updateCharts(this.visibleChartTypes);
-        break;
-      default:
-        this.visibleChartTypes = [];
-    }
+    return hljs.highlight(code, {
+      language: 'json',
+    }).value;
   }
 
   ngOnInit() {
@@ -331,10 +94,52 @@ export class AppComponent implements OnInit {
   onChartTypeSelected(type: string | null) {
     this.selectedChartType = type;
     if (type) {
-      this.updateVisibleCharts(type);
       this.router.navigate(['/charts']);
+      // Ajout des logs ici à la place
+      console.log('Type sélectionné:', type);
+      if (type === 'Pie Chart') {
+        console.log('PIE_CHART_DATA:', PIE_CHART_DATA);
+        console.log('Premier exemple de pie chart:', this.pieExample.config.series);
+      }
     } else {
       this.router.navigate(['/home']);
     }
+  }
+
+  openCodeBlocks: { [key: string]: boolean } = {};
+
+  activeCodeBlock: number | null = null; // Nouvelle propriété pour tracker le menu actif
+
+  @HostListener('document:click', ['$event'])
+  clickOutside(event: any) {
+    const clickedElement = event.target as HTMLElement;
+    // Vérifie si le clic est en dehors d'un code-block ou code-toggle
+    if (
+      !clickedElement.closest('.code-block') &&
+      !clickedElement.closest('.code-toggle')
+    ) {
+      this.closeAllCodeBlocks();
+    }
+  }
+
+  closeAllCodeBlocks() {
+    this.openCodeBlocks = {};
+    this.activeCodeBlock = null;
+  }
+
+  toggleCode(index: number, event: Event) {
+    event.stopPropagation(); // Empêche la propagation du clic
+
+    if (this.activeCodeBlock !== null && this.activeCodeBlock !== index) {
+      // Ferme le bloc précédemment ouvert
+      this.openCodeBlocks[this.activeCodeBlock] = false;
+    }
+
+    this.openCodeBlocks[index] = !this.openCodeBlocks[index];
+    this.activeCodeBlock = this.openCodeBlocks[index] ? index : null;
+  }
+
+  isCodeOpen(index: number): boolean {
+    return this.openCodeBlocks[index] || false;
   }
 }

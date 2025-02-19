@@ -49,3 +49,60 @@ input, textarea, select, button {
   outline: 2px solid #007bff;
   outline-offset: 2px;
 }
+
+// styles généraux réutilisés
+
+.code-block {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  border: 1px solid #e0e0e0;
+
+  pre {
+    margin: 0;
+    padding: 1rem;
+
+    code {
+      font-size: 0.9rem;
+      line-height: 1.6;
+
+      .strong {
+        font-weight: 600;
+      }
+
+      i {
+        color: #807f7f;
+        font-style: italic;
+      }
+
+      .red {
+        color: #d53131;
+      }
+
+      .orange {
+        color: #d35400;
+      }
+
+      .yellow {
+        color: #baa100;
+      }
+
+      .purple {
+        color: #b523b5;
+      }
+
+      .green {
+        color: #1e9324;
+      }
+
+      .white {
+        color: #d5d5d5;
+      }
+
+      .blue {
+        color: #1423DC;
+      }
+    }
+  }
+}
