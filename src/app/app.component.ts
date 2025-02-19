@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { NavigationEnd, Router } from '@angular/router';
 import { COMBO_CHART_DATA, PIE_CHART_DATA } from './data/_index';
 import { BAR_CHART_DATA } from './data/bar-chart.data';
 import { FUNNEL_CHART_DATA } from './data/funnel-chart.data';
@@ -8,6 +8,7 @@ import { TREEMAP_CHART_DATA } from './data/treemap-chart.data';
 import { HEATMAP_CHART_DATA } from './data/heatmap-chart.data';
 import { RANGE_CHART_DATA } from './data/range-chart.data';
 import { ChartService } from './core/services/chart.service';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -15,8 +16,16 @@ import { ChartService } from './core/services/chart.service';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent implements OnInit {
-  constructor(private router: Router, private chartService: ChartService) {}
 
+  constructor(private router: Router, private chartService: ChartService) {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.showSidebar = !event.url.includes('/documentation');
+    });
+  }
+  
+  showSidebar = true;
   selectedChartType: string | null = null;
   chartTypes = [
     'Pie Chart',
@@ -28,10 +37,7 @@ export class AppComponent implements OnInit {
     'Range Chart',
     'Funnel Chart',
   ];
-
   visibleChartTypes = [];
-
-  // PIE CHARTS
   pieExample = PIE_CHART_DATA.pieExample;
   pieExample2 = PIE_CHART_DATA.pieExample2;
   pieExample3 = PIE_CHART_DATA.pieExample3;
@@ -41,8 +47,6 @@ export class AppComponent implements OnInit {
   pieExample7 = PIE_CHART_DATA.pieExample7;
   pieExample8 = PIE_CHART_DATA.pieExample8;
   pieExample9 = PIE_CHART_DATA.pieExample9;
-
-  // BAR CHARTS
   barExample = BAR_CHART_DATA.barExample;
   barExample2 = BAR_CHART_DATA.barExample2;
   barExample3 = BAR_CHART_DATA.barExample3;
@@ -53,8 +57,6 @@ export class AppComponent implements OnInit {
   barExample8 = BAR_CHART_DATA.barExample8;
   barExample9 = BAR_CHART_DATA.barExample9;
   barExample10 = BAR_CHART_DATA.barExample10;
-
-  // LINE CHARTS
   lineExample = LINE_CHART_DATA.lineExample;
   lineExample2 = LINE_CHART_DATA.lineExample2;
   lineExample3 = LINE_CHART_DATA.lineExample3;
@@ -64,22 +66,12 @@ export class AppComponent implements OnInit {
   lineExample7 = LINE_CHART_DATA.lineExample7;
   lineExample8 = LINE_CHART_DATA.lineExample8;
   lineExample9 = LINE_CHART_DATA.lineExample9;
-
-  // TREEMAP CHARTS
   treemapExample = TREEMAP_CHART_DATA.treemapExample;
   treemapExample2 = TREEMAP_CHART_DATA.treemapExample2;
   treemapExample3 = TREEMAP_CHART_DATA.treemapExample3;
-
-  // HEATMAP CHARTS
   heatmapExample = HEATMAP_CHART_DATA.heatmapExample;
-
-  // RANGE CHARTS
   rangeExample = RANGE_CHART_DATA.rangeExample;
-
-  // FUNNEL CHARTS
   funnelExample = FUNNEL_CHART_DATA.funnelExample;
-
-  // COMBO CHARTS
   comboExample = COMBO_CHART_DATA.comboExample;
 
   private updateVisibleCharts(selectedType: string) {
@@ -325,7 +317,6 @@ export class AppComponent implements OnInit {
         ];
         this.chartService.updateCharts(this.visibleChartTypes);
         break;
-
       default:
         this.visibleChartTypes = [];
     }

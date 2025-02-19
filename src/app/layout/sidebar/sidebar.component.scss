@@ -35,11 +35,11 @@
     span:nth-child(1) {
       transform: translateY(8px) rotate(45deg);
     }
-    
+
     span:nth-child(2) {
       opacity: 0;
     }
-    
+
     span:nth-child(3) {
       transform: translateY(-8px) rotate(-45deg);
     }
@@ -85,7 +85,7 @@
     li {
       padding: 0.8rem 1rem;
       cursor: pointer;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
       border-radius: 6px;
       margin-bottom: 0.5rem;
       background: transparent;
@@ -98,6 +98,7 @@
 
       &.active {
         background: #ffffff;
+        color: #3498db;
         box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.03),
           inset -1px -1px 2px rgba(255, 255, 255, 0.5);
       }

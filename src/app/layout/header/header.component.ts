@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
   template: `
     <header class="app-header">
       <div class="header-left" (click)="goHome()">
-        <img src="assets/app-logo.webp" alt="Logo" class="logo" />
+        <img src="assets/logo/app-logo.webp" alt="Logo" class="logo" />
         <h1>Jquery-Charts</h1>
       </div>
       <div class="header-right">

@@ -1,6 +1,6 @@
 <div class="welcome-container">
   <h1>Jquery-Charts (Demo)</h1>
-  
+
   <div class="project-description">
     <p>Une surcouche permettant de simplifier la création de graphiques avec différentes bibliothèques</p>
   </div>
@@ -8,11 +8,11 @@
   <div class="library-selector">
     <label>Bibliothèque de graphiques :</label>
     <div class="toggle-container">
-      <button 
+      <button
         [class.active]="selectedLibrary === 'apexcharts'"
         (click)="selectLibrary('apexcharts')"
       >ApexCharts</button>
-      <button 
+      <button
         [class.disabled]="true"
         title="Bientôt disponible"
       >HighCharts</button>
@@ -35,6 +35,6 @@
   </div>
 
   <div class="get-started">
-    <p>Explorez les différents types de graphiques disponibles et leur configuration</p>
+    <p>Explorez les différents types de graphiques disponibles ainsi que leur configuration depuis la <a routerLink="/documentation" class="doc-link">documentation</a></p>
   </div>
 </div>

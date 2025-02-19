@@ -10,6 +10,7 @@
     color: #2c3e50;
     font-weight: 700;
     background: linear-gradient(45deg, #2c3e50, #3498db);
+    background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -23,7 +24,7 @@
   .library-selector {
     margin: 2rem 0;
     padding: 1rem;
-    
+
     label {
       display: block;
       margin-bottom: 1rem;
@@ -34,7 +35,7 @@
       display: flex;
       justify-content: center;
       gap: 1rem;
-      
+
       button {
         padding: 0.5rem 1.5rem;
         border: 1px solid #ddd;
@@ -69,7 +70,7 @@
     background: white;
     padding: 2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
 
     &:hover {
@@ -92,15 +93,26 @@
     padding: 1rem;
     background: #f8f9fa;
     border-radius: 8px;
-    
+
     p {
       color: #666;
     }
   }
 }
 
-@media (max-width: 768px) {
+.doc-link {
+  color: #3498db;
+  padding-bottom: .2rem;
+  border-bottom: 1px solid #3498db;
+  font-weight: 500;
+  cursor: pointer;
 
+  &:hover {
+    color: #2980b9;
+  }
+}
+
+@media (max-width: 768px) {
   .welcome-container {
     padding: 1rem;
 
@@ -108,7 +120,7 @@
       font-size: 2rem;
     }
   }
-  
+
   .welcome-content {
     grid-template-columns: 1fr;
   }

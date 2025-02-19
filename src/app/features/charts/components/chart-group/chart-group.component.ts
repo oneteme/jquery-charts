@@ -61,6 +61,9 @@ export class ChartGroupComponent implements OnInit, OnChanges {
         hljs.highlightAll();
       });
     }
+    if (changes['rows']) {
+      console.log('New chart data:', this.rows);
+    }
   }
 
   getConfigCode(chart: any): string {

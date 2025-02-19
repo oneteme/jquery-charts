@@ -1,9 +1,11 @@
 <div class="app-container">
   <app-header (goToHome)="onChartTypeSelected(null)"></app-header>
-  <app-sidebar 
+  <app-sidebar
+    *ngIf="showSidebar"
     [chartTypes]="chartTypes"
     [selectedType]="selectedChartType"
-    (selectChartType)="onChartTypeSelected($event)">
+    (selectChartType)="onChartTypeSelected($event)"
+  >
   </app-sidebar>
   <main>
     <router-outlet></router-outlet>

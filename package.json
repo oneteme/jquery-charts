@@ -13,14 +13,14 @@
     "type": "git",
     "url": "https://github.com/oneteme/jquery-charts.git"
   },
-
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build",
-    "watchJC": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
-    "watchJA": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
-    "watch": "ng build --watch --configuration development",
+    "watch-lib1": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
+    "watch-lib2": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
+    "watch": "concurrently \"npm run watch-lib1\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\"",
+    "dev": "concurrently \"npm run watch-lib1\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\" \"wait-on dist/oneteme/jquery-apexcharts && npm run start\"",
     "test": "ng test"
   },
   "dependencies": {
@@ -43,6 +43,7 @@
     "@angular/cli": "~16.1.4",
     "@angular/compiler-cli": "^16.1.0",
     "@types/jasmine": "~4.3.0",
+    "concurrently": "^9.1.2",
     "jasmine-core": "~4.6.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
@@ -50,6 +51,7 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "ng-packagr": "^16.0.0",
-    "typescript": "~5.1.3"
+    "typescript": "~5.1.3",
+    "wait-on": "^8.0.2"
   }
 }
