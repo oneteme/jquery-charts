@@ -18,7 +18,7 @@ import hljs from 'highlight.js';
 })
 export class AppComponent implements OnInit {
   showSidebar = true;
-  selectedChartType: string | null = null;
+  selectedChartType: string = 'Pie Chart';
 
   chartTypes = [
     'Pie Chart',
@@ -87,7 +87,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     if (this.router.url === '/charts') {
-      this.onChartTypeSelected('Pie Chart');
+      this.selectedChartType = 'Pie Chart';
     }
   }
 
@@ -95,12 +95,6 @@ export class AppComponent implements OnInit {
     this.selectedChartType = type;
     if (type) {
       this.router.navigate(['/charts']);
-      // Ajout des logs ici à la place
-      console.log('Type sélectionné:', type);
-      if (type === 'Pie Chart') {
-        console.log('PIE_CHART_DATA:', PIE_CHART_DATA);
-        console.log('Premier exemple de pie chart:', this.pieExample.config.series);
-      }
     } else {
       this.router.navigate(['/home']);
     }
@@ -108,12 +102,12 @@ export class AppComponent implements OnInit {
 
   openCodeBlocks: { [key: string]: boolean } = {};
 
-  activeCodeBlock: number | null = null; // Nouvelle propriété pour tracker le menu actif
+  activeCodeBlock: number | null = null; // track menu actif
 
   @HostListener('document:click', ['$event'])
   clickOutside(event: any) {
     const clickedElement = event.target as HTMLElement;
-    // Vérifie si le clic est en dehors d'un code-block ou code-toggle
+    // Vérifie si clic en dehors d'un code-block ou code-toggle
     if (
       !clickedElement.closest('.code-block') &&
       !clickedElement.closest('.code-toggle')

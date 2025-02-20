@@ -78,6 +78,13 @@ export class DocumentationComponent {
     'La section Data (prochainement disponible) vous permettra de maitriser la structuration des données',
   ];
 
+  globalConfigNotes: string[] = [
+    'Les propriétés height et series sont obligatoires',
+    'Le pivot et continue sont mutuellement exclusifs',
+    'stacked n\'est compatible qu\'avec les types bar/column',
+    'Certaines options peuvent être écrasées par les configurations spécifiques des types'
+  ];
+
   toggleGraphTypesMenu(event: Event) {
     event.stopPropagation();
     this.isGraphTypesOpen = !this.isGraphTypesOpen;

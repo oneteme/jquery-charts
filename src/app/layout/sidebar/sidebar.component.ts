@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -12,7 +12,7 @@ import { Router } from '@angular/router';
 
     <div class="sidebar" [class.open]="isMenuOpen">
       <ul>
-        <li *ngFor="let type of chartTypes" 
+        <li *ngFor="let type of chartTypes"
             [class.active]="selectedType === type"
             (click)="onSelect(type)">
           {{type}}
@@ -20,20 +20,20 @@ import { Router } from '@angular/router';
       </ul>
     </div>
 
-    <div class="overlay" 
-         *ngIf="isMenuOpen" 
+    <div class="overlay"
+         *ngIf="isMenuOpen"
          (click)="toggleMenu()">
     </div>
   `,
   styleUrls: ['./sidebar.component.scss']
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
   @Input() chartTypes: string[] = [];
   @Input() selectedType: string | null = null;
   @Output() selectChartType = new EventEmitter<string>();
 
   constructor(private router: Router) {}
-  
+
   isMenuOpen = false;
 
   toggleMenu() {
@@ -41,6 +41,7 @@ export class SidebarComponent {
   }
 
   onSelect(type: string) {
+    console.log("8. Selecting chart type:", type);
     this.selectChartType.emit(type);
     if (window.innerWidth <= 768) {
       this.toggleMenu();
@@ -48,9 +49,12 @@ export class SidebarComponent {
   }
 
   ngOnInit() {
+    console.log("5. Sidebar Init - URL:", this.router.url);
+    console.log("6. Current selectedType:", this.selectedType);
+
     if (this.router.url === '/charts' && !this.selectedType) {
-      this.selectedType = 'Pie Chart';
-      this.selectChartType.emit(this.selectedType);
+      console.log("7. Setting default type to Pie Chart");
+      this.selectChartType.emit('Pie Chart');
     }
   }
 }

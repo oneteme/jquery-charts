@@ -1,63 +1,15 @@
-import { ChartProvider, XaxisType, YaxisType, DataProvider, CoordinateProvider } from '@oneteme/jquery-core';
-
-export interface SeriesConfig<X extends XaxisType, Y extends YaxisType> {
-  data: {
-    x: DataProvider<X>;
-    y: DataProvider<Y>;
-  };
-  name?: string | ((o: any, i: number) => string);
-  color?: string;
-  type?: string;
-  stack?: string | DataProvider<string>;
-}
-
-export interface CommonChartConfig<X extends XaxisType, Y extends YaxisType> {
-  series: Array<SeriesConfig<X, Y>>;
-  title?: string;
-  subtitle?: string;
-  xtitle?: string;
-  ytitle?: string;
-  width?: number;
-  height?: number;
-  showToolbar?: boolean;
-  pivot?: boolean;
-  continue?: boolean;
-  stacked?: boolean;
-  xorder?: 'asc' | 'desc';
-  options?: {
-    dataLabels?: {
-      enabled?: boolean;
-      enabledOnSeries?: number[];
-    };
-    plotOptions?: {
-      pie?: {
-        donut?: {
-          size?: string;
-        };
-      };
-      bar?: {
-        horizontal?: boolean;
-        borderRadius?: number;
-        barHeight?: string;
-        distributed?: boolean;
-        isFunnel?: boolean;
-      };
-    };
-    yaxis?: Array<{
-      title?: {
-        text?: string;
-      };
-      opposite?: boolean;
-    }>;
-  };
-}
+import {
+  ChartProvider,
+  XaxisType,
+  YaxisType
+} from '@oneteme/jquery-core';
 
 export interface ChartData<X extends XaxisType, Y extends YaxisType> {
   data: any[];
-  config: CommonChartConfig<X, Y>;
+  config: ChartProvider<X, Y>;
 }
 
-// Types spécifiques
+// Types spécifiques pour chaque graphique
 export type PieChartData = ChartData<string, number>;
 export type BarChartData = ChartData<string | XaxisType, number>;
 export type LineChartData = ChartData<string, number>;
