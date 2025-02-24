@@ -1,0 +1,228 @@
+<ng-container *ngIf="selectedChartType">
+  <div class="charts-container" *ngIf="selectedChartType">
+    <h2>{{ selectedChartType }} Examples</h2>
+    <div class="charts-grid">
+      <ng-container [ngSwitch]="selectedChartType">
+        <!-- Pie Charts -->
+        <ng-container *ngSwitchCase="'Pie Chart'">
+          <div
+            class="chart-wrapper"
+            *ngFor="
+              let example of [
+                pieExample,
+                pieExample2,
+                pieExample3,
+                pieExample4,
+                pieExample5,
+                pieExample6,
+                pieExample7,
+                pieExample8,
+                pieExample9
+              ];
+              let i = index
+            "
+          >
+            <chart
+              type="pie"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(i, $event)">
+              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(i)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(i)">
+              <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Bar Charts -->
+        <ng-container *ngSwitchCase="'Bar Chart'">
+          <div
+            class="chart-wrapper"
+            *ngFor="
+              let example of [
+                barExample,
+                barExample2,
+                barExample3,
+                barExample4,
+                barExample5,
+                barExample6,
+                barExample7,
+                barExample8,
+                barExample9,
+                barExample10
+              ];
+              let i = index
+            "
+          >
+            <chart
+              type="bar"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(i, $event)">
+              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(i)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(i)">
+              <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Line Charts -->
+        <ng-container *ngSwitchCase="'Line Chart'">
+          <div
+            class="chart-wrapper"
+            *ngFor="
+              let example of [
+                lineExample,
+                lineExample2,
+                lineExample3,
+                lineExample4,
+                lineExample5,
+                lineExample6,
+                lineExample7,
+                lineExample8,
+                lineExample9
+              ];
+              let i = index
+            "
+          >
+            <chart
+              type="line"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(i, $event)">
+              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(i)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(i)">
+              <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Treemap Charts -->
+        <ng-container *ngSwitchCase="'Treemap Chart'">
+          <div
+            class="chart-wrapper"
+            *ngFor="
+              let example of [
+                treemapExample,
+                treemapExample2,
+                treemapExample3
+              ];
+              let i = index
+            "
+          >
+            <chart
+              type="treemap"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(i, $event)">
+              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(i)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(i)">
+              <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Heatmap Charts -->
+        <ng-container *ngSwitchCase="'Heatmap Chart'">
+          <div class="chart-wrapper">
+            <chart
+              type="heatmap"
+              [config]="heatmapExample.config"
+              [data]="heatmapExample.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(0, $event)">
+              {{ isCodeOpen(0) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(0)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(heatmapExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Range Charts -->
+        <ng-container *ngSwitchCase="'Range Chart'">
+          <div class="chart-wrapper">
+            <chart
+              type="rangeArea"
+              [config]="rangeExample.config"
+              [data]="rangeExample.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(0, $event)">
+              {{ isCodeOpen(0) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(0)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(rangeExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Funnel Charts -->
+        <ng-container *ngSwitchCase="'Funnel Chart'">
+          <div class="chart-wrapper">
+            <chart
+              type="funnel"
+              [config]="funnelExample.config"
+              [data]="funnelExample.data"
+            />
+            <div class="code-toggle" (click)="toggleCode(0, $event)">
+              {{ isCodeOpen(0) ? "Masquer le code" : "Voir le code" }}
+              <img
+                src="assets/icons/chevron.svg"
+                class="chevron"
+                [class.open]="isCodeOpen(0)"
+                alt="toggle code"
+              />
+            </div>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(funnelExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+      </ng-container>
+    </div>
+  </div>
+</ng-container>

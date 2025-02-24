@@ -10,7 +10,7 @@
     position: fixed;
     height: calc(100vh - 80px);
     overflow-y: auto;
-    z-index: 101;
+    z-index: 98;
     left: 0;
     background: #f8f9fa;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
@@ -93,9 +93,8 @@
   }
 
   .doc-content {
-    margin-left: 250px;
-    padding: 2rem;
-    max-width: 900px;
+    padding: 2rem 2rem 2rem 3rem;
+    max-width: min(90%, 1800px);
 
     .introduction {
       margin-bottom: 3rem;
@@ -167,7 +166,7 @@
       color: #2c3e50;
     }
 
-    
+
 
     .step {
       margin-bottom: 2rem;
@@ -198,6 +197,32 @@
     .doc-content {
       margin-left: 0;
       padding: 1rem;
+    }
+  }
+}
+
+.see-examples {
+  margin-top: 2rem;
+  text-align: right;
+
+  .examples-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: #3498db;
+    color: white;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background: #2980b9;
+    }
+
+    img {
+      width: 20px;
+      height: 20px;
     }
   }
 }

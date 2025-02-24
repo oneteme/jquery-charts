@@ -6,101 +6,12 @@
   padding-top: 80px;
   width: 100%;
 
-  .charts-container {
-    width: 100%;
-    padding: 2rem;
-
-    h2 {
-      margin-bottom: 2rem;
-      color: #2c3e50;
-    }
-
-    .charts-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 3fr));
-      gap: 2rem;
-
-      .chart-wrapper {
-        position: relative;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        overflow: visible;
-        &:has(.code-block.open) {
-          border-radius: 8px 8px 0 0;
-        }
-
-        chart {
-          display: block;
-          padding: 1rem;
-          min-height: 300px;
-        }
-        .code-toggle {
-          padding: 0.5rem 1rem;
-          border-top: 1px solid #eee;
-          color: #3498db;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          transition: background-color 0.2s ease;
-
-          &:hover {
-            background-color: #f8f9fa;
-          }
-
-          .chevron {
-            transform: rotate(90deg);
-            width: 17px;
-            height: 17px;
-            margin-left: 0.5rem;
-            transition: transform 0.3s ease;
-
-            &.open {
-              transform: rotate(270deg);
-            }
-          }
-        }
-        .code-block {
-          display: none;
-          position: absolute;
-          top: 100%;
-          left: 0;
-          right: 0;
-          z-index: 1000;
-          background: #f8f9fa;
-          border: 1px solid #e0e0e0;
-          border-top: 1px solid #e0e0e071;
-          border-radius: 0 0 8px 8px;
-          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-          margin-top: 0;
-
-          &.open {
-            display: block;
-          }
-
-          pre {
-            margin: 0;
-            padding: 1rem;
-            max-height: 500px;
-            overflow-y: auto;
-
-            code {
-              font-size: 0.9rem;
-              line-height: 1.6;
-            }
-          }
-        }
-      }
-    }
-  }
-
   main {
     flex: 1;
     // margin-left: 250px;
     // width: calc(100% - 250px);
     &.with-sidebar {
-      margin-left: 250px;
+      margin-left: 280px;
     }
   }
 }

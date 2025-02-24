@@ -14,17 +14,17 @@
           currentSection === 'information-générale'
         "
       >
-        <div class="nav-item" (click)="toggleGraphTypesMenu($event)">
+        <div class="nav-item" (click)="toggleMenu('graphTypes', $event)">
           <span>Types de Graphiques</span>
           <img
             src="assets/icons/chevron.svg"
             class="chevron"
-            [class.open]="isGraphTypesOpen"
+            [class.open]="menuState.graphTypes"
             alt="chevron"
           />
         </div>
         <!-- Sous-menu des types de graphiques -->
-        <ul class="sub-nav" *ngIf="isGraphTypesOpen">
+        <ul class="sub-nav" *ngIf="menuState.graphTypes">
           <li
             [class.active]="currentSection === 'information-générale'"
             (click)="selectSection('information-générale', $event)"
@@ -80,17 +80,17 @@
         class="menu-item"
         [class.active]="currentSection.startsWith('configuration')"
       >
-        <div class="nav-item" (click)="toggleConfigMenu($event)">
+        <div class="nav-item" (click)="toggleMenu('config', $event)">
           <span>Configuration</span>
           <img
             src="assets/icons/chevron.svg"
             class="chevron"
-            [class.open]="isConfigOpen"
+            [class.open]="menuState.config"
             alt="chevron"
           />
         </div>
         <!-- Sous-menu -->
-        <ul class="sub-nav" *ngIf="isConfigOpen">
+        <ul class="sub-nav" *ngIf="menuState.config">
           <li
             [class.active]="currentSection === 'configuration-global'"
             (click)="selectSection('configuration-global', $event)"
@@ -144,17 +144,17 @@
 
       <!-- Nouveau Menu Data avec accordéon -->
       <li class="menu-item" [class.active]="currentSection.startsWith('data')">
-        <div class="nav-item" (click)="toggleDataMenu($event)">
+        <div class="nav-item" (click)="toggleMenu('data', $event)">
           <span>Data</span>
           <img
             src="assets/icons/chevron.svg"
             class="chevron"
-            [class.open]="isDataOpen"
+            [class.open]="menuState.data"
             alt="chevron"
           />
         </div>
         <!-- Sous-menu Data -->
-        <ul class="sub-nav" *ngIf="isDataOpen">
+        <ul class="sub-nav" *ngIf="menuState.data">
           <li
             [class.active]="currentSection === 'data-structure'"
             (click)="selectSection('data-structure', $event)"
@@ -196,7 +196,7 @@
 
       <div class="introduction">
         <p>
-          jQuery-Charts est une bibliothèque de visualisation de données pour
+          <strong>jQuery-Charts</strong> est une bibliothèque de visualisation de données pour
           Angular, qui simplifie l'utilisation de bibliothèques tierces comme
           ApexCharts ou Highcharts. Elle fournit une interface de programmation
           standardisée, ce qui signifie que vous utilisez toujours la même
@@ -300,20 +300,20 @@
       </app-important-notes>
     </section>
 
-    <!-- Section Types de Graphiques -->
     <section *ngIf="currentSection === 'information-générale'">
       <app-graph-types-section
-        title="Information Générale"
+        title="Types de Graphiques - Vue d'ensemble"
         [code]="graphTypes.infosGlobal.basic.code"
-        description="Vue d'ensemble des configurations communes à tous les types de graphiques"
+        description="Introduction aux concepts fondamentaux et à la structure commune des graphiques"
       >
       </app-graph-types-section>
 
-      <app-important-notes
-        [notes]="globalConfigNotes"
-        title="Notes importantes sur la configuration globale"
+      <app-informations
+        title="Points clés à retenir"
+        [notes]="infoGeneralNotes"
+        type="warning"
       >
-      </app-important-notes>
+      </app-informations>
     </section>
 
     <section *ngIf="currentSection === 'type-pie'">
@@ -322,12 +322,18 @@
         [code]="graphTypes.pie.basic.code"
         description="Pour les données circulaires et proportionnelles"
         [compatibilityNotes]="[
-          'pie ↔ donut (même données, avec/sans trou central)',
-          'polar ↔ radar (même données, visualisation différente)',
-          'radialBar (structure de données unique, non interchangeable)'
+          '• pie ↔ donut (même données, avec/sans trou central)',
+          '• polar ↔ radar (même données, visualisation différente)',
+          '• radialBar (structure de données unique, non interchangeable)'
         ]"
       >
       </app-graph-types-section>
+      <div class="see-examples">
+        <a [routerLink]="['/charts', 'pie']" class="examples-link">
+          <img src="assets/icons/chart.svg" alt="chart" />
+          Voir les exemples de Pie Charts
+        </a>
+      </div>
     </section>
 
     <section *ngIf="currentSection === 'type-bar'">
@@ -336,9 +342,9 @@
         [code]="graphTypes.bar.basic.code"
         description="Pour comparer des valeurs entre catégories"
         [compatibilityNotes]="[
-          'bar ↔ column (orientation horizontale/verticale)',
-          'Peut utiliser stacked et pivot',
-          'Compatible avec le mode continue'
+          '• bar ↔ column (orientation horizontale/verticale)',
+          '• Peut utiliser stacked et pivot',
+          '• Compatible avec le mode continue'
         ]"
       >
       </app-graph-types-section>
@@ -350,9 +356,9 @@
         [code]="graphTypes.line.basic.code"
         description="Pour visualiser des tendances et évolutions"
         [compatibilityNotes]="[
-          'line ↔ area (avec/sans remplissage)',
-          'Plusieurs styles de courbes disponibles',
-          'Compatible avec le mode continue'
+          '• line ↔ area (avec/sans remplissage)',
+          '• Plusieurs styles de courbes disponibles',
+          '• Compatible avec le mode continue'
         ]"
       >
       </app-graph-types-section>
@@ -364,9 +370,9 @@
         [code]="graphTypes.treemap.basic.code"
         description="Pour visualiser des données hiérarchiques"
         [compatibilityNotes]="[
-          'treemap ↔ heatmap (visualisations alternatives)',
-          'Supporte le groupement de données',
-          'distributed et enableShades sont mutuellement exclusifs'
+          '• treemap ↔ heatmap (visualisations alternatives)',
+          '• Supporte le groupement de données',
+          '• distributed et enableShades sont mutuellement exclusifs'
         ]"
       >
       </app-graph-types-section>
@@ -378,8 +384,8 @@
         [code]="graphTypes.heatmap.basic.code"
         description="Pour visualiser l'intensité des données"
         [compatibilityNotes]="[
-          'Compatible avec les échelles de couleurs personnalisées',
-          'Peut être utilisé avec des données matricielles'
+          '• Compatible avec les échelles de couleurs personnalisées',
+          '• Peut être utilisé avec des données matricielles'
         ]"
       >
       </app-graph-types-section>
@@ -391,9 +397,9 @@
         [code]="graphTypes.range.basic.code"
         description="Pour représenter des plages de valeurs"
         [compatibilityNotes]="[
-          'rangeArea ↔ rangeBar ↔ rangeColumn',
-          'Nécessite des données min/max',
-          'Compatible avec le mode horizontal pour rangeBar'
+          '• rangeArea ↔ rangeBar ↔ rangeColumn',
+          '• Nécessite des données min/max',
+          '• Compatible avec le mode horizontal pour rangeBar'
         ]"
       >
       </app-graph-types-section>
@@ -405,9 +411,9 @@
         [code]="graphTypes.funnel.basic.code"
         description="Pour visualiser des processus par étapes"
         [compatibilityNotes]="[
-          'funnel ↔ pyramid',
-          'Ne supporte pas le pivot',
-          'Configuration spécifique pour le goulot'
+          '• funnel ↔ pyramid',
+          '• Ne supporte pas le pivot',
+          '• Configuration spécifique pour le goulot'
         ]"
       >
       </app-graph-types-section>
