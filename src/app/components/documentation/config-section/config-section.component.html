@@ -2,6 +2,11 @@
   <h2>{{ title }}</h2>
   <p *ngIf="description">{{ description }}</p>
   <div class="code-block">
+    <app-btn-view-examples
+          *ngIf="shouldShowButton"
+          [chartType]="getChartType()"
+          [chartName]="title">
+        </app-btn-view-examples>
     <pre><code [innerHTML]="code"></code></pre>
   </div>
 </section>

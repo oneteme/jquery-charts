@@ -8,74 +8,11 @@
         Installation & Démarrage
       </li>
       <li
-        class="menu-item"
-        [class.active]="
-          currentSection.startsWith('type-') ||
-          currentSection === 'information-générale'
-        "
+        [class.active]="currentSection === 'information-générale'"
+        (click)="selectSection('information-générale')"
       >
-        <div class="nav-item" (click)="toggleMenu('graphTypes', $event)">
-          <span>Types de Graphiques</span>
-          <img
-            src="assets/icons/chevron.svg"
-            class="chevron"
-            [class.open]="menuState.graphTypes"
-            alt="chevron"
-          />
-        </div>
-        <!-- Sous-menu des types de graphiques -->
-        <ul class="sub-nav" *ngIf="menuState.graphTypes">
-          <li
-            [class.active]="currentSection === 'information-générale'"
-            (click)="selectSection('information-générale', $event)"
-          >
-            Information Générale
-          </li>
-          <li
-            [class.active]="currentSection === 'type-pie'"
-            (click)="selectSection('type-pie', $event)"
-          >
-            Pie Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'type-bar'"
-            (click)="selectSection('type-bar', $event)"
-          >
-            Bar Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'type-line'"
-            (click)="selectSection('type-line', $event)"
-          >
-            Line Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'type-treemap'"
-            (click)="selectSection('type-treemap', $event)"
-          >
-            Treemap Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'type-heatmap'"
-            (click)="selectSection('type-heatmap', $event)"
-          >
-            Heatmap Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'type-range'"
-            (click)="selectSection('type-range', $event)"
-          >
-            Range Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'type-funnel'"
-            (click)="selectSection('type-funnel', $event)"
-          >
-            Funnel Charts
-          </li>
-        </ul>
+        <span>Types de Graphiques</span>
       </li>
-
       <li
         class="menu-item"
         [class.active]="currentSection.startsWith('configuration')"
@@ -89,7 +26,6 @@
             alt="chevron"
           />
         </div>
-        <!-- Sous-menu -->
         <ul class="sub-nav" *ngIf="menuState.config">
           <li
             [class.active]="currentSection === 'configuration-global'"
@@ -141,8 +77,6 @@
           </li>
         </ul>
       </li>
-
-      <!-- Nouveau Menu Data avec accordéon -->
       <li class="menu-item" [class.active]="currentSection.startsWith('data')">
         <div class="nav-item" (click)="toggleMenu('data', $event)">
           <span>Data</span>
@@ -153,7 +87,6 @@
             alt="chevron"
           />
         </div>
-        <!-- Sous-menu Data -->
         <ul class="sub-nav" *ngIf="menuState.data">
           <li
             [class.active]="currentSection === 'data-structure'"
@@ -193,14 +126,13 @@
   <div class="doc-content">
     <section *ngIf="currentSection === 'getting-started'">
       <h2>Installation & Démarrage</h2>
-
       <div class="introduction">
         <p>
-          <strong>jQuery-Charts</strong> est une bibliothèque de visualisation de données pour
-          Angular, qui simplifie l'utilisation de bibliothèques tierces comme
-          ApexCharts ou Highcharts. Elle fournit une interface de programmation
-          standardisée, ce qui signifie que vous utilisez toujours la même
-          syntaxe Angular quel que soit le moteur de rendu choisi.
+          <strong>jQuery-Charts</strong> est une bibliothèque de visualisation
+          de données pour Angular, qui simplifie l'utilisation de bibliothèques
+          tierces comme ApexCharts ou Highcharts. Elle fournit une interface de
+          programmation standardisée, ce qui signifie que vous utilisez toujours
+          la même syntaxe Angular quel que soit le moteur de rendu choisi.
         </p>
         <p>Concrètement, cela signifie que :</p>
         <ul>
@@ -222,7 +154,6 @@
           </li>
         </ul>
       </div>
-
       <div class="step">
         <h3>1. Création du projet Angular</h3>
         <p>Si vous n'avez pas encore de projet Angular, créez-en un :</p>
@@ -231,21 +162,18 @@
 <span class="red strong">cd</span> my-chart-app</code></pre>
         </div>
       </div>
-
       <div class="step">
         <h3>2. Installation des dépendances</h3>
         <p>Installez les packages nécessaires :</p>
         <div class="code-block">
           <pre><code><span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-charts</span>
-<span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core</span>
-
+<span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core</span><br>
 <i>Si vous utilisez Apexcharts</i>
 <span class="red strong">npm</span> install <span class="blue strong">apexcharts</span><br>
 <i>Si vous utilisez Highcharts</i>
 <span class="red strong">npm</span> install <span class="blue strong">highcharts</span></code></pre>
         </div>
       </div>
-
       <div class="step">
         <h3>3. Configuration du module</h3>
         <p>
@@ -256,8 +184,7 @@
           <h4>Option A : Dans un module (app.module.ts)</h4>
           <div class="code-block">
             <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;
-
-&#64;NgModule({{ '{' }}
+<br>&#64;NgModule({{ '{' }}
   <span class="red">imports</span>: <span class="blue">[</span>
     <span class="blue">BrowserModule,</span>
     <span class="blue">ChartComponent</span>
@@ -268,8 +195,7 @@
         <div class="option-block">
           <h4>Option B : Dans un composant standalone</h4>
           <div class="code-block">
-            <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;
-
+            <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;<br>
 &#64;Component({{ '{' }}
   <span class="red strong">standalone</span>: <span class="blue strong">true</span>,
   <span class="red">imports</span>: <span class="blue">[ChartComponent]</span>
@@ -278,7 +204,6 @@
           </div>
         </div>
       </div>
-
       <div class="step">
         <h3>4. Utilisation dans un composant</h3>
         <p>Exemple d'utilisation simple :</p>
@@ -290,16 +215,13 @@
 <span class="red">&gt;&lt;/chart&gt;</span></code></pre>
         </div>
       </div>
-
-      <chart [type]="'pie'" [config]="config" [data]="data"></chart>
-
-      <app-important-notes
+      <app-informations
         [notes]="gettingStartedNotes"
         title="Recommandations pour bien démarrer"
+        type="warning"
       >
-      </app-important-notes>
+      </app-informations>
     </section>
-
     <section *ngIf="currentSection === 'information-générale'">
       <app-graph-types-section
         title="Types de Graphiques - Vue d'ensemble"
@@ -307,15 +229,19 @@
         description="Introduction aux concepts fondamentaux et à la structure commune des graphiques"
       >
       </app-graph-types-section>
-
       <app-informations
         title="Points clés à retenir"
         [notes]="infoGeneralNotes"
-        type="warning"
+        type="info"
       >
       </app-informations>
-    </section>
-
+      <app-informations
+        title="Compatibilité entre types"
+        [notes]="chartCompatibilityNotes"
+        type="tip"
+      >
+      </app-informations>
+         </section>
     <section *ngIf="currentSection === 'type-pie'">
       <app-graph-types-section
         title="Pie Charts"
@@ -328,14 +254,8 @@
         ]"
       >
       </app-graph-types-section>
-      <div class="see-examples">
-        <a [routerLink]="['/charts', 'pie']" class="examples-link">
-          <img src="assets/icons/chart.svg" alt="chart" />
-          Voir les exemples de Pie Charts
-        </a>
-      </div>
-    </section>
 
+    </section>
     <section *ngIf="currentSection === 'type-bar'">
       <app-graph-types-section
         title="Bar Charts"
@@ -349,7 +269,6 @@
       >
       </app-graph-types-section>
     </section>
-
     <section *ngIf="currentSection === 'type-line'">
       <app-graph-types-section
         title="Line Charts"
@@ -363,7 +282,6 @@
       >
       </app-graph-types-section>
     </section>
-
     <section *ngIf="currentSection === 'type-treemap'">
       <app-graph-types-section
         title="Treemap Charts"
@@ -377,7 +295,6 @@
       >
       </app-graph-types-section>
     </section>
-
     <section *ngIf="currentSection === 'type-heatmap'">
       <app-graph-types-section
         title="Heatmap Charts"
@@ -390,7 +307,6 @@
       >
       </app-graph-types-section>
     </section>
-
     <section *ngIf="currentSection === 'type-range'">
       <app-graph-types-section
         title="Range Charts"
@@ -404,7 +320,6 @@
       >
       </app-graph-types-section>
     </section>
-
     <section *ngIf="currentSection === 'type-funnel'">
       <app-graph-types-section
         title="Funnel Charts"
@@ -418,56 +333,48 @@
       >
       </app-graph-types-section>
     </section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-global'"
       title="Configuration - Structure de base"
       [code]="configs.global.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-pie'"
       title="Configuration des Pie Charts"
       [code]="configs.pie.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-bar'"
       title="Configuration des Bar Charts"
       [code]="configs.bar.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-line'"
       title="Configuration des Line Charts"
       [code]="configs.line.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-treemap'"
       title="Configuration des Treemap Charts"
       [code]="configs.treemap.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-heatmap'"
       title="Configuration des Heatmap Charts"
       [code]="configs.heatmap.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-range'"
       title="Configuration des Range Charts"
       [code]="configs.range.basic.code"
     >
     </app-config-section>
-
     <app-config-section
       *ngIf="currentSection === 'configuration-funnel'"
       title="Configuration des Funnel Charts"
@@ -475,8 +382,6 @@
       [code]="configs.funnel.basic.code"
     >
     </app-config-section>
-
-    <!-- Sections Data -->
     <app-data-section
       *ngIf="currentSection === 'data-structure'"
       title="Structure des données pour les graphiques"
@@ -484,7 +389,6 @@
       [code]="datas.structure.basic.code"
     >
     </app-data-section>
-
     <app-data-section
       *ngIf="currentSection === 'data-providers'"
       title="Utilisation des Data Providers"
@@ -492,7 +396,6 @@
       [code]="datas.providers.basic.code"
     >
     </app-data-section>
-
     <app-data-section
       *ngIf="currentSection === 'data-fields'"
       title="Manipulation des données avec Fields"
@@ -500,7 +403,6 @@
       [code]="datas.fields.basic.code"
     >
     </app-data-section>
-
     <app-data-section
       *ngIf="currentSection === 'data-values'"
       title="Utilisation des Values pour les données statiques"
@@ -508,7 +410,6 @@
       [code]="datas.values.basic.code"
     >
     </app-data-section>
-
     <app-data-section
       *ngIf="currentSection === 'data-combine'"
       title="Combinaison et agrégation de données"

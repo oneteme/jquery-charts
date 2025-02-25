@@ -12,7 +12,7 @@ import { ChartTypesService } from './core/services/chart-types.service';
     AppComponent,
     HomeComponent,
     HeaderComponent,
-    SidebarComponent
+    SidebarComponent,
   ],
   imports: [
     BrowserModule,

@@ -90,24 +90,33 @@ export class DocumentationComponent {
     "• 'stacked' n'est compatible qu'avec les types bar/column",
     '• Certaines options peuvent être écrasées par les configurations spécifiques des types'
   ];
+
+  chartCompatibilityNotes: string[] = [
+    '• Pie Charts : pie ↔ donut (même données, avec/sans trou central), polar ↔ radar (visualisation différente)',
+    '• Bar Charts : bar ↔ column (orientation), compatible stacked et pivot',
+    '• Line Charts : line ↔ area (avec/sans remplissage), compatible continue',
+    '• Treemap Charts : treemap ↔ heatmap, supporte le groupement',
+    '• Range Charts : rangeArea ↔ rangeBar ↔ rangeColumn, nécessite min/max',
+    '• Funnel Charts : funnel ↔ pyramid, configuration spécifique pour le goulot'
+  ];
   menuState: { [key: string]: boolean } = {
     graphTypes: false,
     config: false,
     data: false
   };
 
-  
+
 
   toggleMenu(menuName: 'graphTypes' | 'config' | 'data', event: Event) {
     event.stopPropagation();
-    
+
     // Fermer les autres menus
     Object.keys(this.menuState).forEach(key => {
       if (key !== menuName) {
         this.menuState[key] = false;
       }
     });
-    
+
     // Basculer l'état du menu cliqué
     this.menuState[menuName] = !this.menuState[menuName];
   }

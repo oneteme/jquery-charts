@@ -6,6 +6,7 @@ import { DocumentationComponent } from './documentation.component';
 import { ConfigSectionComponent } from '../../components/documentation/config-section/config-section.component';
 import { DataSectionComponent } from '../../components/documentation/data-section/data-section.component';
 import { GraphTypesSectionComponent } from '../../components/documentation/graph-types-section/graph-types-section.component';
+import { BtnViewExamplesComponent } from '../../components/documentation/btn-view-examples/btn-view-examples.component';
 import { InformationsComponent } from '../../components/documentation/informations/informations.component';
 
 const routes: Routes = [
@@ -22,7 +23,8 @@ const routes: Routes = [
   ],
   imports: [
     CommonModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild(routes),
+    BtnViewExamplesComponent
   ]
 })
 export class DocumentationModule { }
