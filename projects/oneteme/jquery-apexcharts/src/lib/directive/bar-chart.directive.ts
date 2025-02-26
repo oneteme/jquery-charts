@@ -166,7 +166,7 @@ export class BarChartDirective<X extends XaxisType> implements ChartView<X, numb
   private updateLoading() {
     mergeDeep(this._options, {
       noData: {
-        text: this.isLoading ? 'Loading...' : 'Aucune donnée'
+        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
       }
     });
   }
