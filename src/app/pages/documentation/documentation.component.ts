@@ -76,21 +76,18 @@ export class DocumentationComponent {
     "• La propriété 'pivot' n'est pas disponible pour tous les types",
     "• 'stacked' ne fonctionne qu'avec les types bar/column",
   ];
-
   gettingStartedNotes: string[] = [
     "• Il est recommandé de suivre la documentation dans l'ordre proposé",
     '• Commencez par explorer les différents types de graphiques disponibles ainsi que leur compatibilité',
     '• Puis approfondissez avec les options de configuration spécifiques',
     '• La section Data vous permet de maitriser la structuration des données',
   ];
-
   globalConfigNotes: string[] = [
     '• Les propriétés height et series sont obligatoires',
     '• Le pivot et continue sont mutuellement exclusifs',
     "• 'stacked' n'est compatible qu'avec les types bar/column",
     '• Certaines options peuvent être écrasées par les configurations spécifiques des types'
   ];
-
   chartCompatibilityNotes: string[] = [
     '• Pie Charts : pie ↔ donut (même données, avec/sans trou central), polar ↔ radar (visualisation différente)',
     '• Bar Charts : bar ↔ column (orientation), compatible stacked et pivot',
@@ -100,24 +97,19 @@ export class DocumentationComponent {
     '• Funnel Charts : funnel ↔ pyramid, configuration spécifique pour le goulot'
   ];
   menuState: { [key: string]: boolean } = {
-    graphTypes: false,
     config: false,
     data: false
   };
 
-
-
-  toggleMenu(menuName: 'graphTypes' | 'config' | 'data', event: Event) {
+  toggleMenu(menuName: 'config' | 'data', event: Event) {
     event.stopPropagation();
 
-    // Fermer les autres menus
     Object.keys(this.menuState).forEach(key => {
       if (key !== menuName) {
         this.menuState[key] = false;
       }
     });
 
-    // Basculer l'état du menu cliqué
     this.menuState[menuName] = !this.menuState[menuName];
   }
 

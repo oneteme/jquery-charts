@@ -22,19 +22,14 @@
               let i = index
             "
           >
-            <chart
-              type="pie"
-              [config]="example.config"
-              [data]="example.data"
-            />
+            <chart type="pie" [config]="example.config" [data]="example.data" />
             <div class="code-toggle" (click)="toggleCode(i, $event)">
-              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(i)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
+              <span class="tooltip">Voir le code</span>
             </div>
             <div class="code-block" [class.open]="isCodeOpen(i)">
               <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
@@ -62,17 +57,11 @@
               let i = index
             "
           >
-            <chart
-              type="bar"
-              [config]="example.config"
-              [data]="example.data"
-            />
+            <chart type="bar" [config]="example.config" [data]="example.data" />
             <div class="code-toggle" (click)="toggleCode(i, $event)">
-              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(i)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
             </div>
@@ -107,11 +96,9 @@
               [data]="example.data"
             />
             <div class="code-toggle" (click)="toggleCode(i, $event)">
-              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(i)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
             </div>
@@ -126,11 +113,7 @@
           <div
             class="chart-wrapper"
             *ngFor="
-              let example of [
-                treemapExample,
-                treemapExample2,
-                treemapExample3
-              ];
+              let example of [treemapExample, treemapExample2, treemapExample3];
               let i = index
             "
           >
@@ -140,11 +123,9 @@
               [data]="example.data"
             />
             <div class="code-toggle" (click)="toggleCode(i, $event)">
-              {{ isCodeOpen(i) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(i)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
             </div>
@@ -163,11 +144,9 @@
               [data]="heatmapExample.data"
             />
             <div class="code-toggle" (click)="toggleCode(0, $event)">
-              {{ isCodeOpen(0) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(0)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
             </div>
@@ -186,11 +165,9 @@
               [data]="rangeExample.data"
             />
             <div class="code-toggle" (click)="toggleCode(0, $event)">
-              {{ isCodeOpen(0) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(0)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
             </div>
@@ -209,11 +186,9 @@
               [data]="funnelExample.data"
             />
             <div class="code-toggle" (click)="toggleCode(0, $event)">
-              {{ isCodeOpen(0) ? "Masquer le code" : "Voir le code" }}
               <img
-                src="assets/icons/chevron.svg"
-                class="chevron"
-                [class.open]="isCodeOpen(0)"
+                src="assets/icons/code.svg"
+                class="code-icon"
                 alt="toggle code"
               />
             </div>
