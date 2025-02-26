@@ -149,7 +149,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
   private updateLoading() {
     mergeDeep(this._options, {
       noData: {
-        text: this.isLoading ? 'Loading...' : 'Aucune donnée'
+        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
       }
     });
   }

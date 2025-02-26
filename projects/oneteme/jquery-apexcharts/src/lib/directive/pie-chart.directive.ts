@@ -156,7 +156,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
   private updateLoading() {
     mergeDeep(this._options, {
       noData: {
-        text: this.isLoading ? 'Loading...' : 'Aucune donnée'
+        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
       }
     });
   }
