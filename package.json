@@ -14,12 +14,8 @@
     "url": "https://github.com/oneteme/jquery-charts.git"
   },
   "contributors": [
-    {
-      "name": "antonin77"
-    },
-    {
-      "name": "NairodP"
-    }
+    {"name": "antonin77"},
+    {"name": "NairodP"}
   ],
   "scripts": {
     "ng": "ng",
