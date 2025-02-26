@@ -1,7 +1,7 @@
 .charts-container {
   width: 100%;
   padding: 2rem;
-    max-width: min(90%, 1800px);
+  max-width: min(90%, 1800px);
 
   h2 {
     margin-bottom: 2rem;
@@ -13,188 +13,114 @@
     grid-template-columns: repeat(auto-fit, minmax(400px, 3fr));
     gap: 2rem;
 
-//     .chart-wrapper {
-//       position: relative;
-//       background: white;
-//       border-radius: 8px;
-//       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-//       overflow: visible;
+    .chart-wrapper {
+      position: relative;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      overflow: hidden;
+      padding-bottom: .7rem;
 
-//       &:has(.code-block.open) {
-//         border-radius: 8px 8px 0 0;
-//       }
+      chart {
+        display: block;
+        padding: 1rem;
+        min-height: 300px;
+      }
 
-//       chart {
-//         display: block;
-//         padding: 1rem;
-//         min-height: 300px;
-//       }
-//       .code-toggle {
-//         padding: 0.5rem 1rem;
-//         border-top: 1px solid #eee;
-//         color: #3498db;
-//         cursor: pointer;
-//         display: flex;
-//         align-items: center;
-//         justify-content: space-between;
-//         transition: background-color 0.2s ease;
-
-//         &:hover {
-//           background-color: #f8f9fa;
-//         }
-
-//         .chevron {
-//           transform: rotate(90deg);
-//           width: 17px;
-//           height: 17px;
-//           margin-left: 0.5rem;
-//           transition: transform 0.3s ease;
-
-//           &.open {
-//             transform: rotate(270deg);
-//           }
-//         }
-//       }
-//       .code-block {
-//         display: none;
-//         position: absolute;
-//         top: 100%;
-//         left: 0;
-//         right: 0;
-//         z-index: 1000;
-//         background: #f8f9fa;
-//         border: 1px solid #e0e0e0;
-//         border-top: 1px solid #e0e0e071;
-//         border-radius: 0 0 8px 8px;
-//         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-//         margin-top: 0;
-
-//         &.open {
-//           display: block;
-//         }
-
-//         pre {
-//           margin: 0;
-//           padding: 1rem;
-//           max-height: 500px;
-//           overflow-y: auto;
-
-//           code {
-//             font-size: 0.9rem;
-//             line-height: 1.6;
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
-.chart-wrapper {
-  position: relative;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden; // Changed from visible to hidden
-
-  chart {
-    display: block;
-    padding: 1rem;
-    min-height: 300px;
-  }
-
-  .code-toggle {
-    position: absolute;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 2;
-    padding: 0.5rem;
-    background: white;
-    border-radius: 6px;
-    color: #3498db;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    transition: all 0.2s ease;
-    border: 1px solid #e0e0e0;
-    font-size: 0.9rem;
-
-    .tooltip {
-      position: absolute;
-      bottom: 100%;
-      right: 0;
-      background: rgba(0, 0, 0, 0.8);
-      color: white;
-      padding: 0.5rem 0.75rem;
-      border-radius: 4px;
-      font-size: 0.8rem;
-      white-space: nowrap;
-      opacity: 0;
-      visibility: hidden;
-      transform: translateY(5px);
-      transition: all 0.2s ease;
-      margin-bottom: 5px;
-
-      &::after {
-        content: '';
+      .code-toggle {
         position: absolute;
-        top: 100%;
-        right: 10px;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 5px solid rgba(0, 0, 0, 0.8);
-      }
-    }
-
-    &:hover {
-      background-color: #f8f9fa;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-
-      .tooltip {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-      }
-    }
-
-    .code-icon {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
-  .code-block {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(248, 249, 250, 0.98);
-    z-index: 1;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    padding: 1rem;
-    display: flex;
-    margin: 0;
-
-    &.open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    pre {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: auto;
-      background: transparent;
-
-      code {
+        bottom: 1rem;
+        right: 1rem;
+        z-index: 2;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 6px;
+        color: #3498db;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+        border: 1px solid #e0e0e0;
         font-size: 0.9rem;
-        line-height: 1.6;
+
+        .tooltip {
+          position: absolute;
+          bottom: 100%;
+          right: 0;
+          background: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 0.5rem 0.75rem;
+          border-radius: 4px;
+          font-size: 0.8rem;
+          white-space: nowrap;
+          opacity: 0;
+          visibility: hidden;
+          transform: translateY(5px);
+          transition: all 0.2s ease;
+          margin-bottom: 5px;
+
+          &::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            right: 10px;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid rgba(0, 0, 0, 0.8);
+          }
+        }
+
+        &:hover {
+          background-color: #f8f9fa;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+          .tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+          }
+        }
+
+        .code-icon {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .code-block {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(248, 249, 250, 0.98);
+        z-index: 1;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        padding: 1rem;
+        display: flex;
+        margin: 0;
+
+        &.open {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        pre {
+          margin: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background: transparent;
+
+          code {
+            font-size: 0.9rem;
+            line-height: 1.6;
+          }
+        }
       }
     }
   }
-}
-}
 }
