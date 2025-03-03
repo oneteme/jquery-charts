@@ -19,6 +19,10 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
             <span>Installer</span>
             <span class="version">v1.0.0</span>
           </button>
+          <div class="separator"></div>
+          <button class="github-btn" (click)="goToGithub()">
+            <img src="assets/icons/github.svg" alt="GitHub" />
+          </button>
         </div>
       </nav>
     </header>
@@ -45,6 +49,13 @@ export class HeaderComponent {
   goToInstall() {
     window.open(
       'https://www.npmjs.com/package/@oneteme/jquery-apexcharts',
+      '_blank'
+    );
+  }
+
+  goToGithub() {
+    window.open(
+      'https://github.com/oneteme/jquery-charts',
       '_blank'
     );
   }
