@@ -5,15 +5,16 @@ import { ChartComponent } from '@oneteme/jquery-apexcharts';
 import { ChartsComponent } from './charts.component';
 
 const routes: Routes = [
-  { path: ':type', component: ChartsComponent }
+  {
+    path: '',
+    redirectTo: 'pie',
+    pathMatch: 'full',
+  },
+  { path: ':type', component: ChartsComponent },
 ];
 
 @NgModule({
   declarations: [ChartsComponent],
-  imports: [
-    CommonModule,
-    ChartComponent,
-    RouterModule.forChild(routes)
-  ]
+  imports: [CommonModule, ChartComponent, RouterModule.forChild(routes)],
 })
-export class ChartsModule { }
+export class ChartsModule {}
