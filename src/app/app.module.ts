@@ -6,6 +6,7 @@ import { HomeComponent } from './pages/home/home.component';
 import { HeaderComponent } from './components/header/header.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ChartTypesService } from './core/services/chart-types.service';
+import { FooterComponent } from './components/footer/footer.component';
 
 @NgModule({
   declarations: [
@@ -13,6 +14,7 @@ import { ChartTypesService } from './core/services/chart-types.service';
     HomeComponent,
     HeaderComponent,
     SidebarComponent,
+    FooterComponent,
   ],
   imports: [
     BrowserModule,

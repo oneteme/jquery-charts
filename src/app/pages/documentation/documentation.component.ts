@@ -96,6 +96,12 @@ export class DocumentationComponent {
     '• Range Charts : rangeArea ↔ rangeBar ↔ rangeColumn, nécessite min/max',
     '• Funnel Charts : funnel ↔ pyramid, configuration spécifique pour le goulot'
   ];
+  configNotes: string[] = [
+    '1. Les propriétés height et series sont obligatoires',
+    '2. Le pivot et continue sont mutuellement exclusifs',
+    `3. stacked n'est compatible qu'avec les types bar/column`,
+    '4. Certaines options peuvent être écrasées par les configurations spécifiques des types'
+  ];
   menuState: { [key: string]: boolean } = {
     config: false,
     data: false
