@@ -123,15 +123,15 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
           }
         },
         events: {
-          mouseMove: function (e, c, config) {
+          mouseMove: function(e, c, config) {
             var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            toolbar ? toolbar.style.visibility = "visible" : null;
+            if (toolbar) toolbar.style.visibility = "visible";
           },
-          mouseLeave: function (e, c, config) {
+          mouseLeave: function(e, c, config) {
             var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            toolbar ? toolbar.style.visibility = "hidden" : null;
+            if (toolbar) toolbar.style.visibility = "hidden";
           }
-        }
+        },
       },
       title: {
         text: this._chartConfig.title
