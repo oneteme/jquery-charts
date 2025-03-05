@@ -504,18 +504,21 @@
       >
       </app-graph-types-section>
     </section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-global'"
-      title="Configuration - Structure de base"
-      [code]="configs.global.basic.code"
-    >
-    </app-config-section>
-    <app-informations
+
+    <ng-container *ngIf="currentSection === 'configuration-global'">
+      <app-config-section
+        title="Configuration - Structure de base"
+        [code]="configs.global.basic.code"
+      >
+      </app-config-section>
+      <app-informations
         [notes]="configNotes"
         title="Notes importantes"
         type="warning"
       >
       </app-informations>
+    </ng-container>
+
     <app-config-section
       *ngIf="currentSection === 'configuration-pie'"
       title="Configuration des Pie Charts"

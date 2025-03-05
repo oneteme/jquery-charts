@@ -10,7 +10,7 @@ import { Component, OnInit } from '@angular/core';
           <span class="license">Apache 2.0</span>
         </div>
         <div class="footer-right">
-          <span class="contribution">Toutes les contributions sont les bienvenues. Vous pouvez également créer une issue ici ➙</span>
+          <span class="contribution">Toutes contributions sont les bienvenues. Vous pouvez également créer une issue ici ➙</span>
           <a
             href="https://github.com/oneteme/jquery-charts/issues"
             target="_blank"
