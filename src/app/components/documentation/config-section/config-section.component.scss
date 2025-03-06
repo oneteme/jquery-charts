@@ -1,54 +1,86 @@
 .config-section {
   margin-bottom: 2rem;
 
-  p {
-    color: red;
+  h2 {
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
   }
 
-  .code-block {
+  .description {
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  .type-details {
     position: relative;
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin: 1rem 0;
-    border: 1px solid #e0e0e0;
 
-    pre {
-      margin: 0;
-      padding: 1rem;
+    .code-block {
+      background: #f8f9fa;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border: 1px solid #e0e0e0;
 
-      code {
-        font-size: 0.9rem;
-        line-height: 1.6;
+      h3 {
+        color: #34495e;
+        margin-top: 0;
+        margin-bottom: 1rem;
+      }
 
-        strong {
-          color: #22628c;
-          font-weight: 600;
+      pre {
+        margin: 0;
+        padding: 1rem;
+
+        code {
+          font-size: 0.9rem;
+          line-height: 1.6;
         }
+      }
+    }
 
-        i {
-          color: #7e7e7e;
-          font-style: italic;
+    .compatibility-notes {
+      background: #fff3cd;
+      padding: 1.5rem;
+      border-radius: 8px;
+      margin: 1.5rem 0;
+      border-left: 4px solid #ffc107;
+
+      h3 {
+        color: #856404;
+        margin-top: 0;
+        margin-bottom: 1rem;
+      }
+
+      ul {
+        margin: 0;
+        padding-left: 1.5rem;
+
+        li {
+          color: #856404;
+          margin-bottom: 0.5rem;
+          line-height: 1.4;
         }
+      }
+    }
+    .examples {
+      margin-top: 2rem;
 
-        .red {
-          color: #ba2c2c;
-        }
+      h3 {
+        color: #34495e;
+        margin-bottom: 1.5rem;
+      }
 
-        .yellow {
-          color: #b6b615;
-        }
+      .example-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
 
-        .purple {
-          color: #b51e94;
-        }
-
-        .green {
-          color: #1e9324;
-        }
-
-        .white {
-          color: #d5d5d5;
+        .example-item {
+          background: white;
+          border-radius: 8px;
+          padding: 1rem;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
       }
     }

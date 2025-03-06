@@ -1,567 +1,17 @@
-<div class="documentation-container">
+<!-- <div class="documentation-container">
   <div class="doc-nav">
-    <ul>
-      <li
-        [class.active]="currentSection === 'getting-started'"
-        (click)="selectSection('getting-started')"
-      >
-        Installation & Démarrage
-      </li>
-      <li
-        [class.active]="currentSection === 'information-générale'"
-        (click)="selectSection('information-générale')"
-      >
-        <span>Types de Graphiques</span>
-      </li>
-      <li
-        class="menu-item"
-        [class.active]="currentSection.startsWith('configuration')"
-      >
-        <div class="nav-item" (click)="toggleMenu('config', $event)">
-          <span>Configuration</span>
-          <img
-            src="assets/icons/chevron.svg"
-            class="chevron"
-            [class.open]="menuState.config"
-            alt="chevron"
-          />
-        </div>
-        <ul class="sub-nav" *ngIf="menuState.config">
-          <li
-            [class.active]="currentSection === 'configuration-global'"
-            (click)="selectSection('configuration-global', $event)"
-          >
-            Configuration Globale
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-pie'"
-            (click)="selectSection('configuration-pie', $event)"
-          >
-            Pie Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-bar'"
-            (click)="selectSection('configuration-bar', $event)"
-          >
-            Bar Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-line'"
-            (click)="selectSection('configuration-line', $event)"
-          >
-            Line Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-treemap'"
-            (click)="selectSection('configuration-treemap', $event)"
-          >
-            Treemap Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-heatmap'"
-            (click)="selectSection('configuration-heatmap', $event)"
-          >
-            Heatmap Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-range'"
-            (click)="selectSection('configuration-range', $event)"
-          >
-            Range Charts
-          </li>
-          <li
-            [class.active]="currentSection === 'configuration-funnel'"
-            (click)="selectSection('configuration-funnel', $event)"
-          >
-            Funnel Charts
-          </li>
-        </ul>
-      </li>
-      <li class="menu-item" [class.active]="currentSection.startsWith('data')">
-        <div class="nav-item" (click)="toggleMenu('data', $event)">
-          <span>Data</span>
-          <img
-            src="assets/icons/chevron.svg"
-            class="chevron"
-            [class.open]="menuState.data"
-            alt="chevron"
-          />
-        </div>
-        <ul class="sub-nav" *ngIf="menuState.data">
-          <li
-            [class.active]="currentSection === 'data-structure'"
-            (click)="selectSection('data-structure', $event)"
-          >
-            Structure des données
-          </li>
-          <li
-            [class.active]="currentSection === 'data-providers'"
-            (click)="selectSection('data-providers', $event)"
-          >
-            Data Providers
-          </li>
-          <li
-            [class.active]="currentSection === 'data-fields'"
-            (click)="selectSection('data-fields', $event)"
-          >
-            Utilisation des Fields
-          </li>
-          <li
-            [class.active]="currentSection === 'data-values'"
-            (click)="selectSection('data-values', $event)"
-          >
-            Utilisation des Values
-          </li>
-          <li
-            [class.active]="currentSection === 'data-combine'"
-            (click)="selectSection('data-combine', $event)"
-          >
-            Combinaison de données
-          </li>
-        </ul>
-      </li>
-    </ul>
-  </div>
 
-  <div class="doc-content">
-    <section *ngIf="currentSection === 'getting-started'">
-      <h2>Installation & Démarrage</h2>
-      <div class="introduction">
-        <p>
-          <strong>jQuery-Charts</strong> est une bibliothèque de visualisation
-          de données pour Angular, qui simplifie l'utilisation de bibliothèques
-          tierces comme ApexCharts ou Highcharts. Elle fournit une interface de
-          programmation standardisée, ce qui signifie que vous utilisez toujours
-          la même syntaxe Angular quel que soit le moteur de rendu choisi.
-        </p>
-        <p>Concrètement, cela signifie que :</p>
-        <ul>
-          <li>
-            Vous n'avez pas besoin d'apprendre la syntaxe spécifique
-            d'ApexCharts ou Highcharts
-          </li>
-          <li>
-            La configuration des graphiques reste identique quel que soit la
-            bibliothèque sous-jacente
-          </li>
-          <li>
-            Vous pouvez créer rapidement des graphiques interactifs et
-            personnalisables
-          </li>
-          <li>
-            La mise en place est simple et intuitive grâce à une syntaxe Angular
-            native
-          </li>
-        </ul>
-      </div>
-      <div class="step">
-        <h3>1. Création du projet Angular</h3>
-        <p>Si vous n'avez pas encore de projet Angular, créez-en un :</p>
-        <div class="code-block">
-          <pre><code><span class="red strong">ng new</span> my-chart-app
-<span class="red strong">cd</span> my-chart-app</code></pre>
-        </div>
-      </div>
-      <div class="step">
-        <h3>2. Installation des dépendances</h3>
-        <p>Installez les packages nécessaires :</p>
-        <div class="code-block">
-          <pre><code><span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core &#64;oneteme/jquery-charts</span><br>
-<i>Si vous utilisez Apexcharts</i>
-<span class="red strong">npm</span> install <span class="blue strong">apexcharts</span><br>
-<i>Si vous utilisez Highcharts</i>
-<span class="red strong">npm</span> install <span class="blue strong">highcharts</span></code></pre>
-        </div>
-      </div>
-      <div class="step">
-        <h3>3. Configuration du module</h3>
-        <p>
-          Il existe deux façons d'importer le ChartComponent selon votre
-          architecture :
-        </p>
-        <div class="option-block">
-          <h4>Option A : Dans un module (app.module.ts)</h4>
-          <div class="code-block">
-            <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;
-<br>&#64;NgModule({{ '{' }}
-  <span class="red">imports</span>: <span class="blue">[</span>
-    <span class="blue">BrowserModule,</span>
-    <span class="blue">ChartComponent</span>
-    <span class="blue">]</span>
-  {{ '}' }})</code></pre>
-          </div>
-        </div>
-        <div class="option-block">
-          <h4>Option B : Dans un composant standalone</h4>
-          <div class="code-block">
-            <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;<br>
-&#64;Component({{ '{' }}
-  <span class="red strong">standalone</span>: <span class="blue strong">true</span>,
-  <span class="red">imports</span>: <span class="blue">[ChartComponent]</span>
-<i>// ... reste de la configuration du composant</i>
-{{ '}' }})</code></pre>
-          </div>
-        </div>
-      </div>
-      <div class="step">
-        <h3>4. Utilisation dans un composant</h3>
-        <p>Exemple d'utilisation simple :</p>
-        <div class="code-block">
-          <pre><code><span class="red">&lt;chart</span>
-  <span class="orange">[type]</span>=<span class="blue strong">"<span class="purple strong">'</span>pie<span class="purple strong">'</span>"</span>
-  <span class="orange">[config]</span>=<span class="blue strong">"config"</span>
-  <span class="orange">[data]</span>=<span class="blue strong">"data"</span>
-<span class="red">&gt;&lt;/chart&gt;</span></code></pre>
-        </div>
-      </div>
-      <app-informations
-        [notes]="gettingStartedNotes"
-        title="Recommandations pour bien démarrer"
-        type="warning"
-      >
-      </app-informations>
-    </section>
-    <section *ngIf="currentSection === 'information-générale'">
-      <h2>Types de Graphiques</h2>
-      <div class="introduction">
-        <p>
-          <strong>jQuery-Charts</strong> offre une variété de types de
-          graphiques adaptés à différents besoins de visualisation. La
-          bibliothèque maintient une syntaxe uniforme tout en permettant un
-          rendu spécifique pour chaque type de graphique.
-        </p>
-      </div>
-      <div class="chart-categories">
-        <app-graph-types-section
-          title="Vue d'ensemble des types de graphiques"
-          [code]="graphTypes.infosGlobal.basic.code"
-          description="Introduction à la structure commune des graphiques"
-        >
-        </app-graph-types-section>
-        <div class="compatibility-matrix">
-          <h3>Compatibilité et utilisations recommandées</h3>
-          <div class="chart-family">
-            <h4>Graphiques circulaires</h4>
-            <ul class="chart-types-list">
-              <li>
-                <span class="chart-type">pie</span> - Répartition de valeurs
-                dans un ensemble complet
-              </li>
-              <li>
-                <span class="chart-type">donut</span> - Comme pie mais avec
-                espace central pour informations supplémentaires
-              </li>
-              <li>
-                <span class="chart-type">polar</span> - Répartition circulaire
-                avec valeurs radiales
-              </li>
-              <li>
-                <span class="chart-type">radar</span> - Comparaison
-                multi-variables sur axes radiaux
-              </li>
-              <li>
-                <span class="chart-type">radialBar</span> - Progression
-                circulaire par catégorie
-              </li>
-            </ul>
-            <div class="compatibility-note">
-              <span class="compatibility-icon">↔</span> Les types
-              <code>pie</code> et <code>donut</code> sont interchangeables (même
-              données, avec/sans trou central)<br />
-              <span class="compatibility-icon">↔</span> Les types
-              <code>polar</code> et <code>radar</code> sont interchangeables
-              (même données, visualisation différente)
-            </div>
-          </div>
-          <div class="chart-family">
-            <h4>Graphiques à barres</h4>
-            <ul class="chart-types-list">
-              <li>
-                <span class="chart-type">bar</span> - Comparaison de valeurs
-                avec orientation horizontale
-              </li>
-              <li>
-                <span class="chart-type">column</span> - Comparaison de valeurs
-                avec orientation verticale
-              </li>
-            </ul>
-            <div class="compatibility-note">
-              <span class="compatibility-icon">↔</span> Les types
-              <code>bar</code> et <code>column</code> sont interchangeables
-              (orientation horizontale/verticale)<br />
-              <span class="compatibility-icon">✓</span> Compatibles avec les
-              options <code>stacked</code> et <code>pivot</code><br />
-              <span class="compatibility-icon">✓</span> Compatibles avec le mode
-              <code>continue</code>
-            </div>
-          </div>
-          <div class="chart-family">
-            <h4>Graphiques linéaires</h4>
-            <ul class="chart-types-list">
-              <li>
-                <span class="chart-type">line</span> - Évolution temporelle ou
-                tendances
-              </li>
-              <li>
-                <span class="chart-type">area</span> - Évolution temporelle avec
-                accent sur le volume
-              </li>
-            </ul>
-            <div class="compatibility-note">
-              <span class="compatibility-icon">↔</span> Les types
-              <code>line</code> et <code>area</code> sont interchangeables
-              (avec/sans remplissage)<br />
-              <span class="compatibility-icon">✓</span> Plusieurs styles de
-              courbes disponibles<br />
-              <span class="compatibility-icon">✓</span> Compatibles avec le mode
-              <code>continue</code>
-            </div>
-          </div>
-          <div class="chart-family">
-            <h4>Graphiques matriciels</h4>
-            <ul class="chart-types-list">
-              <li>
-                <span class="chart-type">treemap</span> - Données hiérarchiques
-                avec proportions relatives
-              </li>
-              <li>
-                <span class="chart-type">heatmap</span> - Distribution
-                d'intensité sur deux dimensions
-              </li>
-            </ul>
-            <div class="compatibility-note">
-              <span class="compatibility-icon">↔</span> Les types
-              <code>treemap</code> et <code>heatmap</code> sont interchangeables
-              (visualisations alternatives)<br />
-              <span class="compatibility-icon">✓</span> Supportent le groupement
-              de données<br />
-              <span class="compatibility-icon">⚠️</span>
-              <code>distributed</code> et <code>enableShades</code> sont
-              mutuellement exclusifs
-            </div>
-          </div>
-          <div class="chart-family">
-            <h4>Graphiques à intervalles</h4>
-            <ul class="chart-types-list">
-              <li>
-                <span class="chart-type">rangeBar</span> - Intervalles de
-                valeurs sous forme de barres
-              </li>
-              <li>
-                <span class="chart-type">rangeArea</span> - Intervalles de
-                valeurs sous forme de zones
-              </li>
-            </ul>
-            <div class="compatibility-note">
-              <span class="compatibility-icon">↔</span> Les types
-              <code>rangeArea</code>, <code>rangeBar</code> et
-              <code>rangeColumn</code> sont interchangeables<br />
-              <span class="compatibility-icon">⚠️</span> Nécessitent des données
-              min/max<br />
-              <span class="compatibility-icon">✓</span> Compatible avec le mode
-              horizontal pour <code>rangeBar</code>
-            </div>
-          </div>
-          <div class="chart-family">
-            <h4>Graphiques à entonnoir</h4>
-            <ul class="chart-types-list">
-              <li>
-                <span class="chart-type">funnel</span> - Processus séquentiel ou
-                conversion
-              </li>
-              <li>
-                <span class="chart-type">pyramid</span> - Hiérarchie de valeurs
-                ordonnées
-              </li>
-            </ul>
-            <div class="compatibility-note">
-              <span class="compatibility-icon">↔</span> Les types
-              <code>funnel</code> et <code>pyramid</code> sont
-              interchangeables<br />
-              <span class="compatibility-icon">⚠️</span> Ne supportent pas le
-              <code>pivot</code><br />
-              <span class="compatibility-icon">✓</span> Configuration spécifique
-              pour le goulot
-            </div>
-          </div>
-        </div>
-        <div class="chart-selection-guide">
-          <h3>Comment choisir le bon type de graphique</h3>
-          <ol>
-            <li>
-              <strong>Nature des données</strong> : catégorielles, temporelles,
-              proportionnelles, etc.
-            </li>
-            <li>
-              <strong>Message à communiquer</strong> : comparaison, évolution,
-              distribution, etc.
-            </li>
-            <li>
-              <strong>Nombre de variables</strong> : une, deux ou plusieurs
-              dimensions
-            </li>
-            <li>
-              <strong>Compatibilité</strong> : transitions dynamiques entre
-              types compatibles
-            </li>
-          </ol>
-        </div>
-      </div>
-      <app-informations
-        title="Points clés à retenir"
-        [notes]="infoGeneralNotes"
-        type="info"
-      >
-      </app-informations>
-    </section>
-    <section *ngIf="currentSection === 'type-pie'">
-      <app-graph-types-section
-        title="Pie Charts"
-        [code]="graphTypes.pie.basic.code"
-        description="Pour les données circulaires et proportionnelles"
-        [compatibilityNotes]="[
-          '• pie ↔ donut (même données, avec/sans trou central)',
-          '• polar ↔ radar (même données, visualisation différente)',
-          '• radialBar (structure de données unique, non interchangeable)'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
-    <section *ngIf="currentSection === 'type-bar'">
-      <app-graph-types-section
-        title="Bar Charts"
-        [code]="graphTypes.bar.basic.code"
-        description="Pour comparer des valeurs entre catégories"
-        [compatibilityNotes]="[
-          '• bar ↔ column (orientation horizontale/verticale)',
-          '• Peut utiliser stacked et pivot',
-          '• Compatible avec le mode continue'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
-    <section *ngIf="currentSection === 'type-line'">
-      <app-graph-types-section
-        title="Line Charts"
-        [code]="graphTypes.line.basic.code"
-        description="Pour visualiser des tendances et évolutions"
-        [compatibilityNotes]="[
-          '• line ↔ area (avec/sans remplissage)',
-          '• Plusieurs styles de courbes disponibles',
-          '• Compatible avec le mode continue'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
-    <section *ngIf="currentSection === 'type-treemap'">
-      <app-graph-types-section
-        title="Treemap Charts"
-        [code]="graphTypes.treemap.basic.code"
-        description="Pour visualiser des données hiérarchiques"
-        [compatibilityNotes]="[
-          '• treemap ↔ heatmap (visualisations alternatives)',
-          '• Supporte le groupement de données',
-          '• distributed et enableShades sont mutuellement exclusifs'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
-    <section *ngIf="currentSection === 'type-heatmap'">
-      <app-graph-types-section
-        title="Heatmap Charts"
-        [code]="graphTypes.heatmap.basic.code"
-        description="Pour visualiser l'intensité des données"
-        [compatibilityNotes]="[
-          '• Compatible avec les échelles de couleurs personnalisées',
-          '• Peut être utilisé avec des données matricielles'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
-    <section *ngIf="currentSection === 'type-range'">
-      <app-graph-types-section
-        title="Range Charts"
-        [code]="graphTypes.range.basic.code"
-        description="Pour représenter des plages de valeurs"
-        [compatibilityNotes]="[
-          '• rangeArea ↔ rangeBar ↔ rangeColumn',
-          '• Nécessite des données min/max',
-          '• Compatible avec le mode horizontal pour rangeBar'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
-    <section *ngIf="currentSection === 'type-funnel'">
-      <app-graph-types-section
-        title="Funnel Charts"
-        [code]="graphTypes.funnel.basic.code"
-        description="Pour visualiser des processus par étapes"
-        [compatibilityNotes]="[
-          '• funnel ↔ pyramid',
-          '• Ne supporte pas le pivot',
-          '• Configuration spécifique pour le goulot'
-        ]"
-      >
-      </app-graph-types-section>
-    </section>
 
-    <ng-container *ngIf="currentSection === 'configuration-global'">
-      <app-config-section
-        title="Configuration - Structure de base"
-        [code]="configs.global.basic.code"
-      >
-      </app-config-section>
-      <app-informations
-        [notes]="configNotes"
-        title="Notes importantes"
-        type="warning"
-      >
-      </app-informations>
-    </ng-container>
 
-    <app-config-section
-      *ngIf="currentSection === 'configuration-pie'"
-      title="Configuration des Pie Charts"
-      [code]="configs.pie.basic.code"
-    >
-    </app-config-section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-bar'"
-      title="Configuration des Bar Charts"
-      [code]="configs.bar.basic.code"
-    >
-    </app-config-section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-line'"
-      title="Configuration des Line Charts"
-      [code]="configs.line.basic.code"
-    >
-    </app-config-section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-treemap'"
-      title="Configuration des Treemap Charts"
-      [code]="configs.treemap.basic.code"
-    >
-    </app-config-section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-heatmap'"
-      title="Configuration des Heatmap Charts"
-      [code]="configs.heatmap.basic.code"
-    >
-    </app-config-section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-range'"
-      title="Configuration des Range Charts"
-      [code]="configs.range.basic.code"
-    >
-    </app-config-section>
-    <app-config-section
-      *ngIf="currentSection === 'configuration-funnel'"
-      title="Configuration des Funnel Charts"
-      description="Découvrez les différentes façons de structurer vos données pour les graphiques"
-      [code]="configs.funnel.basic.code"
-    >
-    </app-config-section>
+
+
+
+
+
+
+
+
+    
     <app-data-section
       *ngIf="currentSection === 'data-structure'"
       title="Structure des données pour les graphiques"
@@ -597,5 +47,126 @@
       description="Apprenez à combiner et agréger vos données pour des visualisations plus complexes"
     >
     </app-data-section>
+  </div>
+</div> -->
+
+<div class="documentation-container">
+  <div class="doc-nav">
+    <ul>
+      <li
+        [class.active]="isActiveExact('getting-started')"
+        routerLink="getting-started"
+      >
+        Installation & Démarrage
+      </li>
+      <li
+        [class.active]="isActiveExact('graph-types')"
+        routerLink="graph-types"
+      >
+        Types de Graphiques
+      </li>
+      <li class="menu-item" [class.active]="isActive('configuration')">
+        <div class="nav-item" (click)="toggleMenu('config', $event)">
+          <span>Configuration</span>
+          <img
+            src="assets/icons/chevron.svg"
+            class="chevron"
+            [class.open]="menuState.config"
+            alt="chevron"
+          />
+        </div>
+        <ul class="sub-nav" *ngIf="menuState.config">
+          <li
+            [class.active]="isActiveExact('global')"
+            routerLink="configuration/global"
+          >
+            Configuration Globale
+          </li>
+          <li
+            [class.active]="isActiveExact('pie')"
+            routerLink="configuration/pie"
+          >
+            Pie Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('bar')"
+            routerLink="configuration/bar"
+          >
+            Bar Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('line')"
+            routerLink="configuration/line"
+          >
+            Line Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('treemap')"
+            routerLink="configuration/treemap"
+          >
+            Treemap Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('heatmap')"
+            routerLink="configuration/heatmap"
+          >
+            Heatmap Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('range')"
+            routerLink="configuration/range"
+          >
+            Range Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('funnel')"
+            routerLink="configuration/funnel"
+          >
+            Funnel Charts
+          </li>
+        </ul>
+      </li>
+      <li class="menu-item" [class.active]="isActive('data')">
+        <div class="nav-item" (click)="toggleMenu('data', $event)">
+          <span>Data</span>
+          <img
+            src="assets/icons/chevron.svg"
+            class="chevron"
+            [class.open]="menuState.data"
+            alt="chevron"
+          />
+        </div>
+        <ul class="sub-nav" *ngIf="menuState.data">
+          <li
+            [class.active]="isActiveExact('structure')"
+            routerLink="data/structure"
+          >
+            Structure des données
+          </li>
+          <li
+            [class.active]="isActiveExact('providers')"
+            routerLink="data/providers"
+          >
+            Data Providers
+          </li>
+          <li [class.active]="isActiveExact('fields')" routerLink="data/fields">
+            Utilisation des Fields
+          </li>
+          <li [class.active]="isActiveExact('values')" routerLink="data/values">
+            Utilisation des Values
+          </li>
+          <li
+            [class.active]="isActiveExact('combine')"
+            routerLink="data/combine"
+          >
+            Combinaison de données
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+
+  <div class="doc-content">
+    <router-outlet></router-outlet>
   </div>
 </div>

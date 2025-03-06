@@ -48,8 +48,7 @@ input, textarea, select, button {
 }
 
 :focus {
-  outline: 2px solid #007bff;
-  outline-offset: 2px;
+  outline: none;
 }
 
 // styles généraux réutilisés

@@ -3,19 +3,27 @@ import { Component, Input } from '@angular/core';
 @Component({
   selector: 'app-config-section',
   templateUrl: './config-section.component.html',
-  styleUrls: ['./config-section.component.scss']
+  styleUrls: ['./config-section.component.scss'],
 })
 export class ConfigSectionComponent {
   @Input() title: string = '';
   @Input() code: string = '';
   @Input() description?: string;
+  @Input() compatibilityNotes?: string[];
+  @Input() examples?: { data: any; config: any }[];
+  @Input() showButton: boolean = true;
 
-  get shouldShowButton(): boolean {
-    return !this.title.toLowerCase().includes('structure de base');
+  shouldShowButton(): boolean {
+    // Ne pas afficher le bouton si le titre contient "Structure de base" ou "Global"
+    return this.showButton && 
+           !this.title?.toLowerCase().includes('structure') && 
+           !this.title?.toLowerCase().includes('global');
   }
 
   getChartType(): string {
-    const match = this.title.match(/Configuration des (\w+) Charts/);
-    return match ? match[1].toLowerCase() : '';
+    if (this.title) {
+      return this.title.split(' ')[0].toLowerCase();
+    }
+    return '';
   }
 }

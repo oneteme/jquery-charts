@@ -11,5 +11,4 @@ export class GraphTypesSectionComponent {
   @Input() description?: string;
   @Input() compatibilityNotes?: string[];
   @Input() examples?: { data: any, config: any }[];
-
 }
