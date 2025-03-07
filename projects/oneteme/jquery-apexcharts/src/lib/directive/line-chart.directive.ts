@@ -38,40 +38,39 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }
   };
 
-  @Input({ required: true }) type: 'line' | 'area';
+  //@Input({ required: true }) type: 'line' | 'area';
   @Input({ required: true }) config: ChartProvider<X, Y>;
   @Input({ required: true }) data: any[];
-  @Input() isLoading: boolean = false;
+ // @Input() isLoading: boolean = false;
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
 
   ngOnChanges(changes: SimpleChanges): void {
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
-    });
-  }
+  });
+}
 
-  ngOnDestroy() {
-    this.destroy();
-  }
+ngOnDestroy() {
+  this.destroy();
+}
 
-  private hydrate(changes: SimpleChanges): void {
-    const shouldUpdateSeries =
-      Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
-    if (shouldUpdateSeries) {
-      this.updateLoading();
-      this.updateData();
-      this.updateOptions(this._options, true, true, false);
-      return;
+private hydrate(changes: SimpleChanges): void {
+          //Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
+      if (changes['data'] || changes['isLoading']) {
+        //this.updateLoading();
+        //this.updateData();
+        this.updateOptions(this._options, true, true, false); //redraw
+      }
+      else{
+        this.createElement();
+      }
     }
 
-    this.createElement();
-  }
-
   private createElement() {
-    this.updateConfig();
-    this.updateType();
-    this.updateLoading();
-    this.updateData();
+      this.updateConfig();
+      //this.updateType();
+      //this.updateLoading();
+      //this.updateData();
 
     if(this.chartInstance() != null) {
       this.updateOptions(this._options, true, true, false);
@@ -146,16 +145,14 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     }, this._chartConfig.options);
   }
 
-  private updateLoading() {
-    mergeDeep(this._options, {
-      noData: {
-        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
-      }
-    });
+  @Input()
+  set isLoading(isLoading: boolean) {
+    this._options.noData.text = isLoading ? 'Chargement des données...' : 'Aucune donnée';
   }
 
-  private updateType() {
-    mergeDeep(this._options, { chart: { type: this.type } });
+  @Input()
+  set type(type: string) {
+    this._options.chart.type = type;
   }
 
   private updateData() {
@@ -169,6 +166,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     animate?: boolean,
     updateSyncedCharts?: boolean
   ) {
+    //if _options.series & _options.xaxis.type & this.config
     return this.ngZone.runOutsideAngular(() =>
       this.chartInstance()?.updateOptions(
         options,

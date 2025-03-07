@@ -36,10 +36,10 @@ export function customIcons(event: (arg: 'previous' | 'next' | 'pivot') => void,
 export function getType<X extends XaxisType, Y extends YaxisType | Coordinate2D>(commonChart: CommonChart<X, Y>): string {
   if(commonChart.series.length && commonChart.series[0].data.length) {
     if (commonChart.continue) {
-      var x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
+      let x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
       return x instanceof Date ? 'datetime' : typeof x == 'number' ? 'numeric' : 'category';
     } else {
-      var categ = commonChart.categories[0];
+      let categ = commonChart.categories[0];
       return categ instanceof Date ? 'datetime' : typeof categ == 'number' ? 'numeric' : 'category';
     }
   }
