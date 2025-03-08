@@ -42,7 +42,7 @@ const routes: Routes = [
           { path: 'heatmap', component: ConfigurationHeatmapComponent },
           { path: 'range', component: ConfigurationRangeComponent },
           { path: 'funnel', component: ConfigurationFunnelComponent },
-        ]
+        ],
       },
       {
         path: 'data',
@@ -53,10 +53,10 @@ const routes: Routes = [
           { path: 'fields', component: DataFieldsComponent },
           { path: 'values', component: DataValuesComponent },
           { path: 'combine', component: DataCombineComponent },
-        ]
-      }
-    ]
-  }
+        ],
+      },
+    ],
+  },
 ];
 
 @NgModule({
@@ -81,15 +81,13 @@ const routes: Routes = [
     DataCombineComponent,
 
     DocSectionComponent,
-    InformationsComponent
+    InformationsComponent,
   ],
   imports: [
     CommonModule,
     RouterModule.forChild(routes),
-    BtnViewExamplesComponent
+    BtnViewExamplesComponent,
   ],
-  providers: [
-    DocumentationService
-  ],
+  providers: [DocumentationService],
 })
-export class DocumentationModule { }
+export class DocumentationModule {}

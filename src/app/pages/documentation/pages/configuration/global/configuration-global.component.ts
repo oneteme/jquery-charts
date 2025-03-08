@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { DocumentationService } from '../../../../../core/services/documentation.service';
 
 @Component({
@@ -26,7 +26,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
   </section> `,
   styleUrls: ['./configuration-global.component.scss'],
 })
-export class ConfigurationGlobalComponent implements OnInit {
+export class ConfigurationGlobalComponent {
   configNotes1: string[];
   configNotes2: string[];
   config: any;
@@ -36,6 +36,4 @@ export class ConfigurationGlobalComponent implements OnInit {
     this.configNotes2 = this.docService.configGlobalNotes2;
     this.config = this.docService.configs.global;
   }
-
-  ngOnInit(): void {}
 }

@@ -11,12 +11,11 @@
   border-radius: 50%;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(67, 96, 115, 0.3);
-  display: none; // Déplacé ici
+  display: none;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding: 0;
-
   span {
     display: block;
     width: 24px;
@@ -26,20 +25,16 @@
     transform-origin: center;
     border-radius: 4px;
   }
-
   &:active {
     transform: scale(0.95);
   }
-
   &.active {
     span:nth-child(1) {
       transform: translateY(8px) rotate(45deg);
     }
-
     span:nth-child(2) {
       opacity: 0;
     }
-
     span:nth-child(3) {
       transform: translateY(-8px) rotate(-45deg);
     }
@@ -59,18 +54,15 @@
   transition: transform 0.3s ease;
   z-index: 97;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
-
   .sidebar-header {
     padding: 1rem;
     margin-bottom: 1rem;
     cursor: pointer;
     transition: all 0.3s ease;
     border-radius: 0.5rem;
-
     &:hover {
       background: #e9ecef;
     }
-
     span {
       font-size: 1.2rem;
       font-weight: 500;
@@ -81,20 +73,17 @@
     list-style: none;
     padding: 0;
     margin: 0;
-
     li {
       padding: 0.8rem 1rem;
       cursor: pointer;
       border-radius: 6px;
       margin-bottom: 0.5rem;
       background: transparent;
-
       &:hover {
         background: #ffffff;
         box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.05),
           -1px -1px 3px rgba(255, 255, 255, 0.5);
       }
-
       &.active {
         background: #ffffff;
         color: #3498db;
@@ -121,15 +110,12 @@
     display: flex;
     flex-direction: column;
   }
-
   .sidebar {
     transform: translateX(-100%);
-
     &.open {
       transform: translateX(0);
     }
   }
-
   .overlay {
     display: block;
   }

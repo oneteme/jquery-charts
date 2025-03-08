@@ -1,12 +1,12 @@
-import { Component, OnInit  } from '@angular/core';
+import { Component } from '@angular/core';
 import { DocumentationService } from '../../../../core/services/documentation.service';
 
 @Component({
   selector: 'app-graph-types',
   templateUrl: './graph-types.component.html',
-  styleUrls: ['./graph-types.component.scss']
+  styleUrls: ['./graph-types.component.scss'],
 })
-export class GraphTypesComponent implements OnInit {
+export class GraphTypesComponent {
   infoGeneralNotes: string[];
   graphTypes: any;
   configs: any;
@@ -17,8 +17,5 @@ export class GraphTypesComponent implements OnInit {
     this.graphTypes = this.docService.graphTypes;
     this.configs = this.docService.configs;
     this.datas = this.docService.datas;
-  }
-
-  ngOnInit(): void {
   }
 }

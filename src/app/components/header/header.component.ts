@@ -54,9 +54,6 @@ export class HeaderComponent {
   }
 
   goToGithub() {
-    window.open(
-      'https://github.com/oneteme/jquery-charts',
-      '_blank'
-    );
+    window.open('https://github.com/oneteme/jquery-charts', '_blank');
   }
 }

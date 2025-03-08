@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { DocumentationService } from '../../../../../core/services/documentation.service';
 
 @Component({
@@ -11,12 +11,9 @@ import { DocumentationService } from '../../../../../core/services/documentation
   >
   </app-doc-section> `,
 })
-export class DataFieldsComponent implements OnInit {
+export class DataFieldsComponent {
   data: any;
-
   constructor(private docService: DocumentationService) {
     this.data = this.docService.datas.fields;
   }
-
-  ngOnInit(): void {}
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { DocumentationService } from '../../../../../core/services/documentation.service';
 
 @Component({
@@ -18,12 +18,10 @@ import { DocumentationService } from '../../../../../core/services/documentation
     </app-doc-section>
   </section>`,
 })
-export class ConfigurationFunnelComponent implements OnInit {
+export class ConfigurationFunnelComponent {
   config: any;
 
   constructor(private docService: DocumentationService) {
     this.config = this.docService.configs.funnel;
   }
-
-  ngOnInit(): void {}
 }

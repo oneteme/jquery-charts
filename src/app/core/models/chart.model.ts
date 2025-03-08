@@ -9,7 +9,6 @@ export interface ChartData<X extends XaxisType, Y extends YaxisType> {
   config: ChartProvider<X, Y>;
 }
 
-// Types spécifiques pour chaque graphique
 export type PieChartData = ChartData<string, number>;
 export type BarChartData = ChartData<string | XaxisType, number>;
 export type LineChartData = ChartData<string, number>;

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { DocumentationService } from '../../../../core/services/documentation.service';
 
 @Component({
@@ -6,12 +6,10 @@ import { DocumentationService } from '../../../../core/services/documentation.se
   templateUrl: './getting-started.component.html',
   styleUrls: ['./getting-started.component.scss']
 })
-export class GettingStartedComponent implements OnInit {
+export class GettingStartedComponent {
   gettingStartedNotes: string[];
 
   constructor(private docService: DocumentationService) {
     this.gettingStartedNotes = this.docService.gettingStartedNotes;
-  }
-  ngOnInit(): void {
   }
 }

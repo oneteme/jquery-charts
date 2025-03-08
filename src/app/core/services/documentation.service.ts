@@ -1,7 +1,5 @@
 import { Injectable } from '@angular/core';
-import {
-  infoGlobalGraphTypes
-} from '../../data/doc/graphTypes/info-global-graph-types';
+import { infoGlobalGraphTypes } from '../../data/doc/graphTypes/info-global-graph-types';
 import {
   globalChartConfig,
   pieChartConfig,
@@ -21,11 +19,11 @@ import {
 } from '../../data/doc/data/_index';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class DocumentationService {
   graphTypes = {
-    infosGlobal: infoGlobalGraphTypes
+    infosGlobal: infoGlobalGraphTypes,
   };
 
   configs = {
@@ -51,7 +49,7 @@ export class DocumentationService {
     "• Chaque famille de graphiques est optimisée pour un cas d'usage spécifique",
     '• La configuration de base reste consistante entre tous les types',
     '• La toolbar permet de basculer dynamiquement entre types compatibles',
-    '• Les détails de configuration spécifiques sont disponibles dans les sections dédiées'
+    '• Les détails de configuration spécifiques sont disponibles dans les sections dédiées',
   ];
 
   chartTypeNotes: string[] = [
@@ -72,14 +70,14 @@ export class DocumentationService {
     '1. Les propriétés height et series sont obligatoires',
     '2. Le pivot et continue sont mutuellement exclusifs',
     `3. stacked n'est compatible qu'avec les types bar/column`,
-    '4. Certaines options peuvent être écrasées par les configurations spécifiques des types'
+    '4. Certaines options peuvent être écrasées par les configurations spécifiques des types',
   ];
 
   configGlobalNotes2: string[] = [
-    'Si une propriété n\'est pas documentée ici ou dans les configurations spécifiques, elle utilise certainement la valeur par défaut de la bibliothèque ApexCharts',
-    'La syntaxe jQuery Charts est une couche d\'abstraction qui simplifie la configuration tout en maintenant l\'accès aux options natives',
+    "Si une propriété n'est pas documentée ici ou dans les configurations spécifiques, elle utilise certainement la valeur par défaut de la bibliothèque ApexCharts",
+    "La syntaxe jQuery Charts est une couche d'abstraction qui simplifie la configuration tout en maintenant l'accès aux options natives",
     'Pour des cas très spécifiques, vous pouvez toujours accéder aux options avancées via l\'objet "options"',
-    'Consultez la <a href="https://apexcharts.com/docs/installation/#" target="_blank" class="doc-link">documentation d\'ApexCharts</a> pour des fonctionnalités plus avancées'
+    'Consultez la <a href="https://apexcharts.com/docs/installation/#" target="_blank" class="doc-link">documentation d\'ApexCharts</a> pour des fonctionnalités plus avancées',
   ];
 
   chartCompatibilityNotes: string[] = [
@@ -88,6 +86,6 @@ export class DocumentationService {
     '• Line Charts : line ↔ area (avec/sans remplissage), compatible continue',
     '• Treemap Charts : treemap ↔ heatmap, supporte le groupement',
     '• Range Charts : rangeArea ↔ rangeBar ↔ rangeColumn, nécessite min/max',
-    '• Funnel Charts : funnel ↔ pyramid, configuration spécifique pour le goulot'
+    '• Funnel Charts : funnel ↔ pyramid, configuration spécifique pour le goulot',
   ];
 }
