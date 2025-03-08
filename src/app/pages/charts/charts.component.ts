@@ -9,7 +9,6 @@ import {
   RANGE_CHART_DATA,
   FUNNEL_CHART_DATA,
 } from '../../data/chart/_index';
-import hljs from 'highlight.js';
 import { ChartTypesService } from 'src/app/core/services/chart-types.service';
 
 @Component({
@@ -122,13 +121,151 @@ export class ChartsComponent implements OnInit {
   }
 
   getHighlightedCode(example: any): string {
-    const code = JSON.stringify(example, null, 2)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+    if (!example) return '';
 
-    return hljs.highlight(code, {
-      language: 'json',
-    }).value;
+    const exampleCopy = JSON.parse(JSON.stringify(example));
+
+    const processDataFunctions = (obj: any) => {
+      if (!obj) return obj;
+
+      if (Array.isArray(obj)) {
+        return obj.map((item) => processDataFunctions(item));
+      }
+
+      if (typeof obj === 'object') {
+        const result: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (typeof value === 'string' && value.includes('&#039;')) {
+            result[key] = value.replace(/&#039;/g, "'");
+          } else {
+            result[key] = processDataFunctions(value);
+          }
+        }
+        return result;
+      }
+
+      return obj;
+    };
+
+    const preprocessedExample = processDataFunctions(exampleCopy);
+
+    const formatObject = (obj: any, indent = 0): string => {
+      if (obj === null) return 'null';
+      if (obj === undefined) return 'undefined';
+
+      const padding = ' '.repeat(indent);
+      const nestedPadding = ' '.repeat(indent + 2);
+
+      if (Array.isArray(obj)) {
+        if (obj.length === 0) return '[]';
+
+        const formattedItems = obj
+          .map((item) => `${nestedPadding}${formatObject(item, indent + 2)}`)
+          .join(',\n');
+
+        return `[\n${formattedItems}\n${padding}]`;
+      }
+
+      if (typeof obj === 'object') {
+        if (obj.constructor !== Object) {
+          return obj.toString();
+        }
+
+        const entries = Object.entries(obj);
+        if (entries.length === 0) return '{}';
+
+        if (
+          'data' in obj &&
+          typeof obj.data === 'object' &&
+          Object.keys(obj.data).length === 0
+        ) {
+          const dataMapping = `{\n${nestedPadding}x: (o) => o.field,\n${nestedPadding}y: (o) => o.count\n${padding}}`;
+          const otherEntries = entries.filter(([key]) => key !== 'data');
+
+          const otherProps = otherEntries
+            .map(([key, value]) => {
+              return `${nestedPadding}${key}: ${formatObject(
+                value,
+                indent + 2
+              )}`;
+            })
+            .join(',\n');
+
+          return `{\n${nestedPadding}data: ${dataMapping}${
+            otherEntries.length > 0 ? ',\n' + otherProps : ''
+          }\n${padding}}`;
+        }
+
+        const formattedProps = entries
+          .map(([key, value]) => {
+            return `${nestedPadding}${key}: ${formatObject(value, indent + 2)}`;
+          })
+          .join(',\n');
+
+        return `{\n${formattedProps}\n${padding}}`;
+      }
+
+      if (typeof obj === 'string') {
+        return `"${obj}"`;
+      }
+      return String(obj);
+    };
+
+    let code = '// Configuration\n';
+    code +=
+      'const config = ' + formatObject(preprocessedExample.config) + ';\n\n';
+    code += '// Données\n';
+    code += 'const data = ' + formatObject(preprocessedExample.data) + ';\n\n';
+    code += '// Utilisation\n';
+
+    const usageCode = `<chart
+  type="${preprocessedExample.config.type || 'pie'}"
+  [config]="config"
+  [data]="data"
+></chart>`;
+
+    code += usageCode;
+
+    const escapedCode = code
+      .replace(/&(?!amp;|lt;|gt;|quot;)/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    const coloredCode = escapedCode
+      .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')
+      .replace(/&lt;chart/g, '<span class="tag">&lt;chart</span>')
+      .replace(/&lt;\/chart&gt;/g, '<span class="tag">&lt;/chart&gt;</span>')
+      .replace(
+        /\[config\]="config"/g,
+        '<span class="tag">[config]="config"</span>'
+      )
+      .replace(/\[data\]="data"/g, '<span class="tag">[data]="data"</span>')
+      .replace(/type="([^"]*)"/g, '<span class="tag">type="$1"</span>')
+      .replace(/&gt;/g, '<span class="tag">&gt;</span>')
+      .replace(
+        /\b(const|let|var|function|return|if|else|for|while|switch|case)\b/g,
+        '<span class="keyword">$1</span>'
+      )
+      .replace(
+        /\b(o) =&gt;/g,
+        '<span class="function">$1</span><span class="operator"> =&gt;</span>'
+      )
+      .replace(
+        /&quot;([^&]*?)&quot;/g,
+        '<span class="string">&quot;$1&quot;</span>'
+      )
+      .replace(
+        /\b(true|false|null|undefined)\b/g,
+        '<span class="boolean">$1</span>'
+      )
+      .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
+      .replace(/\{|\}/g, '<span class="punctuation">$&</span>')
+      .replace(/\(|\)/g, '<span class="punctuation">$&</span>')
+      .replace(/\[|\]/g, '<span class="punctuation">$&</span>')
+      .replace(/:/g, '<span class="punctuation">:</span>')
+      .replace(/,/g, '<span class="punctuation">,</span>');
+
+    return coloredCode;
   }
 }

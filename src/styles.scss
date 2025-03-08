@@ -7,10 +7,11 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
-  font-family: 'Arial', sans-serif;
+  font-family: "Arial", sans-serif;
   line-height: 1.6;
   background-color: #f8f9fa;
   color: #333;
@@ -18,7 +19,8 @@ html, body {
   padding-right: calc(100vw - 100%);
 }
 
-ul, ol {
+ul,
+ol {
   list-style: none;
 }
 
@@ -42,7 +44,10 @@ img {
   height: auto;
 }
 
-input, textarea, select, button {
+input,
+textarea,
+select,
+button {
   border: none;
   outline: none;
 }
@@ -64,9 +69,40 @@ input, textarea, select, button {
     margin: 0;
     padding: 1rem;
 
+    // code {
+    //   font-size: 0.9rem;
+    //   line-height: 1.6;
+
+    //
+
+    //   .keyword {
+    //     color: #c678dd;
+    //     font-weight: bold;
+    //   }
+
+    //   .string {
+    //     color: #98c379;
+    //   }
+
+    //   .boolean, .number {
+    //     color: #d19a66;
+    //   }
+
+    //   .comment {
+    //     color: #5c6370;
+    //     font-style: italic;
+    //   }
+
+    //   .tag {
+    //     color: #e06c75;
+    //   }
+    // }
+
     code {
+      font-family: inherit;
       font-size: 0.9rem;
       line-height: 1.6;
+      white-space: pre;
 
       .strong {
         font-weight: 600;
@@ -102,8 +138,70 @@ input, textarea, select, button {
       }
 
       .blue {
-        color: #1423DC;
+        color: #1423dc;
       }
+
+      .comment {
+        color: #6a737d;
+        font-style: italic;
+      }
+
+      .keyword {
+        color: #9c27b0;
+        font-weight: 500;
+      }
+
+      .string {
+        color: #218838;
+      }
+
+      .number,
+      .boolean {
+        color: #e67e22;
+      }
+
+      .tag {
+        color: #e91e63;
+      }
+
+      .function {
+        color: #0070ba;
+      }
+
+      .property {
+        color: #d32f2f;
+      }
+
+      .operator {
+        color: #0097a7;
+      }
+
+      .punctuation {
+        color: #5f6368;
+      }
+
+      .attr {
+        color: #e91e63;
+      }
+    }
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-corner {
+      background: #f8f9fa;
     }
   }
 }
