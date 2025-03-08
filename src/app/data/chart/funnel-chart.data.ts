@@ -1,5 +1,8 @@
 import { field } from '@oneteme/jquery-core';
-import { ChartDataCollection, FunnelChartData } from '../core/models/chart.model';
+import {
+  ChartDataCollection,
+  FunnelChartData,
+} from '../../core/models/chart.model';
 
 export const FUNNEL_CHART_DATA: ChartDataCollection<FunnelChartData> = {
   funnelExample: {

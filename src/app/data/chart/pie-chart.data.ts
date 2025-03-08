@@ -1,5 +1,8 @@
 import { field, values, joinFields } from '@oneteme/jquery-core';
-import { ChartDataCollection, PieChartData } from '../core/models/chart.model';
+import {
+  ChartDataCollection,
+  PieChartData,
+} from '../../core/models/chart.model';
 
 export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
   pieExample: {

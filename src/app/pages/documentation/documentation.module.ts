@@ -18,8 +18,6 @@ import { DataProvidersComponent } from './pages/data/providers/data-providers.co
 import { DataFieldsComponent } from './pages/data/fields/data-fields.component';
 import { DataValuesComponent } from './pages/data/values/data-values.component';
 import { DataCombineComponent } from './pages/data/combine/data-combine.component';
-
-// composants de documentation partagés
 import { DocSectionComponent } from '../../components/documentation/doc-section/doc-section.component';
 import { InformationsComponent } from '../../components/documentation/informations/informations.component';
 import { BtnViewExamplesComponent } from '../../components/documentation/btn-view-examples/btn-view-examples.component';
@@ -29,14 +27,9 @@ const routes: Routes = [
     path: '',
     component: DocumentationComponent,
     children: [
-      // Redirection par défaut
       { path: '', redirectTo: 'getting-started', pathMatch: 'full' },
-
-      // Pages principales
       { path: 'getting-started', component: GettingStartedComponent },
       { path: 'graph-types', component: GraphTypesComponent },
-
-      // Sous-routes de configuration
       {
         path: 'configuration',
         children: [
@@ -51,8 +44,6 @@ const routes: Routes = [
           { path: 'funnel', component: ConfigurationFunnelComponent },
         ]
       },
-
-      // Sous-routes de données
       {
         path: 'data',
         children: [
@@ -70,12 +61,10 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [
-    // Pages principales
     DocumentationComponent,
     GettingStartedComponent,
     GraphTypesComponent,
 
-    // Pages de configuration
     ConfigurationGlobalComponent,
     ConfigurationPieComponent,
     ConfigurationBarComponent,
@@ -85,14 +74,12 @@ const routes: Routes = [
     ConfigurationRangeComponent,
     ConfigurationFunnelComponent,
 
-    // Pages de données
     DataStructureComponent,
     DataProvidersComponent,
     DataFieldsComponent,
     DataValuesComponent,
     DataCombineComponent,
 
-    // Composants partagés de documentation
     DocSectionComponent,
     InformationsComponent
   ],

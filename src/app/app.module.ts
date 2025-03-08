@@ -17,12 +17,8 @@ import { BackToDocButtonComponent } from './components/back-to-doc-button/back-t
     SidebarComponent,
     FooterComponent,
   ],
-  imports: [
-    BrowserModule,
-    AppRoutingModule,
-    BackToDocButtonComponent
-  ],
+  imports: [BrowserModule, AppRoutingModule, BackToDocButtonComponent],
   providers: [ChartTypesService],
-  bootstrap: [AppComponent]
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

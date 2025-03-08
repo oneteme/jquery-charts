@@ -12,7 +12,6 @@ export class GettingStartedComponent implements OnInit {
   constructor(private docService: DocumentationService) {
     this.gettingStartedNotes = this.docService.gettingStartedNotes;
   }
-
   ngOnInit(): void {
   }
 }

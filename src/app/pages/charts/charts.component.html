@@ -3,7 +3,6 @@
     <h2>Exemples de {{ selectedChartType }}</h2>
     <div class="charts-grid">
       <ng-container [ngSwitch]="selectedChartType">
-        <!-- Pie Charts -->
         <ng-container *ngSwitchCase="'Pie Chart'">
           <div
             class="chart-wrapper"
@@ -37,7 +36,6 @@
           </div>
         </ng-container>
 
-        <!-- Bar Charts -->
         <ng-container *ngSwitchCase="'Bar Chart'">
           <div
             class="chart-wrapper"
@@ -72,7 +70,6 @@
           </div>
         </ng-container>
 
-        <!-- Line Charts -->
         <ng-container *ngSwitchCase="'Line Chart'">
           <div
             class="chart-wrapper"
@@ -110,7 +107,6 @@
           </div>
         </ng-container>
 
-        <!-- Treemap Charts -->
         <ng-container *ngSwitchCase="'Treemap Chart'">
           <div
             class="chart-wrapper"
@@ -138,7 +134,6 @@
           </div>
         </ng-container>
 
-        <!-- Heatmap Charts -->
         <ng-container *ngSwitchCase="'Heatmap Chart'">
           <div class="chart-wrapper">
             <chart
@@ -160,7 +155,6 @@
           </div>
         </ng-container>
 
-        <!-- Range Charts -->
         <ng-container *ngSwitchCase="'Range Chart'">
           <div class="chart-wrapper">
             <chart
@@ -182,7 +176,6 @@
           </div>
         </ng-container>
 
-        <!-- Funnel Charts -->
         <ng-container *ngSwitchCase="'Funnel Chart'">
           <div class="chart-wrapper">
             <chart

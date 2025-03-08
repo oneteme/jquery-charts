@@ -1,3 +1,9 @@
+h2 {
+  margin-bottom: 2rem;
+  color: #2c3e50;
+  font-size: 2rem;
+}
+
 .introduction {
   margin-bottom: 3rem;
   padding: 2rem 2rem 1rem;
@@ -45,16 +51,10 @@
     font-weight: 500 !important;
     border-bottom: 1px solid !important;
     transition: all 0.2s ease !important;
-    
+
     &:hover {
       color: #96cd32 !important;
       border-bottom-style: solid !important;
     }
   }
-}
-
-h2 {
-  margin-bottom: 2rem;
-  color: #2c3e50;
-  font-size: 2rem;
 }

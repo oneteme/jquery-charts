@@ -17,6 +17,5 @@ export class DataValuesComponent implements OnInit {
   constructor(private docService: DocumentationService) {
     this.data = this.docService.datas.values;
   }
-
   ngOnInit(): void {}
 }

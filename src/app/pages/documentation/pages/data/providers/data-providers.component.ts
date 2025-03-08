@@ -17,6 +17,5 @@ export class DataProvidersComponent implements OnInit {
   constructor(private docService: DocumentationService) {
     this.data = this.docService.datas.providers;
   }
-
   ngOnInit(): void {}
 }

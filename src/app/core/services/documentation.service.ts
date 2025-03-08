@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   infoGlobalGraphTypes
-} from '../../components/documentation/data/graphTypes/info-global-graph-types';
+} from '../../data/doc/graphTypes/info-global-graph-types';
 import {
   globalChartConfig,
   pieChartConfig,
@@ -11,14 +11,14 @@ import {
   heatmapChartConfig,
   rangeChartConfig,
   funnelChartConfig,
-} from '../../components/documentation/data/configs/_index';
+} from '../../data/doc/configs/_index';
 import {
   dataCombine,
   dataProviders,
   dataValues,
   dataFields,
   dataStructure,
-} from '../../components/documentation/data/data/_index';
+} from '../../data/doc/data/_index';
 
 @Injectable({
   providedIn: 'root'

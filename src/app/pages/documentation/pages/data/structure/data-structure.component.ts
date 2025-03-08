@@ -17,6 +17,5 @@ export class DataStructureComponent implements OnInit {
   constructor(private docService: DocumentationService) {
     this.data = this.docService.datas.structure;
   }
-
   ngOnInit(): void {}
 }
