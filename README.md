@@ -10,7 +10,7 @@
     <img src="https://img.shields.io/badge/npm-v1.0.0-cb3837.svg?logo=npm&logoColor=white" alt="NPM Version" style="border-radius: 4px;">
   </a>
   <a href="https://github.com/oneteme/jquery-charts/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-28a745.svg" alt="License" style="border-radius: 4px;">
+    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" style="border-radius: 4px;">
   </a>
 </p>
 <p align="center">
@@ -21,6 +21,7 @@
 <br/>
 
 ---
+
 <br/>
 
 ## ✨ Features
@@ -70,6 +71,7 @@
 ## 🚀 Installation
 
 Using npm:
+
 ```bash
 npm install @oneteme/jquery-core @oneteme/jquery-apexcharts
 ```
@@ -90,28 +92,32 @@ npm install @oneteme/jquery-core @oneteme/jquery-apexcharts
 ## 🛠️ Development Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/oneteme/jquery-charts.git
 cd jquery-charts
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
 
 This will concurrently:
+
 - Build the `jquery-core` library in watch mode
 - Build the `jquery-apexcharts` library in watch mode (after core library is built)
 - Start the Angular application in development mode
 
-
 4. If you just want to work on the demo, you can simply enter this command :
+
 ```bash
 npm run start
 ```
@@ -189,6 +195,7 @@ jquery-charts/
 ## 📖 Documentation
 
 The project includes comprehensive documentation with:
+
 - Configuration options for each chart type
 - Usage examples with code snippets
 - Best practices and customization tips
@@ -233,10 +240,11 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
 <br/><br/><br/>
 
 ---
+
 <br/>
 
 ### ⚠️ Third-Party Licenses

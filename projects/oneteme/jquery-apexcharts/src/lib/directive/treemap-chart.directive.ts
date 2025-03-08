@@ -117,9 +117,15 @@ export class TreemapChartDirective implements ChartView<string, number>, OnChang
           }
         },
         events: {
-          mouseMove: function(e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility="visible" },
-          mouseLeave: function(e, c, config) { that.el.nativeElement.querySelector('.apexcharts-toolbar').style.visibility="hidden" }
-        }
+          mouseMove: function(e, c, config) {
+            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+            if (toolbar) toolbar.style.visibility = "visible";
+          },
+          mouseLeave: function(e, c, config) {
+            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
+            if (toolbar) toolbar.style.visibility = "hidden";
+          }
+        },
       },
       title: {
         text: this._chartConfig.title
@@ -148,7 +154,7 @@ export class TreemapChartDirective implements ChartView<string, number>, OnChang
   private updateLoading() {
     mergeDeep(this._options, {
       noData: {
-        text: this.isLoading ? 'Loading...' : 'Aucune donnée'
+        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
       }
     });
   }

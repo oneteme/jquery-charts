@@ -128,15 +128,15 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
           }
         },
         events: {
-          mouseMove: function (e, c, config) {
+          mouseMove: function(e, c, config) {
             var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            toolbar ? toolbar.style.visibility = "visible" : null;
+            if (toolbar) toolbar.style.visibility = "visible";
           },
-          mouseLeave: function (e, c, config) {
+          mouseLeave: function(e, c, config) {
             var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            toolbar ? toolbar.style.visibility = "hidden" : null;
+            if (toolbar) toolbar.style.visibility = "hidden";
           }
-        }
+        },
       },
       title: {
         text: this._chartConfig.title
@@ -161,7 +161,7 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
   private updateLoading() {
     mergeDeep(this._options, {
       noData: {
-        text: this.isLoading ? 'Loading...' : 'Aucune donnée'
+        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
       }
     });
   }
@@ -173,10 +173,9 @@ export class PieChartDirective implements ChartView<string, number>, OnChanges, 
   private updateData() {
     var chartConfig = { ...this._chartConfig, continue: false };
     var commonChart = this.data.length != 1 && this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
-    var colors = commonChart.series.filter(d => d.color).map(d => <string>d.color);
-    // console.log('Data:', this.data);
-    // console.log('Chart Config:', chartConfig);
-    // console.log('Common Chart:', commonChart);
+    var colors = this._chartConfig.options && this._chartConfig.options.colors
+    ? this._chartConfig.options.colors
+    : commonChart.series.filter(d => d.color).map(d => <string>d.color);
     mergeDeep(this._options, { series: this.data.length != 1 && this.type == 'radar' ? commonChart.series : this.type == 'radar' ? [{ name: 'Series 1', data: commonChart.series.flatMap(s => s.data.filter(d => d != null))}] : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
   }
 

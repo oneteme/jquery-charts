@@ -15,6 +15,24 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 20
-    - uses: oneteme/automation-scripts/.github/actions/sonar-npm-scan@main #see package.json: scripts.build
+    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
+    - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main #see package.json: scripts.build
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
+      id: prj_ver
+    outputs:
+      version: ${{ steps.prj_ver.outputs.version }}
+# deploy: cannot override package
+  release: #!PR
+    if: github.ref_name == 'main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: oneteme/automation-scripts/.github/actions/github-release-notes@main
+      with:
+        version: ${{ needs.build.outputs.version }}
+        draft: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# page:
