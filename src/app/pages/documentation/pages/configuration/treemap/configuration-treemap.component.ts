@@ -4,7 +4,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 @Component({
   selector: 'app-configuration-treemap',
   template: `<section>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Treemap Charts"
       [code]="config.basic.code"
       description="Pour visualiser des données hiérarchiques"
@@ -14,7 +15,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
         '• distributed et enableShades sont mutuellement exclusifs'
       ]"
     >
-    </app-config-section>
+    </app-doc-section>
   </section> `,
 })
 export class ConfigurationTreemapComponent implements OnInit {

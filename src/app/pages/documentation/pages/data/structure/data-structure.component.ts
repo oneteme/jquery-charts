@@ -3,12 +3,13 @@ import { DocumentationService } from '../../../../../core/services/documentation
 
 @Component({
   selector: 'app-data-structure',
-  template: `<app-data-section
+  template: `<app-doc-section
+    type="data"
     title="Structure des données pour les graphiques"
     description="Découvrez les différentes façons de structurer vos données pour les graphiques"
     [code]="data.basic.code"
   >
-  </app-data-section> `,
+  </app-doc-section> `,
 })
 export class DataStructureComponent implements OnInit {
   data: any;

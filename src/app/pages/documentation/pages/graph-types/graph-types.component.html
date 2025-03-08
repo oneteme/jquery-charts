@@ -2,43 +2,44 @@
   <h2>Types de Graphiques</h2>
   <div class="introduction">
     <p>
-      <strong>jQuery-Charts</strong> offre une variété de types de
-      graphiques adaptés à différents besoins de visualisation. La
-      bibliothèque maintient une syntaxe uniforme tout en permettant un
-      rendu spécifique pour chaque type de graphique.
+      <strong>jQuery-Charts</strong> offre une variété de types de graphiques
+      adaptés à différents besoins de visualisation. La bibliothèque maintient
+      une syntaxe uniforme tout en permettant un rendu spécifique pour chaque
+      type de graphique.
     </p>
   </div>
   <div class="chart-categories">
-    <app-graph-types-section
+    <app-doc-section
+      type="graph-types"
       title="Vue d'ensemble des types de graphiques"
       [code]="graphTypes.infosGlobal.basic.code"
       description="Introduction à la structure commune des graphiques"
     >
-    </app-graph-types-section>
+    </app-doc-section>
     <div class="compatibility-matrix">
       <h3>Compatibilité et utilisations recommandées</h3>
       <div class="chart-family">
         <h4>Graphiques circulaires</h4>
         <ul class="chart-types-list">
           <li>
-            <span class="chart-type">pie</span> - Répartition de valeurs
-            dans un ensemble complet
+            <span class="chart-type">pie</span> - Répartition de valeurs dans un
+            ensemble complet
           </li>
           <li>
-            <span class="chart-type">donut</span> - Comme pie mais avec
-            espace central pour informations supplémentaires
+            <span class="chart-type">donut</span> - Comme pie mais avec espace
+            central pour informations supplémentaires
           </li>
           <li>
-            <span class="chart-type">polar</span> - Répartition circulaire
-            avec valeurs radiales
+            <span class="chart-type">polar</span> - Répartition circulaire avec
+            valeurs radiales
           </li>
           <li>
-            <span class="chart-type">radar</span> - Comparaison
-            multi-variables sur axes radiaux
+            <span class="chart-type">radar</span> - Comparaison multi-variables
+            sur axes radiaux
           </li>
           <li>
-            <span class="chart-type">radialBar</span> - Progression
-            circulaire par catégorie
+            <span class="chart-type">radialBar</span> - Progression circulaire
+            par catégorie
           </li>
         </ul>
         <div class="compatibility-note">
@@ -46,28 +47,28 @@
           <code>pie</code> et <code>donut</code> sont interchangeables (même
           données, avec/sans trou central)<br />
           <span class="compatibility-icon">↔</span> Les types
-          <code>polar</code> et <code>radar</code> sont interchangeables
-          (même données, visualisation différente)
+          <code>polar</code> et <code>radar</code> sont interchangeables (même
+          données, visualisation différente)
         </div>
       </div>
       <div class="chart-family">
         <h4>Graphiques à barres</h4>
         <ul class="chart-types-list">
           <li>
-            <span class="chart-type">bar</span> - Comparaison de valeurs
-            avec orientation horizontale
+            <span class="chart-type">bar</span> - Comparaison de valeurs avec
+            orientation horizontale
           </li>
           <li>
-            <span class="chart-type">column</span> - Comparaison de valeurs
-            avec orientation verticale
+            <span class="chart-type">column</span> - Comparaison de valeurs avec
+            orientation verticale
           </li>
         </ul>
         <div class="compatibility-note">
           <span class="compatibility-icon">↔</span> Les types
           <code>bar</code> et <code>column</code> sont interchangeables
           (orientation horizontale/verticale)<br />
-          <span class="compatibility-icon">✓</span> Compatibles avec les
-          options <code>stacked</code> et <code>pivot</code><br />
+          <span class="compatibility-icon">✓</span> Compatibles avec les options
+          <code>stacked</code> et <code>pivot</code><br />
           <span class="compatibility-icon">✓</span> Compatibles avec le mode
           <code>continue</code>
         </div>
@@ -88,8 +89,8 @@
           <span class="compatibility-icon">↔</span> Les types
           <code>line</code> et <code>area</code> sont interchangeables
           (avec/sans remplissage)<br />
-          <span class="compatibility-icon">✓</span> Plusieurs styles de
-          courbes disponibles<br />
+          <span class="compatibility-icon">✓</span> Plusieurs styles de courbes
+          disponibles<br />
           <span class="compatibility-icon">✓</span> Compatibles avec le mode
           <code>continue</code>
         </div>
@@ -98,20 +99,20 @@
         <h4>Graphiques matriciels</h4>
         <ul class="chart-types-list">
           <li>
-            <span class="chart-type">treemap</span> - Données hiérarchiques
-            avec proportions relatives
+            <span class="chart-type">treemap</span> - Données hiérarchiques avec
+            proportions relatives
           </li>
           <li>
-            <span class="chart-type">heatmap</span> - Distribution
-            d'intensité sur deux dimensions
+            <span class="chart-type">heatmap</span> - Distribution d'intensité
+            sur deux dimensions
           </li>
         </ul>
         <div class="compatibility-note">
           <span class="compatibility-icon">↔</span> Les types
           <code>treemap</code> et <code>heatmap</code> sont interchangeables
           (visualisations alternatives)<br />
-          <span class="compatibility-icon">✓</span> Supportent le groupement
-          de données<br />
+          <span class="compatibility-icon">✓</span> Supportent le groupement de
+          données<br />
           <span class="compatibility-icon">⚠️</span>
           <code>distributed</code> et <code>enableShades</code> sont
           mutuellement exclusifs
@@ -121,12 +122,12 @@
         <h4>Graphiques à intervalles</h4>
         <ul class="chart-types-list">
           <li>
-            <span class="chart-type">rangeBar</span> - Intervalles de
-            valeurs sous forme de barres
+            <span class="chart-type">rangeBar</span> - Intervalles de valeurs
+            sous forme de barres
           </li>
           <li>
-            <span class="chart-type">rangeArea</span> - Intervalles de
-            valeurs sous forme de zones
+            <span class="chart-type">rangeArea</span> - Intervalles de valeurs
+            sous forme de zones
           </li>
         </ul>
         <div class="compatibility-note">
@@ -153,8 +154,7 @@
         </ul>
         <div class="compatibility-note">
           <span class="compatibility-icon">↔</span> Les types
-          <code>funnel</code> et <code>pyramid</code> sont
-          interchangeables<br />
+          <code>funnel</code> et <code>pyramid</code> sont interchangeables<br />
           <span class="compatibility-icon">⚠️</span> Ne supportent pas le
           <code>pivot</code><br />
           <span class="compatibility-icon">✓</span> Configuration spécifique
@@ -178,8 +178,8 @@
           dimensions
         </li>
         <li>
-          <strong>Compatibilité</strong> : transitions dynamiques entre
-          types compatibles
+          <strong>Compatibilité</strong> : transitions dynamiques entre types
+          compatibles
         </li>
       </ol>
     </div>

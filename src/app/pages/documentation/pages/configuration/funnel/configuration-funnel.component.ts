@@ -4,7 +4,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 @Component({
   selector: 'app-configuration-funnel',
   template: `<section>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Funnel Charts"
       [code]="config.basic.code"
       description="Pour visualiser des processus par étapes"
@@ -14,7 +15,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
         '• Configuration spécifique pour le goulot'
       ]"
     >
-    </app-config-section>
+    </app-doc-section>
   </section>`,
 })
 export class ConfigurationFunnelComponent implements OnInit {

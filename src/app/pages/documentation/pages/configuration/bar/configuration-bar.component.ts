@@ -4,7 +4,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 @Component({
   selector: 'app-configuration-bar',
   template: `<section>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Bar Charts"
       [code]="config.basic.code"
       description="Pour comparer des valeurs entre catégories"
@@ -14,7 +15,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
         '• Compatible avec le mode continue'
       ]"
     >
-    </app-config-section>
+    </app-doc-section>
   </section>`,
 })
 export class ConfigurationBarComponent implements OnInit {

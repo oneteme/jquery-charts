@@ -3,12 +3,13 @@ import { DocumentationService } from '../../../../../core/services/documentation
 
 @Component({
   selector: 'app-data-combine',
-  template: `<app-data-section
+  template: `<app-doc-section
+    type="data"
     title="Combinaison et agrégation de données"
     [code]="data.basic.code"
     description="Apprenez à combiner et agréger vos données pour des visualisations plus complexes"
   >
-  </app-data-section>`,
+  </app-doc-section>`,
 })
 export class DataCombineComponent implements OnInit {
   data: any;

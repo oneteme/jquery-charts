@@ -4,7 +4,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 @Component({
   selector: 'app-configuration-line',
   template: `<section>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Line Charts"
       [code]="config.basic.code"
       description="Pour visualiser des tendances et évolutions"
@@ -14,7 +15,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
         '• Compatible avec le mode continue'
       ]"
     >
-    </app-config-section>
+    </app-doc-section>
   </section>`,
 })
 export class ConfigurationLineComponent implements OnInit {

@@ -4,7 +4,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 @Component({
   selector: 'app-configuration-range',
   template: `<section>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Range Charts"
       [code]="config.basic.code"
       description="Pour représenter des plages de valeurs"
@@ -14,7 +15,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
         '• Compatible avec le mode horizontal pour rangeBar'
       ]"
     >
-    </app-config-section>
+    </app-doc-section>
   </section>`,
 })
 export class ConfigurationRangeComponent implements OnInit {

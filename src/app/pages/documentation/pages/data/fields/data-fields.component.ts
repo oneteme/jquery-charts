@@ -3,12 +3,13 @@ import { DocumentationService } from '../../../../../core/services/documentation
 
 @Component({
   selector: 'app-data-fields',
-  template: `<app-data-section
+  template: `<app-doc-section
+    type="data"
     title="Manipulation des données avec Fields"
     description="Les Fields permettent d'accéder dynamiquement aux propriétés de vos données"
     [code]="data.basic.code"
   >
-  </app-data-section> `,
+  </app-doc-section> `,
 })
 export class DataFieldsComponent implements OnInit {
   data: any;

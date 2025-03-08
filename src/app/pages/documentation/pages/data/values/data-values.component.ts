@@ -3,12 +3,13 @@ import { DocumentationService } from '../../../../../core/services/documentation
 
 @Component({
   selector: 'app-data-values',
-  template: `<app-data-section
+  template: `<app-doc-section
+    type="data"
     title="Utilisation des Values pour les données statiques"
     description="Les Values sont utilisées pour définir des données fixes ou prédéfinies"
     [code]="data.basic.code"
   >
-  </app-data-section> `,
+  </app-doc-section> `,
 })
 export class DataValuesComponent implements OnInit {
   data: any;

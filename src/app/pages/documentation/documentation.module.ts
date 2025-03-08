@@ -20,9 +20,7 @@ import { DataValuesComponent } from './pages/data/values/data-values.component';
 import { DataCombineComponent } from './pages/data/combine/data-combine.component';
 
 // composants de documentation partagés
-import { ConfigSectionComponent } from '../../components/documentation/config-section/config-section.component';
-import { DataSectionComponent } from '../../components/documentation/data-section/data-section.component';
-import { GraphTypesSectionComponent } from '../../components/documentation/graph-types-section/graph-types-section.component';
+import { DocSectionComponent } from '../../components/documentation/doc-section/doc-section.component';
 import { InformationsComponent } from '../../components/documentation/informations/informations.component';
 import { BtnViewExamplesComponent } from '../../components/documentation/btn-view-examples/btn-view-examples.component';
 
@@ -95,13 +93,8 @@ const routes: Routes = [
     DataCombineComponent,
 
     // Composants partagés de documentation
-    ConfigSectionComponent,
-    DataSectionComponent,
-    GraphTypesSectionComponent,
+    DocSectionComponent,
     InformationsComponent
-
-    // test composant stanalone
-    // BtnViewExamplesComponent
   ],
   imports: [
     CommonModule,

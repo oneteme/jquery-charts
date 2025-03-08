@@ -10,11 +10,12 @@ import { DocumentationService } from '../../../../../core/services/documentation
         <li *ngFor="let note of configNotes2" [innerHTML]="note"></li>
       </ul>
     </div>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Configuration - Structure de base"
       [code]="config.basic.code"
     >
-    </app-config-section>
+    </app-doc-section>
 
     <app-informations
       [notes]="configNotes1"

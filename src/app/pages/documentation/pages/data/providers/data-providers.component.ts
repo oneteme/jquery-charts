@@ -3,12 +3,13 @@ import { DocumentationService } from '../../../../../core/services/documentation
 
 @Component({
   selector: 'app-data-providers',
-  template: `<app-data-section
+  template: `<app-doc-section
+    type="data"
     title="Utilisation des Data Providers"
     description="Les Data Providers permettent d'accéder et de manipuler vos données de manière flexible"
     [code]="data.basic.code"
   >
-  </app-data-section>`,
+  </app-doc-section>`,
 })
 export class DataProvidersComponent implements OnInit {
   data: any;

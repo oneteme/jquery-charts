@@ -1,25 +1,31 @@
-<section class="graph-types-section">
+<section [class]="getSectionClass()">
   <h2>{{ title }}</h2>
   <p *ngIf="description" class="description">{{ description }}</p>
 
-  <div class="type-details">
-    <!-- Configuration de base -->
+  <div class="section-content">
     <div class="code-block">
-      <h3>Configuration de base</h3>
+      <h3 *ngIf="getCodeBlockTitle()">{{ getCodeBlockTitle() }}</h3>
+
+      <app-btn-view-examples
+        *ngIf="shouldShowButton()"
+        [chartType]="getChartType()"
+        [chartName]="title"
+      ></app-btn-view-examples>
 
       <pre><code [innerHTML]="code"></code></pre>
     </div>
 
-    <!-- Notes de compatibilité -->
-    <div class="compatibility-notes" *ngIf="compatibilityNotes?.length">
+    <div
+      class="compatibility-notes"
+      *ngIf="compatibilityNotes?.length && !isDataSection()"
+    >
       <h3>Compatibilité</h3>
       <ul>
         <li *ngFor="let note of compatibilityNotes">{{ note }}</li>
       </ul>
     </div>
 
-    <!-- Exemples -->
-    <div class="examples" *ngIf="examples?.length">
+    <div class="examples" *ngIf="examples?.length && !isDataSection()">
       <h3>Exemples</h3>
       <div class="example-grid">
         <div class="example-item" *ngFor="let example of examples">

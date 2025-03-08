@@ -4,7 +4,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 @Component({
   selector: 'app-configuration-heatmap',
   template: `<section>
-    <app-config-section
+    <app-doc-section
+      type="config"
       title="Heatmap Charts"
       [code]="config.basic.code"
       description="Pour visualiser l'intensité des données"
@@ -13,7 +14,7 @@ import { DocumentationService } from '../../../../../core/services/documentation
         '• Peut être utilisé avec des données matricielles'
       ]"
     >
-    </app-config-section>
+    </app-doc-section>
   </section> `,
 })
 export class ConfigurationHeatmapComponent implements OnInit {
