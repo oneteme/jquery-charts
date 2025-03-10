@@ -6,7 +6,7 @@ export function values<T>(...values: T[]): DataProvider<T> {
             return values[idx];
         }
         throw `idx=${idx} out of values=${values}`;
-    }; 
+    };
 }
 
 export function field<T>(name: string): DataProvider<T> {
@@ -53,8 +53,8 @@ export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
             series:provider.series.map(s=>({
                 data:{  //pivot & merge => single serie
                     x:<DataProvider<X>> (provider.pivot // TODO change that cast
-                        ? combineProviders(joiner(), resolveDataProvider(s.name), s.data.x) 
-                        : combineProviders(joiner(), s.data.x, resolveDataProvider(s.name))), 
+                        ? combineProviders(joiner(), resolveDataProvider(s.name), s.data.x)
+                        : combineProviders(joiner(), s.data.x, resolveDataProvider(s.name))),
                     y:s.data.y
                 },
                 color: s.color,
@@ -90,11 +90,11 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(objects: an
                 series[name] = {data: provider.continue ? [] : new Array(chart.categories.length).fill(defaultValue)};
                 var stack = sp(o, i);
                 var color = cp(o, i);
-                var type  = tp(0, i); 
+                var type  = tp(0, i);
                 name  && (series[name].name  = name);
                 stack && (series[name].stack = stack);
                 color && (series[name].color = color);
-                type  && (series[name].type  = type);    
+                type  && (series[name].type  = type);
             }
             if(provider.continue){
                 series[name].data.push({x: m.data.x(o,i), y: requireNonUndefined(m.data.y(o,i), defaultValue)});
@@ -128,7 +128,7 @@ function resolveDataProvider<T>(provider?: T | DataProvider<T>, defaultValue?: T
     return !provider
         ? (o,i)=> defaultValue
         : typeof provider == 'function'
-            ? <DataProvider<T>> provider 
+            ? <DataProvider<T>> provider
             : (o,i)=> provider;
 }
 
@@ -147,7 +147,7 @@ function requireNonUndefined<T>(o: T, elseValue: T) : T{
 }
 
 function isUndefined(o: any): boolean {
-    return o == undefined; 
+    return o == undefined;
 }
 
 
@@ -158,7 +158,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> { //rm 
     ytitle?: string; // multiple  {key: val}
     width?: number;
     height?: number;
-    stacked?: boolean; //barChart only 
+    stacked?: boolean; //barChart only
     pivot?: boolean; //transpose data
     continue?: boolean; //categories | [x,y]
     xorder?: Sort;
@@ -190,7 +190,7 @@ export declare type Sort = 'asc' | 'desc';
 
 export interface CommonChart<X extends XaxisType, Y extends YaxisType | Coordinate2D> {
     series: CommonSerie<Y>[];
-    categories?: X[];    
+    categories?: X[];
     title?: string;
     subtitle?: string;
     xtitle?: string;
@@ -215,10 +215,10 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
 
 export function naturalFieldComparator<T>(sens: Sort, provider: DataProvider<T>) : (o1:any, o2:any)=>number {
     if(provider){
-        const v = sens=='asc' ? 1 : -1; 
+        const v = sens=='asc' ? 1 : -1;
         return (o1,o2)=> {
-            let a = provider(o1, undefined); 
-            let b = provider(o2, undefined); 
+            let a = provider(o1, undefined);
+            let b = provider(o2, undefined);
             return a>b?v:a<b?-v:0;
         }
     }
@@ -226,7 +226,7 @@ export function naturalFieldComparator<T>(sens: Sort, provider: DataProvider<T>)
 }
 
 export function naturalComparator<T>(sens: Sort) : (o1:T, o2:T)=>number {
-    const v = sens=='asc' ? 1 : -1; 
+    const v = sens=='asc' ? 1 : -1;
     return ((a:T,b:T)=> a>b?v:a<b?-v:0)
 }
 
@@ -246,8 +246,10 @@ export function groupBy<T>(arr:[], fn: DataProvider<string>) : {[key:string]: T[
 }
 
 export interface ChartView<X extends XaxisType, Y extends YaxisType> {
-    config: ChartProvider<X, Y>;
-    data: any[];
-    isLoading: boolean;
-    canPivot?: boolean;
+
+  config: ChartProvider<X, Y>;
+  data: any[];
+  isLoading: boolean;
+  canPivot?: boolean;
+  debug?: boolean;
 }

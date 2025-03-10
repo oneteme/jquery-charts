@@ -14,135 +14,80 @@ import {
 import {buildChart, ChartProvider, ChartView, mergeDeep, XaxisType, YaxisType} from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import {customIcons, getType} from "./utils";
-import {asapScheduler} from "rxjs";
+import {asapScheduler, Subscription} from "rxjs";
 
 @Directive({
   standalone: true,
   selector: '[line-chart]'
 })
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implements ChartView<X, Y>, OnChanges, OnDestroy {
-  private el: ElementRef = inject(ElementRef);
   private ngZone = inject(NgZone);
 
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private _chartConfig: ChartProvider<X, Y>;
+  private _options: any;
 
-  private _chartConfig: ChartProvider<X, Y> = {showToolbar: false};
-
-  private _options: any = {
-    chart: {
-      type: 'line'
-    },
-    series: [],
-    noData: {
-      text: 'Aucune donnée'
-    }
-  };
-
-  //@Input({ required: true }) type: 'line' | 'area';
-  @Input({ required: true }) config: ChartProvider<X, Y>;
-  @Input({ required: true }) data: any[];
- // @Input() isLoading: boolean = false;
+  @Input() debug: boolean;
+  @Input({required: true}) data: any[];
+  // @Input() isLoading: boolean = false;
   @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
+
+  constructor(private el: ElementRef) {
+    this._options = initOptions(this.el, this.customEvent);
+  }
+
+  init() {
+      if(this.debug) {
+        console.log("ngOnInit", this._options);
+      }
+      let chart = new ApexCharts(this.el.nativeElement, this._options);
+      chart.render().then(() => {
+        if(this.debug) console.log('redner ok !')
+      });
+      this.chartInstance.set(chart);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
-  });
-}
-
-ngOnDestroy() {
-  this.destroy();
-}
-
-private hydrate(changes: SimpleChanges): void {
-          //Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
-      if (changes['data'] || changes['isLoading']) {
-        //this.updateLoading();
-        //this.updateData();
-        this.updateOptions(this._options, true, true, false); //redraw
-      }
-      else{
-        this.createElement();
-      }
-    }
-
-  private createElement() {
-      this.updateConfig();
-      //this.updateType();
-      //this.updateLoading();
-      //this.updateData();
-
-    if(this.chartInstance() != null) {
-      this.updateOptions(this._options, true, true, false);
-    } else {
-      this.destroy();
-
-      const chartInstance = this.ngZone.runOutsideAngular(
-        () => new ApexCharts(this.el.nativeElement, this._options)
-      );
-      this.chartInstance.set(chartInstance);
-      this.render();
-    }
+    });
   }
 
-  private render() {
-    return this.ngZone.runOutsideAngular(() => this.chartInstance()?.render());
-  }
-
-  private destroy() {
+  ngOnDestroy() {
     this.chartInstance()?.destroy();
     this.chartInstance.set(null);
   }
 
-  private updateConfig() {
-    let that = this;
-    this._chartConfig = this.config;
-    mergeDeep(this._options, {
-      chart: {
-        height: this._chartConfig.height ?? '100%',
-        width: this._chartConfig.width ?? '100%',
-        stacked: this._chartConfig.stacked,
-        toolbar: {
-          show: this._chartConfig.showToolbar ?? false,
-          tools: {
-            download: false,
-            selection: false,
-            zoom: false,
-            zoomin: false,
-            zoomout: false,
-            pan: false,
-            reset: false,
-            customIcons: customIcons(arg => { that.ngZone.run(() => that.customEvent.emit(arg)) }, true)
-          }
-        },
-        events: {
-          mouseMove: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "visible";
-          },
-          mouseLeave: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "hidden";
-          }
-        },
-      },
-      title: {
-        text: this._chartConfig.title
-      },
-      subtitle: {
-        text: this._chartConfig.subtitle
-      },
-      xaxis: {
-        title: {
-          text: this._chartConfig.xtitle
-        }
-      },
-      yaxis: {
-        title: {
-          text: this._chartConfig.ytitle
-        }
+  private hydrate(changes: SimpleChanges): void {
+    if(this.debug) console.log("hydrate", changes);
+    if(changes['data'] || changes['config']) {
+      if(this.debug) console.log("hydrate data or config changes", changes);
+      if(this.data && this._chartConfig){
+        if(this.debug) console.log("hydrate data or config not null", this.data, this._chartConfig);
+        this.updateData();
       }
-    }, this._chartConfig.options);
+    }
+    if(this._options.shouldRedraw){
+      if(this.debug) console.log("hydrate shouldRedraw", changes);
+      this.ngOnDestroy();
+      this.init();
+      delete this._options.shouldRedraw;
+    }
+    else {
+      if(this.debug) console.log("hydrate updateOptions", changes);
+      this.updateOptions(true, true, false); //redraw
+    }
+  }
+
+  //input data + chartConfig
+  private updateData() {
+    let commonChart = buildChart(this.data, {...this._chartConfig, continue: true}, null);
+    this._options.series = commonChart.series;
+    let newType = getType(commonChart);
+    if(this._options.xaxis.type != newType){ // bug chart shit : todo complete ..
+      this._options.xaxis.type = newType;
+      this._options.shouldRedraw = true;
+    }
   }
 
   @Input()
@@ -155,13 +100,13 @@ private hydrate(changes: SimpleChanges): void {
     this._options.chart.type = type;
   }
 
-  private updateData() {
-    var commonChart = buildChart(this.data, {...this._chartConfig, continue: true}, null);
-    mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });
+  @Input()
+  set config(config: ChartProvider<X, Y>) {
+    this._chartConfig = config;
+    this._options = updateOptions(this._options, config);
   }
 
   private updateOptions(
-    options: any,
     redrawPaths?: boolean,
     animate?: boolean,
     updateSyncedCharts?: boolean
@@ -169,11 +114,77 @@ private hydrate(changes: SimpleChanges): void {
     //if _options.series & _options.xaxis.type & this.config
     return this.ngZone.runOutsideAngular(() =>
       this.chartInstance()?.updateOptions(
-        options,
+        this._options,
         redrawPaths,
         animate,
         updateSyncedCharts
       )
     );
   }
+}
+
+function initOptions(node: ElementRef, customEvent: EventEmitter<'previous' | 'next' | 'pivot'>){
+  return {
+    shouldRedraw: true,
+    chart: {
+      type: 'line',
+      toolbar: {
+        tools: {
+          download: false,
+          selection: false,
+          zoom: false,
+          zoomin: false,
+          zoomout: false,
+          pan: false,
+          reset: false,
+          customIcons: customIcons(arg => { customEvent.emit(arg) }, true)
+        }
+      },
+      events: {
+        mouseMove: function() {
+          let toolbar = node.nativeElement.querySelector('.apexcharts-toolbar');
+          if(toolbar) toolbar.style.visibility = "visible";
+        },
+        mouseLeave: function() {
+          let toolbar = node.nativeElement.querySelector('.apexcharts-toolbar');
+          if(toolbar) toolbar.style.visibility = "hidden";
+        }
+      }
+    },
+    xaxis: { }, // set type
+    series: [],
+    noData: {
+      text: 'Aucune donnée'
+    }
+  };
+}
+
+function updateOptions<X extends XaxisType, Y extends YaxisType>(options: any, config : ChartProvider<X, Y>) {
+
+  return mergeDeep(options, {
+    chart: {
+      height: config.height ?? '100%',
+      width: config.width ?? '100%',
+      stacked: config.stacked,
+      toolbar: {
+        show: config.showToolbar ?? false,
+      }
+    },
+    title: {
+      text: config.title
+    },
+    subtitle: {
+      text: config.subtitle
+    },
+    xaxis: {
+      title: {
+        text: config.xtitle
+      }
+    },
+    yaxis: {
+      title: {
+        text: config.ytitle
+      }
+    }
+  }, config.options);
 }
