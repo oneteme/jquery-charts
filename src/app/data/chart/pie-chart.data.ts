@@ -9,6 +9,7 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
     data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
     config: {
       showToolbar: true,
+      height: 250,
       series: [
         {
           data: { x: values('2xx'), y: field('count_2xx') },
@@ -26,7 +27,6 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
           color: '#DAAB3A',
         },
       ],
-      height: 250,
     },
   },
   pieExample2: {
@@ -54,16 +54,16 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
             top: 2,
             left: 1,
             blur: 5,
-            opacity: 0.1
-          }
+            opacity: 0.1,
+          },
         },
         stroke: {
           width: 2,
-          colors: ['#ffffff']
+          colors: ['#ffffff'],
         },
         dataLabels: {
           enabled: true,
-          formatter: function(val, opts) {
+          formatter: function (val, opts) {
             const label = opts.w.globals.labels[opts.seriesIndex];
             return `${label}: ${val.toFixed(0)}%`;
           },
@@ -71,7 +71,7 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
             fontSize: '11px',
             fontFamily: 'Helvetica, Arial, sans-serif',
             fontWeight: 'bold',
-            colors: ['#ffffff']
+            colors: ['#ffffff'],
           },
           background: {
             enabled: true,
@@ -80,15 +80,15 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
             padding: 4,
             opacity: 0.7,
             borderWidth: 1,
-            borderColor: '#ffffff'
+            borderColor: '#ffffff',
           },
           dropShadow: {
             enabled: false,
             top: 1,
             left: 1,
             blur: 1,
-            opacity: 0.4
-          }
+            opacity: 0.4,
+          },
         },
         plotOptions: {
           pie: {
@@ -98,7 +98,7 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
             expandOnClick: true,
             startAngle: 45,
             endAngle: 405,
-          }
+          },
         },
         legend: {
           show: true,
@@ -106,39 +106,41 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
           horizontalAlign: 'center',
           fontSize: '12px',
           labels: {
-            colors: undefined
+            colors: undefined,
           },
           markers: {
             width: 12,
             height: 12,
             strokeWidth: 5,
             strokeColor: '#fff',
-            radius: 12
+            radius: 12,
           },
           itemMargin: {
             horizontal: 10,
-            vertical: 5
-          }
+            vertical: 5,
+          },
         },
         tooltip: {
           enabled: true,
           theme: 'light',
           style: {
-            fontSize: '12px'
+            fontSize: '12px',
           },
           y: {
             title: {
-              formatter: function() {
+              formatter: function () {
                 return 'Nombre de requêtes:';
-              }
+              },
             },
-            formatter: function(value: any | number) {
-              return value + ' requêtes (' + ((value / 410) * 100).toFixed(1) + '%)';
-            }
-          }
+            formatter: function (value: any | number) {
+              return (
+                value + ' requêtes (' + ((value / 410) * 100).toFixed(1) + '%)'
+              );
+            },
+          },
         },
-      }
-    }
+      },
+    },
   },
 
   pieExample3: {
@@ -256,11 +258,23 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
     ],
     config: {
+      title: 'Codes de réponse par API',
+      height: 250,
+      showToolbar: true,
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
+      options: {
+        colors: ['#430C05', '#D46F4D', '#FFBF66', '#08C5D1', '#00353F'],
+        legend: {
+          show: false,
+        },
+        dataLabels: {
+          enabled: false,
+        },
+      },
     },
   },
 
@@ -271,15 +285,50 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
     ],
     config: {
+      title: 'Répartition par API (tri ascendant)',
+      height: 250,
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
       xorder: 'asc',
+      options: {
+        colors: ['#52B788', '#FF9A3C', '#E76F51'],
+        stroke: {
+          width: 1,
+          colors: ['#000'],
+        },
+        plotOptions: {
+          pie: {
+            startAngle: 0,
+            endAngle: 360,
+            expandOnClick: true,
+            offsetX: 0,
+            offsetY: 0,
+            customScale: 1,
+          },
+        },
+        dataLabels: {
+          enabled: true,
+          formatter: function (val) {
+            return val.toFixed(1) + '%';
+          },
+          style: {
+            fontSize: '12px',
+            colors: ['#000'],
+          },
+        },
+        legend: {
+          position: 'left',
+          fontSize: '12px',
+          labels: {
+            colors: '#000',
+          },
+        },
+      },
     },
   },
-
   pieExample8: {
     data: [
       { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
@@ -287,15 +336,50 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
     ],
     config: {
+      title: 'Répartition des statuts ARRONDIS à l\'unité',
+      height: 250,
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
-      xorder: 'desc',
+      xorder: 'asc',
+      options: {
+        colors: ['#4A919E', '#FFB875', '#e76f51'],
+        stroke: {
+          width: 1,
+          colors: ['#000'],
+        },
+        plotOptions: {
+          pie: {
+            startAngle: 0,
+            endAngle: 360,
+            expandOnClick: true,
+            offsetX: 0,
+            offsetY: 0,
+            customScale: 1,
+          },
+        },
+        dataLabels: {
+          enabled: true,
+          formatter: function (val) {
+            return Math.round(val) + '%'; // Arrondi à l'unité
+          },
+          style: {
+            fontSize: '12px',
+            colors: ['#000'],
+          },
+        },
+        legend: {
+          position: 'left',
+          fontSize: '12px',
+          labels: {
+            colors: '#000',
+          },
+        },
+      },
     },
   },
-
   pieExample9: {
     data: [
       { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
@@ -303,12 +387,40 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
     ],
     config: {
+      title: 'Répartition par API (tri descendant)',
+      height: 250,
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
-      continue: true,
+      xorder: 'desc',
+      options: {
+        colors: ['#2A9D8F', '#F4A261', '#E76F51'],
+        stroke: {
+          colors: ['#fff'],
+        },
+        fill: {
+          opacity: 0.8,
+        },
+        plotOptions: {
+          polarArea: {
+            rings: {
+              strokeWidth: 0,
+            },
+            spokes: {
+              strokeWidth: 0,
+            },
+          },
+        },
+        dataLabels: {
+          enabled: false,
+        },
+        legend: {
+          show: true,
+          position: 'right',
+        },
+      },
     },
   },
 };

@@ -44,11 +44,6 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       height: 250,
       options: {
         colors: ['#CA3C66', '#DB6A8F', '#E8AABE', '#A7E0E0', '#4AA3A2'],
-        chart: {
-          toolbar: {
-            show: true,
-          },
-        },
         plotOptions: {
           bar: {
             borderRadius: 8,
@@ -122,14 +117,6 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
           '#344D59',
           '#80586D',
         ],
-        chart: {
-          toolbar: {
-            tools: {
-              download: true,
-              selection: true,
-            },
-          },
-        },
         plotOptions: {
           bar: {
             horizontal: false,
@@ -236,7 +223,6 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       options: {
         colors: ['#CA3C66', '#DB6A8F', '#E8AABE'],
         chart: {
-          type: 'bar',
           stacked: true,
         },
         plotOptions: {
@@ -298,7 +284,7 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
         chart: {
           dropShadow: {
             enabled: true,
-            opacity: 0.1,
+            opacity: 0.4,
           },
         },
         dataLabels: {
@@ -348,14 +334,10 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
       height: 250,
+      showToolbar: true,
       continue: true,
       options: {
         colors: ['#137C8B', '#709CA7', '#B8CBD0'],
-        chart: {
-          toolbar: {
-            show: true,
-          },
-        },
         markers: {
           size: 5,
           hover: {
