@@ -25,9 +25,6 @@ export const FUNNEL_CHART_DATA: ChartDataCollection<FunnelChartData> = {
         colors: ['#3498db', '#2ecc71', '#f1c40f', '#e67e22', '#e74c3c'],
         chart: {
           type: 'bar',
-          toolbar: {
-            show: true
-          },
           animations: {
             enabled: true,
             speed: 500,
@@ -44,15 +41,6 @@ export const FUNNEL_CHART_DATA: ChartDataCollection<FunnelChartData> = {
             distributed: true,
             barHeight: '75%',
             isFunnel: true
-          },
-          funnel: {
-            enabled: true,
-            width: '75%',
-            height: '90%',
-            top: '5%',
-            dataLabels: {
-              show: true
-            }
           }
         },
         dataLabels: {
@@ -146,14 +134,6 @@ export const FUNNEL_CHART_DATA: ChartDataCollection<FunnelChartData> = {
             opacityFrom: 1,
             opacityTo: 0.85,
             stops: [0, 100]
-          }
-        },
-        states: {
-          hover: {
-            filter: {
-              type: 'lighten',
-              value: 0.1
-            }
           }
         }
       }
