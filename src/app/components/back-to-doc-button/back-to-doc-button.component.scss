@@ -9,19 +9,19 @@
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    background: linear-gradient(to right, #1422d5, #1f36e8);
+    background: linear-gradient(to right, #557483, #6d8f9f);
     color: white;
     border: none;
     border-radius: 50px;
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(20, 34, 213, 0.3);
+    box-shadow: 0 4px 12px rgba(72, 109, 151, 0.3);
     transition: all 0.2s ease;
 
     &:hover {
       transform: translateY(-3px);
-      box-shadow: 0 6px 16px rgba(20, 34, 213, 0.4);
+      box-shadow: 0 6px 16px rgba(72, 109, 151, 0.4);
     }
 
     &:active {

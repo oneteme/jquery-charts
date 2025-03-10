@@ -1,6 +1,9 @@
 <ng-container *ngIf="selectedChartType">
   <div class="charts-container" *ngIf="selectedChartType">
     <h2>Exemples de {{ selectedChartType }}</h2>
+    <p class="source-note">
+      <em>Note: Si certains éléments comme les tooltips n'apparaissent pas dans le formatteur de code, vous pouvez consulter le code source complet sur GitHub en cliquant sur l'icône en haut à droite et en naviguant vers <code>src/app/data/chart/</code> pour votre exemple.</em>
+    </p>
     <div class="charts-grid">
       <ng-container [ngSwitch]="selectedChartType">
         <ng-container *ngSwitchCase="'Pie Chart'">

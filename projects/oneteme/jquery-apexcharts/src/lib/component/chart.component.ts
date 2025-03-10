@@ -50,7 +50,6 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     _type: ChartType;
 
     @Input({alias: "type", required: true}) set value(type: ChartType) {
-      console.log('Setting chart type:', type);
       this._type = type;
     }
     @Input({required: true}) config: ChartProvider<X, Y>;

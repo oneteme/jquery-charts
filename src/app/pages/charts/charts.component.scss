@@ -8,6 +8,20 @@
     color: #2c3e50;
   }
 
+  .source-note {
+    margin-bottom: 2rem;
+    font-size: 0.9rem;
+    color: #6c757d;
+    
+    code {
+      background-color: #f8f9fa;
+      padding: 0.1rem 0.3rem;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+  }
+
   .charts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 3fr));

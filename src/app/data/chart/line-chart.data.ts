@@ -7,11 +7,11 @@ import {
 export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
   lineExample: {
     data: [
-      { date: '2023-01', count_2xx: 110, count_4xx: 90, count_5xx: 30 },
-      { date: '2023-02', count_2xx: 125, count_4xx: 65, count_5xx: 45 },
-      { date: '2023-03', count_2xx: 150, count_4xx: 80, count_5xx: 60 },
-      { date: '2023-04', count_2xx: 160, count_4xx: 100, count_5xx: 40 },
-      { date: '2023-05', count_2xx: 180, count_4xx: 110, count_5xx: 20 },
+      { date: '01-2023', count_2xx: 110, count_4xx: 90, count_5xx: 30 },
+      { date: '02-2023', count_2xx: 125, count_4xx: 65, count_5xx: 45 },
+      { date: '03-2023', count_2xx: 150, count_4xx: 80, count_5xx: 60 },
+      { date: '04-2023', count_2xx: 160, count_4xx: 100, count_5xx: 40 },
+      { date: '05-2023', count_2xx: 180, count_4xx: 110, count_5xx: 20 },
     ],
     config: {
       title: 'Évolution des codes HTTP',
@@ -62,7 +62,7 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
               fontWeight: 'bold',
               colors: ['#333']
             },
-            format: 'MMM YY'
+            format: 'YY MMM'
           },
           axisBorder: {
             show: true,

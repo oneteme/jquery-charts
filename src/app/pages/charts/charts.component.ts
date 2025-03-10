@@ -125,6 +125,23 @@ export class ChartsComponent implements OnInit {
 
     const exampleCopy = JSON.parse(JSON.stringify(example));
 
+    let chartType = 'pie';
+    if (Object.values(PIE_CHART_DATA).includes(example)) {
+      chartType = 'pie';
+    } else if (Object.values(BAR_CHART_DATA).includes(example)) {
+      chartType = 'bar';
+    } else if (Object.values(LINE_CHART_DATA).includes(example)) {
+      chartType = 'line';
+    } else if (Object.values(TREEMAP_CHART_DATA).includes(example)) {
+      chartType = 'treemap';
+    } else if (Object.values(HEATMAP_CHART_DATA).includes(example)) {
+      chartType = 'heatmap';
+    } else if (Object.values(RANGE_CHART_DATA).includes(example)) {
+      chartType = 'range';
+    } else if (Object.values(FUNNEL_CHART_DATA).includes(example)) {
+      chartType = 'funnel';
+    }
+
     const processDataFunctions = (obj: any) => {
       if (!obj) return obj;
 
@@ -219,7 +236,7 @@ export class ChartsComponent implements OnInit {
     code += '// Utilisation\n';
 
     const usageCode = `<chart
-  type="${preprocessedExample.config.type || 'pie'}"
+  type="'${chartType}'"
   [config]="config"
   [data]="data"
 ></chart>`;

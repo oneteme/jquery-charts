@@ -128,6 +128,14 @@ export class RangeChartDirective<X extends XaxisType> implements ChartView<X, nu
             if (toolbar) toolbar.style.visibility = "hidden";
           }
         },
+        zoom: {
+          enabled: false
+        },
+        animations: {
+          dynamicAnimation: {
+            enabled: true
+          }
+        },
       },
       title: {
         text: this._chartConfig.title
