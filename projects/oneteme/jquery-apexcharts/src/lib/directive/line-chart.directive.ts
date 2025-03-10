@@ -14,7 +14,8 @@ import {
 import {buildChart, ChartProvider, ChartView, mergeDeep, XaxisType, YaxisType} from "@oneteme/jquery-core";
 import ApexCharts from "apexcharts";
 import {customIcons, getType} from "./utils";
-import {asapScheduler, Subscription} from "rxjs";
+import {asapScheduler, observeOn, Subscription} from "rxjs";
+import {fromPromise} from "rxjs/internal/observable/innerFrom";
 
 @Directive({
   standalone: true,
@@ -36,18 +37,21 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     this._options = initOptions(this.el, this.customEvent);
   }
 
+
   init() {
       if(this.debug) {
-        console.log("ngOnInit", this._options);
+        console.log("ngOnInit", {...this._options});
       }
-      let chart = new ApexCharts(this.el.nativeElement, this._options);
-      chart.render().then(() => {
-        if(this.debug) console.log('redner ok !')
-      });
+      let chart = new ApexCharts(this.el.nativeElement, {...this._options});
       this.chartInstance.set(chart);
+      fromPromise(chart.render().then(()=>  this.debug && console.log(new Date().getMilliseconds(), "promise finish"))).pipe(observeOn(asapScheduler))
+        .subscribe(res=> this.debug && console.log(new Date().getMilliseconds(), "asapScheduler finish"));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if(this.debug) {
+      console.log(new Date().getMilliseconds(), "ngOnChanges changed", changes);
+    }
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
     });
@@ -59,11 +63,9 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
   }
 
   private hydrate(changes: SimpleChanges): void {
-    if(this.debug) console.log("hydrate", changes);
+    if(this.debug) console.log("hydrate", {...changes});
     if(changes['data'] || changes['config']) {
-      if(this.debug) console.log("hydrate data or config changes", changes);
       if(this.data && this._chartConfig){
-        if(this.debug) console.log("hydrate data or config not null", this.data, this._chartConfig);
         this.updateData();
       }
     }
@@ -114,7 +116,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType> implem
     //if _options.series & _options.xaxis.type & this.config
     return this.ngZone.runOutsideAngular(() =>
       this.chartInstance()?.updateOptions(
-        this._options,
+        {...this._options},
         redrawPaths,
         animate,
         updateSyncedCharts
