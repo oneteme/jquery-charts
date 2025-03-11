@@ -267,7 +267,7 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
         { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
       ],
       options: {
-        colors: ['#430C05', '#D46F4D', '#FFBF66', '#08C5D1', '#00353F'],
+        colors: ['#B7CE66', '#8FB43A', '#4B5943', '#DCDFDA', '#C8D6A2'],
         legend: {
           show: false,
         },
@@ -318,6 +318,9 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
             fontSize: '12px',
             colors: ['#000'],
           },
+          dropShadow: {
+            enabled: false,
+          },
         },
         legend: {
           position: 'left',
@@ -361,9 +364,12 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
           },
         },
         dataLabels: {
+          dropShadow: {
+            enabled: false,
+          },
           enabled: true,
           formatter: function (val) {
-            return Math.round(val) + '%'; // Arrondi à l'unité
+            return Math.round(val) + '%';
           },
           style: {
             fontSize: '12px',

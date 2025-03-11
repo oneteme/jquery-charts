@@ -207,8 +207,8 @@ import { DocumentationService } from '../../../../../core/services/documentation
 export class DataCombineComponent {
   data: any;
   combineNotes: string[] = [
-    '• Utilisez <code>joinFields()</code> pour combiner des valeurs catégorielles ou textuelles',
-    '• Préférez <code>combineFields()</code> avec une fonction personnalisée pour des calculs numériques',
+    '• Utilisez joinFields() pour combiner des valeurs catégorielles ou textuelles',
+    '• Préférez combineFields() avec une fonction personnalisée pour des calculs numériques',
     "• Consultez les exemples de graphiques combo et treemap pour voir des cas concrets d'utilisation",
   ];
 

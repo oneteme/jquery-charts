@@ -56,47 +56,16 @@ button {
   outline: none;
 }
 
-// styles généraux réutilisés
-
 .code-block {
   background: #f8f9fa;
   padding: 1.5rem;
   border-radius: 8px;
-  margin: 1rem 0;
+  margin: 1rem 0 0;
   border: 1px solid #e0e0e0;
 
   pre {
     margin: 0;
     padding: 1rem;
-
-    // code {
-    //   font-size: 0.9rem;
-    //   line-height: 1.6;
-
-    //
-
-    //   .keyword {
-    //     color: #c678dd;
-    //     font-weight: bold;
-    //   }
-
-    //   .string {
-    //     color: #98c379;
-    //   }
-
-    //   .boolean, .number {
-    //     color: #d19a66;
-    //   }
-
-    //   .comment {
-    //     color: #5c6370;
-    //     font-style: italic;
-    //   }
-
-    //   .tag {
-    //     color: #e06c75;
-    //   }
-    // }
 
     code {
       font-family: inherit;
