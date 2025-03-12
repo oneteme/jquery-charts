@@ -1,192 +1,153 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  inject,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  signal,
-  SimpleChanges
-} from "@angular/core";
-import {buildChart, buildSingleSerieChart, ChartProvider, ChartType, ChartView, mergeDeep} from "@oneteme/jquery-core";
-import {customIcons} from "./utils";
-import ApexCharts from "apexcharts";
-import {asapScheduler} from "rxjs";
+import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
+import { buildChart, buildSingleSerieChart, ChartProvider, ChartView } from '@oneteme/jquery-core';
+import ApexCharts from 'apexcharts';
+import { asapScheduler, Subscription } from 'rxjs';
+import { ChartCustomEvent, initCommonChartOptions, updateCommonOptions, initChart, updateChartOptions, hydrateChart, destroyChart } from './utils';
 
 @Directive({
   standalone: true,
-  selector: '[pie-chart]'
+  selector: '[pie-chart]',
 })
-export class PieChartDirective implements ChartView<string, number>, OnChanges, OnDestroy {
+export class PieChartDirective
+  implements ChartView<string, number>, OnChanges, OnDestroy
+{
   private el: ElementRef = inject(ElementRef);
   private ngZone = inject(NgZone);
-
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private _chartConfig: ChartProvider<string, number>;
+  private _options: any;
+  private subscription = new Subscription();
+  private _type: 'pie' | 'donut' | 'polar' | 'radar' | 'radial' = 'pie';
 
-  private readonly typeMapping: {[key: string]: ChartType} = {
-    'pie': 'pie',
-    'donut': 'donut',
-    'radial': 'radialBar',
-    'polar': 'polarArea',
-    'radar': 'radar'
+  @Input() debug: boolean;
+  @Input({ required: true }) data: any[];
+  @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
+  @Input()
+  set isLoading(isLoading: boolean) {
+    this._options.noData.text = isLoading
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+  }
+  @Input()
+  set type(type: 'pie' | 'donut' | 'polar' | 'radar' | 'radial') {
+    this._type = type;
+    if (this._options.chart.type !== type) {
+      this._options.chart.type = type;
+      this.configureTypeSpecificOptions();
+      this._options.shouldRedraw = true;
+    }
+  }
+  @Input()
+  set config(config: ChartProvider<string, number>) {
+    this._chartConfig = config;
+    this._options = updateCommonOptions(this._options, config);
   }
 
-  private _chartConfig: ChartProvider<string, number> = {showToolbar: false};
-  private _options: any = {
-    chart: {
-      type: 'pie'
-    },
-    series: [],
-    noData: {
-      text: 'Aucune donnée'
-    }
-  };
+  constructor() {
+    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'pie');
+  }
 
-  @Input({ required: true }) type: "pie" | "donut" | "radialBar" | "polarArea" | "radar";
-  @Input({ required: true }) config: ChartProvider<string, number>;
-  @Input({ required: true }) data: any[];
-  @Input() isLoading: boolean = false;
-  @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
-
-  ngOnDestroy() {
-    this.destroy();
+  init() {
+    initChart(this.el, this.ngZone, this._options, this.chartInstance, this.subscription, this.debug);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (this.debug) {
+      console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
+    }
+
+    if (changes['type']) {
+      this.updateType();
+    }
+
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
     });
   }
 
+  ngOnDestroy() {
+    destroyChart(this.chartInstance, this.subscription);
+  }
+
   private hydrate(changes: SimpleChanges): void {
-    const shouldUpdateSeries =
-      Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
-    if (shouldUpdateSeries) {
+    hydrateChart(
+      changes,
+      this.data,
+      this._chartConfig,
+      this._options,
+      this.chartInstance,
+      this.ngZone,
+      () => this.updateData(),
+      () => this.ngOnDestroy(),
+      () => this.init(),
+      () => updateChartOptions(this.chartInstance(), this.ngZone, this._options),
+      this.debug
+    );
+
+    if (changes['isLoading']) {
       this.updateLoading();
-      this.updateData();
-      this.updateOptions(this._options, true, true, false);
-      return;
     }
-
-    this.createElement();
-  }
-
-  private createElement() {
-    this.updateConfig();
-    this.updateType();
-    this.updateLoading();
-    this.updateData();
-
-    if(this.chartInstance() != null) {
-      this.updateOptions(this._options, true, true, false);
-    } else {
-      this.destroy();
-
-      const chartInstance = this.ngZone.runOutsideAngular(
-        () => new ApexCharts(this.el.nativeElement, this._options)
-      );
-      this.chartInstance.set(chartInstance);
-      this.render();
-    }
-  }
-
-  private render() {
-    return this.ngZone.runOutsideAngular(() => this.chartInstance()?.render());
-  }
-
-  private destroy() {
-    this.chartInstance()?.destroy();
-    this.chartInstance.set(null);
-  }
-
-  private updateConfig() {
-    let that = this;
-    this._chartConfig = this.config;
-    mergeDeep(this._options, {
-      chart: {
-        height: this._chartConfig.height ?? '100%',
-        width: this._chartConfig.width ?? '100%',
-        toolbar: {
-          show: this._chartConfig.showToolbar ?? false,
-          tools: {
-            download: false,
-            selection: false,
-            zoom: false,
-            zoomin: false,
-            zoomout: false,
-            pan: false,
-            reset: false,
-            customIcons: customIcons(arg => { that.ngZone.run(() => that.customEvent.emit(arg))}, true)
-          }
-        },
-        events: {
-          mouseMove: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "visible";
-          },
-          mouseLeave: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "hidden";
-          }
-        },
-      },
-      title: {
-        text: this._chartConfig.title
-      },
-      subtitle: {
-        text: this._chartConfig.subtitle
-      },
-      xaxis: {
-        title: {
-          text: this._chartConfig.xtitle
-        }
-      },
-      yaxis: {
-        title: {
-          text: this._chartConfig.ytitle
-        }
-      },
-
-    }, this._chartConfig.options);
-  }
-
-  private updateLoading() {
-    mergeDeep(this._options, {
-      noData: {
-        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
-      }
-    });
   }
 
   private updateType() {
-    mergeDeep(this._options, { chart: { type: this.typeMapping[this.type] } })
+    this.configureTypeSpecificOptions();
+    this._options.shouldRedraw = true;
+  }
+
+  private configureTypeSpecificOptions() {
+    const currentType = this._type;
+
+    if (currentType === 'pie') {
+      this._options.chart.type = 'pie';
+    }
+    else if (currentType === 'donut') {
+      this._options.chart.type = 'donut';
+    }
+    else if (currentType === 'radial') {
+      this._options.chart.type = 'radialBar';
+    }
+    else if (currentType === 'polar') {
+      this._options.chart.type = 'polarArea';
+    }
+    else if (currentType === 'radar') {
+      this._options.chart.type = 'radar';
+    }
   }
 
   private updateData() {
-    var chartConfig = { ...this._chartConfig, continue: false };
-    var commonChart = this.data.length != 1 && this.type == 'radar' ? buildChart(this.data, chartConfig, null) : buildSingleSerieChart(this.data, chartConfig, null);
-    var colors = this._chartConfig.options && this._chartConfig.options.colors
-    ? this._chartConfig.options.colors
-    : commonChart.series.filter(d => d.color).map(d => <string>d.color);
-    mergeDeep(this._options, { series: this.data.length != 1 && this.type == 'radar' ? commonChart.series : this.type == 'radar' ? [{ name: 'Series 1', data: commonChart.series.flatMap(s => s.data.filter(d => d != null))}] : commonChart.series.flatMap(s => s.data.filter(d => d != null)), labels: commonChart.categories || [], colors: colors || [] });
+    const chartConfig = { ...this._chartConfig, continue: false };
+
+    const commonChart =
+      this.data.length != 1 && this._type == 'radar'
+        ? buildChart(this.data, chartConfig, null)
+        : buildSingleSerieChart(this.data, chartConfig, null);
+
+    if (this.data.length != 1 && this._type == 'radar') {
+      this._options.series = commonChart.series;
+    } else if (this._type == 'radar') {
+      this._options.series = [
+        {
+          name: 'Series 1',
+          data: commonChart.series.flatMap((s) =>
+            s.data.filter((d) => d != null)
+          ),
+        },
+      ];
+    } else {
+      this._options.series = commonChart.series.flatMap((s) =>
+        s.data.filter((d) => d != null)
+      );
+    }
+    this._options.labels = commonChart.categories || [];
   }
 
-  private updateOptions(
-    options: any,
-    redrawPaths?: boolean,
-    animate?: boolean,
-    updateSyncedCharts?: boolean
-  ) {
-    return this.ngZone.runOutsideAngular(() =>
-      this.chartInstance()?.updateOptions(
-        options,
-        redrawPaths,
-        animate,
-        updateSyncedCharts
-      )
-    );
+  private updateLoading() {
+    this._options.noData.text = this.isLoading
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+
+    if (this.chartInstance()) {
+      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
+    }
   }
 }

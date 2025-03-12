@@ -28,6 +28,7 @@ export class AppComponent {
       { count: 80, field: '5xx' }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: field('field'), y: field('count') }, name: 'Nombre d\'appels' }
       ],
@@ -156,6 +157,7 @@ export class AppComponent {
       { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Nombre d\'appels' },
         { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Nombre d\'appels' },
@@ -327,6 +329,7 @@ export class AppComponent {
       { count: 60, field: 'v3' }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: field('field'), y: field('count') }, name: 'test' }
       ],
@@ -350,6 +353,7 @@ export class AppComponent {
       { count_2xx: 110, count_4xx: 160, count_5xx: 80 }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: values('2xx'), y: field('count_2xx') }, name: 'Nombre d\'appels' },
         { data: { x: values('4xx'), y: field('count_4xx') }, name: 'Nombre d\'appels' },
@@ -506,6 +510,7 @@ export class AppComponent {
       { count: 44, field: 'CDE' }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: field('field'), y: field('count') } }
       ],
@@ -564,6 +569,7 @@ export class AppComponent {
       { count: 31, field: 'XYZ', categ: 'Mobile' },
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: field('field'), y: field('count') }, name: field('categ') }
       ],
@@ -580,6 +586,7 @@ export class AppComponent {
       { min: 25, max: 30, field: '2024' }
     ],
     config: {
+      showToolbar: true,
       series: [
         { data: { x: field('field'), y: rangeFields('min', 'max') } }
       ],
@@ -594,6 +601,7 @@ export class AppComponent {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' }
     ],
     config: {
+      showToolbar: true,
       series: [
         {
           data: {

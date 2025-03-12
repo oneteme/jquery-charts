@@ -1,194 +1,154 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  inject,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  signal,
-  SimpleChanges,
-  ViewChild
-} from "@angular/core";
-import {buildChart, ChartProvider, ChartView, mergeDeep, naturalFieldComparator, XaxisType} from "@oneteme/jquery-core";
-import ApexCharts from "apexcharts";
-import {customIcons, getType} from "./utils";
-import {asapScheduler} from "rxjs";
+import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
+import { buildChart, ChartProvider, ChartView, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
+import ApexCharts from 'apexcharts';
+import { asapScheduler, Subscription } from 'rxjs';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, initChart, updateChartOptions, hydrateChart, destroyChart } from './utils';
 
 @Directive({
   standalone: true,
-  selector: '[bar-chart]'
+  selector: '[bar-chart]',
 })
-export class BarChartDirective<X extends XaxisType> implements ChartView<X, number>, OnDestroy, OnChanges {
+export class BarChartDirective<X extends XaxisType>
+  implements ChartView<X, number>, OnChanges, OnDestroy
+{
   private el: ElementRef = inject(ElementRef);
   private ngZone = inject(NgZone);
-
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private subscription = new Subscription();
+  private _chartConfig: ChartProvider<X, number>;
+  private _options: any;
+  private _canPivot: boolean = true;
+  // private _type: 'bar' | 'column' | 'funnel' | 'pyramid' = 'bar';
 
-  private _chartConfig: ChartProvider<X, number> = {showToolbar: false};
-  private _options: any = {
-    chart: {
-      type: 'bar'
-    },
-    series: [{
-      data: []
-    }]
-  };
-
-  @ViewChild("chart", { static: true }) chartElement: ElementRef;
+  @Input() debug: boolean;
   @Input({ required: true }) type: 'bar' | 'column' | 'funnel' | 'pyramid';
-  @Input({ required: true }) config: ChartProvider<X, number>;
   @Input({ required: true }) data: any[];
-  @Input() canPivot: boolean = true;
-  @Input() isLoading: boolean = false;
-  @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
+  @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
+  @Input() set isLoading(isLoading: boolean) {
+    this._options.noData.text = isLoading
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+  }
+  @Input() set canPivot(canPivot: boolean) {
+    this._canPivot = canPivot;
+  }
+  get canPivot(): boolean {
+    return this._canPivot;
+  }
+  @Input() set config(config: ChartProvider<X, number>) {
+    this._chartConfig = config;
+    this._options = updateCommonOptions(this._options, config);
+    this.configureTypeSpecificOptions();
+  }
 
-  ngOnDestroy() {
-    this.destroy();
+  constructor() {
+    this._options = initCommonChartOptions(
+      this.el,
+      this.customEvent,
+      this.ngZone,
+      'bar'
+    );
+  }
+
+  init() {
+    initChart(this.el, this.ngZone, this._options, this.chartInstance, this.subscription, this.debug);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (this.debug) console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
+    if (changes['type']) this.updateType();
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
     });
   }
 
+  ngOnDestroy() {
+    destroyChart(this.chartInstance, this.subscription);
+  }
+
   private hydrate(changes: SimpleChanges): void {
-    const shouldUpdateSeries =
-      Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
-    if (shouldUpdateSeries) {
+    hydrateChart(
+      changes,
+      this.data,
+      this._chartConfig,
+      this._options,
+      this.chartInstance,
+      this.ngZone,
+      () => this.updateData(),
+      () => this.ngOnDestroy(),
+      () => this.init(),
+      () => updateChartOptions(this.chartInstance(), this.ngZone, this._options), this.debug
+    );
+
+    if (changes['isLoading']) {
       this.updateLoading();
-      this.updateData();
-      this.updateOptions(this._options, true, true, false);
-      return;
     }
-
-    this.createElement();
-  }
-
-  private createElement() {
-    this.updateConfig();
-    this.updateLoading();
-    this.updateData();
-
-    if(this.chartInstance() != null) {
-      this.updateOptions(this._options, true, true, false);
-    } else {
-      this.destroy();
-
-      const chartInstance = this.ngZone.runOutsideAngular(
-        () => new ApexCharts(this.el.nativeElement, this._options)
-      );
-      this.chartInstance.set(chartInstance);
-      this.render();
-    }
-  }
-
-  private render() {
-    return this.ngZone.runOutsideAngular(() => this.chartInstance()?.render());
-  }
-
-  private destroy() {
-    this.chartInstance()?.destroy();
-    this.chartInstance.set(null);
-  }
-
-  private updateConfig() {
-    let that = this;
-    this._chartConfig = this.config;
-    mergeDeep(this._options, {
-      chart: {
-        height: this._chartConfig.height ?? '100%',
-        width: this._chartConfig.width ?? '100%',
-        stacked: this._chartConfig.stacked,
-        toolbar: {
-          show: this._chartConfig.showToolbar ?? false,
-          tools: {
-            download: false,
-            selection: false,
-            zoom: false,
-            zoomin: false,
-            zoomout: false,
-            pan: false,
-            reset: false,
-            customIcons: customIcons((arg) => { that.ngZone.run(() => that.customEvent.emit(arg)) }, this.canPivot)
-          }
-        },
-        events: {
-          mouseMove: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "visible";
-          },
-          mouseLeave: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "hidden";
-          }
-        },
-      },
-      title: {
-        text: this._chartConfig.title
-      },
-      subtitle: {
-        text: this._chartConfig.subtitle
-      },
-      xaxis: {
-        title: {
-          text: this._chartConfig.xtitle
-        }
-      },
-      yaxis: {
-        title: {
-          text: this._chartConfig.ytitle
-        }
-      }
-    }, this.type == 'bar' ? {
-      plotOptions: {
-        bar: {
-          horizontal: true
-        }
-      }
-    } : {}, this._chartConfig.options);
-  }
-
-  private updateData() {
-    var data = [...this.data];
-    if (this.type == 'funnel') {
-      data = data.sort(naturalFieldComparator('asc', this._chartConfig.series[0].data.y));
-    } else if (this.type == 'pyramid') {
-      data = data.sort(naturalFieldComparator('desc', this._chartConfig.series[0].data.y));
-    }
-    var commonChart = buildChart(data, { ...this._chartConfig, pivot: !this.canPivot ? false : this._chartConfig.pivot });
-    mergeDeep(this._options, { series: commonChart.series.length ? commonChart.series.map(s => ({ data: s.data, name: s.name, color: s.color, group: s.stack })): [{data: []}] , xaxis: { type: getType(commonChart), categories: commonChart.categories || [] } });
-  }
-
-  private updateLoading() {
-    mergeDeep(this._options, {
-      noData: {
-        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
-      }
-    });
   }
 
   private updateType() {
-    mergeDeep(this._options, { chart: { type: this.type } });
+    this._options.chart.type = 'bar';
+    this.configureTypeSpecificOptions();
+    this._options.shouldRedraw = true;
   }
 
-  private updateOptions(
-    options: any,
-    redrawPaths?: boolean,
-    animate?: boolean,
-    updateSyncedCharts?: boolean
-  ) {
-    return this.ngZone.runOutsideAngular(() =>
-      this.chartInstance()?.updateOptions(
-        options,
-        redrawPaths,
-        animate,
-        updateSyncedCharts
-      )
-    );
+  private configureTypeSpecificOptions() {
+    if (this.type === 'bar') {
+      if (!this._options.plotOptions) this._options.plotOptions = {};
+      if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+      this._options.plotOptions.bar.horizontal = true;
+    }
+    else if (this.type === 'column') {
+      if (!this._options.plotOptions) this._options.plotOptions = {};
+      if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+      this._options.plotOptions.bar.horizontal = false;
+    }
+    // Configuration spécifique pour funnel / pyramid ? ajouter ici
+  }
+
+
+  private updateData() {
+    let sortedData = [...this.data];
+    if (this.type == 'funnel') {
+      sortedData = sortedData.sort(
+        naturalFieldComparator('asc', this._chartConfig.series[0].data.y)
+      );
+    } else if (this.type == 'pyramid') {
+      sortedData = sortedData.sort(
+        naturalFieldComparator('desc', this._chartConfig.series[0].data.y)
+      );
+    }
+
+    // Construction du graphique avec les données
+    const commonChart = buildChart(sortedData, {
+      ...this._chartConfig,
+      pivot: !this.canPivot ? false : this._chartConfig.pivot,
+    });
+
+    this._options.series = commonChart.series.length
+      ? commonChart.series.map((s) => ({
+          data: s.data,
+          name: s.name,
+          color: s.color,
+          group: s.stack,
+        }))
+      : [{ data: [] }];
+
+    const newType = getType(commonChart);
+    if (this._options.xaxis.type !== newType) {
+      this._options.xaxis.type = newType;
+      this._options.shouldRedraw = true;
+    }
+
+    this._options.xaxis.categories = commonChart.categories || [];
+  }
+
+  private updateLoading() {
+    this._options.noData.text = this.isLoading
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+
+    if (this.chartInstance()) {
+      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
+    }
   }
 }
-
