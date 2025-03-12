@@ -9,186 +9,183 @@ import {
   OnDestroy,
   Output,
   signal,
-  SimpleChanges
-} from "@angular/core";
-import {buildChart, ChartProvider, ChartView, mergeDeep, XaxisType} from "@oneteme/jquery-core";
-import {customIcons, getType} from "./utils";
-
-import ApexCharts from "apexcharts";
-import {asapScheduler} from "rxjs";
+  SimpleChanges,
+} from '@angular/core';
+import {
+  buildChart,
+  ChartProvider,
+  ChartView,
+  XaxisType,
+} from '@oneteme/jquery-core';
+import ApexCharts from 'apexcharts';
+import { asapScheduler, Subscription } from 'rxjs';
+import {
+  ChartCustomEvent,
+  getType,
+  initCommonChartOptions,
+  updateCommonOptions,
+  initChart,
+  updateChartOptions,
+  hydrateChart,
+  destroyChart,
+} from './utils';
 
 @Directive({
-    standalone: true,
-    selector: '[range-chart]'
+  standalone: true,
+  selector: '[range-chart]',
 })
-export class RangeChartDirective<X extends XaxisType> implements ChartView<X, number[]>, OnChanges, OnDestroy {
+export class RangeChartDirective<X extends XaxisType>
+  implements ChartView<X, number[]>, OnChanges, OnDestroy
+{
   private el: ElementRef = inject(ElementRef);
   private ngZone = inject(NgZone);
-
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private _chartConfig: ChartProvider<X, number[]>;
+  private _options: any;
+  private subscription = new Subscription();
+  private _type: 'rangeArea' | 'rangeBar' | 'rangeColumn' = 'rangeArea';
+  private _canPivot: boolean = true;
 
-  private _chartConfig: ChartProvider<X, number[]> = {showToolbar: false};
-
-  private _options: any = {
-    chart: {
-      type: 'rangeArea'
-    },
-    series: []
-  };
-
-  @Input({ required: true }) type: 'rangeArea' | 'rangeBar' | 'rangeColumn';
-  @Input({ required: true }) config: ChartProvider<X, number[]>;
+  @Input() debug: boolean;
   @Input({ required: true }) data: any[];
-  @Input() canPivot: boolean = true;
-  @Input() isLoading: boolean = false;
-  @Output() customEvent: EventEmitter<'previous' | 'next' | 'pivot'> = new EventEmitter();
+  @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
+  @Input() set isLoading(isLoading: boolean) {
+    this._options.noData.text = isLoading
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+  }
+  @Input() set canPivot(canPivot: boolean) {
+    this._canPivot = canPivot;
+  }
+  get canPivot(): boolean {
+    return this._canPivot;
+  }
+  @Input() set type(type: 'rangeArea' | 'rangeBar' | 'rangeColumn') {
+    this._type = type;
+    if (this._options.chart.type !== type) {
+      this._options.chart.type = type;
+      this.configureTypeSpecificOptions();
+      this._options.shouldRedraw = true;
+    }
+  }
+  @Input() set config(config: ChartProvider<X, number[]>) {
+    this._chartConfig = config;
+    this._options = updateCommonOptions(this._options, config);
+  }
 
-  ngOnDestroy() {
-    this.destroy();
+  constructor() {
+    this._options = initCommonChartOptions(
+      this.el,
+      this.customEvent,
+      this.ngZone,
+      'rangeArea'
+    );
+  }
+
+  init() {
+    initChart(
+      this.el,
+      this.ngZone,
+      this._options,
+      this.chartInstance,
+      this.subscription,
+      this.debug
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
+    if (this.debug) {
+      console.log(
+        new Date().getMilliseconds(),
+        'Détection de changements',
+        changes
+      );
+    }
+    if (changes['type']) this.updateType();
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
     });
   }
 
+  ngOnDestroy() {
+    destroyChart(this.chartInstance, this.subscription);
+  }
+
   private hydrate(changes: SimpleChanges): void {
-    const shouldUpdateSeries =
-      Object.keys(changes).filter((c) => c !== "data" && c!== "isLoading").length === 0;
-    if (shouldUpdateSeries) {
+    hydrateChart(
+      changes,
+      this.data,
+      this._chartConfig,
+      this._options,
+      this.chartInstance,
+      this.ngZone,
+      () => this.updateData(),
+      () => this.ngOnDestroy(),
+      () => this.init(),
+      () =>
+        updateChartOptions(this.chartInstance(), this.ngZone, this._options),
+      this.debug
+    );
+
+    if (changes['isLoading']) {
       this.updateLoading();
-      this.updateData();
-      this.updateOptions(this._options, true);
-      return;
     }
-
-    this.createElement();
-  }
-
-  private createElement() {
-    this.updateConfig();
-    this.updateType();
-    this.updateLoading();
-    this.updateData();
-
-    if(this.chartInstance() != null) {
-      this.updateOptions(this._options, true, true, false);
-    } else {
-      this.destroy();
-
-      const chartInstance = this.ngZone.runOutsideAngular(
-        () => new ApexCharts(this.el.nativeElement, this._options)
-      );
-      this.chartInstance.set(chartInstance);
-      this.render();
-    }
-  }
-
-  private render() {
-    return this.ngZone.runOutsideAngular(() => this.chartInstance()?.render());
-  }
-
-  private destroy() {
-    this.chartInstance()?.destroy();
-    this.chartInstance.set(null);
   }
 
   private updateType() {
-    mergeDeep(this._options, { chart: { type: this.type == 'rangeColumn' ? 'rangeBar' : this.type } })
+    this.configureTypeSpecificOptions();
+    this._options.shouldRedraw = true;
   }
 
-  private updateConfig() {
-    let that = this;
-    this._chartConfig = this.config;
-    mergeDeep(this._options, {
-      chart: {
-        height: this._chartConfig.height ?? '100%',
-        width: this._chartConfig.width ?? '100%',
-        toolbar: {
-          show: this._chartConfig.showToolbar ?? false,
-          tools: {
-            download: false,
-            selection: false,
-            zoom: false,
-            zoomin: false,
-            zoomout: false,
-            pan: false,
-            reset: false,
-            customIcons: customIcons(arg => { that.ngZone.run(() => that.customEvent.emit(arg))}, true)
-          }
-        },
-        events: {
-          mouseMove: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "visible";
-          },
-          mouseLeave: function(e, c, config) {
-            var toolbar = that.el.nativeElement.querySelector('.apexcharts-toolbar');
-            if (toolbar) toolbar.style.visibility = "hidden";
-          }
-        },
-        zoom: {
-          enabled: false
-        },
-        animations: {
-          dynamicAnimation: {
-            enabled: true
-          }
-        },
-      },
-      title: {
-        text: this._chartConfig.title
-      },
-      subtitle: {
-        text: this._chartConfig.subtitle
-      },
-      xaxis: {
-        title: {
-          text: this._chartConfig.xtitle
-        }
-      },
-      yaxis: {
-        title: {
-          text: this._chartConfig.ytitle
-        }
-      }
-    }, this.type == 'rangeBar' ? {
-      plotOptions: {
-        bar: {
-          horizontal: true
-        }
-      }
-    } : {}, this._chartConfig.options);
+  private configureTypeSpecificOptions() {
+    const currentType = this._type;
+
+    if (currentType === 'rangeBar') {
+      if (!this._options.plotOptions) this._options.plotOptions = {};
+      if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+      this._options.plotOptions.bar.horizontal = true;
+    } else if (currentType === 'rangeColumn') {
+      this._options.chart.type = 'rangeBar';
+      if (!this._options.plotOptions) this._options.plotOptions = {};
+      if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+      this._options.plotOptions.bar.horizontal = false;
+    }
   }
 
   private updateData() {
-    var commonChart = buildChart(this.data, { ...this._chartConfig, continue: true, pivot: !this.canPivot ? false: this._chartConfig.pivot }, null);
-    mergeDeep(this._options, { series: commonChart.series, xaxis: { type: getType(commonChart) } });
+    let commonChart = buildChart(
+      this.data,
+      {
+        ...this._chartConfig,
+        continue: true,
+        pivot: !this.canPivot ? false : this._chartConfig.pivot,
+      },
+      null
+    );
+
+    this._options.series = commonChart.series;
+
+    let newType = getType(commonChart);
+    if (this._options.xaxis.type != newType) {
+      this._options.xaxis.type = newType;
+      this._options.shouldRedraw = true;
+    }
   }
 
   private updateLoading() {
-    mergeDeep(this._options, {
-      noData: {
-        text: this.isLoading ? 'Chargement des données...' : 'Aucune donnée'
-      }
-    });
-  }
+    this._options.noData.text = this.isLoading
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
 
-  private updateOptions(
-    options: any,
-    redrawPaths?: boolean,
-    animate?: boolean,
-    updateSyncedCharts?: boolean
-  ) {
-    return this.ngZone.runOutsideAngular(() =>
-      this.chartInstance()?.updateOptions(
-        options,
-        redrawPaths,
-        animate,
-        updateSyncedCharts
-      )
-    );
+    if (this.chartInstance()) {
+      updateChartOptions(
+        this.chartInstance(),
+        this.ngZone,
+        this._options,
+        false,
+        false,
+        false
+      );
+    }
   }
-
 }
