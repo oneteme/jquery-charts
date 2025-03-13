@@ -10,7 +10,7 @@ const barConfig = {
   type: 'column',
   // Hauteur du graphique en pixels
   height: 250,
-  // Afficher ou non la barre d'outils
+  // Afficher ou non la barre d'outils de jquery-charts
   showToolbar: false,
   // Activation de l'empilement des barres
   stacked: true,
