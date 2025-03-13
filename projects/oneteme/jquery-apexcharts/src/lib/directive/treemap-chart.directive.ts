@@ -12,12 +12,12 @@ import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions,
 export class TreemapChartDirective
   implements ChartView<string, number>, OnChanges, OnDestroy
 {
-  private el: ElementRef = inject(ElementRef);
-  private ngZone = inject(NgZone);
+  private readonly el: ElementRef = inject(ElementRef);
+  private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private readonly subscription = new Subscription();
   private _chartConfig: ChartProvider<string, number>;
   private _options: any;
-  private subscription = new Subscription();
   private _type: 'treemap' | 'heatmap' = 'treemap';
 
   @Input() debug: boolean;

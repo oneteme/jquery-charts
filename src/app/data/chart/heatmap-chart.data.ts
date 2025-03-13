@@ -47,6 +47,7 @@ export const HEATMAP_CHART_DATA: ChartDataCollection<HeatmapChartData> = {
         },
       ],
       height: 250,
+      showToolbar: true,
       options: {
         plotOptions: {
           heatmap: {
@@ -119,7 +120,7 @@ export const HEATMAP_CHART_DATA: ChartDataCollection<HeatmapChartData> = {
             const jour = w.globals.seriesNames[seriesIndex];
             const heure = w.globals.labels[dataPointIndex];
             const valeur = series[seriesIndex][dataPointIndex];
-            
+
             return `
               <div style="padding: 5px">
                 <div style="font-weight: bold; margin-bottom: 5px">

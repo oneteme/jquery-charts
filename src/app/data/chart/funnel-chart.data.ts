@@ -96,6 +96,23 @@ export const FUNNEL_CHART_DATA: ChartDataCollection<FunnelChartData> = {
             show: false,
           },
         },
+        yaxis: {
+          labels: {
+            show: false
+          },
+          axisBorder: {
+            show: false
+          },
+          axisTicks: {
+            show: false
+          },
+          crosshairs: {
+            show: false
+          },
+          tooltip: {
+            enabled: false
+          }
+        },
         legend: {
           show: false,
         },
@@ -106,21 +123,16 @@ export const FUNNEL_CHART_DATA: ChartDataCollection<FunnelChartData> = {
           enabled: true,
           theme: 'light',
           custom: function ({ series, seriesIndex, dataPointIndex, w }) {
-            // Calcul de l'index correct dans les données
-            // L'index doit être inversé car les données sont affichées dans l'ordre inverse
-            // dans un graphique en entonnoir
             const correctIndex =
               FUNNEL_CHART_DATA.funnelExample.data.length - 1 - dataPointIndex;
 
             const data = FUNNEL_CHART_DATA.funnelExample.data[correctIndex];
 
-            // Récupère la valeur de l'étape précédente (s'il y en a une)
             let prevValue =
               correctIndex > 0
                 ? FUNNEL_CHART_DATA.funnelExample.data[correctIndex - 1].count
                 : null;
 
-            // Calcule le taux de conversion par rapport à l'étape précédente
             let conversionRate = prevValue
               ? ((data.count / prevValue) * 100).toFixed(1) + '%'
               : '100%';

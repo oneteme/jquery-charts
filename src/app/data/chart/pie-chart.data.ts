@@ -132,10 +132,10 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
                 return 'Nombre de requêtes:';
               },
             },
-            formatter: function (value: any | number) {
-              return (
-                value + ' requêtes (' + ((value / 410) * 100).toFixed(1) + '%)'
-              );
+            formatter: function (value: number) {
+            return (
+              value + ' requêtes (' + ((value / 410) * 100).toFixed(1) + '%)'
+            );
             },
           },
         },

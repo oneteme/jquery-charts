@@ -11,10 +11,10 @@ import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions,
 export class BarChartDirective<X extends XaxisType>
   implements ChartView<X, number>, OnChanges, OnDestroy
 {
-  private el: ElementRef = inject(ElementRef);
-  private ngZone = inject(NgZone);
+  private readonly el: ElementRef = inject(ElementRef);
+  private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
-  private subscription = new Subscription();
+  private readonly subscription = new Subscription();
   private _chartConfig: ChartProvider<X, number>;
   private _options: any;
   private _canPivot: boolean = true;

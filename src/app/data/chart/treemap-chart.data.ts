@@ -230,6 +230,9 @@ export const TREEMAP_CHART_DATA: ChartDataCollection<TreemapChartData> = {
           '#2980B9',
           '#C0392B',
           '#27AE60',
+          '#F27438',
+          '#A7001E',
+          '#E1A624',
         ],
         chart: {
           dropShadow: {

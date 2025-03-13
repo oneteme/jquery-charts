@@ -18,7 +18,7 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
 })
 export class ChartsComponent implements OnInit {
   selectedChartType: string = 'Pie Chart';
-  private chartTypeMap: { [key: string]: string } = {
+  private readonly chartTypeMap: { [key: string]: string } = {
     pie: 'Pie Chart',
     bar: 'Bar Chart',
     line: 'Line Chart',
@@ -68,8 +68,8 @@ export class ChartsComponent implements OnInit {
 
   constructor(
     public router: Router,
-    private route: ActivatedRoute,
-    private chartTypesService: ChartTypesService
+    private readonly route: ActivatedRoute,
+    private readonly chartTypesService: ChartTypesService
   ) {}
 
   ngOnInit() {

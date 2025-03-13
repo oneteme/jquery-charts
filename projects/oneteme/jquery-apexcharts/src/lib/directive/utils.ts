@@ -14,7 +14,7 @@ export function customIcons(
   event: (arg: ChartCustomEvent) => void,
   canPivot: boolean
 ): any[] {
-  var customIcons = [
+  let customIcons = [
     {
       icon: ICONS.previous,
       title: 'Graphique précédent',
@@ -46,6 +46,16 @@ export function customIcons(
   return customIcons;
 }
 
+export function determineXAxisDataType(value: any): string {
+  if (value instanceof Date) {
+    return 'datetime';
+  } else if (typeof value === 'number') {
+    return 'numeric';
+  } else {
+    return 'category';
+  }
+}
+
 /**
  * Détermine le type d'axe X en fonction des données
  */
@@ -55,19 +65,11 @@ export function getType<
 >(commonChart: CommonChart<X, Y>): string {
   if (commonChart.series.length && commonChart.series[0].data.length) {
     if (commonChart.continue) {
-      let x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
-      return x instanceof Date
-        ? 'datetime'
-        : typeof x == 'number'
-        ? 'numeric'
-        : 'category';
+      const x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
+      return determineXAxisDataType(x);
     } else {
-      let categ = commonChart.categories[0];
-      return categ instanceof Date
-        ? 'datetime'
-        : typeof categ == 'number'
-        ? 'numeric'
-        : 'category';
+      const categ = commonChart.categories[0];
+      return determineXAxisDataType(categ);
     }
   }
   return 'datetime';
@@ -98,7 +100,7 @@ export function initCommonChartOptions(
           pan: false,
           reset: false,
           customIcons: customIcons((arg) => {
-            ngZone.run(() => customEvent.emit(arg as ChartCustomEvent));
+            ngZone.run(() => customEvent.emit(arg));
           }, canPivot),
         },
       },

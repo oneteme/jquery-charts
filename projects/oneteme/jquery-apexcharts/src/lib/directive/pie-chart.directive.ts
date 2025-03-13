@@ -11,12 +11,12 @@ import { ChartCustomEvent, initCommonChartOptions, updateCommonOptions, initChar
 export class PieChartDirective
   implements ChartView<string, number>, OnChanges, OnDestroy
 {
-  private el: ElementRef = inject(ElementRef);
-  private ngZone = inject(NgZone);
+  private readonly el: ElementRef = inject(ElementRef);
+  private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private readonly subscription = new Subscription();
   private _chartConfig: ChartProvider<string, number>;
   private _options: any;
-  private subscription = new Subscription();
   private _type: 'pie' | 'donut' | 'polar' | 'radar' | 'radial' = 'pie';
 
   @Input() debug: boolean;

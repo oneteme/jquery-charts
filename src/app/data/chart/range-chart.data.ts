@@ -15,11 +15,12 @@ export const RANGE_CHART_DATA: ChartDataCollection<RangeChartData> = {
     ],
     config: {
       title: 'Évolution des valeurs min/max',
-      series: [{ 
+      series: [{
         data: { x: field('field'), y: rangeFields('min', 'max') },
         name: 'Plage de valeurs'
       }],
       height: 250,
+      showToolbar: true,
       options: {
         colors: ['#4AA3A2'],
         stroke: {

@@ -11,14 +11,14 @@ import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions,
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   implements ChartView<X, Y>, OnChanges, OnDestroy
 {
-  private el: ElementRef = inject(ElementRef);
-  private ngZone = inject(NgZone);
+  private readonly el: ElementRef = inject(ElementRef);
+  private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
   private _chartConfig: ChartProvider<X, Y>;
   private _options: any;
 
   // Abonnement global pour éviter les fuites de mémoire
-  private subscription = new Subscription();
+  private readonly subscription = new Subscription();
 
   @Input() debug: boolean;
   @Input({ required: true }) data: any[];

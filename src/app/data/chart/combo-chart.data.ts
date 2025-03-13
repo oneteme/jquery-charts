@@ -21,7 +21,7 @@ export const COMBO_CHART_DATA: ChartDataCollection<ComboChartData> = {
                 args.reduce((acc, o) => {
                   acc += o;
                   return acc;
-                }),
+                }, 0),
               ['count_2xx', 'count_4xx', 'count_5xx']
             ),
           },

@@ -1,4 +1,4 @@
-import { field, values, joinFields } from '@oneteme/jquery-core';
+import { field, joinFields } from '@oneteme/jquery-core';
 import {
   ChartDataCollection,
   LineChartData,
@@ -20,17 +20,17 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
       series: [
         {
           data: { x: field('date'), y: field('count_2xx') },
-          name: "Succès",
+          name: 'Succès',
           color: '#4CAF50',
         },
         {
           data: { x: field('date'), y: field('count_4xx') },
-          name: "Erreur client",
+          name: 'Erreur client',
           color: '#FF9800',
         },
         {
           data: { x: field('date'), y: field('count_5xx') },
-          name: "Erreur serveur",
+          name: 'Erreur serveur',
           color: '#F44336',
         },
       ],
@@ -42,76 +42,76 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             top: 2,
             left: 1,
             blur: 5,
-            opacity: 0.15
+            opacity: 0.15,
           },
         },
         stroke: {
           curve: 'smooth',
-          width: [4, 4, 4]
+          width: [4, 4, 4],
         },
         markers: {
           size: 5,
           strokeWidth: 0,
           hover: {
-            size: 8
-          }
+            size: 8,
+          },
         },
         xaxis: {
           labels: {
             style: {
               fontWeight: 'bold',
-              colors: ['#333']
+              colors: ['#333'],
             },
-            format: 'YY MMM'
+            format: 'YY MMM',
           },
           axisBorder: {
             show: true,
             color: '#78909c',
-            height: 1
-          }
+            height: 1,
+          },
         },
         yaxis: {
           title: {
             text: "Nombre d'appels",
             style: {
               fontSize: '12px',
-              fontWeight: 'bold'
-            }
+              fontWeight: 'bold',
+            },
           },
           labels: {
-            formatter: function(val) {
+            formatter: function (val) {
               return val.toFixed(0);
-            }
-          }
+            },
+          },
         },
         tooltip: {
           shared: true,
           intersect: false,
           theme: 'light',
           y: {
-            formatter: function(val) {
-              return val + " requêtes";
-            }
-          }
+            formatter: function (val) {
+              return val + ' requêtes';
+            },
+          },
         },
         grid: {
           borderColor: '#f1f1f1',
           row: {
             colors: ['#f8f8f8', 'transparent'],
-            opacity: 0.5
-          }
+            opacity: 0.5,
+          },
         },
         legend: {
           position: 'top',
           horizontalAlign: 'right',
           floating: true,
           offsetY: -25,
-          offsetX: -5
+          offsetX: -5,
         },
         dataLabels: {
-          enabled: false
-        }
-      }
+          enabled: false,
+        },
+      },
     },
   },
 
@@ -128,7 +128,7 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
         {
           data: { x: field('field'), y: field('count') },
           name: "Nombre d'appels",
-          color: '#CA3C66'
+          color: '#CA3C66',
         },
       ],
       height: 250,
@@ -141,17 +141,17 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             speed: 800,
             animateGradually: {
               enabled: true,
-              delay: 150
+              delay: 150,
             },
             dynamicAnimation: {
               enabled: true,
-              speed: 350
-            }
-          }
+              speed: 350,
+            },
+          },
         },
         stroke: {
           width: 5,
-          curve: 'smooth'
+          curve: 'smooth',
         },
         markers: {
           size: 6,
@@ -159,8 +159,8 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
           strokeColors: '#CA3C66',
           strokeWidth: 3,
           hover: {
-            size: 8
-          }
+            size: 8,
+          },
         },
         fill: {
           type: 'gradient',
@@ -172,8 +172,8 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             inverseColors: false,
             opacityFrom: 1,
             opacityTo: 0.8,
-            stops: [0, 100]
-          }
+            stops: [0, 100],
+          },
         },
         dataLabels: {
           enabled: true,
@@ -182,32 +182,32 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             foreColor: '#fff',
             borderRadius: 2,
             padding: 4,
-            opacity: 0.9
+            opacity: 0.9,
           },
           style: {
-            fontSize: '12px'
-          }
+            fontSize: '12px',
+          },
         },
         tooltip: {
           theme: 'dark',
           x: {
-            show: false
+            show: false,
           },
           y: {
             title: {
-              formatter: () => 'Requêtes:'
+              formatter: () => 'Requêtes:',
             },
-            formatter: (val) => `${val} requêtes`
-          }
+            formatter: (val) => `${val} requêtes`,
+          },
         },
         grid: {
           row: {
             colors: ['#f3f3f3', 'transparent'],
-            opacity: 0.5
-          }
-        }
-      }
-    }
+            opacity: 0.5,
+          },
+        },
+      },
+    },
   },
 
   lineExample3: {
@@ -236,43 +236,43 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
         colors: ['#77021D', '#F6B339', '#DA7B27'],
         stroke: {
           width: 3,
-          curve: 'smooth'
+          curve: 'smooth',
         },
         markers: {
           size: 4,
           hover: {
-            size: 6
-          }
+            size: 6,
+          },
         },
         xaxis: {
           categories: ['Api 1', 'Api 2', 'Api 3'],
           title: {
-            text: 'APIs'
-          }
+            text: 'APIs',
+          },
         },
         yaxis: {
           title: {
-            text: "Nombre d'appels"
+            text: "Nombre d'appels",
           },
           min: 0,
-          max: 100
+          max: 100,
         },
         legend: {
           position: 'top',
           horizontalAlign: 'right',
           floating: true,
           offsetY: -25,
-          offsetX: -5
+          offsetX: -5,
         },
         tooltip: {
           y: {
-            formatter: function(value) {
-              return value + " requêtes";
-            }
-          }
-        }
-      }
-    }
+            formatter: function (value) {
+              return value + ' requêtes';
+            },
+          },
+        },
+      },
+    },
   },
 
   lineExample4: {
@@ -293,7 +293,7 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
       series: [
         {
           data: { x: joinFields('_', 'field', 'subField'), y: field('count') },
-          name: "Appels API"
+          name: 'Appels API',
         },
       ],
       height: 250,
@@ -301,24 +301,21 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
         colors: ['#137C8B'],
         chart: {
           type: 'line',
-          zoom: {
-            enabled: true
-          },
           dropShadow: {
             enabled: true,
             color: '#000',
             top: 3,
             left: 2,
             blur: 4,
-            opacity: 0.1
-          }
+            opacity: 0.1,
+          },
         },
         dataLabels: {
           enabled: true,
           offsetY: -10,
           style: {
             fontSize: '12px',
-            colors: ['#304758']
+            colors: ['#304758'],
           },
           background: {
             enabled: true,
@@ -327,61 +324,71 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             borderRadius: 2,
             borderWidth: 1,
             borderColor: '#137C8B',
-            opacity: 0.9
-          }
+            opacity: 0.9,
+          },
         },
         stroke: {
           curve: 'stepline',
-          width: 3
+          width: 3,
         },
         grid: {
           row: {
             colors: ['#f3f3f3', 'transparent'],
-            opacity: 0.5
-          }
+            opacity: 0.5,
+          },
         },
         markers: {
           size: 6,
           colors: ['#fff'],
           strokeColors: '#137C8B',
-          strokeWidth: 2
+          strokeWidth: 2,
         },
         xaxis: {
-          categories: ['Api 1_2xx', 'Api 2_2xx', 'Api 3_2xx', 'Api 1_4xx', 'Api 2_4xx', 'Api 3_4xx', 'Api 1_5xx', 'Api 2_5xx', 'Api 3_5xx'],
+          categories: [
+            'Api 1_2xx',
+            'Api 2_2xx',
+            'Api 3_2xx',
+            'Api 1_4xx',
+            'Api 2_4xx',
+            'Api 3_4xx',
+            'Api 1_5xx',
+            'Api 2_5xx',
+            'Api 3_5xx',
+          ],
           labels: {
             rotate: -45,
             style: {
               fontSize: '11px',
-              colors: Array(9).fill('#5c5c5c')
-            }
+              colors: Array(9).fill('#5c5c5c'),
+            },
           },
           axisBorder: {
             show: true,
             color: '#78909c',
-            height: 1
+            height: 1,
           },
           title: {
             text: 'API et code',
             style: {
               fontSize: '12px',
-              fontWeight: 600
-            }
-          }
+              fontWeight: 600,
+            },
+          },
         },
         yaxis: {
           title: {
             text: "Nombre d'appels",
             style: {
               fontSize: '12px',
-              fontWeight: 600
-            }
+              fontWeight: 600,
+            },
           },
           min: 0,
           labels: {
-            formatter: function(val) {
+            formatter: function (val) {
               return val.toFixed(0);
-            }
-          }
+            },
+          },
         },
         annotations: {
           points: [
@@ -392,18 +399,18 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
                 size: 8,
                 fillColor: '#fff',
                 strokeColor: '#FF4560',
-                radius: 2
+                radius: 2,
               },
               label: {
                 borderColor: '#FF4560',
                 offsetY: 0,
                 style: {
                   color: '#fff',
-                  background: '#FF4560'
+                  background: '#FF4560',
                 },
-                text: 'Point critique'
-              }
-            }
+                text: 'Point critique',
+              },
+            },
           ],
           yaxis: [
             {
@@ -414,27 +421,27 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
                 borderColor: '#00E396',
                 style: {
                   color: '#fff',
-                  background: '#00E396'
+                  background: '#00E396',
                 },
-                text: 'Seuil d\'alerte'
-              }
-            }
-          ]
+                text: "Seuil d'alerte",
+              },
+            },
+          ],
         },
         tooltip: {
           fixed: {
             enabled: true,
             position: 'topRight',
-            offsetY: 30
+            offsetY: 30,
           },
           y: {
-            formatter: function(val) {
-              return val + " requêtes";
-            }
-          }
-        }
-      }
-    }
+            formatter: function (val) {
+              return val + ' requêtes';
+            },
+          },
+        },
+      },
+    },
   },
 
   lineExample5: {
@@ -466,22 +473,20 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             show: true,
             tools: {
               download: true,
-              zoom: true,
-              zoomout: true,
-            }
+            },
           },
           dropShadow: {
             enabled: true,
             top: 0,
             left: 0,
             blur: 3,
-            opacity: 0.2
-          }
+            opacity: 0.2,
+          },
         },
         stroke: {
           width: 4,
           curve: 'smooth',
-          lineCap: 'round'
+          lineCap: 'round',
         },
         fill: {
           type: 'gradient',
@@ -491,29 +496,16 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             shadeIntensity: 0.3,
             opacityFrom: 0.7,
             opacityTo: 0.4,
-            stops: [0, 100]
-          }
+            stops: [0, 100],
+          },
         },
         markers: {
           size: 6,
           strokeWidth: 0,
           hover: {
             size: 9,
-            sizeOffset: 3
+            sizeOffset: 3,
           },
-          discrete: [{
-            seriesIndex: 0,
-            dataPointIndex: 0,
-            fillColor: '#77021D',
-            strokeColor: '#fff',
-            size: 8
-          }, {
-            seriesIndex: 2,
-            dataPointIndex: 2,
-            fillColor: '#DA7B27',
-            strokeColor: '#fff',
-            size: 8
-          }]
         },
         xaxis: {
           categories: ['Api 1', 'Api 2', 'Api 3'],
@@ -521,32 +513,32 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             text: 'APIs',
             style: {
               fontSize: '12px',
-              fontWeight: 600
-            }
+              fontWeight: 600,
+            },
           },
           labels: {
             style: {
               fontWeight: '500',
-              colors: ['#3e4045', '#3e4045', '#3e4045']
-            }
-          }
+              colors: ['#3e4045', '#3e4045', '#3e4045'],
+            },
+          },
         },
         yaxis: {
           title: {
             text: "Nombre d'appels",
             style: {
               fontSize: '12px',
-              fontWeight: 600
-            }
+              fontWeight: 600,
+            },
           },
           min: 0,
           max: 100,
           tickAmount: 5,
           labels: {
-            formatter: function(val) {
+            formatter: function (val) {
               return val.toFixed(0);
-            }
-          }
+            },
+          },
         },
         legend: {
           position: 'top',
@@ -559,17 +551,17 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             height: 12,
             strokeWidth: 0,
             radius: 12,
-            offsetX: -3
+            offsetX: -3,
           },
           itemMargin: {
             horizontal: 10,
-            vertical: 8
-          }
+            vertical: 8,
+          },
         },
         tooltip: {
           shared: true,
           intersect: false,
-          custom: function({series, seriesIndex, dataPointIndex, w}) {
+          custom: function ({ series, seriesIndex, dataPointIndex, w }) {
             const status = w.globals.seriesNames[seriesIndex];
             const api = w.globals.categoryLabels[dataPointIndex];
             const value = series[seriesIndex][dataPointIndex];
@@ -584,31 +576,31 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
                 </div>
               </div>
             `;
-          }
+          },
         },
         grid: {
           borderColor: '#e0e6ed',
           strokeDashArray: 5,
           xaxis: {
             lines: {
-              show: true
-            }
+              show: true,
+            },
           },
           yaxis: {
             lines: {
-              show: true
-            }
+              show: true,
+            },
           },
           padding: {
             top: 0,
             right: 0,
             bottom: 0,
-            left: 10
-          }
+            left: 10,
+          },
         },
         dataLabels: {
           enabled: true,
-          formatter: function(val) {
+          formatter: function (val) {
             return val;
           },
           background: {
@@ -616,11 +608,11 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             foreColor: '#fff',
             borderRadius: 2,
             padding: 3,
-            opacity: 0.7
-          }
-        }
-      }
-    }
+            opacity: 0.7,
+          },
+        },
+      },
+    },
   },
 
   lineExample6: {
@@ -633,9 +625,21 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
       title: 'Vue par API',
       subtitle: 'Comparaison des codes de statut',
       series: [
-        { data: { x: field('field'), y: field('count_2xx') }, name: 'Succès (2xx)', color: '#4CAF50' },
-        { data: { x: field('field'), y: field('count_4xx') }, name: 'Erreur client (4xx)', color: '#FF9800' },
-        { data: { x: field('field'), y: field('count_5xx') }, name: 'Erreur serveur (5xx)', color: '#F44336' },
+        {
+          data: { x: field('field'), y: field('count_2xx') },
+          name: 'Succès (2xx)',
+          color: '#4CAF50',
+        },
+        {
+          data: { x: field('field'), y: field('count_4xx') },
+          name: 'Erreur client (4xx)',
+          color: '#FF9800',
+        },
+        {
+          data: { x: field('field'), y: field('count_5xx') },
+          name: 'Erreur serveur (5xx)',
+          color: '#F44336',
+        },
       ],
       height: 250,
       options: {
@@ -643,12 +647,12 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
           dropShadow: {
             enabled: true,
             opacity: 0.2,
-            blur: 5
-          }
+            blur: 5,
+          },
         },
         stroke: {
           curve: 'smooth',
-          width: 3
+          width: 3,
         },
         fill: {
           type: 'gradient',
@@ -660,26 +664,26 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             inverseColors: true,
             opacityFrom: 0.85,
             opacityTo: 0.95,
-            stops: [0, 100]
-          }
+            stops: [0, 100],
+          },
         },
         xaxis: {
           categories: ['Api 1', 'Api 2', 'Api 3'],
           title: {
-            text: 'APIs'
-          }
+            text: 'APIs',
+          },
         },
         yaxis: {
           title: {
-            text: "Nombre d'appels"
-          }
+            text: "Nombre d'appels",
+          },
         },
         markers: {
           size: 6,
           strokeWidth: 0,
           hover: {
-            size: 9
-          }
+            size: 9,
+          },
         },
         grid: {
           show: true,
@@ -688,25 +692,25 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
           position: 'back',
           xaxis: {
             lines: {
-              show: false
-            }
+              show: false,
+            },
           },
           yaxis: {
             lines: {
-              show: true
-            }
-          }
+              show: true,
+            },
+          },
         },
         tooltip: {
           shared: true,
           intersect: false,
           y: {
-            formatter: function(val) {
-              return val + " requêtes";
-            }
-          }
-        }
-      }
+            formatter: function (val) {
+              return val + ' requêtes';
+            },
+          },
+        },
+      },
     },
   },
 
@@ -728,59 +732,66 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
       stacked: true,
       xorder: 'asc',
       options: {
-        colors: ['#8E44AD', '#16A085', '#F39C12', '#2980B9', '#C0392B', '#27AE60'],
+        colors: [
+          '#8E44AD',
+          '#16A085',
+          '#F39C12',
+          '#2980B9',
+          '#C0392B',
+          '#27AE60',
+        ],
         chart: {
           toolbar: {
-            show: true
-          }
+            show: true,
+          },
         },
         dataLabels: {
           enabled: true,
-          formatter: function(val) {
+          formatter: function (val) {
             return val;
-          }
+          },
         },
         stroke: {
           curve: 'straight',
-          width: 2
+          width: 2,
         },
         fill: {
           type: 'solid',
-          opacity: 1
+          opacity: 1,
         },
         markers: {
-          size: 0
+          size: 0,
         },
         xaxis: {
           categories: ['Api 3', 'Api 2', 'Api 1'],
           title: {
-            text: 'APIs (triées)'
-          }
+            text: 'APIs (triées)',
+          },
         },
         yaxis: {
           title: {
-            text: "Requêtes cumulées"
+            text: 'Requêtes cumulées',
           },
           labels: {
-            formatter: function(val) {
+            formatter: function (val) {
               return val.toFixed(0);
-            }
-          }
+            },
+          },
         },
         legend: {
           position: 'top',
-          horizontalAlign: 'right'
+          horizontalAlign: 'right',
         },
         tooltip: {
           shared: true,
           intersect: false,
           y: {
-            formatter: function(val) {
-              return val + " requêtes";
-            }
-          }
-        }
-      }
+            formatter: function (val) {
+              return val + ' requêtes';
+            },
+          },
+        },
+      },
     },
   },
 
@@ -792,28 +803,40 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
     ],
     config: {
       series: [
-        { data: { x: field('field'), y: field('count_2xx') }, name: 'Succès (2xx)', color: '#8E44AD' },
-        { data: { x: field('field'), y: field('count_4xx') }, name: 'Erreur client (4xx)', color: '#16A085' },
-        { data: { x: field('field'), y: field('count_5xx') }, name: 'Erreur serveur (5xx)', color: '#F39C12' },
+        {
+          data: { x: field('field'), y: field('count_2xx') },
+          name: 'Succès (2xx)',
+          color: '#8E44AD',
+        },
+        {
+          data: { x: field('field'), y: field('count_4xx') },
+          name: 'Erreur client (4xx)',
+          color: '#16A085',
+        },
+        {
+          data: { x: field('field'), y: field('count_5xx') },
+          name: 'Erreur serveur (5xx)',
+          color: '#F39C12',
+        },
       ],
       height: 250,
       xorder: 'desc',
       options: {
         dataLabels: {
-          enabled: false
+          enabled: false,
         },
         stroke: {
           curve: 'stepline',
           width: [3, 3, 3],
-          dashArray: [0, 5, 10]
+          dashArray: [0, 5, 10],
         },
         markers: {
           size: 5,
           shape: ['circle', 'square', 'triangle'],
           hover: {
             size: 7,
-            sizeOffset: 3
-          }
+            sizeOffset: 3,
+          },
         },
         xaxis: {
           categories: ['Api 1', 'Api 2', 'Api 3'],
@@ -821,76 +844,76 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
             text: 'APIs (triées)',
             style: {
               fontSize: '12px',
-              fontWeight: 600
-            }
+              fontWeight: 600,
+            },
           },
           labels: {
             style: {
               colors: ['#2E294E', '#2E294E', '#2E294E'],
-              fontSize: '12px'
-            }
+              fontSize: '12px',
+            },
           },
           axisBorder: {
             show: true,
-            color: '#78909c'
+            color: '#78909c',
           },
           axisTicks: {
             show: true,
-            color: '#78909c'
-          }
+            color: '#78909c',
+          },
         },
         yaxis: {
           title: {
             text: "Nombre d'appels",
             style: {
               fontSize: '12px',
-              fontWeight: 600
-            }
+              fontWeight: 600,
+            },
           },
           min: 0,
           max: 100,
           tickAmount: 5,
           labels: {
-            formatter: function(val) {
+            formatter: function (val) {
               return val.toFixed(0);
             },
             style: {
-              colors: ['#555']
-            }
-          }
+              colors: ['#555'],
+            },
+          },
         },
         grid: {
           borderColor: '#e0e0e0',
           strokeDashArray: 5,
           row: {
             colors: ['#f5f5f5', 'transparent'],
-            opacity: 0.5
+            opacity: 0.5,
           },
           column: {
-            colors: ['#f5f5f5', 'transparent']
-          }
+            colors: ['#f5f5f5', 'transparent'],
+          },
         },
         tooltip: {
           shared: true,
           intersect: false,
           theme: 'light',
           style: {
-            fontSize: '12px'
+            fontSize: '12px',
           },
           marker: {
-            show: true
+            show: true,
           },
           x: {
             show: true,
-            format: 'dd MMM'
+            format: 'dd MMM',
           },
           y: {
-            formatter: function(val) {
-              return val + " requêtes";
-            }
-          }
+            formatter: function (val) {
+              return val + ' requêtes';
+            },
+          },
         },
-      }
+      },
     },
   },
 
@@ -914,58 +937,69 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
         colors: ['#77021D', '#F6B339', '#DA7B27'],
         chart: {
           toolbar: {
-            show: true
+            show: true,
           },
-          zoom: {
-            enabled: true,
-            type: 'x',
-            autoScaleYaxis: true
-          }
         },
         dataLabels: {
-          enabled: false
+          enabled: false,
+        },
+        yaxis: {
+          labels: {
+            show: false,
+          },
+          axisBorder: {
+            show: false,
+          },
+          axisTicks: {
+            show: false,
+          },
+          crosshairs: {
+            show: false,
+          },
+          tooltip: {
+            enabled: false,
+          },
+        },
+        xaxis: {
+          labels: {
+            show: false,
+          },
+          axisBorder: {
+            show: false,
+          },
+          axisTicks: {
+            show: false,
+          },
+          crosshairs: {
+            show: false,
+          },
+          tooltip: {
+            enabled: false,
+          },
         },
         stroke: {
           curve: 'smooth',
           width: [3, 3, 3],
-          dashArray: [0, 5, 8]
+          dashArray: [0, 5, 8],
         },
         markers: {
           size: 5,
-          shape: "circle",
+          shape: 'circle',
           hover: {
-            size: 8
-          }
-        },
-        xaxis: {
-          type: 'category',
-          labels: {
-            formatter: function(val) {
-              return val;
-            }
-          }
-        },
-        yaxis: {
-          title: {
-            text: "Nombre d'appels"
+            size: 8,
           },
-          min: 0
-        },
-        legend: {
-          position: 'top',
-          horizontalAlign: 'right'
         },
         tooltip: {
           shared: true,
           intersect: false,
           y: {
-            formatter: function(y, { series, seriesIndex, dataPointIndex }) {
-              if (typeof y !== "undefined") {
-                return y + " requêtes";
+            formatter: function (y, { series, seriesIndex, dataPointIndex }) {
+              if (typeof y !== 'undefined') {
+                return y + ' requêtes';
               }
               return y;
-            }
-          }
+            },
+          },
         },
         annotations: {
           yaxis: [
@@ -973,16 +1007,17 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
               y: 50,
               borderColor: '#999',
               label: {
-                text: 'Seuil moyen',
+                text: 'SEUIL MOYEN',
+                offsetY: -5,
                 style: {
                   color: '#fff',
-                  background: '#00E396'
-                }
-              }
-            }
-          ]
-        }
-      }
+                  background: '#A7001E',
+                },
+              },
+            },
+          ],
+        },
+      },
     },
-  }
+  },
 };

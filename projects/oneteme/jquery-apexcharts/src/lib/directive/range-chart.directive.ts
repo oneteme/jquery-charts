@@ -1,34 +1,8 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  inject,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  signal,
-  SimpleChanges,
-} from '@angular/core';
-import {
-  buildChart,
-  ChartProvider,
-  ChartView,
-  XaxisType,
-} from '@oneteme/jquery-core';
+import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
+import { buildChart, ChartProvider, ChartView, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, Subscription } from 'rxjs';
-import {
-  ChartCustomEvent,
-  getType,
-  initCommonChartOptions,
-  updateCommonOptions,
-  initChart,
-  updateChartOptions,
-  hydrateChart,
-  destroyChart,
-} from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, initChart, updateChartOptions, hydrateChart, destroyChart } from './utils';
 
 @Directive({
   standalone: true,
@@ -37,12 +11,12 @@ import {
 export class RangeChartDirective<X extends XaxisType>
   implements ChartView<X, number[]>, OnChanges, OnDestroy
 {
-  private el: ElementRef = inject(ElementRef);
-  private ngZone = inject(NgZone);
+  private readonly el: ElementRef = inject(ElementRef);
+  private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private readonly subscription = new Subscription();
   private _chartConfig: ChartProvider<X, number[]>;
   private _options: any;
-  private subscription = new Subscription();
   private _type: 'rangeArea' | 'rangeBar' | 'rangeColumn' = 'rangeArea';
   private _canPivot: boolean = true;
 
@@ -178,14 +152,7 @@ export class RangeChartDirective<X extends XaxisType>
       : 'Aucune donnée';
 
     if (this.chartInstance()) {
-      updateChartOptions(
-        this.chartInstance(),
-        this.ngZone,
-        this._options,
-        false,
-        false,
-        false
-      );
+      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
     }
   }
 }
