@@ -1,0 +1,97 @@
+<section>
+  <h2>Installation & Démarrage</h2>
+  <div class="introduction">
+    <p>
+      <strong>jQuery-Charts</strong> est une bibliothèque de visualisation de
+      données pour Angular, qui simplifie l'utilisation de bibliothèques tierces
+      comme ApexCharts ou Highcharts. Elle fournit une interface de
+      programmation standardisée, ce qui signifie que vous utilisez toujours la
+      même syntaxe Angular quel que soit le moteur de rendu choisi.
+    </p>
+    <p>Concrètement, cela signifie que :</p>
+    <ul>
+      <li>
+        Vous n'avez pas besoin d'apprendre la syntaxe spécifique d'ApexCharts ou
+        Highcharts
+      </li>
+      <li>
+        La configuration des graphiques reste identique quel que soit la
+        bibliothèque sous-jacente
+      </li>
+      <li>
+        Vous pouvez créer rapidement des graphiques interactifs et
+        personnalisables
+      </li>
+      <li>
+        La mise en place est simple et intuitive grâce à une syntaxe Angular
+        native
+      </li>
+    </ul>
+  </div>
+  <div class="step">
+    <h3>1. Création du projet Angular</h3>
+    <p>Si vous n'avez pas encore de projet Angular, créez-en un :</p>
+    <div class="code-block">
+      <pre><code><span class="red strong">ng new</span> my-chart-app
+<span class="red strong">cd</span> my-chart-app</code></pre>
+    </div>
+  </div>
+  <div class="step">
+    <h3>2. Installation des dépendances</h3>
+    <p>Installez les packages nécessaires :</p>
+    <div class="code-block">
+      <pre><code><span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core &#64;oneteme/jquery-charts</span><br>
+<i>Si vous utilisez Apexcharts</i>
+<span class="red strong">npm</span> install <span class="blue strong">apexcharts</span><br>
+<i>Si vous utilisez Highcharts</i>
+<span class="red strong">npm</span> install <span class="blue strong">highcharts</span></code></pre>
+    </div>
+  </div>
+  <div class="step">
+    <h3>3. Configuration du module</h3>
+    <p>
+      Il existe deux façons d'importer le ChartComponent selon votre
+      architecture :
+    </p>
+    <div class="option-block">
+      <h4>Option A : Dans un module (app.module.ts)</h4>
+      <div class="code-block">
+        <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;
+<br>&#64;NgModule({{ '{' }}
+<span class="red">imports</span>: <span class="blue">[</span>
+<span class="blue">BrowserModule,</span>
+<span class="blue">ChartComponent</span>
+<span class="blue">]</span>
+{{ '}' }})</code></pre>
+      </div>
+    </div>
+    <div class="option-block">
+      <h4>Option B : Dans un composant standalone</h4>
+      <div class="code-block">
+        <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;<br>
+&#64;Component({{ '{' }}
+<span class="red strong">standalone</span>: <span class="blue strong">true</span>,
+<span class="red">imports</span>: <span class="blue">[ChartComponent]</span>
+<i>// ... reste de la configuration du composant</i>
+{{ '}' }})</code></pre>
+      </div>
+    </div>
+  </div>
+  <div class="step">
+    <h3>4. Utilisation dans un composant</h3>
+    <p>Exemple d'utilisation simple :</p>
+    <div class="code-block">
+      <pre><code><span class="red">&lt;chart</span>
+  <span class="orange">[type]</span>=<span class="blue strong">"<span class="purple strong">'</span>pie<span class="purple strong">'</span>"</span>
+  <span class="orange">[config]</span>=<span class="blue strong">"config"</span>
+  <span class="orange">[data]</span>=<span class="blue strong">"data"</span>
+<span class="red">&gt;&lt;/chart&gt;</span></code></pre>
+    </div>
+  </div>
+  <app-informations
+    [notes]="gettingStartedNotes"
+    title="Recommandations pour bien démarrer"
+    type="warning"
+  >
+  </app-informations>
+</section>

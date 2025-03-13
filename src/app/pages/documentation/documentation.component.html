@@ -1,0 +1,119 @@
+<div class="documentation-container">
+  <div class="doc-nav">
+    <ul>
+      <li
+        [class.active]="isActiveExact('getting-started')"
+        routerLink="getting-started"
+      >
+        Installation & Démarrage
+      </li>
+      <li
+        [class.active]="isActiveExact('graph-types')"
+        routerLink="graph-types"
+      >
+        Types de Graphiques
+      </li>
+      <li class="menu-item" [class.active]="isActive('configuration')">
+        <div class="nav-item" (click)="toggleMenu('config', $event)">
+          <span>Configuration</span>
+          <img
+            src="assets/icons/chevron.svg"
+            class="chevron"
+            [class.open]="menuState.config"
+            alt="chevron"
+          />
+        </div>
+        <ul class="sub-nav" *ngIf="menuState.config">
+          <li
+            [class.active]="isActiveExact('global')"
+            routerLink="configuration/global"
+          >
+            Configuration Globale
+          </li>
+          <li
+            [class.active]="isActiveExact('pie')"
+            routerLink="configuration/pie"
+          >
+            Pie Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('bar')"
+            routerLink="configuration/bar"
+          >
+            Bar Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('line')"
+            routerLink="configuration/line"
+          >
+            Line Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('treemap')"
+            routerLink="configuration/treemap"
+          >
+            Treemap Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('heatmap')"
+            routerLink="configuration/heatmap"
+          >
+            Heatmap Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('range')"
+            routerLink="configuration/range"
+          >
+            Range Charts
+          </li>
+          <li
+            [class.active]="isActiveExact('funnel')"
+            routerLink="configuration/funnel"
+          >
+            Funnel Charts
+          </li>
+        </ul>
+      </li>
+      <li class="menu-item" [class.active]="isActive('data')">
+        <div class="nav-item" (click)="toggleMenu('data', $event)">
+          <span>Data</span>
+          <img
+            src="assets/icons/chevron.svg"
+            class="chevron"
+            [class.open]="menuState.data"
+            alt="chevron"
+          />
+        </div>
+        <ul class="sub-nav" *ngIf="menuState.data">
+          <li
+            [class.active]="isActiveExact('structure')"
+            routerLink="data/structure"
+          >
+            Structure des données
+          </li>
+          <li
+            [class.active]="isActiveExact('providers')"
+            routerLink="data/providers"
+          >
+            Data Providers
+          </li>
+          <li [class.active]="isActiveExact('fields')" routerLink="data/fields">
+            Utilisation des Fields
+          </li>
+          <li [class.active]="isActiveExact('values')" routerLink="data/values">
+            Utilisation des Values
+          </li>
+          <li
+            [class.active]="isActiveExact('combine')"
+            routerLink="data/combine"
+          >
+            Combinaison de données
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+  <div class="doc-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>

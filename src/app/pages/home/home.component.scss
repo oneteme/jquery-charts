@@ -1,0 +1,137 @@
+.welcome-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2rem 4rem;
+  text-align: center;
+
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 3rem;
+    color: #2c3e50;
+    font-weight: 700;
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .project-description {
+    font-size: 1.2rem;
+    color: #666;
+    margin-bottom: 2rem;
+  }
+
+  .library-selector {
+    margin: 2rem 0;
+    padding: 1rem;
+
+    label {
+      display: block;
+      margin-bottom: 1rem;
+      color: #666;
+    }
+
+    .toggle-container {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+
+      button {
+        padding: 0.5rem 1.5rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+
+        &.active {
+          background: #3498db;
+          color: white;
+          border-color: #3498db;
+        }
+
+        &.disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background: #f5f5f5;
+        }
+      }
+    }
+  }
+
+  .welcome-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin: 3rem 0;
+  }
+
+  .feature-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+    }
+
+    h3 {
+      color: #2c3e50;
+      margin-bottom: 1rem;
+    }
+
+    p {
+      color: #666;
+      line-height: 1.6;
+    }
+  }
+
+  .coming-soon {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+
+    p {
+      color: #666;
+    }
+  }
+}
+
+.doc-link {
+  color: #3498db;
+  padding-bottom: 0.2rem;
+  border-bottom: 1px solid #3498db;
+  font-weight: 500;
+  cursor: pointer;
+
+  &:hover {
+    color: #2980b9;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-container {
+    padding: 1rem;
+
+    h1 {
+      font-size: 2rem;
+    }
+  }
+
+  .welcome-content {
+    grid-template-columns: 1fr;
+  }
+
+  .library-selector .toggle-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .chart-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}

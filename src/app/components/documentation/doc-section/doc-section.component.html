@@ -1,0 +1,37 @@
+<section [class]="getSectionClass()">
+  <h2>{{ title }}</h2>
+  <p *ngIf="description" class="description">{{ description }}</p>
+
+  <div class="section-content">
+    <div class="code-block">
+      <h3 *ngIf="getCodeBlockTitle()">{{ getCodeBlockTitle() }}</h3>
+
+      <app-btn-view-examples
+        *ngIf="shouldShowButton()"
+        [chartType]="getChartType()"
+        [chartName]="title"
+      ></app-btn-view-examples>
+
+      <pre><code [innerHTML]="code"></code></pre>
+    </div>
+
+    <div
+      class="compatibility-notes"
+      *ngIf="compatibilityNotes?.length && !isDataSection()"
+    >
+      <h3>Compatibilité</h3>
+      <ul>
+        <li *ngFor="let note of compatibilityNotes">{{ note }}</li>
+      </ul>
+    </div>
+
+    <div class="examples" *ngIf="examples?.length && !isDataSection()">
+      <h3>Exemples</h3>
+      <div class="example-grid">
+        <div class="example-item" *ngFor="let example of examples">
+          <chart [data]="example.data" [config]="example.config"></chart>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

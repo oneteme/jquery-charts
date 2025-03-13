@@ -17,6 +17,10 @@
         "build": {
           "builder": "@angular-devkit/build-angular:browser",
           "options": {
+            "styles": [
+              "src/styles.scss",
+              "./projects/oneteme/jquery-apexcharts/src/assets/styles/styles.scss"
+            ],
             "outputPath": "dist/jquery-charts",
             "index": "src/index.html",
             "main": "src/main.ts",
@@ -33,11 +37,7 @@
                 "input": "./projects/oneteme/jquery-apexcharts/src/assets",
                 "output": "./assets/icons"
               }
-              
-            ],
-            "styles": [
-              "src/styles.scss",
-              "./projects/oneteme/jquery-apexcharts/src/assets/styles/styles.scss"
+
             ],
             "scripts": []
           },
