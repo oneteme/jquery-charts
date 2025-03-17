@@ -939,54 +939,15 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
           toolbar: {
             show: true,
           },
-        },
-        dataLabels: {
-          enabled: false,
-        },
-        yaxis: {
-          labels: {
-            show: false,
-          },
-          axisBorder: {
-            show: false,
-          },
-          axisTicks: {
-            show: false,
-          },
-          crosshairs: {
-            show: false,
-          },
-          tooltip: {
-            enabled: false,
-          },
-        },
-        xaxis: {
-          labels: {
-            show: false,
-          },
-          axisBorder: {
-            show: false,
-          },
-          axisTicks: {
-            show: false,
-          },
-          crosshairs: {
-            show: false,
-          },
-          tooltip: {
-            enabled: false,
-          },
-        },
-        stroke: {
-          curve: 'smooth',
-          width: [3, 3, 3],
-          dashArray: [0, 5, 8],
+          sparkline: {
+            enabled: true,
+          }
         },
         markers: {
           size: 5,
           shape: 'circle',
           hover: {
-            size: 8,
+            size: 6,
           },
         },
         tooltip: {

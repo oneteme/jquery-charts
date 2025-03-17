@@ -52,6 +52,15 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   set config(config: ChartProvider<X, Y>) {
     this._chartConfig = config;
     this._options = updateCommonOptions(this._options, config);
+
+    // Vérifier si sparkline est activé pour masquer l'axe Y
+    if (config.options?.chart?.sparkline?.enabled) {
+      if (!this._options.yaxis) this._options.yaxis = {};
+      this._options.yaxis.show = false;
+      this._options.yaxis.showAlways = false;
+      if (!this._options.yaxis.labels) this._options.yaxis.labels = {};
+      this._options.yaxis.labels.show = false;
+    }
   }
 
   constructor() {
