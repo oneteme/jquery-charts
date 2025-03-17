@@ -100,10 +100,6 @@ export class RangeChartDirective<X extends XaxisType>
         updateChartOptions(this.chartInstance(), this.ngZone, this._options),
       this.debug
     );
-
-    if (changes['isLoading']) {
-      this.updateLoading();
-    }
   }
 
   private updateType() {
@@ -143,16 +139,6 @@ export class RangeChartDirective<X extends XaxisType>
     if (this._options.xaxis.type != newType) {
       this._options.xaxis.type = newType;
       this._options.shouldRedraw = true;
-    }
-  }
-
-  private updateLoading() {
-    this._options.noData.text = this.isLoading
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-
-    if (this.chartInstance()) {
-      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
     }
   }
 }

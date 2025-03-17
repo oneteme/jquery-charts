@@ -271,11 +271,23 @@ export function hydrateChart(
 
   // Optimisation: regroupement des types de changements pour éviter les opérations redondantes
   const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-  const needsOptionsUpdate = Object.keys(changes).some(key => !['debug', 'isLoading'].includes(key));
+  const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
 
   // Mise à jour des données si nécessaire
   if (needsDataUpdate && data && chartConfig) {
     updateDataFn();
+  }
+
+  // Mise à jour spécifique pour isLoading
+  if (changes['isLoading'] && chartInstance()) {
+    options.noData.text = changes['isLoading'].currentValue
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+
+    // Mise à jour immédiate des options de noData sans redessiner complètement
+    updateChartOptions(chartInstance(), ngZone, {
+      noData: options.noData
+    }, false, false, false);
   }
 
   // Stratégie de mise à jour optimisée

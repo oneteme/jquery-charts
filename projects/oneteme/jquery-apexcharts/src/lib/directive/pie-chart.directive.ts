@@ -83,10 +83,6 @@ export class PieChartDirective
       () => updateChartOptions(this.chartInstance(), this.ngZone, this._options),
       this.debug
     );
-
-    if (changes['isLoading']) {
-      this.updateLoading();
-    }
   }
 
   private updateType() {
@@ -139,15 +135,5 @@ export class PieChartDirective
       );
     }
     this._options.labels = commonChart.categories || [];
-  }
-
-  private updateLoading() {
-    this._options.noData.text = this.isLoading
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-
-    if (this.chartInstance()) {
-      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
-    }
   }
 }

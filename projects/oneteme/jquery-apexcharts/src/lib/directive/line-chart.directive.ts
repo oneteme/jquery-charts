@@ -113,11 +113,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
       () => updateChartOptions(this.chartInstance(), this.ngZone, this._options),
       this.debug
     );
-
-    // Gestion spécifique du chargement
-    if (changes['isLoading']) {
-      this.updateLoading();
-    }
   }
 
   /**
@@ -136,19 +131,6 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
     if (this._options.xaxis.type != newType) {
       this._options.xaxis.type = newType;
       this._options.shouldRedraw = true;
-    }
-  }
-
-  /**
-   * Met à jour l'état de chargement
-   */
-  private updateLoading() {
-    this._options.noData.text = this.isLoading
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-
-    if (this.chartInstance()) {
-      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
     }
   }
 }
