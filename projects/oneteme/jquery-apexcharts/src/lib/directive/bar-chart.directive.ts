@@ -79,10 +79,6 @@ export class BarChartDirective<X extends XaxisType>
       () => this.init(),
       () => updateChartOptions(this.chartInstance(), this.ngZone, this._options), this.debug
     );
-
-    if (changes['isLoading']) {
-      this.updateLoading();
-    }
   }
 
   private updateType() {
@@ -92,19 +88,23 @@ export class BarChartDirective<X extends XaxisType>
   }
 
   private configureTypeSpecificOptions() {
-    if (this.type === 'bar') {
-      if (!this._options.plotOptions) this._options.plotOptions = {};
-      if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+
+    if (!this._options.plotOptions) this._options.plotOptions = {};
+    if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+
+    if (this._options.plotOptions.bar.horizontal === undefined) {
+      if (this.type === 'bar') {
+        this._options.plotOptions.bar.horizontal = true;
+      } else if (this.type === 'column') {
+        this._options.plotOptions.bar.horizontal = false;
+      }
+    }
+
+    if (this.type === 'funnel' || this.type === 'pyramid') {
+      this._options.plotOptions.bar.isFunnel = true;
       this._options.plotOptions.bar.horizontal = true;
     }
-    else if (this.type === 'column') {
-      if (!this._options.plotOptions) this._options.plotOptions = {};
-      if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
-      this._options.plotOptions.bar.horizontal = false;
-    }
-    // Configuration spécifique pour funnel / pyramid ? ajouter ici
   }
-
 
   private updateData() {
     let sortedData = [...this.data];
@@ -118,7 +118,6 @@ export class BarChartDirective<X extends XaxisType>
       );
     }
 
-    // Construction du graphique avec les données
     const commonChart = buildChart(sortedData, {
       ...this._chartConfig,
       pivot: !this.canPivot ? false : this._chartConfig.pivot,
@@ -140,15 +139,5 @@ export class BarChartDirective<X extends XaxisType>
     }
 
     this._options.xaxis.categories = commonChart.categories || [];
-  }
-
-  private updateLoading() {
-    this._options.noData.text = this.isLoading
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-
-    if (this.chartInstance()) {
-      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
-    }
   }
 }

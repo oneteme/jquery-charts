@@ -123,6 +123,7 @@ export function initCommonChartOptions(
       text: 'Aucune donnée',
     },
     xaxis: {},
+    plotOptions: {},
   };
 }
 
@@ -133,7 +134,9 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
   options: any,
   config: ChartProvider<X, Y>
 ) {
-  return mergeDeep(
+
+  const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
+  const updatedOptions = mergeDeep(
     options,
     {
       chart: {
@@ -163,6 +166,16 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
     },
     config.options
   );
+
+  const userSetHorizontal = config.options?.plotOptions?.bar?.horizontal !== undefined;
+
+  if (existingBarHorizontal !== undefined && !userSetHorizontal) {
+    if (!updatedOptions.plotOptions) updatedOptions.plotOptions = {};
+    if (!updatedOptions.plotOptions.bar) updatedOptions.plotOptions.bar = {};
+    updatedOptions.plotOptions.bar.horizontal = existingBarHorizontal;
+  }
+
+  return updatedOptions;
 }
 
 /**
@@ -258,11 +271,23 @@ export function hydrateChart(
 
   // Optimisation: regroupement des types de changements pour éviter les opérations redondantes
   const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-  const needsOptionsUpdate = Object.keys(changes).some(key => !['debug', 'isLoading'].includes(key));
+  const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
 
   // Mise à jour des données si nécessaire
   if (needsDataUpdate && data && chartConfig) {
     updateDataFn();
+  }
+
+  // Mise à jour spécifique pour isLoading
+  if (changes['isLoading'] && chartInstance()) {
+    options.noData.text = changes['isLoading'].currentValue
+      ? 'Chargement des données...'
+      : 'Aucune donnée';
+
+    // Mise à jour immédiate des options de noData sans redessiner complètement
+    updateChartOptions(chartInstance(), ngZone, {
+      noData: options.noData
+    }, false, false, false);
   }
 
   // Stratégie de mise à jour optimisée
