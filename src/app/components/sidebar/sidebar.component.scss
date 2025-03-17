@@ -21,7 +21,6 @@
     width: 24px;
     height: 2px;
     background: white;
-    transition: all 0.3s ease;
     transform-origin: center;
     border-radius: 4px;
   }
@@ -51,14 +50,12 @@
   position: fixed;
   left: 0;
   top: 80px;
-  transition: transform 0.3s ease;
   z-index: 97;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
   .sidebar-header {
     padding: 1rem;
     margin-bottom: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
     border-radius: 0.5rem;
     &:hover {
       background: #e9ecef;

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, Input, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router } from '@angular/router';
 import { ChartTypesService } from 'src/app/core/services/chart-types.service';
 
@@ -18,7 +18,7 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
     <div class="sidebar" [class.open]="isMenuOpen">
       <ul>
         <li
-          *ngFor="let type of chartTypes"
+          *ngFor="let type of chartTypes; trackBy: trackByFn"
           [class.active]="selectedType === type"
           (click)="onSelect(type)"
         >
@@ -30,6 +30,7 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
     <div class="overlay" *ngIf="isMenuOpen" (click)="toggleMenu()"></div>
   `,
   styleUrls: ['./sidebar.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SidebarComponent implements OnInit {
   @Input() chartTypes: string[] = [];
@@ -37,9 +38,9 @@ export class SidebarComponent implements OnInit {
   isMenuOpen = false;
 
   constructor(
-    private router: Router,
-    private chartTypesService: ChartTypesService,
-    private cdr: ChangeDetectorRef
+    private readonly router: Router,
+    private readonly chartTypesService: ChartTypesService,
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit() {
