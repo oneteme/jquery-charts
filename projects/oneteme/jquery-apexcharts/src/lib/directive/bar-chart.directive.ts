@@ -1,35 +1,8 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  inject,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  signal,
-  SimpleChanges,
-} from '@angular/core';
-import {
-  buildChart,
-  ChartProvider,
-  ChartView,
-  naturalFieldComparator,
-  XaxisType,
-} from '@oneteme/jquery-core';
+import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
+import { buildChart, ChartProvider, ChartView, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, Subscription } from 'rxjs';
-import {
-  ChartCustomEvent,
-  getType,
-  initCommonChartOptions,
-  updateCommonOptions,
-  initChart,
-  updateChartOptions,
-  hydrateChart,
-  destroyChart,
-} from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, initChart, updateChartOptions, hydrateChart, destroyChart } from './utils';
 
 @Directive({
   standalone: true,
@@ -78,23 +51,11 @@ export class BarChartDirective<X extends XaxisType>
   }
 
   init() {
-    initChart(
-      this.el,
-      this.ngZone,
-      this._options,
-      this.chartInstance,
-      this.subscription,
-      this.debug
-    );
+    initChart(this.el, this.ngZone, this._options, this.chartInstance, this.subscription, this.debug);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.debug)
-      console.log(
-        new Date().getMilliseconds(),
-        'Détection de changements',
-        changes
-      );
+    if (this.debug) console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
     if (changes['type']) this.updateType();
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
@@ -116,9 +77,7 @@ export class BarChartDirective<X extends XaxisType>
       () => this.updateData(),
       () => this.ngOnDestroy(),
       () => this.init(),
-      () =>
-        updateChartOptions(this.chartInstance(), this.ngZone, this._options),
-      this.debug
+      () => updateChartOptions(this.chartInstance(), this.ngZone, this._options), this.debug
     );
 
     if (changes['isLoading']) {
@@ -163,7 +122,6 @@ export class BarChartDirective<X extends XaxisType>
       );
     }
 
-    // Construction du graphique avec les données
     const commonChart = buildChart(sortedData, {
       ...this._chartConfig,
       pivot: !this.canPivot ? false : this._chartConfig.pivot,
@@ -193,14 +151,7 @@ export class BarChartDirective<X extends XaxisType>
       : 'Aucune donnée';
 
     if (this.chartInstance()) {
-      updateChartOptions(
-        this.chartInstance(),
-        this.ngZone,
-        this._options,
-        false,
-        false,
-        false
-      );
+      updateChartOptions(this.chartInstance(), this.ngZone, this._options, false, false, false);
     }
   }
 }
