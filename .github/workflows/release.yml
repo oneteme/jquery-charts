@@ -80,7 +80,7 @@ jobs:
         node-version: 20
     - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
       with:
-        base-href: ''
+        base-href: '/jquery-charts/'
     - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
       with:
         project: 'jquery-charts'
