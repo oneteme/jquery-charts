@@ -123,6 +123,7 @@ export function initCommonChartOptions(
       text: 'Aucune donnée',
     },
     xaxis: {},
+    plotOptions: {},
   };
 }
 
@@ -133,7 +134,9 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
   options: any,
   config: ChartProvider<X, Y>
 ) {
-  return mergeDeep(
+
+  const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
+  const updatedOptions = mergeDeep(
     options,
     {
       chart: {
@@ -163,6 +166,16 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
     },
     config.options
   );
+
+  const userSetHorizontal = config.options?.plotOptions?.bar?.horizontal !== undefined;
+
+  if (existingBarHorizontal !== undefined && !userSetHorizontal) {
+    if (!updatedOptions.plotOptions) updatedOptions.plotOptions = {};
+    if (!updatedOptions.plotOptions.bar) updatedOptions.plotOptions.bar = {};
+    updatedOptions.plotOptions.bar.horizontal = existingBarHorizontal;
+  }
+
+  return updatedOptions;
 }
 
 /**

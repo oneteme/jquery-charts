@@ -6,23 +6,52 @@ import {
 
 export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
   barExample: {
-    data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
+    data: [
+      { palier: 'Niveau 1', COUNT: 110 },
+      { palier: 'Niveau 2', COUNT: 160 },
+      { palier: 'Niveau 3', COUNT: 80 },
+      { palier: 'Niveau 4', COUNT: 145 }
+    ],
     config: {
+      title: 'title test',
       series: [
         {
-          data: { x: values('2xx'), y: field('count_2xx') },
-          name: "Nombre d'appels",
-        },
-        {
-          data: { x: values('4xx'), y: field('count_4xx') },
-          name: "Nombre d'appels",
-        },
-        {
-          data: { x: values('5xx'), y: field('count_5xx') },
-          name: "Nombre d'appels",
+          data: { x: field('palier'), y: field('COUNT') },
+          name: 'Opérations',
         },
       ],
       height: 250,
+      showToolbar: true,
+      options: {
+        dataLabels: {
+          dropShadow: {
+            enabled: true,
+          },
+          enabled: true,
+        },
+        title: {
+          align: 'center',
+          style: {
+            color: '#333',
+            fontSize: '16px',
+            fontWeight: 700,
+          },
+        },
+        plotOptions: {
+          bar: {
+            horizontal: false,
+            distributed: true,
+          },
+        },
+        yaxis: { show: true },
+        xaxis: {
+          show: false,
+          labels: { show: false },
+          axisBorder: { show: false },
+          axisTicks: { show: false },
+        },
+        legend: { horizontalAlign: 'left', offsetX: 20 },
+      },
     },
   },
 
