@@ -33,13 +33,13 @@ export class HeaderComponent {
   @Output() goToHome = new EventEmitter<void>();
 
   constructor(
-    private router: Router,
-    private chartTypesService: ChartTypesService
+    private readonly router: Router,
+    private readonly chartTypesService: ChartTypesService
   ) {}
 
   goHome() {
     this.chartTypesService.resetSelectedType();
-    this.router.navigate(['/home']);
+    this.router.navigate(['/']);
   }
 
   goToDoc() {

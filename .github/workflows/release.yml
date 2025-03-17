@@ -1,5 +1,5 @@
 name: tag release
-on: 
+on:
   workflow_dispatch:
     inputs:
       core:
@@ -54,7 +54,7 @@ jobs:
         project: 'jquery-highcharts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main 
+    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
       id: prj_ver
     outputs:  # take global project version
       version: ${{ steps.prj_ver.outputs.version }}
@@ -80,7 +80,7 @@ jobs:
         node-version: 20
     - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
       with:
-        base-href: 'jquery-charts'
+        base-href: '/'
     - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
       with:
         project: 'jquery-charts'
