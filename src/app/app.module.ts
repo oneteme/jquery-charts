@@ -8,6 +8,7 @@ import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ChartTypesService } from './core/services/chart-types.service';
 import { FooterComponent } from './components/footer/footer.component';
 import { BackToDocButtonComponent } from './components/back-to-doc-button/back-to-doc-button.component';
+import { BasicTestComponent } from './pages/basic-test/basic-test.component';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,12 @@ import { BackToDocButtonComponent } from './components/back-to-doc-button/back-t
     SidebarComponent,
     FooterComponent,
   ],
-  imports: [BrowserModule, AppRoutingModule, BackToDocButtonComponent],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    BackToDocButtonComponent,
+    BasicTestComponent,
+  ],
   providers: [ChartTypesService],
   bootstrap: [AppComponent],
 })
