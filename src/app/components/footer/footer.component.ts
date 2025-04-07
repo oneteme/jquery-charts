@@ -10,7 +10,7 @@ import { Component } from '@angular/core';
           <span class="license">Apache 2.0</span>
 
           <!-- uncomment if you want to quickly access the test page  -->
-           
+
           <!-- <div class="separator"></div>
           <a
             routerLink="/basic-test"

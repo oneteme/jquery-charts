@@ -1,9 +1,8 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from '@oneteme/jquery-apexcharts';
-import { ChartProvider, field } from '@oneteme/jquery-core';
-import { BarChartDirective } from '@oneteme/jquery-apexcharts';
+import { field } from '@oneteme/jquery-core';
 
 interface TestData {
   label: string;
@@ -14,7 +13,6 @@ interface TestData {
   selector: 'app-basic-test',
   standalone: true,
   imports: [CommonModule, ChartComponent, FormsModule],
-  // imports: [CommonModule, BarChartDirective, FormsModule],
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
 })
@@ -22,7 +20,7 @@ export class BasicTestComponent implements OnInit {
   chartData: TestData[] = [];
   chartConfig: any;
   chartType = 'bar'; // Type de graphique par défaut
-  dataDelay = 100; // Délai par défaut en ms
+  dataDelay = 10; // Délai par défaut en ms
 
   maille = 'label';
 

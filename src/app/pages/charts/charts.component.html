@@ -2,7 +2,12 @@
   <div class="charts-container" *ngIf="selectedChartType">
     <h2>Exemples de {{ selectedChartType }}</h2>
     <p class="source-note">
-      <em>Note: Si certains éléments comme les tooltips n'apparaissent pas dans le formatteur de code, vous pouvez consulter le code source complet sur GitHub en cliquant sur l'icône en haut à droite et en naviguant vers <code>src/app/data/chart/</code> pour votre exemple.</em>
+      <em
+        >Note: Si certains éléments comme les tooltips n'apparaissent pas dans
+        le formatteur de code, vous pouvez consulter le code source complet sur
+        GitHub en cliquant sur l'icône en haut à droite et en naviguant vers
+        <span>src/app/data/chart/</span> pour votre exemple.</em
+      >
     </p>
     <div class="charts-grid">
       <ng-container [ngSwitch]="selectedChartType">
@@ -24,15 +29,24 @@
               let i = index
             "
           >
-            <chart type="pie" [config]="example.config" [data]="example.data" />
-            <div class="code-toggle" (click)="toggleCode(i, $event)">
+            <chart
+              class="chart-component"
+              type="pie"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(i, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(i)">
               <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
             </div>
@@ -57,15 +71,25 @@
               let i = index
             "
           >
-            <chart type="bar" [config]="example.config" [data]="example.data" />
-            <div class="code-toggle" (click)="toggleCode(i, $event)">
+            <chart
+              class="chart-component"
+              type="bar"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(i, $event)"
+              (keyup.enter)="toggleCode(i, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(i)">
               <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
             </div>
@@ -91,18 +115,24 @@
             "
           >
             <chart
+              class="chart-component"
               type="line"
               [config]="example.config"
               [data]="example.data"
             />
-            <div class="code-toggle" (click)="toggleCode(i, $event)">
+            <button
+              class="code-toggle"
+              (click)="toggleCode(i, $event)"
+              (keyup.enter)="toggleCode(i, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(i)">
               <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
             </div>
@@ -113,27 +143,29 @@
           <div
             class="chart-wrapper"
             *ngFor="
-              let example of [
-                treemapExample,
-                treemapExample2,
-                treemapExample3,
-              ];
+              let example of [treemapExample, treemapExample2, treemapExample3];
               let i = index
             "
           >
             <chart
+              class="chart-component"
               type="treemap"
               [config]="example.config"
               [data]="example.data"
             />
-            <div class="code-toggle" (click)="toggleCode(i, $event)">
+            <button
+              class="code-toggle"
+              (click)="toggleCode(i, $event)"
+              (keyup.enter)="toggleCode(i, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(i)">
               <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
             </div>
@@ -143,18 +175,24 @@
         <ng-container *ngSwitchCase="'Heatmap Chart'">
           <div class="chart-wrapper">
             <chart
+              class="chart-component"
               type="heatmap"
               [config]="heatmapExample.config"
               [data]="heatmapExample.data"
             />
-            <div class="code-toggle" (click)="toggleCode(0, $event)">
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(0)">
               <pre><code [innerHTML]="getHighlightedCode(heatmapExample)"></code></pre>
             </div>
@@ -164,18 +202,24 @@
         <ng-container *ngSwitchCase="'Range Chart'">
           <div class="chart-wrapper">
             <chart
+              class="chart-component"
               type="rangeArea"
               [config]="rangeExample.config"
               [data]="rangeExample.data"
             />
-            <div class="code-toggle" (click)="toggleCode(0, $event)">
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(0)">
               <pre><code [innerHTML]="getHighlightedCode(rangeExample)"></code></pre>
             </div>
@@ -185,18 +229,24 @@
         <ng-container *ngSwitchCase="'Funnel Chart'">
           <div class="chart-wrapper">
             <chart
+              class="chart-component"
               type="funnel"
               [config]="funnelExample.config"
               [data]="funnelExample.data"
             />
-            <div class="code-toggle" (click)="toggleCode(0, $event)">
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
               <img
                 src="assets/icons/code.svg"
                 class="code-icon"
                 alt="toggle code"
               />
               <span class="tooltip">Voir le code</span>
-            </div>
+            </button>
             <div class="code-block" [class.open]="isCodeOpen(0)">
               <pre><code [innerHTML]="getHighlightedCode(funnelExample)"></code></pre>
             </div>

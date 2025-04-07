@@ -1,4 +1,4 @@
-import { field, values, joinFields } from '@oneteme/jquery-core';
+import { field, joinFields } from '@oneteme/jquery-core';
 import {
   ChartDataCollection,
   BarChartData,
