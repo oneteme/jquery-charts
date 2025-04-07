@@ -1,7 +1,7 @@
 import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
 import { buildChart, ChartProvider, ChartView } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
-import { asapScheduler, observeOn, Subscription } from 'rxjs';
+import { asapScheduler, observeOn } from 'rxjs';
 import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
@@ -15,7 +15,6 @@ export class TreemapChartDirective
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
-  private readonly subscription = new Subscription();
   private _chartConfig: ChartProvider<string, number>;
   private _options: any;
   private _type: 'treemap' | 'heatmap' = 'treemap';
@@ -62,13 +61,7 @@ export class TreemapChartDirective
       try {
         let chart = new ApexCharts(this.el.nativeElement, { ...this._options });
         this.chartInstance.set(chart);
-        const renderSubscription = fromPromise(
-          chart
-            .render()
-            .then(
-              () =>
-                this.debug &&
-                console.log(
+        fromPromise(chart.render().then(() =>this.debug && console.log(
                   new Date().getMilliseconds(),
                   'Rendu du graphique terminé'
                 )
@@ -89,9 +82,6 @@ export class TreemapChartDirective
             error: (error) =>
               console.error('Erreur dans le flux Observable:', error),
           });
-
-        // Ajout au gestionnaire d'abonnements
-        this.subscription.add(renderSubscription);
       } catch (error) {
         console.error("Erreur lors de l'initialisation du graphique:", error);
       }
@@ -117,49 +107,35 @@ export class TreemapChartDirective
   }
 
   ngOnDestroy() {
-    destroyChart(this.chartInstance, this.subscription);
+    destroyChart(this.chartInstance);
   }
 
   private hydrate(changes: SimpleChanges): void {
     if (this.debug) console.log('Hydratation du graphique', { ...changes });
 
-    // Optimisation: regroupement des types de changements pour éviter les opérations redondantes
     const needsDataUpdate =
       changes['data'] || changes['config'] || changes['type'];
     const needsOptionsUpdate = Object.keys(changes).some(
       (key) => !['debug'].includes(key)
     );
 
-    // Mise à jour des données si nécessaire
     if (needsDataUpdate && this.data && this._chartConfig) {
       this.updateData();
     }
 
-    // Mise à jour spécifique pour isLoading
     if (changes['isLoading'] && this.chartInstance()) {
       this._options.noData.text = changes['isLoading'].currentValue
         ? 'Chargement des données...'
         : 'Aucune donnée';
 
-      // Mise à jour immédiate des options de noData sans redessiner complètement
-      this.updateChartOptions(
-        {
-          noData: this._options.noData,
-        },
-        false,
-        false,
-        false
-      );
+      this.updateChartOptions({ noData: this._options.noData }, false, false, false);
     }
 
-    // Stratégie de mise à jour optimisée
     if (this._options.shouldRedraw) {
       if (this.debug)
         console.log('Recréation complète du graphique nécessaire', changes);
-      setTimeout(() => {
-        this.ngOnDestroy();
-        this.init();
-      }, 250);
+      this.ngOnDestroy();
+      this.init();
       delete this._options.shouldRedraw;
     } else if (needsOptionsUpdate) {
       if (this.debug)

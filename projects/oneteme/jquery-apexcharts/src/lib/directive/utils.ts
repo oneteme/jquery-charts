@@ -2,7 +2,6 @@ import { CommonChart, Coordinate2D, XaxisType, YaxisType, ChartProvider, mergeDe
 import { ICONS } from '../../assets/icons/icons';
 import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import ApexCharts from 'apexcharts';
-import { Subscription } from 'rxjs';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
@@ -206,11 +205,7 @@ export function updateChartOptions(
 /**
  * Fonction commune pour la destruction propre des graphiques
  */
-export function destroyChart(chartInstance: any, subscription: Subscription): void {
-  // Désabonnement pour éviter les fuites de mémoire
-  subscription.unsubscribe();
-
-  // Nettoyage de l'instance du graphique
+export function destroyChart(chartInstance: any): void {
   if (chartInstance()) {
     chartInstance().destroy();
     chartInstance.set(null);

@@ -1,19 +1,20 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent } from '@oneteme/jquery-apexcharts';
-import { field } from '@oneteme/jquery-core';
+import { ChartProvider, field } from '@oneteme/jquery-core';
+import { BarChartDirective } from '@oneteme/jquery-apexcharts';
 
 interface TestData {
   label: string;
   value1: number;
   value2: number;
 }
-
 @Component({
   selector: 'app-basic-test',
   standalone: true,
   imports: [CommonModule, ChartComponent, FormsModule],
+  // imports: [CommonModule, BarChartDirective, FormsModule],
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
 })
@@ -66,6 +67,7 @@ export class BasicTestComponent implements OnInit {
           name: 'Bénéfice',
         },
       ],
+      showToolbar : true,
       options: {
         chart: {
           height: 400,
@@ -128,6 +130,13 @@ export class BasicTestComponent implements OnInit {
   }
 
   /**
+   * Gestion des événements personnalisés de la directive
+   */
+  onChartEvent(event: string) {
+    console.log('Événement du graphique reçu:', event);
+  }
+
+  /**
    * Charge les données avec un délai configurable
    * pour simuler une requête API distante
    */
@@ -145,6 +154,16 @@ export class BasicTestComponent implements OnInit {
       this.chartData = [
         { label: 'Janvier', value1: 4500, value2: 2800 },
         { label: 'Février', value1: 5200, value2: 3100 },
+        { label: 'Mars', value1: 4800, value2: 2600 },
+        { label: 'Avril', value1: 5800, value2: 3400 },
+        { label: 'Mai', value1: 6000, value2: 3700 },
+        { label: 'Juin', value1: 6500, value2: 4200 },
+        { label: 'Juillet', value1: 7200, value2: 4500 },
+        { label: 'Août', value1: 7800, value2: 4800 },
+        { label: 'Septembre', value1: 7300, value2: 4300 },
+        { label: 'Octobre', value1: 6900, value2: 4100 },
+        { label: 'Novembre', value1: 7100, value2: 4400 },
+        { label: 'Décembre', value1: 7400, value2: 4700 },
       ];
 
       console.log('➡️ Chargement des données terminé', this.localData);

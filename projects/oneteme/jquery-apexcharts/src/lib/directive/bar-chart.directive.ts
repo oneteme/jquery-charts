@@ -1,7 +1,7 @@
 import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
 import { buildChart, ChartProvider, ChartView, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
-import { asapScheduler, observeOn, Subscription } from 'rxjs';
+import { asapScheduler, observeOn } from 'rxjs';
 import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
@@ -15,11 +15,9 @@ export class BarChartDirective<X extends XaxisType>
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
-  private readonly subscription = new Subscription();
   private _chartConfig: ChartProvider<X, number>;
   private _options: any;
   private _canPivot: boolean = true;
-  // private _type: 'bar' | 'column' | 'funnel' | 'pyramid' = 'bar';
 
   @Input() debug: boolean;
   @Input({ required: true }) type: 'bar' | 'column' | 'funnel' | 'pyramid';
@@ -42,8 +40,6 @@ export class BarChartDirective<X extends XaxisType>
     this.configureTypeSpecificOptions();
   }
 
-  @Output() readonly chartReady: EventEmitter<{ chartObj: ApexCharts }> = new EventEmitter<{ chartObj: ApexCharts }>();
-
   constructor() {
     this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'bar');
   }
@@ -58,7 +54,7 @@ export class BarChartDirective<X extends XaxisType>
       try {
         let chart = new ApexCharts(this.el.nativeElement, { ...this._options });
         this.chartInstance.set(chart);
-        const renderSubscription = fromPromise(
+        fromPromise(
           chart
             .render()
             .then(
@@ -77,9 +73,6 @@ export class BarChartDirective<X extends XaxisType>
             error: (error) =>
               console.error('Erreur dans le flux Observable:', error),
           });
-
-        // Ajout au gestionnaire d'abonnements
-        this.subscription.add(renderSubscription);
       } catch (error) {
         console.error("Erreur lors de l'initialisation du graphique:", error);
       }
@@ -96,38 +89,30 @@ export class BarChartDirective<X extends XaxisType>
   }
 
   ngOnDestroy() {
-    destroyChart(this.chartInstance, this.subscription);
+    destroyChart(this.chartInstance);
   }
 
   private hydrate(changes: SimpleChanges): void {
     if (this.debug) console.log('Hydratation du graphique', { ...changes });
     const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
     const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
-
-    // Mise à jour des données si nécessaire
     if (needsDataUpdate && this.data && this._chartConfig) {
       this.updateData();
     }
-
-    // Mise à jour spécifique pour isLoading
     if (changes['isLoading'] && this.chartInstance()) {
       this._options.noData.text = changes['isLoading'].currentValue
         ? 'Chargement des données...'
         : 'Aucune donnée';
 
-      // Mise à jour immédiate des options de noData sans redessiner complètement
       this.updateChartOptions({
         noData: this._options.noData
       }, false, false, false);
     }
 
-    // Stratégie de mise à jour optimisée
     if (this._options.shouldRedraw) {
       if (this.debug) console.log('Recréation complète du graphique nécessaire', changes);
-      setTimeout(() => {
-        this.ngOnDestroy();
-        this.init();
-      }, 200);
+      this.ngOnDestroy();
+      this.init();
       delete this._options.shouldRedraw;
     } else if (needsOptionsUpdate) {
       if (this.debug) console.log('Mise à jour des options du graphique', changes);
