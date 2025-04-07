@@ -17,7 +17,7 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
           </button>
           <button class="download-btn" (click)="goToInstall()">
             <span>Installer</span>
-            <span class="version">v1.0.0</span>
+            <span class="version">v0.0.16</span>
           </button>
           <div class="separator"></div>
           <button class="github-btn" (click)="goToGithub()">

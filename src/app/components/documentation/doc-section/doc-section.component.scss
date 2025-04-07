@@ -21,13 +21,6 @@
   .section-content {
     position: relative;
 
-    // .code-block {
-    //   background: #f8f9fa;
-    //   padding: 1.5rem;
-    //   border-radius: 8px;
-    //   margin: 1.5rem 0;
-    //   border: 1px solid #e0e0e0;
-
       h3 {
         color: #34495e;
         margin-top: 0;
@@ -42,7 +35,6 @@
           font-size: 0.9rem;
           line-height: 1.6;
 
-          // Styles spécifiques pour la section data
           &.data-section {
             strong {
               color: #22628c;

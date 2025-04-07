@@ -1,8 +1,5 @@
 import { field } from '@oneteme/jquery-core';
-import {
-  ChartDataCollection,
-  HeatmapChartData,
-} from '../../core/models/chart.model';
+import { ChartDataCollection, HeatmapChartData } from '../../core/models/chart.model';
 
 export const HEATMAP_CHART_DATA: ChartDataCollection<HeatmapChartData> = {
   heatmapExample: {
