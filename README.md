@@ -100,6 +100,15 @@ This will concurrently:
 npm run start
 ```
 
+5. If you want, a basic-test page is available to test the integration of the libraries. You can simply uncomment the 'BasicTestComponent' in the following files:
+- `src/app/app-routing.module.ts`
+- `src/app/app.module.ts`
+
+and uncomment the quick access button in the following file:
+- `src/app/components/footer/footer.component.html`
+
+This will allow you to access the basic-test page at `/basic-test`.
+
 <br/>
 
 ---

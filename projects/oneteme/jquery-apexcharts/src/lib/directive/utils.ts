@@ -1,9 +1,7 @@
 import { CommonChart, Coordinate2D, XaxisType, YaxisType, ChartProvider, mergeDeep } from '@oneteme/jquery-core';
 import { ICONS } from '../../assets/icons/icons';
-import { ElementRef, EventEmitter, NgZone, SimpleChanges } from '@angular/core';
+import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import ApexCharts from 'apexcharts';
-import { asapScheduler, observeOn, Subscription } from 'rxjs';
-import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
@@ -179,53 +177,6 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
 }
 
 /**
- * Initialise un graphique ApexCharts de façon sécurisée
- */
-export function initChart(
-  el: ElementRef,
-  ngZone: NgZone,
-  options: any,
-  chartInstance: any,
-  subscription: Subscription,
-  debug: boolean
-) {
-  if (debug) {
-    console.log('Initialisation du graphique', { ...options });
-  }
-
-  // Exécution en dehors de la zone Angular pour de meilleures performances
-  return ngZone.runOutsideAngular(() => {
-    try {
-      let chart = new ApexCharts(el.nativeElement, { ...options });
-      chartInstance.set(chart);
-
-      // Utilisation de fromPromise pour gérer le rendu asynchrone
-      const renderSubscription = fromPromise(
-        chart.render()
-          .then(() => debug && console.log(new Date().getMilliseconds(), 'Rendu du graphique terminé'))
-          .catch(error => {
-            console.error('Erreur lors du rendu du graphique:', error);
-            chartInstance.set(null);
-          })
-      )
-      .pipe(observeOn(asapScheduler))
-      .subscribe({
-        next: () => debug && console.log(new Date().getMilliseconds(), 'Observable rendu terminé'),
-        error: (error) => console.error('Erreur dans le flux Observable:', error)
-      });
-
-      // Ajout au gestionnaire d'abonnements
-      subscription.add(renderSubscription);
-
-      return chart;
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation du graphique:', error);
-      return null;
-    }
-  });
-}
-
-/**
  * Met à jour les options du graphique de manière sécurisée
  */
 export function updateChartOptions(
@@ -252,64 +203,9 @@ export function updateChartOptions(
 }
 
 /**
- * Fonction commune pour gérer l'hydratation des graphiques
- */
-export function hydrateChart(
-  changes: SimpleChanges,
-  data: any[],
-  chartConfig: ChartProvider<any, any>,
-  options: any,
-  chartInstance: any,
-  ngZone: NgZone,
-  updateDataFn: Function,
-  destroyFn: Function,
-  initFn: Function,
-  updateOptionsFn: Function,
-  debug: boolean
-): void {
-  if (debug) console.log('Hydratation du graphique', { ...changes });
-
-  // Optimisation: regroupement des types de changements pour éviter les opérations redondantes
-  const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-  const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
-
-  // Mise à jour des données si nécessaire
-  if (needsDataUpdate && data && chartConfig) {
-    updateDataFn();
-  }
-
-  // Mise à jour spécifique pour isLoading
-  if (changes['isLoading'] && chartInstance()) {
-    options.noData.text = changes['isLoading'].currentValue
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-
-    // Mise à jour immédiate des options de noData sans redessiner complètement
-    updateChartOptions(chartInstance(), ngZone, {
-      noData: options.noData
-    }, false, false, false);
-  }
-
-  // Stratégie de mise à jour optimisée
-  if (options.shouldRedraw) {
-    if (debug) console.log('Recréation complète du graphique nécessaire', changes);
-    destroyFn();
-    initFn();
-    delete options.shouldRedraw;
-  } else if (needsOptionsUpdate) {
-    if (debug) console.log('Mise à jour des options du graphique', changes);
-    updateOptionsFn();
-  }
-}
-
-/**
  * Fonction commune pour la destruction propre des graphiques
  */
-export function destroyChart(chartInstance: any, subscription: Subscription): void {
-  // Désabonnement pour éviter les fuites de mémoire
-  subscription.unsubscribe();
-
-  // Nettoyage de l'instance du graphique
+export function destroyChart(chartInstance: any): void {
   if (chartInstance()) {
     chartInstance().destroy();
     chartInstance.set(null);

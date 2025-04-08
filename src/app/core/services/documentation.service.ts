@@ -1,22 +1,7 @@
 import { Injectable } from '@angular/core';
 import { infoGlobalGraphTypes } from '../../data/doc/graphTypes/info-global-graph-types';
-import {
-  globalChartConfig,
-  pieChartConfig,
-  barChartConfig,
-  lineChartConfig,
-  treemapChartConfig,
-  heatmapChartConfig,
-  rangeChartConfig,
-  funnelChartConfig,
-} from '../../data/doc/configs/_index';
-import {
-  dataCombine,
-  dataProviders,
-  dataValues,
-  dataFields,
-  dataStructure,
-} from '../../data/doc/data/_index';
+import { globalChartConfig, pieChartConfig, barChartConfig, lineChartConfig, treemapChartConfig, heatmapChartConfig, rangeChartConfig, funnelChartConfig } from '../../data/doc/configs/_index';
+import { dataCombine, dataProviders, dataValues, dataFields, dataStructure } from '../../data/doc/data/_index';
 
 @Injectable({
   providedIn: 'root',

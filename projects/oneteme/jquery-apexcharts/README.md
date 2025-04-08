@@ -1,24 +1,12 @@
-# JqueryApexcharts
+# jQuery ApexCharts
 
-This library was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.1.0.
+A jQuery plugin wrapper for ApexCharts, providing easy-to-use chart generation capabilities for your web applications.
 
-## Code scaffolding
+## Overview
 
-Run `ng generate component component-name --project jquery-apexcharts` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module --project jquery-apexcharts`.
-> Note: Don't forget to add `--project jquery-apexcharts` or else it will be added to the default project in your `angular.json` file. 
+This plugin allows you to integrate the powerful ApexCharts library with jQuery-Core, making it simpler to create interactive and responsive charts in your web applications.
 
-## Build
+## All others topics (Documentation)
+## Additional Documentation
 
-Run `ng build jquery-apexcharts` to build the project. The build artifacts will be stored in the `dist/` directory.
-
-## Publishing
-
-After building your library with `ng build jquery-apexcharts`, go to the dist folder `cd dist/jquery-apexcharts` and run `npm publish`.
-
-## Running unit tests
-
-Run `ng test jquery-apexcharts` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+For additional information, installation instructions, examples and other, please refer to the [main documentation](https://github.com/oneteme/jquery-charts) of the project.

@@ -36,7 +36,7 @@ export class BackToDocButtonComponent implements OnInit, OnDestroy {
   private routerSubscription: Subscription | null = null;
   private navHistory: string[] = [];
 
-  constructor(private router: Router) {}
+  constructor(private readonly router: Router) {}
 
   ngOnInit() {
     this.routerSubscription = this.router.events

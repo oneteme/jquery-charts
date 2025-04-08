@@ -2,6 +2,7 @@
   width: 100%;
   padding: 2rem;
   max-width: min(90%, 1800px);
+  height: 100%;
 
   h2 {
     margin-bottom: 2rem;
@@ -12,10 +13,10 @@
     margin-bottom: 2rem;
     font-size: 0.9rem;
     color: #6c757d;
-    
-    code {
-      background-color: #f8f9fa;
-      padding: 0.1rem 0.3rem;
+
+    span {
+      background-color: #eaeaea;
+      padding: 0.2rem 0.2rem;
       border-radius: 3px;
       font-family: monospace;
       font-size: 0.9em;
@@ -26,6 +27,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 3fr));
     gap: 2rem;
+    height: 100%;
 
     .chart-wrapper {
       position: relative;
@@ -34,11 +36,13 @@
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
       overflow: visible;
       padding-bottom: 0.9rem;
+      height: 100%;
 
-      chart {
+      .chart-component {
         display: block;
         padding: 1rem;
         min-height: 300px;
+        height: 100%;
       }
 
       .code-toggle {

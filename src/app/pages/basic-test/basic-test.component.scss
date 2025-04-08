@@ -1,0 +1,56 @@
+.basic-test-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  h1 {
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  .description {
+    background-color: #f5f5f5;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+
+    span {
+      background-color: #eef1f2;
+    }
+  }
+
+  .chart-container {
+    background: white;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    min-height: 400px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+
+  .debug-info {
+    margin-top: 30px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-left: 4px solid #4AA3A2;
+    border-radius: 4px;
+
+    h3 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    code {
+      background-color: #eef1f2;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+  }
+}

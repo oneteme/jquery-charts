@@ -1,0 +1,25 @@
+<div class="basic-test-container">
+  <h1>Environnement de test jQuery-Charts</h1>
+
+  <p class="description">
+    Cette page permet de tester l'intégration de base de la bibliothèque jQuery-Charts avec jquery-core + jquery-apexcharts ou jquery-highcharts et de reproduire certins effets de bord relevés.
+  </p>
+
+  <div class="chart-container">
+    <chart
+      [type]="chartType"
+      [config]="chartConfig"
+      [data]="chartData"
+      [isLoading]="true"
+      [debug]="true"
+    ></chart>
+  </div>
+
+  <div class="debug-info">
+    <h3>Informations de débogage</h3>
+    <p>Type de graphique: <code>{{ chartType }}</code></p>
+    <p>Nombre d'enregistrements: <code>{{ chartData.length }}</code></p>
+    <p>Délai d'affichage: <code>{{ dataDelay }} ms</code></p>
+    <p>Maille: <code>{{ maille }}</code></p>
+  </div>
+</div>

@@ -1,8 +1,5 @@
 import { field, joinFields } from '@oneteme/jquery-core';
-import {
-  ChartDataCollection,
-  LineChartData,
-} from '../../core/models/chart.model';
+import { ChartDataCollection, LineChartData } from '../../core/models/chart.model';
 
 export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
   lineExample: {
