@@ -11,7 +11,7 @@
   "peerDependencies": {
     "@angular/common": ">=16.1.0",
     "@angular/core": ">=16.1.0",
-    "highcharts": "^10.3.3",
+    "highcharts": "^11.4.3",
     "@oneteme/jquery-core": "^0.0.15"
   },
   "dependencies": {
