@@ -1,9 +1,7 @@
 import { CommonChart, Coordinate2D, XaxisType, YaxisType, ChartProvider, mergeDeep } from '@oneteme/jquery-core';
 import { ICONS } from '../../assets/icons/icons';
 import { ElementRef, EventEmitter, NgZone, SimpleChanges } from '@angular/core';
-import Highcharts from 'highcharts';
-import { asapScheduler, observeOn, Subscription } from 'rxjs';
-import { fromPromise } from 'rxjs/internal/observable/innerFrom';
+import * as Highcharts from 'highcharts';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
@@ -19,7 +17,7 @@ export function customIcons(
       icon: ICONS.previous,
       title: 'Graphique précédent',
       class: 'custom-icon',
-      click: function (chart, options, e) {
+      click: function (chart) {
         event('previous');
       },
     },
@@ -27,7 +25,7 @@ export function customIcons(
       icon: ICONS.next,
       title: 'Graphique suivant',
       class: 'custom-icon',
-      click: function (chart, options, e) {
+      click: function (chart) {
         event('next');
       },
     },
@@ -38,7 +36,7 @@ export function customIcons(
       icon: ICONS.pivot,
       title: 'Pivot',
       class: 'custom-icon',
-      click: function (chart, options, e) {
+      click: function (chart) {
         event('pivot');
       },
     });
@@ -84,46 +82,38 @@ export function initCommonChartOptions(
   ngZone: NgZone,
   chartType: string,
   canPivot: boolean = true
-) {
+): Highcharts.Options {
   return {
-    shouldRedraw: true,
     chart: {
-      type: chartType,
-      toolbar: {
-        show: false,
-        tools: {
-          download: false,
-          selection: false,
-          zoom: false,
-          zoomin: false,
-          zoomout: false,
-          pan: false,
-          reset: false,
-          customIcons: customIcons((arg) => {
-            ngZone.run(() => customEvent.emit(arg));
-          }, canPivot),
-        },
-      },
+      type: chartType as any,
       events: {
-        mouseMove: function () {
-          let toolbar = node.nativeElement.querySelector('.apexcharts-toolbar');
-          if (toolbar) toolbar.style.visibility = 'visible';
-        },
-        mouseLeave: function () {
-          let toolbar = node.nativeElement.querySelector('.apexcharts-toolbar');
-          if (toolbar) toolbar.style.visibility = 'hidden';
-        },
-      },
-      zoom: {
-        enabled: false,
-      },
+        load: function() {
+          // Ajouter des boutons personnalisés lors du chargement du graphique
+          if (this.renderer && customEvent) {
+            // Implémentation des boutons personnalisés
+          }
+        }
+      }
+    },
+    title: {
+      text: undefined
     },
     series: [],
-    noData: {
-      text: 'Aucune donnée',
+    lang: {
+      noData: 'Aucune donnée'
     },
-    xaxis: {},
+    xAxis: {
+      type: 'category'
+    },
+    yAxis: {
+      title: {
+        text: undefined
+      }
+    },
     plotOptions: {},
+    credits: {
+      enabled: false
+    }
   };
 }
 
@@ -131,21 +121,15 @@ export function initCommonChartOptions(
  * Met à jour les options communes du graphique en fonction de la configuration fournie
  */
 export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
-  options: any,
+  options: Highcharts.Options,
   config: ChartProvider<X, Y>
-) {
-
-  const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
+): Highcharts.Options {
   const updatedOptions = mergeDeep(
     options,
     {
       chart: {
         height: config.height ?? '100%',
         width: config.width ?? '100%',
-        stacked: config.stacked,
-        toolbar: {
-          show: config.showToolbar ?? false,
-        },
       },
       title: {
         text: config.title,
@@ -153,73 +137,62 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
       subtitle: {
         text: config.subtitle,
       },
-      xaxis: {
+      xAxis: {
         title: {
           text: config.xtitle,
-        },
+        }
       },
-      yaxis: {
+      yAxis: {
         title: {
           text: config.ytitle,
-        },
+        }
       },
     },
     config.options
   );
 
-  const userSetHorizontal = config.options?.plotOptions?.bar?.horizontal !== undefined;
+  // Gérer les options spécifiques comme stacked pour les barres
+  if (config.stacked && updatedOptions.plotOptions) {
+    if (!updatedOptions.plotOptions.series) {
+      updatedOptions.plotOptions.series = {};
+    }
+    if (!updatedOptions.plotOptions.column) {
+      updatedOptions.plotOptions.column = {};
+    }
+    if (!updatedOptions.plotOptions.bar) {
+      updatedOptions.plotOptions.bar = {};
+    }
 
-  if (existingBarHorizontal !== undefined && !userSetHorizontal) {
-    if (!updatedOptions.plotOptions) updatedOptions.plotOptions = {};
-    if (!updatedOptions.plotOptions.bar) updatedOptions.plotOptions.bar = {};
-    updatedOptions.plotOptions.bar.horizontal = existingBarHorizontal;
+    updatedOptions.plotOptions.series.stacking = 'normal';
+    updatedOptions.plotOptions.column.stacking = 'normal';
+    updatedOptions.plotOptions.bar.stacking = 'normal';
   }
 
   return updatedOptions;
 }
 
 /**
- * Initialise un graphique ApexCharts de façon sécurisée
+ * Initialise un graphique Highcharts
  */
 export function initChart(
   el: ElementRef,
   ngZone: NgZone,
-  options: any,
+  options: Highcharts.Options,
   chartInstance: any,
-  subscription: Subscription,
+  highchartsInstance: typeof Highcharts,
   debug: boolean
-) {
+): Highcharts.Chart {
   if (debug) {
-    console.log('Initialisation du graphique', { ...options });
+    console.log('Initialisation du graphique Highcharts', { ...options });
   }
 
-  // Exécution en dehors de la zone Angular pour de meilleures performances
   return ngZone.runOutsideAngular(() => {
     try {
-      let chart = new ApexCharts(el.nativeElement, { ...options });
+      const chart = highchartsInstance.chart(el.nativeElement, options);
       chartInstance.set(chart);
-
-      // Utilisation de fromPromise pour gérer le rendu asynchrone
-      const renderSubscription = fromPromise(
-        chart.render()
-          .then(() => debug && console.log(new Date().getMilliseconds(), 'Rendu du graphique terminé'))
-          .catch(error => {
-            console.error('Erreur lors du rendu du graphique:', error);
-            chartInstance.set(null);
-          })
-      )
-      .pipe(observeOn(asapScheduler))
-      .subscribe({
-        next: () => debug && console.log(new Date().getMilliseconds(), 'Observable rendu terminé'),
-        error: (error) => console.error('Erreur dans le flux Observable:', error)
-      });
-
-      // Ajout au gestionnaire d'abonnements
-      subscription.add(renderSubscription);
-
       return chart;
     } catch (error) {
-      console.error('Erreur lors de l\'initialisation du graphique:', error);
+      console.error('Erreur lors de l\'initialisation du graphique Highcharts:', error);
       return null;
     }
   });
@@ -229,26 +202,21 @@ export function initChart(
  * Met à jour les options du graphique de manière sécurisée
  */
 export function updateChartOptions(
-  chartInstance: ApexCharts | null,
+  chartInstance: Highcharts.Chart | null,
   ngZone: NgZone,
-  options: any,
-  redrawPaths: boolean = true,
-  animate: boolean = true,
-  updateSyncedCharts: boolean = false
-): Promise<void> {
-  if (!chartInstance) return Promise.resolve();
+  options: Highcharts.Options,
+  redraw: boolean = true,
+  oneToOne: boolean = false
+): void {
+  if (!chartInstance) return;
 
-  return ngZone.runOutsideAngular(() =>
-    chartInstance.updateOptions(
-      { ...options },
-      redrawPaths,
-      animate,
-      updateSyncedCharts
-    ).catch(error => {
-      console.error('Erreur lors de la mise à jour des options:', error);
-      return Promise.resolve();
-    })
-  );
+  ngZone.runOutsideAngular(() => {
+    try {
+      chartInstance.update(options, redraw, oneToOne);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour des options du graphique:', error);
+    }
+  });
 }
 
 /**
@@ -258,60 +226,81 @@ export function hydrateChart(
   changes: SimpleChanges,
   data: any[],
   chartConfig: ChartProvider<any, any>,
-  options: any,
+  options: Highcharts.Options,
   chartInstance: any,
   ngZone: NgZone,
+  highchartsInstance: typeof Highcharts,
   updateDataFn: Function,
   destroyFn: Function,
   initFn: Function,
-  updateOptionsFn: Function,
   debug: boolean
 ): void {
-  if (debug) console.log('Hydratation du graphique', { ...changes });
+  if (debug) console.log('Hydratation du graphique Highcharts', { ...changes });
 
-  // Optimisation: regroupement des types de changements pour éviter les opérations redondantes
-  const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-  const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
+  // Gestion des mises à jour
+  const needsDataUpdate = changes['data']?.currentValue ||
+                         changes['config']?.currentValue ||
+                         changes['type']?.currentValue;
 
-  // Mise à jour des données si nécessaire
   if (needsDataUpdate && data && chartConfig) {
     updateDataFn();
   }
 
-  // Mise à jour spécifique pour isLoading
-  if (changes['isLoading'] && chartInstance()) {
-    options.noData.text = changes['isLoading'].currentValue
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-
-    // Mise à jour immédiate des options de noData sans redessiner complètement
-    updateChartOptions(chartInstance(), ngZone, {
-      noData: options.noData
-    }, false, false, false);
+  // Gestion de l'état de chargement
+  if (changes['isLoading']) {
+    const loadingState = changes['isLoading'].currentValue;
+    if (chartInstance()) {
+      if (loadingState) {
+        chartInstance().showLoading('Chargement des données...');
+      } else {
+        chartInstance().hideLoading();
+      }
+    }
   }
 
-  // Stratégie de mise à jour optimisée
-  if (options.shouldRedraw) {
-    if (debug) console.log('Recréation complète du graphique nécessaire', changes);
+  // Recréation du graphique si besoin
+  if (options['shouldRedraw']) {
+    if (debug) console.log('Recréation complète du graphique Highcharts nécessaire', changes);
     destroyFn();
     initFn();
-    delete options.shouldRedraw;
-  } else if (needsOptionsUpdate) {
-    if (debug) console.log('Mise à jour des options du graphique', changes);
-    updateOptionsFn();
+    delete options['shouldRedraw'];
   }
 }
 
 /**
  * Fonction commune pour la destruction propre des graphiques
  */
-export function destroyChart(chartInstance: any, subscription: Subscription): void {
-  // Désabonnement pour éviter les fuites de mémoire
-  subscription.unsubscribe();
-
-  // Nettoyage de l'instance du graphique
+export function destroyChart(chartInstance: any): void {
   if (chartInstance()) {
     chartInstance().destroy();
     chartInstance.set(null);
   }
+}
+
+/**
+ * Convertit les données CommonChart en format Highcharts
+ */
+export function convertToHighchartsFormat<X extends XaxisType, Y extends YaxisType>(
+  commonChart: CommonChart<X, Y | Coordinate2D>,
+  chartType: string
+): any[] {
+  if (!commonChart.series || commonChart.series.length === 0) {
+    return [];
+  }
+
+  return commonChart.series.map(series => {
+    const seriesData = commonChart.continue
+      ? series.data.map((point: any) => {
+          return { x: point.x, y: point.y };
+        })
+      : series.data;
+
+    return {
+      name: series.name || '',
+      data: seriesData,
+      color: series.color,
+      stack: series.stack,
+      type: chartType
+    };
+  });
 }

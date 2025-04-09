@@ -64,7 +64,6 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
       this.config = this.config.pivot
         ? { ...this.config, pivot: false }
         : { ...this.config, pivot: true };
-      return;
     }
   }
 }
