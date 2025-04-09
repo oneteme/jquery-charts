@@ -5,12 +5,12 @@ import ApexCharts from "apexcharts";
     selector: '[test-chart]'
 })
 export class TestChartDirective {
-    private el: ElementRef = inject(ElementRef);
+    private readonly el: ElementRef = inject(ElementRef);
 
     private _chart: ApexCharts;
 
     ngAfterViewInit() {
-        var options = {
+        const options = {
             series: [{
                 name: 'Website Blog',
                 type: 'column',

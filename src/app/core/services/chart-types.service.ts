@@ -5,7 +5,7 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root',
 })
 export class ChartTypesService {
-  private chartTypes = [
+  private readonly chartTypes = [
     'Pie Chart',
     'Bar Chart',
     'Line Chart',
@@ -15,7 +15,7 @@ export class ChartTypesService {
     'Funnel Chart',
   ];
 
-  private selectedChartType = new BehaviorSubject<string | null>(null);
+  private readonly selectedChartType = new BehaviorSubject<string | null>(null);
 
   getChartTypes() {
     return this.chartTypes;

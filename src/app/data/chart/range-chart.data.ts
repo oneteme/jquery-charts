@@ -1,8 +1,5 @@
 import { field, rangeFields } from '@oneteme/jquery-core';
-import {
-  ChartDataCollection,
-  RangeChartData,
-} from '../../core/models/chart.model';
+import { ChartDataCollection, RangeChartData } from '../../core/models/chart.model';
 
 export const RANGE_CHART_DATA: ChartDataCollection<RangeChartData> = {
   rangeExample: {

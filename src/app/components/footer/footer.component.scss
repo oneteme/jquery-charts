@@ -25,6 +25,35 @@
         border-radius: 4px;
         font-size: 0.75rem;
       }
+      .separator {
+        height: 18px;
+        width: 1px;
+        background-color: rgba(0, 0, 0, 0.2);
+        margin: 0 0.5rem;
+      }
+
+      .test-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px;
+        border-radius: 3px;
+        transition: background-color 0.2s;
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .test-link:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .test-icon {
+        opacity: 0.5;
+        transition: opacity 0.2s;
+      }
+
+      .test-link:hover .test-icon {
+        opacity: 0.8;
+      }
     }
 
     .footer-right {

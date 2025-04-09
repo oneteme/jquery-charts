@@ -1,8 +1,5 @@
 import { field } from '@oneteme/jquery-core';
-import {
-  ChartDataCollection,
-  TreemapChartData,
-} from '../../core/models/chart.model';
+import { ChartDataCollection, TreemapChartData } from '../../core/models/chart.model';
 
 export const TREEMAP_CHART_DATA: ChartDataCollection<TreemapChartData> = {
   treemapExample: {
