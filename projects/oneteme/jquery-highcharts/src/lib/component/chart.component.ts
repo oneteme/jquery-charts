@@ -9,7 +9,7 @@ import { TreemapChartDirective } from '../directive/treemap-chart.directive';
 
 @Component({
   standalone: true,
-  imports: [ CommonModule, PieChartDirective, BarChartDirective, LineChartDirective, RangeChartDirective, TreemapChartDirective ],
+  imports: [CommonModule, PieChartDirective, BarChartDirective, LineChartDirective, RangeChartDirective, TreemapChartDirective],
   selector: 'chart',
   templateUrl: './chart.component.html',
 })

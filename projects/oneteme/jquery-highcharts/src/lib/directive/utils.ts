@@ -1,6 +1,6 @@
 import { CommonChart, Coordinate2D, XaxisType, YaxisType, ChartProvider, mergeDeep } from '@oneteme/jquery-core';
 import { ICONS } from '../../assets/icons/icons';
-import { ElementRef, EventEmitter, NgZone, SimpleChanges } from '@angular/core';
+import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import * as Highcharts from 'highcharts';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
@@ -16,16 +16,16 @@ export function customIcons(
     {
       icon: ICONS.previous,
       title: 'Graphique précédent',
-      class: 'custom-icon',
-      click: function (chart) {
+      className: 'custom-icon',
+      onclick: function () {
         event('previous');
       },
     },
     {
       icon: ICONS.next,
       title: 'Graphique suivant',
-      class: 'custom-icon',
-      click: function (chart) {
+      className: 'custom-icon',
+      onclick: function () {
         event('next');
       },
     },
@@ -35,8 +35,8 @@ export function customIcons(
     customIcons.push({
       icon: ICONS.pivot,
       title: 'Pivot',
-      class: 'custom-icon',
-      click: function (chart) {
+      className: 'custom-icon',
+      onclick: function () {
         event('pivot');
       },
     });
@@ -48,7 +48,7 @@ export function determineXAxisDataType(value: any): string {
   if (value instanceof Date) {
     return 'datetime';
   } else if (typeof value === 'number') {
-    return 'numeric';
+    return 'linear';
   } else {
     return 'category';
   }
@@ -74,7 +74,59 @@ export function getType<
 }
 
 /**
- * Initialise les options de base communes à tous les graphiques
+ * Gère l'événement mousemove sur le conteneur du graphique
+ */
+function handleMouseMove(container: HTMLElement): void {
+  container.style.visibility = 'visible';
+}
+
+/**
+ * Gère l'événement mouseleave sur le conteneur du graphique
+ */
+function handleMouseLeave(container: HTMLElement): void {
+  container.style.visibility = 'hidden';
+}
+
+/**
+ * Configure la barre d'outils personnalisée pour le graphique
+ */
+function setupCustomToolbar(
+  node: ElementRef,
+  customEvent: EventEmitter<ChartCustomEvent>,
+  ngZone: NgZone,
+  canPivot: boolean
+): void {
+  const container = document.createElement('div');
+  container.className = 'highcharts-custom-toolbar';
+  container.style.position = 'absolute';
+  container.style.zIndex = '10';
+  container.style.right = '10px';
+  container.style.top = '10px';
+  container.style.visibility = 'hidden';
+
+  const buttons = customIcons((arg) => {
+    ngZone.run(() => customEvent.emit(arg));
+  }, canPivot);
+
+  buttons.forEach(button => {
+    const buttonEl = document.createElement('button');
+    buttonEl.innerHTML = button.icon;
+    buttonEl.title = button.title;
+    buttonEl.className = button.className;
+    buttonEl.addEventListener('click', () => button.onclick());
+    container.appendChild(buttonEl);
+  });
+
+  const chartContainer = node.nativeElement.querySelector('.highcharts-container');
+  if (chartContainer) {
+    chartContainer.appendChild(container);
+    chartContainer.addEventListener('mousemove', () => handleMouseMove(container));
+    chartContainer.addEventListener('mouseleave', () => handleMouseLeave(container));
+  }
+}
+
+/**
+ * Initialise les options de base communes à tous les graphiques Highcharts
  */
 export function initCommonChartOptions(
   node: ElementRef,
@@ -85,35 +137,46 @@ export function initCommonChartOptions(
 ): Highcharts.Options {
   return {
     chart: {
-      type: chartType as any,
+      type: mapChartType(chartType) as any,
       events: {
-        load: function() {
-          // Ajouter des boutons personnalisés lors du chargement du graphique
-          if (this.renderer && customEvent) {
-            // Implémentation des boutons personnalisés
-          }
+        load: function () {
+          ngZone.run(() => {
+            setTimeout(() => setupCustomToolbar(node, customEvent, ngZone, canPivot), 100);
+          });
         }
       }
     },
     title: {
       text: undefined
     },
+    credits: {
+      enabled: false
+    },
     series: [],
-    lang: {
-      noData: 'Aucune donnée'
+    legend: {
+      enabled: true
     },
     xAxis: {
       type: 'category'
     },
     yAxis: {
       title: {
-        text: undefined
+        text: ''
       }
     },
     plotOptions: {},
-    credits: {
-      enabled: false
-    }
+    lang: {
+      noData: 'Aucune donnée'
+    },
+    noData: {
+      style: {
+        fontSize: '14px',
+        color: '#666'
+      },
+      position: {
+        verticalAlign: 'middle'
+      }
+    } as any
   };
 }
 
@@ -124,6 +187,8 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
   options: Highcharts.Options,
   config: ChartProvider<X, Y>
 ): Highcharts.Options {
+  const existingBarHorizontal = (options?.plotOptions as any)?.bar?.horizontal;
+
   const updatedOptions = mergeDeep(
     options,
     {
@@ -132,139 +197,78 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
         width: config.width ?? '100%',
       },
       title: {
-        text: config.title,
+        text: config.title || undefined
       },
       subtitle: {
-        text: config.subtitle,
+        text: config.subtitle || undefined
       },
       xAxis: {
         title: {
-          text: config.xtitle,
+          text: config.xtitle || undefined
         }
       },
       yAxis: {
         title: {
-          text: config.ytitle,
+          text: config.ytitle || undefined
         }
       },
+      plotOptions: {
+        series: {
+          stacking: config.stacked ? 'normal' : undefined
+        }
+      }
     },
-    config.options
+    config.options || {}
   );
 
-  // Gérer les options spécifiques comme stacked pour les barres
-  if (config.stacked && updatedOptions.plotOptions) {
-    if (!updatedOptions.plotOptions.series) {
-      updatedOptions.plotOptions.series = {};
-    }
-    if (!updatedOptions.plotOptions.column) {
-      updatedOptions.plotOptions.column = {};
-    }
-    if (!updatedOptions.plotOptions.bar) {
-      updatedOptions.plotOptions.bar = {};
-    }
+  // Gestion spécifique des graphiques horizontaux
+  const userSetHorizontal = config.options?.plotOptions?.bar?.horizontal !== undefined;
 
-    updatedOptions.plotOptions.series.stacking = 'normal';
-    updatedOptions.plotOptions.column.stacking = 'normal';
-    updatedOptions.plotOptions.bar.stacking = 'normal';
+  if (existingBarHorizontal !== undefined && !userSetHorizontal) {
+    if (!updatedOptions.plotOptions) updatedOptions.plotOptions = {};
+    if (!updatedOptions.plotOptions.bar) updatedOptions.plotOptions.bar = {};
+    updatedOptions.plotOptions.bar.horizontal = existingBarHorizontal;
   }
 
   return updatedOptions;
 }
 
 /**
- * Initialise un graphique Highcharts
- */
-export function initChart(
-  el: ElementRef,
-  ngZone: NgZone,
-  options: Highcharts.Options,
-  chartInstance: any,
-  highchartsInstance: typeof Highcharts,
-  debug: boolean
-): Highcharts.Chart {
-  if (debug) {
-    console.log('Initialisation du graphique Highcharts', { ...options });
-  }
-
-  return ngZone.runOutsideAngular(() => {
-    try {
-      const chart = highchartsInstance.chart(el.nativeElement, options);
-      chartInstance.set(chart);
-      return chart;
-    } catch (error) {
-      console.error('Erreur lors de l\'initialisation du graphique Highcharts:', error);
-      return null;
-    }
-  });
-}
-
-/**
- * Met à jour les options du graphique de manière sécurisée
+ * Met à jour les options du graphique Highcharts
  */
 export function updateChartOptions(
   chartInstance: Highcharts.Chart | null,
   ngZone: NgZone,
-  options: Highcharts.Options,
-  redraw: boolean = true,
-  oneToOne: boolean = false
-): void {
-  if (!chartInstance) return;
+  options: any,
+  redrawPaths: boolean = true,
+  animate: boolean = true,
+  updateSyncedCharts: boolean = false
+): Promise<void> {
+  if (!chartInstance) return Promise.resolve();
 
-  ngZone.runOutsideAngular(() => {
+  return ngZone.runOutsideAngular(() => {
     try {
-      chartInstance.update(options, redraw, oneToOne);
+      // Mise à jour des séries si nécessaire
+      if (options.series) {
+        // Supprimer les séries existantes
+        while (chartInstance.series.length > 0) {
+          chartInstance.series[0].remove(false);
+        }
+
+        // Ajouter les nouvelles séries
+        options.series.forEach((serie: any) => {
+          chartInstance.addSeries(serie, false);
+        });
+      }
+
+      // Mise à jour des options générales du graphique
+      chartInstance.update(options, animate, redrawPaths);
+      return Promise.resolve();
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des options du graphique:', error);
+      console.error('Erreur lors de la mise à jour des options:', error);
+      return Promise.resolve();
     }
   });
-}
-
-/**
- * Fonction commune pour gérer l'hydratation des graphiques
- */
-export function hydrateChart(
-  changes: SimpleChanges,
-  data: any[],
-  chartConfig: ChartProvider<any, any>,
-  options: Highcharts.Options,
-  chartInstance: any,
-  ngZone: NgZone,
-  highchartsInstance: typeof Highcharts,
-  updateDataFn: Function,
-  destroyFn: Function,
-  initFn: Function,
-  debug: boolean
-): void {
-  if (debug) console.log('Hydratation du graphique Highcharts', { ...changes });
-
-  // Gestion des mises à jour
-  const needsDataUpdate = changes['data']?.currentValue ||
-                         changes['config']?.currentValue ||
-                         changes['type']?.currentValue;
-
-  if (needsDataUpdate && data && chartConfig) {
-    updateDataFn();
-  }
-
-  // Gestion de l'état de chargement
-  if (changes['isLoading']) {
-    const loadingState = changes['isLoading'].currentValue;
-    if (chartInstance()) {
-      if (loadingState) {
-        chartInstance().showLoading('Chargement des données...');
-      } else {
-        chartInstance().hideLoading();
-      }
-    }
-  }
-
-  // Recréation du graphique si besoin
-  if (options['shouldRedraw']) {
-    if (debug) console.log('Recréation complète du graphique Highcharts nécessaire', changes);
-    destroyFn();
-    initFn();
-    delete options['shouldRedraw'];
-  }
 }
 
 /**
@@ -278,29 +282,122 @@ export function destroyChart(chartInstance: any): void {
 }
 
 /**
- * Convertit les données CommonChart en format Highcharts
+ * Convertit le format de données CommonChart vers le format Highcharts
  */
-export function convertToHighchartsFormat<X extends XaxisType, Y extends YaxisType>(
-  commonChart: CommonChart<X, Y | Coordinate2D>,
-  chartType: string
+export function convertToHighchartsSeries<X extends XaxisType, Y extends YaxisType>(
+  commonChart: CommonChart<X, Y>
 ): any[] {
-  if (!commonChart.series || commonChart.series.length === 0) {
+  if (!commonChart.series?.length) {
     return [];
   }
 
   return commonChart.series.map(series => {
-    const seriesData = commonChart.continue
-      ? series.data.map((point: any) => {
-          return { x: point.x, y: point.y };
-        })
-      : series.data;
-
-    return {
+    const result: any = {
       name: series.name || '',
-      data: seriesData,
-      color: series.color,
-      stack: series.stack,
-      type: chartType
+      type: mapChartType((series as any).type),
+      color: series.color
     };
+
+    // Format de données continue avec {x, y}
+    if (commonChart.continue) {
+      result.data = series.data.map(point => {
+        // Si le point a des coordonnées x et y
+        const pointObj = point as unknown as { x: X; y: Y };
+        if ('x' in pointObj && 'y' in pointObj) {
+          return [pointObj.x, pointObj.y];
+        }
+        return point;
+      });
+    }
+    // Format avec catégories séparées
+    else {
+      result.data = series.data;
+    }
+
+    // Gestion du stacking
+    if (series.stack) {
+      result.stack = series.stack;
+    }
+
+    return result;
   });
+}
+
+/**
+ * Convertit les types de graphiques entre notre API et Highcharts
+ */
+function mapChartType(type: string | undefined): string {
+  if (!type) return 'line';
+
+  switch (type) {
+    case 'bar': return 'bar';
+    case 'column': return 'column';
+    case 'line': return 'line';
+    case 'area': return 'area';
+    case 'pie': return 'pie';
+    case 'donut': return 'pie'; // Highcharts utilise innerSize pour donut
+    case 'polar': return 'line'; // Nécessite une configuration spéciale
+    case 'radar': return 'line'; // Nécessite une configuration spéciale
+    case 'radial': return 'line'; // Nécessite une configuration spéciale
+    case 'treemap': return 'treemap';
+    case 'heatmap': return 'heatmap';
+    case 'rangeBar': return 'columnrange';
+    case 'rangeArea': return 'arearange';
+    case 'rangeColumn': return 'columnrange';
+    case 'funnel': return 'funnel';
+    case 'pyramid': return 'pyramid';
+    default: return 'line';
+  }
+}
+
+/**
+ * Applique les configurations spécifiques selon le type de graphique
+ */
+function applySpecificChartOptions(
+  options: Highcharts.Options,
+  type: string,
+  chartType: string
+): void {
+  switch (type) {
+    case 'donut':
+      if (!options.plotOptions) options.plotOptions = {};
+      if (!(options.plotOptions as any).pie) (options.plotOptions as any).pie = {};
+      (options.plotOptions as any).pie.innerSize = '50%';
+      break;
+
+    case 'polar':
+    case 'radar':
+      if (!options.chart) options.chart = {};
+      options.chart.polar = true;
+      break;
+
+    case 'funnel':
+    case 'pyramid':
+      if (!options.plotOptions) options.plotOptions = {};
+      if (!(options.plotOptions as any)[chartType]) (options.plotOptions as any)[chartType] = {};
+      break;
+
+    case 'bar':
+      if (!options.plotOptions) options.plotOptions = {};
+      if (!(options.plotOptions as any).bar) (options.plotOptions as any).bar = {};
+      (options.plotOptions as any).bar.horizontal = true;
+      break;
+  }
+}
+
+/**
+ * Configure les options spécifiques selon le type de graphique
+ */
+export function configureChartTypeOptions(
+  options: Highcharts.Options,
+  type: string
+): void {
+  const chartType = mapChartType(type);
+
+  if (options.chart) {
+    options.chart.type = chartType as any;
+  }
+
+  // Applique les configurations spécifiques
+  applySpecificChartOptions(options, type, chartType);
 }
