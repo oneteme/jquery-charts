@@ -1,177 +1,219 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ChartComponent } from '@oneteme/jquery-apexcharts';
-import { field } from '@oneteme/jquery-core';
+import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
+import { HighchartsComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
+import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
 
-interface TestData {
-  label: string;
-  value1: number;
-  value2: number;
-}
 @Component({
   selector: 'app-basic-test',
-  standalone: true,
-  imports: [CommonModule, ChartComponent, FormsModule],
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    ApexChartComponent,
+    HighchartsComponent,
+  ],
 })
 export class BasicTestComponent implements OnInit {
-  chartData: TestData[] = [];
-  chartConfig: any;
-  chartType = 'bar'; // Type de graphique par défaut
-  dataDelay = 10; // Délai par défaut en ms
+  // Références aux composants de graphiques
+  @ViewChild('apexChart') apexChart: ApexChartComponent<string, number>;
+  @ViewChild('highchart') highchart: HighchartsComponent<string, number>;
 
-  maille = 'label';
+  // Contrôle de l'affichage
+  showApexChart = true;
+  showHighcharts = true;
+  layoutMode: 'row' | 'column' = 'column';
+  isPanelExpanded = false;
 
-  // Données locales qui simuleront des données distantes
-  localData: TestData[] = [
-    { label: 'Janvier', value1: 4500, value2: 2800 },
-    { label: 'Février', value1: 5200, value2: 3100 },
-    { label: 'Mars', value1: 4800, value2: 2600 },
-    { label: 'Avril', value1: 5800, value2: 3400 },
-    { label: 'Mai', value1: 6000, value2: 3700 },
-    { label: 'Juin', value1: 6500, value2: 4200 },
-    { label: 'Juillet', value1: 7200, value2: 4500 },
-    { label: 'Août', value1: 7800, value2: 4800 },
-    { label: 'Septembre', value1: 7300, value2: 4300 },
-    { label: 'Octobre', value1: 6900, value2: 4100 },
+  // Configuration du graphique
+  chartType: ChartType = 'pie';
+  chartConfig: ChartProvider<string, number>;
+  chartData: any[] = [];
+  isLoading: boolean = true;
+  isSimpleChart = true;
+  dataDelay = 500;
+
+  // Exemples de données pour graphiques simples (pie, donut)
+  private readonly simpleData = [
+    { category: 'Catégorie A', value: 30 },
+    { category: 'Catégorie B', value: 25 },
+    { category: 'Catégorie C', value: 20 },
+    { category: 'Catégorie D', value: 15 },
+    { category: 'Catégorie E', value: 10 },
+  ];
+
+  // Exemples de données pour graphiques complexes (bar, column, line)
+  private readonly complexData = [
+    { month: 'Jan', team: 'Équipe A', value: 44 },
+    { month: 'Fév', team: 'Équipe A', value: 55 },
+    { month: 'Mar', team: 'Équipe A', value: 57 },
+    { month: 'Avr', team: 'Équipe A', value: 56 },
+    { month: 'Mai', team: 'Équipe A', value: 61 },
+    { month: 'Juin', team: 'Équipe A', value: 58 },
+    { month: 'Jan', team: 'Équipe B', value: 76 },
+    { month: 'Fév', team: 'Équipe B', value: 85 },
+    { month: 'Mar', team: 'Équipe B', value: 101 },
+    { month: 'Avr', team: 'Équipe B', value: 98 },
+    { month: 'Mai', team: 'Équipe B', value: 87 },
+    { month: 'Juin', team: 'Équipe B', value: 105 },
+    { month: 'Jan', team: 'Équipe C', value: 35 },
+    { month: 'Fév', team: 'Équipe C', value: 41 },
+    { month: 'Mar', team: 'Équipe C', value: 36 },
+    { month: 'Avr', team: 'Équipe C', value: 33 },
+    { month: 'Mai', team: 'Équipe C', value: 42 },
+    { month: 'Juin', team: 'Équipe C', value: 30 },
   ];
 
   constructor() {}
 
-  ngOnInit() {
-
-    // Initialiser la configuration du graphique
-    this.initChartConfig();
-
-    // Simuler un chargement de données distantes
-    this.loadData();
+  ngOnInit(): void {
+    this.loadChartData();
   }
 
   /**
-   * Initialise la configuration du graphique
+   * Charge les données du graphique en fonction du type sélectionné
    */
-  initChartConfig() {
-    this.chartConfig = {
-      title: 'Évolution mensuelle',
-      series: [
-        {
-          data: { x: field(this.maille), y: field('value1') },
-          name: "Chiffre d'affaires",
-        },
-        {
-          data: { x: field(this.maille), y: field('value2') },
-          name: 'Bénéfice',
-        },
-      ],
-      showToolbar : true,
-      options: {
-        chart: {
-          height: 400,
-        },
-        plotOptions: {
-          bar: {
-            horizontal: false,
-            columnWidth: '60%',
-            distributed: false,
-            borderRadius: 2,
-          },
-        },
-        dataLabels: {
-          dropShadow: {
-            enabled: true,
-          },
-          formatter: (val: number) =>
-            `${val.toLocaleString('fr-FR').replace(/,/g, ' ')}`,
-          enabled: true,
-          position: 'top',
-        },
-        xaxis: {
-          type: 'category',
-          labels: {
-            rotate: 0,
-            formatter: (v: string) => this.formatting(v),
-          },
-        },
-        yaxis: {
-          tickAmount: 5,
-          min: 0,
-          max: 15000,
-          forceNiceScale: true,
-          axisBorder: {
-            show: true,
-          },
-          axisTicks: {
-            show: true,
-          },
-          labels: {
-            formatter: (val: number) =>
-              `${val.toLocaleString('fr-FR').replace(/,/g, ' ')}`,
-          },
-        },
-        grid: {
-          borderColor: '#e7e7e7',
-          row: {
-            colors: ['#f3f3f3', 'transparent'],
-            opacity: 0.5,
-          },
-        },
-        legend: {
-          position: 'bottom',
-          horizontalAlign: 'center',
-          offsetY: -5,
-        },
-      },
-      stacked: true,
-    };
-  }
-
-  /**
-   * Gestion des événements personnalisés de la directive
-   */
-  onChartEvent(event: string) {
-    console.log('Événement du graphique reçu:', event);
-  }
-
-  /**
-   * Charge les données avec un délai configurable
-   * pour simuler une requête API distante
-   */
-  loadData() {
-    // S'assurer que les données soient vides pendant le chargement
+  loadChartData(): void {
+    // Simuler un délai de chargement
     this.chartData = [];
 
-    console.log(`🔍 DÉBUT CHARGEMENT - délai initialisé à ${this.dataDelay}ms`);
-
-  // Simuler un délai réseau
-  setTimeout(() => {
-    console.log(`✔️ DONNÉES REÇUES après ${this.dataDelay}ms`);
-
-      // Charger les données locales après le délai
-      this.chartData = [
-        { label: 'Janvier', value1: 4500, value2: 2800 },
-        { label: 'Février', value1: 5200, value2: 3100 },
-        { label: 'Mars', value1: 4800, value2: 2600 },
-        { label: 'Avril', value1: 5800, value2: 3400 },
-        { label: 'Mai', value1: 6000, value2: 3700 },
-        { label: 'Juin', value1: 6500, value2: 4200 },
-        { label: 'Juillet', value1: 7200, value2: 4500 },
-        { label: 'Août', value1: 7800, value2: 4800 },
-        { label: 'Septembre', value1: 7300, value2: 4300 },
-        { label: 'Octobre', value1: 6900, value2: 4100 },
-        { label: 'Novembre', value1: 7100, value2: 4400 },
-        { label: 'Décembre', value1: 7400, value2: 4700 },
-      ];
-
-      console.log('➡️ Chargement des données terminé', this.localData);
+    setTimeout(() => {
+      if (this.isSimpleChart) {
+        this.configureSimpleChart();
+      } else {
+        this.configureComplexChart();
+      }
     }, this.dataDelay);
   }
 
   /**
-   * Formatage personnalisé pour les étiquettes
+   * Configure un graphique simple (pie, donut)
    */
-  formatting(value: string): string {
-    return value;
+  private configureSimpleChart(): void {
+    // Configuration pour les graphiques de type pie/donut
+    this.chartConfig = {
+      title: 'Répartition par catégorie',
+      subtitle: 'Données 2025',
+      // showToolbar: true,
+      series: [
+        {
+          data: {
+            x: field('category'),
+            y: field('value'),
+          },
+        },
+      ],
+      options: {
+        legend: {
+          position: 'bottom',
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+    };
+
+    this.chartData = [...this.simpleData];
+  }
+
+  /**
+   * Configure un graphique complexe (line, bar, column)
+   */
+  private configureComplexChart(): void {
+    // Configuration pour les graphiques avec séries multiples
+    this.chartConfig = {
+      title: 'Performance par mois',
+      subtitle: 'Données 2025',
+      showToolbar: true,
+      xtitle: 'Mois',
+      ytitle: 'Valeur',
+      stacked: false,
+      series: [
+        {
+          name: field('team'),
+          data: {
+            x: field('month'),
+            y: field('value'),
+          },
+        },
+      ],
+      options: {
+        legend: {
+          position: 'bottom',
+        },
+        tooltip: {
+          enabled: true,
+        },
+      },
+    };
+
+    this.chartData = [...this.complexData];
+  }
+
+  /**
+   * Change le type de graphique (simple)
+   */
+  setSimpleChartType(type: ChartType): void {
+    this.chartType = type;
+    this.loadChartData();
+  }
+
+  /**
+   * Change le type de graphique (complexe)
+   */
+  setComplexChartType(type: ChartType): void {
+    this.chartType = type;
+    this.loadChartData();
+  }
+
+  /**
+   * Bascule entre graphique simple et complexe
+   */
+  toggleChartComplexity(): void {
+    this.isSimpleChart = !this.isSimpleChart;
+
+    if (this.isSimpleChart) {
+      this.chartType = 'pie';
+    } else {
+      this.chartType = 'column';
+    }
+
+    this.loadChartData();
+  }
+
+  /**
+   * Force le rechargement des données
+   */
+  reloadData(): void {
+    this.loadChartData();
+  }
+
+  /**
+   * Gère les événements de la barre d'outils du graphique
+   */
+  onChartEvent(event: 'previous' | 'next' | 'pivot'): void {
+    console.log('Événement de graphique reçu:', event);
+
+    if (event === 'pivot') {
+      if (this.chartConfig) {
+        this.chartConfig = {
+          ...this.chartConfig,
+          pivot: !this.chartConfig.pivot,
+        };
+        this.loadChartData();
+      }
+    }
+  }
+
+  /**
+   * Bascule l'état du panneau de contrôle
+   */
+  toggleControlPanel(): void {
+    this.isPanelExpanded = !this.isPanelExpanded;
   }
 }

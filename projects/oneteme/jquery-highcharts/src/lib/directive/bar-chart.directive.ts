@@ -1,35 +1,52 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
-import { buildChart, ChartProvider, ChartView, CommonChart, naturalFieldComparator, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { buildChart, ChartProvider, ChartView, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
-import { asapScheduler } from 'rxjs';
-import { ChartCustomEvent, configureChartTypeOptions, convertToHighchartsSeries, getType, initCommonChartOptions, updateCommonOptions } from './utils';
+import { ChartCustomEvent, convertToHighchartsSeries, determineXAxisDataType } from './utils';
+
+// Extend the Highcharts.Chart interface to include our custom properties
+declare module 'highcharts' {
+  interface Chart {
+    toolbarContainer?: Highcharts.SVGElement;
+    customEvent?: {
+      click: (event: ChartCustomEvent) => void;
+    };
+  }
+
+  interface Options {
+    customOptions?: {
+      canPivot?: boolean;
+      [key: string]: any;
+    };
+  }
+}
 
 @Directive({
   standalone: true,
-  selector: '[bar-chart]',
+  selector: '[highcharts-bar-chart]',
 })
 export class BarChartDirective<X extends XaxisType>
   implements ChartView<X, number>, OnChanges, OnDestroy
 {
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
-  private readonly chartInstance = signal<Highcharts.Chart | null>(null);
+  private chart: Highcharts.Chart | null = null;
   private _chartConfig: ChartProvider<X, number>;
   private _options: Highcharts.Options;
   private _canPivot: boolean = true;
+  private _shouldRedraw: boolean = false;
 
-  @Input() debug: boolean;
+  @Input() debug: boolean = true; // Activons le debug par défaut pour voir ce qui se passe
   @Input({ required: true }) type: 'bar' | 'column' | 'funnel' | 'pyramid';
   @Input({ required: true }) data: any[];
   @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
 
   @Input()
   set isLoading(isLoading: boolean) {
-    if (this.chartInstance()) {
+    if (this.chart) {
       if (isLoading) {
-        this.chartInstance().showLoading('Chargement des données...');
+        this.chart.showLoading('Chargement des données...');
       } else {
-        this.chartInstance().hideLoading();
+        this.chart.hideLoading();
       }
     }
   }
@@ -46,151 +63,273 @@ export class BarChartDirective<X extends XaxisType>
   @Input()
   set config(config: ChartProvider<X, number>) {
     this._chartConfig = config;
-    this._options = updateCommonOptions(this._options, config);
+    this._options = this.updateCommonOptions(this._options || this.initCommonChartOptions(), config);
     this.configureTypeSpecificOptions();
   }
 
   constructor() {
-    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'bar');
+    this._options = this.initCommonChartOptions();
     this.configureTypeSpecificOptions();
   }
 
-  init() {
-    if (this.debug) {
-      console.log('Initialisation du graphique Highcharts', { ...this._options });
-    }
-
-    this.ngZone.runOutsideAngular(() => {
-      try {
-        const chart = Highcharts.chart(
-          this.el.nativeElement,
-          { ...this._options },
-          (chart) => {
-            if (this.debug) {
-              console.log('Graphique Highcharts initialisé', chart);
-            }
-          }
-        );
-
-        this.chartInstance.set(chart);
-      } catch (error) {
-        console.error("Erreur lors de l'initialisation du graphique:", error);
-      }
-    });
-  }
-
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.debug) {
-      console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
-    }
-    if (changes['type']) this.updateType();
+    this.debug && console.log(new Date().getMilliseconds(), '[HIGHCHARTS BAR] Détection de changements dans bar-chart', changes);
 
-    this.ngZone.runOutsideAngular(() => {
-      asapScheduler.schedule(() => this.hydrate(changes));
-    });
+    if (changes['data'] || changes['config'] || changes['type']) {
+      this.updateChart();
+    }
   }
 
   ngOnDestroy() {
-    const chart = this.chartInstance();
-    if (chart) {
-      chart.destroy();
-      this.chartInstance.set(null);
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
     }
   }
 
-  private hydrate(changes: SimpleChanges): void {
-    if (this.debug) console.log('Hydratation du graphique', { ...changes });
-
-    const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
-
-    if (needsDataUpdate && this.data && this._chartConfig) {
-      this.updateData();
-    }
-
-    if (changes['isLoading'] && this.chartInstance()) {
-      if (changes['isLoading'].currentValue) {
-        this.chartInstance().showLoading('Chargement des données...');
-      } else {
-        this.chartInstance().hideLoading();
-      }
-    }
-
-    if ((this._options as any).shouldRedraw) {
-      if (this.debug) console.log('Recréation complète du graphique nécessaire', changes);
-      this.ngOnDestroy();
-      this.init();
-      delete (this._options as any).shouldRedraw;
-    } else if (needsOptionsUpdate && this.chartInstance()) {
-      if (this.debug) console.log('Mise à jour des options du graphique', changes);
-      this.updateChartOptions();
-    }
-  }
-
-  private updateChartOptions(): void {
-    const chart = this.chartInstance();
-    if (!chart) return;
-
-    try {
-      // Mise à jour des séries
-      if (this._options.series && Array.isArray(this._options.series)) {
-        while (chart.series.length > 0) {
-          chart.series[0].remove(false);
+  /**
+   * Initialise les options de base communes à tous les graphiques Highcharts
+   */
+  private initCommonChartOptions(): Highcharts.Options {
+    return {
+      chart: {
+        type: 'column' as const,
+        events: {},
+        zooming: {
+          type: 'x',
+          // On désactive explicitement le zooming avec les options correctes
+          mouseWheel: false,
+          pinchType: undefined
         }
-
-        this._options.series.forEach(series => {
-          chart.addSeries(series as any, false);
-        });
+      },
+      title: {
+        text: undefined
+      },
+      credits: {
+        enabled: false
+      },
+      series: [],
+      legend: {
+        enabled: true
+      },
+      xAxis: {
+        type: 'category' as const
+      },
+      yAxis: {
+        title: {
+          text: ''
+        }
+      },
+      plotOptions: {
+        series: {
+          stacking: undefined
+        }
       }
-
-      // Mise à jour des options générales
-      chart.update(this._options, true);
-    } catch (error) {
-      console.error('Erreur lors de la mise à jour des options:', error);
-    }
+    };
   }
 
-  private updateType() {
-    configureChartTypeOptions(this._options, this.type);
-    (this._options as any).shouldRedraw = true;
+  /**
+   * Met à jour les options communes du graphique en fonction de la configuration fournie
+   */
+  private updateCommonOptions(
+    options: Highcharts.Options,
+    config: ChartProvider<X, number>
+  ): Highcharts.Options {
+
+    if (!options.chart) options.chart = {};
+    if (!options.plotOptions) options.plotOptions = {};
+    if (!options.plotOptions.series) options.plotOptions.series = {};
+
+    // Configurer le stacking correctement pour Highcharts
+    if (config.stacked) {
+      // Pour Highcharts, on doit définir le stacking sur les plotOptions du type spécifique
+      if (!options.plotOptions.column) options.plotOptions.column = {};
+      if (!options.plotOptions.bar) options.plotOptions.bar = {};
+
+      // Appliquer le stacking normal à tous les types de graphiques de barres
+      (options.plotOptions.column as any).stacking = 'normal';
+      (options.plotOptions.bar as any).stacking = 'normal';
+
+      // On peut aussi le définir au niveau des séries pour s'assurer qu'il est appliqué
+      options.plotOptions.series.stacking = 'normal';
+    } else {
+      // S'assurer que stacking est désactivé si nécessaire
+      if (options.plotOptions.column) (options.plotOptions.column as any).stacking = undefined;
+      if (options.plotOptions.bar) (options.plotOptions.bar as any).stacking = undefined;
+      options.plotOptions.series.stacking = undefined;
+    }
+
+    // Définir les dimensions
+    options.chart.height = config.height || undefined;
+    options.chart.width = config.width || null;
+
+    // Définir les titres
+    if (!options.title) options.title = {};
+    options.title.text = config.title || undefined;
+
+    if (!options.subtitle) options.subtitle = {};
+    options.subtitle.text = config.subtitle || undefined;
+
+    // Gestion sûre des XAxis
+    if (!options.xAxis) {
+      options.xAxis = { title: { text: config.xtitle || undefined } };
+    } else {
+      // S'assurer que xAxis est un objet et non un tableau
+      const xAxis = Array.isArray(options.xAxis) ? options.xAxis[0] : options.xAxis;
+      if (!xAxis.title) xAxis.title = {};
+      xAxis.title.text = config.xtitle || undefined;
+
+      // Réassigner xAxis (maintenant qu'on est sûr qu'il a un title)
+      options.xAxis = xAxis;
+    }
+
+    // Gestion sûre des YAxis
+    if (!options.yAxis) {
+      options.yAxis = { title: { text: config.ytitle || undefined } };
+    } else {
+      // S'assurer que yAxis est un objet et non un tableau
+      const yAxis = Array.isArray(options.yAxis) ? options.yAxis[0] : options.yAxis;
+      if (!yAxis.title) yAxis.title = {};
+      yAxis.title.text = config.ytitle || undefined;
+
+      // Réassigner yAxis (maintenant qu'on est sûr qu'il a un title)
+      options.yAxis = yAxis;
+    }
+
+
+    // Appliquer les options personnalisées de l'utilisateur
+    if (config.options) {
+      // Fusion deep des options utilisateur
+      for (const key in config.options) {
+        if (typeof config.options[key] === 'object' && config.options[key] !== null) {
+          if (!options[key] || typeof options[key] !== 'object') {
+            options[key] = {};
+          }
+
+          Object.assign(options[key], config.options[key]);
+        } else {
+          options[key] = config.options[key];
+        }
+      }
+    }
+    return options;
   }
 
   private configureTypeSpecificOptions() {
-    configureChartTypeOptions(this._options, this.type);
+    if (!this._options || !this.type) {
+      console.warn('[HIGHCHARTS BAR] Options ou type non définis');
+      return;
+    }
+
+    // Configuration spécifique au type
+    if (!this._options.chart) this._options.chart = {};
+    if (!this._options.plotOptions) this._options.plotOptions = {};
+    if (!this._options.plotOptions.bar) (this._options.plotOptions as any).bar = {};
+    if (!this._options.plotOptions.column) (this._options.plotOptions as any).column = {};
+
+    if (this.type === 'bar') {
+      this._options.chart.type = 'bar';
+      // Configurer les barres horizontales
+      (this._options.plotOptions as any).bar.horizontal = true;
+    } else if (this.type === 'column') {
+      this._options.chart.type = 'column';
+      // Configurer les barres verticales
+      (this._options.plotOptions as any).bar.horizontal = false;
+    } else if (this.type === 'funnel') {
+      console.log('[HIGHCHARTS BAR] Configuration pour type funnel');
+      // Highcharts nécessite l'importation du module funnel
+      this._options.chart.type = 'funnel';
+    } else if (this.type === 'pyramid') {
+      console.log('[HIGHCHARTS BAR] Configuration pour type pyramid');
+      // Highcharts nécessite l'importation du module funnel
+      this._options.chart.type = 'pyramid';
+    }
+    this._shouldRedraw = true;
   }
 
-  private updateData() {
-    let sortedData = [...this.data];
-    if (this.type == 'funnel') {
-      sortedData = sortedData.sort(
-        naturalFieldComparator('asc', this._chartConfig.series[0].data.y)
-      );
-    } else if (this.type == 'pyramid') {
-      sortedData = sortedData.sort(
-        naturalFieldComparator('desc', this._chartConfig.series[0].data.y)
-      );
+  private updateChart() {
+    if (!this.data || !this._chartConfig) {
+      console.warn('[HIGHCHARTS BAR] Données ou configuration manquantes');
+      return;
     }
 
-    const commonChart = buildChart(sortedData, {
-      ...this._chartConfig,
-      pivot: !this.canPivot ? false : this._chartConfig.pivot,
-    });
+    try {
+      // Construction des données au format CommonChart
+      let sortedData = [...this.data];
+      if (this.type === 'funnel') {
+        // Logique de tri pour funnel
+      } else if (this.type === 'pyramid') {
+        // Logique de tri pour pyramid
+      }
+      const commonChart = buildChart(sortedData, {
+        ...this._chartConfig,
+        pivot: !this.canPivot ? false : this._chartConfig.pivot,
+      });
 
-    // Conversion des séries au format Highcharts
-    this._options.series = convertToHighchartsSeries(commonChart as CommonChart<X, YaxisType>);
+      this._options.series = convertToHighchartsSeries(commonChart as any);
 
-    // Mise à jour des catégories si nécessaire
-    if (commonChart.categories?.length) {
-      if (!this._options.xAxis) this._options.xAxis = {};
-      (this._options.xAxis as any).categories = commonChart.categories;
-    }
+      // Ajout des catégories
+      if (commonChart.categories?.length) {
+        // S'assurer que xAxis est un objet pour pouvoir ajouter des catégories
+        if (!this._options.xAxis) {
+          this._options.xAxis = { categories: [] };
+        }
 
-    // Mise à jour du type d'axe X
-    const axisType = getType(commonChart);
-    if (!this._options.xAxis) this._options.xAxis = {};
-    if ((this._options.xAxis as any).type !== axisType) {
-      (this._options.xAxis as any).type = axisType;
-      (this._options as any).shouldRedraw = true;
+        const xAxis = Array.isArray(this._options.xAxis) ? this._options.xAxis[0] : this._options.xAxis;
+        xAxis.categories = commonChart.categories.map(c => c?.toString() || '');
+        xAxis.type = 'category';
+
+        // Réassigner xAxis avec les catégories
+        this._options.xAxis = xAxis;
+      } else {
+        console.warn('[HIGHCHARTS BAR] Pas de catégories trouvées');
+      }
+
+      if (commonChart.series?.length && commonChart.series[0].data?.length) {
+        const firstDataPoint = commonChart.series[0].data[0];
+
+        if (typeof firstDataPoint === 'object' && firstDataPoint !== null && 'x' in firstDataPoint) {
+          const x = (firstDataPoint as any).x;
+          const xType = determineXAxisDataType(x);
+
+          // S'assurer que xAxis est un objet pour pouvoir définir son type
+          const xAxis = Array.isArray(this._options.xAxis) ? this._options.xAxis[0] : this._options.xAxis;
+          xAxis.type = (xType === 'numeric' ? 'linear' : xType) as Highcharts.AxisTypeValue;
+
+          // Réassigner xAxis avec le bon type
+          this._options.xAxis = xAxis;
+        }
+      }
+
+      // Définir les dimensions explicites pour éviter les erreurs NaN
+      if (!this._options.chart) this._options.chart = {};
+      const containerWidth = this.el.nativeElement.offsetWidth || undefined;
+      const containerHeight = this.el.nativeElement.offsetHeight || undefined;
+      this._options.chart.width = containerWidth;
+      this._options.chart.height = containerHeight;
+
+      // Création ou mise à jour du graphique
+      this.ngZone.runOutsideAngular(() => {
+        if (this.chart) {
+          // Mise à jour du graphique existant
+          this.chart.update(this._options, true);
+        } else {
+          // Création d'un nouveau graphique
+          try {
+            this.chart = Highcharts.chart(
+              this.el.nativeElement,
+              this._options
+            );
+          } catch (chartError) {
+            console.error('[HIGHCHARTS BAR] Erreur lors de la création du graphique:', chartError);
+          }
+        }
+      });
+
+      this.debug && console.log(new Date().getMilliseconds(), '[HIGHCHARTS BAR] Graphique mis à jour avec', this._options);
+
+    } catch (error) {
+      console.error('[HIGHCHARTS BAR] Erreur lors de la mise à jour du graphique:', error);
     }
   }
 }

@@ -8,7 +8,10 @@
       ],
       "@oneteme/jquery-core": [
         "dist/oneteme/jquery-core"
-      ]
+      ],
+      "@oneteme/jquery-highcharts": [
+        "dist/oneteme/jquery-highcharts"
+      ],
     },
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",

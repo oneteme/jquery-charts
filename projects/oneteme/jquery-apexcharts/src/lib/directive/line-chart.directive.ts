@@ -7,7 +7,7 @@ import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
   standalone: true,
-  selector: '[line-chart]',
+  selector: '[apex-line-chart]',
 })
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   implements ChartView<X, Y>, OnChanges, OnDestroy

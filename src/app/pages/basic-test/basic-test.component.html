@@ -1,25 +1,262 @@
 <div class="basic-test-container">
-  <h1>Environnement de test jQuery-Charts</h1>
+  <h1>Page de Test des Graphiques</h1>
 
-  <p class="description">
-    Cette page permet de tester l'intégration de base de la bibliothèque jQuery-Charts avec jquery-core + jquery-apexcharts ou jquery-highcharts et de reproduire certins effets de bord relevés.
-  </p>
-
-  <div class="chart-container">
-    <chart
-      [type]="chartType"
-      [config]="chartConfig"
-      [data]="chartData"
-      [isLoading]="true"
-      [debug]="true"
-    ></chart>
+  <div class="description">
+    <p>
+      Cette page permet de tester l'intégration de la bibliothèque jQuery-Charts
+      avec jquery-core + jquery-apexcharts et/ou jquery-highcharts et de reproduire
+      certains effets de bord relevés. Vous pouvez utiliser le panneau de
+      contrôle en bas pour configurer les tests.
+    </p>
   </div>
 
+  <!-- Conteneur de graphiques -->
+  <div
+    class="charts-container"
+    [class.horizontal-layout]="layoutMode === 'row'"
+  >
+    <!-- ApexCharts -->
+    <div class="chart-wrapper" [class.hidden]="!showApexChart">
+      <h2>
+        Graph ApexCharts
+        <small>({{ chartType }})</small>
+      </h2>
+      <div class="chart-box">
+          <chart
+            #apexChart
+            [type]="chartType"
+            [config]="chartConfig"
+            [data]="chartData"
+            [isLoading]="isLoading"
+            (customEvent)="onChartEvent($event)"
+          ></chart>
+        </div>
+    </div>
+
+    <!-- Highcharts -->
+    <div class="chart-wrapper" [class.hidden]="!showHighcharts">
+      <h2>
+        Graph Highcharts
+        <small>({{ chartType }})</small>
+      </h2>
+      <div class="chart-box">
+          <highcharts-chart
+            #highchart
+            [type]="chartType"
+            [config]="chartConfig"
+            [data]="chartData"
+            [isLoading]="isLoading"
+            (customEvent)="onChartEvent($event)"
+          ></highcharts-chart>
+        </div>
+    </div>
+  </div>
+
+  <!-- Debug Info -->
   <div class="debug-info">
     <h3>Informations de débogage</h3>
-    <p>Type de graphique: <code>{{ chartType }}</code></p>
-    <p>Nombre d'enregistrements: <code>{{ chartData.length }}</code></p>
-    <p>Délai d'affichage: <code>{{ dataDelay }} ms</code></p>
-    <p>Maille: <code>{{ maille }}</code></p>
+    <p>
+      Type de graphique: <code>{{ chartType }}</code>
+    </p>
+    <p>
+      Données chargées: <code>{{ chartData.length }}</code> éléments
+    </p>
+    <p>
+      Délai de chargement simulé: <code>{{ dataDelay }}</code> ms
+    </p>
+    <p>
+      Data mode : <code>{{ isSimpleChart ? "Simple" : "Complexe" }}</code>
+    </p>
+  </div>
+
+  <!-- Panneau de contrôle optimisé -->
+  <div class="control-panel">
+    <div class="panel-header">
+      <h3>Contrôles</h3>
+      <button class="toggle-button" (click)="toggleControlPanel()">
+        {{ isPanelExpanded ? "×" : "+" }}
+      </button>
+    </div>
+    <div class="panel-content" [class.collapsed]="!isPanelExpanded">
+      <!-- Visibilité des graphiques -->
+      <div class="control-section">
+        <div class="control-group">
+          <button
+            (click)="showApexChart = !showApexChart"
+            class="btn visibility-btn"
+            [class.active]="showApexChart"
+            title="Afficher/Masquer ApexCharts"
+          >
+            <img
+              [src]="
+                showApexChart
+                  ? 'assets/icons/open-eye.svg'
+                  : 'assets/icons/eye-closed.svg'
+              "
+              alt="Visibilité"
+              class="eye-icon"
+            />
+            <span>ApexCharts</span>
+          </button>
+          <button
+            (click)="showHighcharts = !showHighcharts"
+            class="btn visibility-btn"
+            [class.active]="showHighcharts"
+            title="Afficher/Masquer Highcharts"
+          >
+            <img
+              [src]="
+                showHighcharts
+                  ? 'assets/icons/open-eye.svg'
+                  : 'assets/icons/eye-closed.svg'
+              "
+              alt="Visibilité"
+              class="eye-icon"
+            />
+            <span>Highcharts</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Disposition des graphiques -->
+      <div class="control-section">
+        <div class="control-group button-group">
+          <button
+            (click)="layoutMode = 'column'"
+            class="btn layout-btn"
+            [class.active]="layoutMode === 'column'"
+            title="Disposition verticale"
+          >
+            <img
+              src="assets/icons/split-view.svg"
+              class="layout-icon"
+              alt="Disposition verticale"
+            />
+          </button>
+          <button
+            (click)="layoutMode = 'row'"
+            class="btn layout-btn"
+            [class.active]="layoutMode === 'row'"
+            title="Disposition horizontale"
+          >
+            <img
+              src="assets/icons/split-view.svg"
+              class="layout-icon horizontal"
+              alt="Disposition horizontale"
+            />
+          </button>
+        </div>
+      </div>
+
+      <!-- Mode graphique avec bouton toggle -->
+      <div class="control-section">
+        <div class="control-group mode-toggle">
+          <button
+            (click)="toggleChartComplexity()"
+            class="btn mode-btn"
+            [class.active-simple]="isSimpleChart"
+            [class.active-complex]="!isSimpleChart"
+          >
+            <span class="mode-label simple" [class.active]="isSimpleChart"
+              >Simple</span
+            >
+            <span class="toggle-track">
+              <span class="toggle-thumb" [class.right]="!isSimpleChart"></span>
+            </span>
+            <span class="mode-label complex" [class.active]="!isSimpleChart"
+              >Complexe</span
+            >
+          </button>
+        </div>
+      </div>
+
+      <!-- Types de graphiques simples -->
+      <div class="control-section" *ngIf="isSimpleChart">
+        <div class="control-group chart-types">
+          <button
+            (click)="setSimpleChartType('pie')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'pie'"
+            title="Pie Chart"
+          >
+            <span class="chart-icon pie">○</span>
+          </button>
+          <button
+            (click)="setSimpleChartType('donut')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'donut'"
+            title="Donut Chart"
+          >
+            <span class="chart-icon donut">◉</span>
+          </button>
+          <button
+            (click)="setSimpleChartType('polar')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'polar'"
+            title="Polar Chart"
+          >
+            <span class="chart-icon polar">◐</span>
+          </button>
+          <button
+            (click)="setSimpleChartType('radar')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'radar'"
+            title="Radar Chart"
+          >
+            <span class="chart-icon radar">◎</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Types de graphiques complexes -->
+      <div class="control-section" *ngIf="!isSimpleChart">
+        <div class="control-group chart-types">
+          <button
+            (click)="setComplexChartType('column')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'column'"
+            title="Column Chart"
+          >
+            <span class="chart-icon column">▌</span>
+          </button>
+          <button
+            (click)="setComplexChartType('bar')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'bar'"
+            title="Bar Chart"
+          >
+            <span class="chart-icon bar">▬</span>
+          </button>
+          <button
+            (click)="setComplexChartType('line')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'line'"
+            title="Line Chart"
+          >
+            <span class="chart-icon line">┬</span>
+          </button>
+          <button
+            (click)="setComplexChartType('area')"
+            class="btn chart-btn"
+            [class.active]="chartType === 'area'"
+            title="Area Chart"
+          >
+            <span class="chart-icon area">▲</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bouton de rechargement -->
+      <div class="control-section">
+        <button
+          class="btn reload-btn"
+          (click)="reloadData()"
+          title="Recharger les données"
+        >
+          <img src="assets/icons/reload.svg" alt="Reload" class="reload-icon" />
+          <span>Recharger</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>

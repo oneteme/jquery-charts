@@ -2,6 +2,7 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
 
   h1 {
     color: #333;
@@ -14,20 +15,345 @@
     border-radius: 5px;
     margin-bottom: 20px;
     line-height: 1.5;
+  }
 
-    span {
-      background-color: #eef1f2;
+  .control-panel {
+    position: fixed;
+    left: 20px;
+    bottom: 20px;
+    width: 220px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    border: 1px solid #e8e8e8;
+    transition: all 0.3s ease;
+    overflow: hidden;
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 15px;
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e8e8e8;
+      overflow: hidden;
+
+      h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #333;
+      }
+
+      .toggle-button {
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #e8e8e8;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 18px;
+        color: #555;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #d8d8d8;
+        }
+      }
+    }
+
+    .panel-content {
+      width: 100%;
+      max-height: 400px;
+      transition: all 0.3s ease;
+      padding: 12px;
+      overflow-y: hidden;
+
+      &.collapsed {
+        max-height: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .control-section {
+        margin-bottom: 15px;
+
+        &:last-child {
+          margin-bottom: 0px;
+        }
+
+        .control-group {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          width: 100%;
+
+          &.button-group {
+            justify-content: center;
+          }
+
+          &.chart-types {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+          }
+
+          &.mode-toggle {
+            justify-content: center;
+            margin: 10px 0;
+          }
+
+          .visibility-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            width: 100%;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+
+            .eye-icon {
+              width: 16px;
+              height: 16px;
+              filter: invert(0.5);
+              transition: all 0.2s ease;
+            }
+
+            &.active {
+              background: #e7f5ff;
+              border-color: #90c8f9;
+
+              .eye-icon {
+                filter: invert(0.3);
+              }
+            }
+          }
+
+          .layout-btn {
+            flex: 1;
+            padding: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+
+            .layout-icon {
+              width: 20px;
+              height: 20px;
+              filter: invert(0.5);
+              transition: all 0.2s ease;
+
+              &.horizontal {
+                transform: rotate(90deg);
+              }
+            }
+
+            &.active {
+              background: #e7f5ff;
+              border-color: #90c8f9;
+
+              .layout-icon {
+                filter: invert(0.3);
+              }
+            }
+          }
+
+          .mode-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+
+            .mode-label {
+              font-size: 13px;
+              color: #999;
+              font-weight: 600;
+              transition: all 0.2s ease;
+
+              &.active {
+                color: #333;
+              }
+            }
+
+            .toggle-track {
+              position: relative;
+              width: 36px;
+              height: 20px;
+              background: #e2e2e2;
+              border-radius: 10px;
+              transition: all 0.3s ease;
+
+              .toggle-thumb {
+                position: absolute;
+                top: 2px;
+                left: 2px;
+                width: 16px;
+                height: 16px;
+                background: white;
+                border-radius: 50%;
+                transition: all 0.3s ease;
+
+                &.right {
+                  left: 18px;
+                }
+              }
+            }
+
+            &.active-simple .toggle-track {
+              background: #8cd9b3;
+            }
+
+            &.active-complex .toggle-track {
+              background: #90c8f9;
+            }
+          }
+
+          .chart-btn {
+            aspect-ratio: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+
+            .chart-icon {
+              font-size: 20px;
+              color: #555;
+
+              &.bar {
+                transform: rotate(90deg);
+              }
+            }
+
+            &.active {
+              background: #e7f5ff;
+              border-color: #90c8f9;
+              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+
+              .chart-icon {
+                color: #007bff;
+              }
+            }
+          }
+        }
+
+        .reload-btn {
+          width: 100%;
+          padding: 10px 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: #f8f9fa;
+          border: 1px solid #dee2e6;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+
+          .reload-icon {
+            width: 16px;
+            height: 16px;
+            filter: invert(0.5);
+          }
+
+          &:hover {
+            background: #e7f5ff;
+            border-color: #90c8f9;
+
+            .reload-icon {
+              filter: invert(0.3);
+            }
+          }
+        }
+      }
     }
   }
 
-  .chart-container {
-    background: white;
-    border: 1px solid #e1e4e8;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    min-height: 400px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  .charts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin: 30px 0;
+
+    &.horizontal-layout {
+      flex-direction: row;
+      flex-wrap: wrap;
+
+      .chart-wrapper {
+        flex: 1 1 calc(50% - 15px);
+        min-width: 400px;
+      }
+    }
+
+    .chart-wrapper {
+      margin-bottom: 30px;
+      transition: all 0.3s ease;
+
+      &.hidden {
+        display: none;
+      }
+
+      &.chart-expanded {
+        width: 100%;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .chart-box {
+        height: 440px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        position: relative;
+
+        .chart-placeholder {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #999;
+          font-style: italic;
+          text-align: center;
+          padding: 20px;
+          background-color: #fafafa;
+          border-radius: 5px;
+        }
+      }
+    }
+
+    .chart-instance {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .apex-chart, .highcharts-chart {
+    width: 100%;
+    height: 100%;
   }
 
   .debug-info {

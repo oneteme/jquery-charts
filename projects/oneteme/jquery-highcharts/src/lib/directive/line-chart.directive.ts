@@ -1,191 +1,345 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
-import { buildChart, ChartProvider, ChartView, CommonChart, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
+import {
+  buildChart,
+  ChartProvider,
+  ChartView,
+  XaxisType,
+  YaxisType,
+} from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
-import { asapScheduler } from 'rxjs';
-import { ChartCustomEvent, configureChartTypeOptions, convertToHighchartsSeries, getType, initCommonChartOptions, updateCommonOptions } from './utils';
+import {
+  ChartCustomEvent,
+  convertToHighchartsSeries,
+  determineXAxisDataType,
+} from './utils';
 
 @Directive({
   standalone: true,
-  selector: '[line-chart]',
+  selector: '[highcharts-line-chart]',
 })
 export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   implements ChartView<X, Y>, OnChanges, OnDestroy
 {
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
-  private readonly chartInstance = signal<Highcharts.Chart | null>(null);
+  private chart: Highcharts.Chart | null = null;
   private _chartConfig: ChartProvider<X, Y>;
   private _options: Highcharts.Options;
+  private _shouldRedraw: boolean = false;
 
-  @Input() debug: boolean;
+  @Input() debug: boolean = false;
+  @Input({ required: true }) type: 'line' | 'area';
   @Input({ required: true }) data: any[];
   @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
 
-  /**
-   * Setter pour l'état de chargement
-   */
   @Input()
   set isLoading(isLoading: boolean) {
-    if (this.chartInstance()) {
+    if (this.chart) {
       if (isLoading) {
-        this.chartInstance().showLoading('Chargement des données...');
+        this.chart.showLoading('Chargement des données...');
       } else {
-        this.chartInstance().hideLoading();
+        this.chart.hideLoading();
       }
     }
   }
 
-  /**
-   * Setter pour la gestion du type de graphique
-   */
-  @Input()
-  set type(type: 'line' | 'area') {
-    if (!this._options.chart) this._options.chart = {};
-    if ((this._options.chart as any).type !== type) {
-      (this._options.chart as any).type = type;
-      configureChartTypeOptions(this._options, type);
-      (this._options as any).shouldRedraw = true;
-    }
-  }
-
-  /**
-   * Setter pour la configuration du graphique
-   */
   @Input()
   set config(config: ChartProvider<X, Y>) {
     this._chartConfig = config;
-    this._options = updateCommonOptions(this._options, config);
-
-    // Vérifier si sparkline est activé
-    if (config.options?.chart?.sparkline?.enabled) {
-      if (!this._options.xAxis) this._options.xAxis = {};
-      (this._options.xAxis as any).visible = false;
-
-      if (!this._options.yAxis) this._options.yAxis = {};
-      (this._options.yAxis as any).visible = false;
-
-      if (!this._options.legend) this._options.legend = {};
-      this._options.legend.enabled = false;
-    }
+    this._options = this.updateCommonOptions(
+      this._options || this.initCommonChartOptions(),
+      config
+    );
+    this.configureTypeSpecificOptions();
   }
 
   constructor() {
-    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'line');
-  }
-
-  /**
-   * Initialise le graphique Highcharts
-   */
-  init() {
-    if (this.debug) {
-      console.log('Initialisation du graphique Highcharts', { ...this._options });
-    }
-
-    this.ngZone.runOutsideAngular(() => {
-      try {
-        const chart = Highcharts.chart(
-          this.el.nativeElement,
-          { ...this._options },
-          (chart) => {
-            if (this.debug) {
-              console.log('Graphique Highcharts initialisé', chart);
-            }
-          }
-        );
-
-        this.chartInstance.set(chart);
-      } catch (error) {
-        console.error("Erreur lors de l'initialisation du graphique:", error);
-      }
-    });
+    this._options = this.initCommonChartOptions();
+    this.configureTypeSpecificOptions();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.debug) {
-      console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
+    this.debug &&
+      console.log(
+        new Date().getMilliseconds(),
+        '[HIGHCHARTS LINE] Détection de changements',
+        changes
+      );
+
+    if (changes['type']) {
+      this.configureTypeSpecificOptions();
+      this._shouldRedraw = true;
     }
 
-    this.ngZone.runOutsideAngular(() => {
-      asapScheduler.schedule(() => this.hydrate(changes));
-    });
+    if (changes['data'] || changes['config'] || changes['type']) {
+      this.updateChart();
+    }
   }
 
   ngOnDestroy() {
-    const chart = this.chartInstance();
-    if (chart) {
-      chart.destroy();
-      this.chartInstance.set(null);
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
     }
   }
 
-  private hydrate(changes: SimpleChanges): void {
-    if (this.debug) console.log('Hydratation du graphique', { ...changes });
+  /**
+   * Initialise les options de base communes à tous les graphiques Highcharts
+   */
+  private initCommonChartOptions(): Highcharts.Options {
+    return {
+      chart: {
+        type: 'line' as const,
+        events: {},
+        zooming: {
+          type: 'x',
+          mouseWheel: false,
+          pinchType: undefined,
+        },
+      },
+      title: {
+        text: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      series: [],
+      legend: {
+        enabled: true,
+      },
+      xAxis: {
+        type: 'category' as const,
+      },
+      yAxis: {
+        title: {
+          text: '',
+        },
+      },
+      plotOptions: {
+        series: {
+          marker: {
+            enabled: true,
+          },
+        },
+      },
+    };
+  }
 
-    const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
+  /**
+   * Met à jour les options communes du graphique en fonction de la configuration fournie
+   */
+  private updateCommonOptions(
+    options: Highcharts.Options,
+    config: ChartProvider<X, Y>
+  ): Highcharts.Options {
+    if (!options.chart) options.chart = {};
+    if (!options.plotOptions) options.plotOptions = {};
+    if (!options.plotOptions.series) options.plotOptions.series = {};
 
-    if (needsDataUpdate && this.data && this._chartConfig) {
-      this.updateData();
+    // Définir les dimensions
+    options.chart.height = config.height || undefined;
+    options.chart.width = config.width || null;
+
+    // Définir les titres
+    if (!options.title) options.title = {};
+    options.title.text = config.title || undefined;
+
+    if (!options.subtitle) options.subtitle = {};
+    options.subtitle.text = config.subtitle || undefined;
+
+    // Gestion sûre des XAxis
+    if (!options.xAxis) {
+      options.xAxis = { title: { text: config.xtitle || undefined } };
+    } else {
+      // S'assurer que xAxis est un objet et non un tableau
+      const xAxis = Array.isArray(options.xAxis)
+        ? options.xAxis[0]
+        : options.xAxis;
+      if (!xAxis.title) xAxis.title = {};
+      xAxis.title.text = config.xtitle || undefined;
+
+      // Réassigner xAxis
+      options.xAxis = xAxis;
     }
 
-    if (changes['isLoading'] && this.chartInstance()) {
-      if (changes['isLoading'].currentValue) {
-        this.chartInstance().showLoading('Chargement des données...');
-      } else {
-        this.chartInstance().hideLoading();
+    // Gestion sûre des YAxis
+    if (!options.yAxis) {
+      options.yAxis = { title: { text: config.ytitle || undefined } };
+    } else {
+      // S'assurer que yAxis est un objet et non un tableau
+      const yAxis = Array.isArray(options.yAxis)
+        ? options.yAxis[0]
+        : options.yAxis;
+      if (!yAxis.title) yAxis.title = {};
+      yAxis.title.text = config.ytitle || undefined;
+
+      // Réassigner yAxis
+      options.yAxis = yAxis;
+    }
+
+    // Support des sparklines
+    if (config.options?.chart?.sparkline?.enabled) {
+      // Configurer les sparklines (graphique très minimaliste)
+      options.chart.height = 50; // Hauteur réduite
+      if (!options.xAxis) options.xAxis = {};
+      const xAxis = Array.isArray(options.xAxis)
+        ? options.xAxis[0]
+        : options.xAxis;
+      xAxis.visible = false;
+      options.xAxis = xAxis;
+
+      if (!options.yAxis) options.yAxis = {};
+      const yAxis = Array.isArray(options.yAxis)
+        ? options.yAxis[0]
+        : options.yAxis;
+      yAxis.visible = false;
+      options.yAxis = yAxis;
+
+      if (!options.legend) options.legend = {};
+      options.legend.enabled = false;
+
+      if (!options.plotOptions.series) options.plotOptions.series = {};
+      options.plotOptions.series.marker = { enabled: false };
+    }
+
+    // Appliquer les options personnalisées de l'utilisateur
+    if (config.options) {
+      // Fusion deep des options utilisateur
+      for (const key in config.options) {
+        if (
+          typeof config.options[key] === 'object' &&
+          config.options[key] !== null
+        ) {
+          if (!options[key] || typeof options[key] !== 'object') {
+            options[key] = {};
+          }
+
+          Object.assign(options[key], config.options[key]);
+        } else {
+          options[key] = config.options[key];
+        }
       }
     }
 
-    // Si options doivent être réinitialisées complètement
-    if ((this._options as any).shouldRedraw) {
-      if (this.debug) console.log('Recréation complète du graphique nécessaire', changes);
-      this.ngOnDestroy();
-      this.init();
-      delete (this._options as any).shouldRedraw;
-    } else if (needsOptionsUpdate && this.chartInstance()) {
-      if (this.debug) console.log('Mise à jour des options du graphique', changes);
-      this.updateChartOptions();
+    return options;
+  }
+
+  private configureTypeSpecificOptions() {
+    if (!this._options) {
+      this._options = this.initCommonChartOptions();
+    }
+
+    if (!this.type) {
+      return;
+    }
+
+    if (!this._options.chart) this._options.chart = {};
+    if (!this._options.plotOptions) this._options.plotOptions = {};
+    if (!this._options.plotOptions.series)
+      this._options.plotOptions.series = {};
+
+    // Configuration spécifique au type
+    if (this.type === 'line') {
+      this._options.chart.type = 'line';
+    } else if (this.type === 'area') {
+      this._options.chart.type = 'area';
     }
   }
 
-  private updateData() {
-    const commonChart = buildChart(
-      this.data,
-      { ...this._chartConfig, continue: true },
-      null
-    );
-
-    // Mise à jour du type d'axe X
-    const axisType = getType(commonChart);
-    if (!this._options.xAxis) this._options.xAxis = {};
-    if ((this._options.xAxis as any).type !== axisType) {
-      (this._options.xAxis as any).type = axisType;
+  private updateChart() {
+    if (!this.data || !this._chartConfig) {
+      console.warn('[HIGHCHARTS LINE] Données ou configuration manquantes');
+      return;
     }
-
-    // Conversion des séries au format Highcharts
-    this._options.series = convertToHighchartsSeries(commonChart as CommonChart<X, YaxisType>);
-  }
-
-  private updateChartOptions(): void {
-    const chart = this.chartInstance();
-    if (!chart) return;
 
     try {
-      // Mise à jour des séries
-      if (this._options.series && Array.isArray(this._options.series)) {
-        while (chart.series.length > 0) {
-          chart.series[0].remove(false);
-        }
+      // Construction des données au format CommonChart
+      const commonChart = buildChart(this.data, {
+        ...this._chartConfig,
+        continue: true,
+      });
 
-        this._options.series.forEach(series => {
-          chart.addSeries(series as any, false);
-        });
+      // Conversion au format Highcharts
+      this._options.series = convertToHighchartsSeries(commonChart as any);
+
+      // Déterminer le type d'axe X en fonction des données
+      if (commonChart.series?.length && commonChart.series[0].data?.length) {
+        const firstDataPoint = commonChart.series[0].data[0];
+
+        if (
+          typeof firstDataPoint === 'object' &&
+          firstDataPoint !== null &&
+          'x' in firstDataPoint
+        ) {
+          const x = (firstDataPoint as any).x;
+          const xType = determineXAxisDataType(x);
+
+          // S'assurer que xAxis est un objet pour pouvoir définir son type
+          const xAxis = Array.isArray(this._options.xAxis)
+            ? this._options.xAxis[0]
+            : this._options.xAxis;
+          xAxis.type = (
+            xType === 'numeric' ? 'linear' : xType
+          ) as Highcharts.AxisTypeValue;
+
+          // Réassigner xAxis avec le bon type
+          this._options.xAxis = xAxis;
+        }
       }
 
-      // Mise à jour des options générales
-      chart.update(this._options, true);
+      // Définir les dimensions explicites pour éviter les erreurs NaN
+      if (!this._options.chart) this._options.chart = {};
+      const containerWidth = this.el.nativeElement.offsetWidth || undefined;
+      const containerHeight = this.el.nativeElement.offsetHeight || undefined;
+      this._options.chart.width = containerWidth;
+      this._options.chart.height = containerHeight;
+
+      // Création ou mise à jour du graphique
+      this.ngZone.runOutsideAngular(() => {
+        if (this.chart && !this._shouldRedraw) {
+          // Mise à jour du graphique existant
+          this.chart.update(this._options, true);
+        } else {
+          // Destruction du graphique existant si nécessaire
+          if (this.chart) {
+            this.chart.destroy();
+          }
+
+          // Création d'un nouveau graphique
+          try {
+            this.chart = Highcharts.chart(this.el.nativeElement, this._options);
+            this._shouldRedraw = false;
+          } catch (chartError) {
+            console.error(
+              '[HIGHCHARTS LINE] Erreur lors de la création du graphique:',
+              chartError
+            );
+          }
+        }
+      });
+
+      this.debug &&
+        console.log(
+          new Date().getMilliseconds(),
+          '[HIGHCHARTS LINE] Graphique mis à jour avec',
+          this._options
+        );
     } catch (error) {
-      console.error('Erreur lors de la mise à jour des options:', error);
+      console.error(
+        '[HIGHCHARTS LINE] Erreur lors de la mise à jour du graphique:',
+        error
+      );
     }
   }
 }

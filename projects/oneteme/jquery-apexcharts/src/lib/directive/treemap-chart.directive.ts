@@ -7,7 +7,7 @@ import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
   standalone: true,
-  selector: '[treemap-chart]',
+  selector: '[apex-treemap-chart]',
 })
 export class TreemapChartDirective
   implements ChartView<string, number>, OnChanges, OnDestroy

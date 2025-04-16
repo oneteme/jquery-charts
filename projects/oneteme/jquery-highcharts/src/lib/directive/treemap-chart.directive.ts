@@ -1,198 +1,384 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
 import { buildChart, ChartProvider, ChartView } from '@oneteme/jquery-core';
-import ApexCharts from 'apexcharts';
-import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
-import { fromPromise } from 'rxjs/internal/observable/innerFrom';
+import * as Highcharts from 'highcharts';
+import { ChartCustomEvent } from './utils';
 
 @Directive({
   standalone: true,
-  selector: '[treemap-chart]',
+  selector: '[highcharts-treemap-chart]',
 })
 export class TreemapChartDirective
   implements ChartView<string, number>, OnChanges, OnDestroy
 {
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
-  private readonly chartInstance = signal<ApexCharts | null>(null);
+  private chart: Highcharts.Chart | null = null;
   private _chartConfig: ChartProvider<string, number>;
-  private _options: any;
+  private _options: Highcharts.Options;
   private _type: 'treemap' | 'heatmap' = 'treemap';
+  private _shouldRedraw: boolean = false;
 
-  @Input() debug: boolean;
+  @Input() debug: boolean = false;
   @Input({ required: true }) data: any[];
   @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
+
   @Input()
   set isLoading(isLoading: boolean) {
-    this._options.noData.text = isLoading
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
-  }
-  @Input()
-  set type(type: 'treemap' | 'heatmap') {
-    this._type = type;
-    if (this._options.chart.type !== type) {
-      this._options.chart.type = type;
-      this.configureTypeSpecificOptions();
-      this._options.shouldRedraw = true;
+    if (this.chart) {
+      if (isLoading) {
+        this.chart.showLoading('Chargement des données...');
+      } else {
+        this.chart.hideLoading();
+      }
     }
   }
+
+  @Input()
+  set type(type: 'treemap' | 'heatmap') {
+    if (this._type !== type) {
+      this._type = type;
+      this.configureTypeSpecificOptions();
+      this._shouldRedraw = true;
+    }
+  }
+
   @Input()
   set config(config: ChartProvider<string, number>) {
     this._chartConfig = config;
-    this._options = updateCommonOptions(this._options, config);
+    this._options = this.updateCommonOptions(
+      this._options || this.initCommonChartOptions(),
+      config
+    );
+    this.configureTypeSpecificOptions();
   }
 
   constructor() {
-    this._options = initCommonChartOptions(
-      this.el,
-      this.customEvent,
-      this.ngZone,
-      'treemap'
-    );
-  }
-
-  init() {
-    if (this.debug) {
-      console.log('Initialisation du graphique', { ...this._options });
-    }
-
-    this.ngZone.runOutsideAngular(() => {
-      try {
-        let chart = new ApexCharts(this.el.nativeElement, { ...this._options });
-        this.chartInstance.set(chart);
-        fromPromise(chart.render().then(() =>this.debug && console.log(
-                  new Date().getMilliseconds(),
-                  'Rendu du graphique terminé'
-                )
-            )
-            .catch((error) => {
-              console.error('Erreur lors du rendu du graphique:', error);
-              this.chartInstance.set(null);
-            })
-        )
-          .pipe(observeOn(asapScheduler))
-          .subscribe({
-            next: () =>
-              this.debug &&
-              console.log(
-                new Date().getMilliseconds(),
-                'Observable rendu terminé'
-              ),
-            error: (error) =>
-              console.error('Erreur dans le flux Observable:', error),
-          });
-      } catch (error) {
-        console.error("Erreur lors de l'initialisation du graphique:", error);
-      }
-    });
+    this._options = this.initCommonChartOptions();
+    this.configureTypeSpecificOptions();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.debug) {
+    this.debug &&
       console.log(
         new Date().getMilliseconds(),
-        'Détection de changements',
+        '[HIGHCHARTS TREEMAP] Détection de changements',
         changes
       );
-    }
 
     if (changes['type']) {
-      this.updateType();
+      this.configureTypeSpecificOptions();
+      this._shouldRedraw = true;
     }
 
-    this.ngZone.runOutsideAngular(() => {
-      asapScheduler.schedule(() => this.hydrate(changes));
-    });
+    if (changes['data'] || changes['config'] || changes['type']) {
+      this.updateChart();
+    }
   }
 
   ngOnDestroy() {
-    destroyChart(this.chartInstance);
-  }
-
-  private hydrate(changes: SimpleChanges): void {
-    if (this.debug) console.log('Hydratation du graphique', { ...changes });
-
-    const needsDataUpdate =
-      changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(
-      (key) => !['debug'].includes(key)
-    );
-
-    if (needsDataUpdate && this.data && this._chartConfig) {
-      this.updateData();
-    }
-
-    if (changes['isLoading'] && this.chartInstance()) {
-      this._options.noData.text = changes['isLoading'].currentValue
-        ? 'Chargement des données...'
-        : 'Aucune donnée';
-
-      this.updateChartOptions({ noData: this._options.noData }, false, false, false);
-    }
-
-    if (this._options.shouldRedraw) {
-      if (this.debug)
-        console.log('Recréation complète du graphique nécessaire', changes);
-      this.ngOnDestroy();
-      this.init();
-      delete this._options.shouldRedraw;
-    } else if (needsOptionsUpdate) {
-      if (this.debug)
-        console.log('Mise à jour des options du graphique', changes);
-      this.updateChartOptions();
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
     }
   }
 
-  private updateChartOptions(
-    specificOptions?: any,
-    redrawPaths: boolean = true,
-    animate: boolean = true,
-    updateSyncedCharts: boolean = false
-  ): Promise<void> {
-    const chartInstance = this.chartInstance();
-    if (!chartInstance) return Promise.resolve();
-
-    const options = specificOptions || this._options;
-
-    return this.ngZone.runOutsideAngular(() =>
-      chartInstance
-        .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
-        .catch((error) => {
-          console.error('Erreur lors de la mise à jour des options:', error);
-          return Promise.resolve();
-        })
-    );
+  /**
+   * Initialise les options de base communes aux graphiques Highcharts treemap et heatmap
+   */
+  private initCommonChartOptions(): Highcharts.Options {
+    return {
+      chart: {
+        type: 'treemap' as const,
+        events: {},
+      },
+      title: {
+        text: undefined,
+      },
+      credits: {
+        enabled: false,
+      },
+      series: [
+        {
+          type: 'treemap',
+          data: [],
+        },
+      ],
+      legend: {
+        enabled: true,
+      },
+      colorAxis: {
+        minColor: '#FFFFFF',
+        maxColor: '#1976D2',
+      },
+      tooltip: {
+        headerFormat: '<b>{point.key}</b><br/>',
+        pointFormat: '{point.name}: {point.value}',
+      },
+    };
   }
 
-  private updateType() {
-    this.configureTypeSpecificOptions();
-    this._options.shouldRedraw = true;
+  /**
+   * Met à jour les options communes du graphique en fonction de la configuration fournie
+   */
+  private updateCommonOptions(
+    options: Highcharts.Options,
+    config: ChartProvider<string, number>
+  ): Highcharts.Options {
+    if (!options.chart) options.chart = {};
+
+    // Définir les dimensions
+    options.chart.height = config.height || undefined;
+    options.chart.width = config.width || null;
+
+    // Définir les titres
+    if (!options.title) options.title = {};
+    options.title.text = config.title || undefined;
+
+    if (!options.subtitle) options.subtitle = {};
+    options.subtitle.text = config.subtitle || undefined;
+
+    // Appliquer les options personnalisées de l'utilisateur
+    if (config.options) {
+      // Fusion deep des options utilisateur
+      for (const key in config.options) {
+        if (
+          typeof config.options[key] === 'object' &&
+          config.options[key] !== null
+        ) {
+          if (!options[key] || typeof options[key] !== 'object') {
+            options[key] = {};
+          }
+
+          Object.assign(options[key], config.options[key]);
+        } else {
+          options[key] = config.options[key];
+        }
+      }
+    }
+
+    return options;
   }
 
   private configureTypeSpecificOptions() {
-    const currentType = this._type;
+    if (!this._options) {
+      this._options = this.initCommonChartOptions();
+    }
 
-    if (currentType === 'treemap') {
-      this._options.chart.type = 'treemap';
-    } else if (currentType === 'heatmap') {
-      this._options.chart.type = 'heatmap';
+    if (!this._options.chart) this._options.chart = {};
+    if (!this._options.plotOptions) this._options.plotOptions = {};
+
+    // Configuration spécifique au type
+    switch (this._type) {
+      case 'treemap':
+        this._options.chart.type = 'treemap';
+        if (!this._options.plotOptions.treemap)
+          this._options.plotOptions.treemap = {};
+        (this._options.plotOptions.treemap as any).layoutAlgorithm =
+          'squarified';
+        (this._options.plotOptions.treemap as any).dataLabels = {
+          enabled: true,
+          format: '{point.name}: {point.value}',
+        };
+        break;
+
+      case 'heatmap':
+        this._options.chart.type = 'heatmap';
+        if (!this._options.xAxis) this._options.xAxis = {};
+        if (!this._options.yAxis) this._options.yAxis = {};
+
+        // Configuration spécifique à la heatmap
+        const xAxis = Array.isArray(this._options.xAxis)
+          ? this._options.xAxis[0]
+          : this._options.xAxis;
+        xAxis.opposite = true;
+
+        const yAxis = Array.isArray(this._options.yAxis)
+          ? this._options.yAxis[0]
+          : this._options.yAxis;
+        yAxis.opposite = true;
+
+        this._options.xAxis = xAxis;
+        this._options.yAxis = yAxis;
+
+        if (!this._options.plotOptions.heatmap)
+          this._options.plotOptions.heatmap = {};
+        (this._options.plotOptions.heatmap as any).dataLabels = {
+          enabled: true,
+          format: '{point.value}',
+        };
+        break;
+
+      default:
+        this._options.chart.type = 'treemap';
+        break;
     }
   }
 
-  private updateData() {
-    const commonChart = buildChart(
-      this.data,
-      { ...this._chartConfig, continue: true },
-      null
-    );
+  private updateChart() {
+    if (!this.data || !this._chartConfig) {
+      console.warn('[HIGHCHARTS TREEMAP] Données ou configuration manquantes');
+      return;
+    }
 
-    this._options.series = commonChart.series;
+    try {
+      // Construction des données au format CommonChart
+      const commonChart = buildChart(
+        this.data,
+        {
+          ...this._chartConfig,
+          continue: true,
+        },
+        null
+      );
 
-    const newType = getType(commonChart);
-    if (this._options.xaxis.type != newType) {
-      this._options.xaxis.type = newType;
-      this._options.shouldRedraw = true;
+      // Formater les données selon le type de graphique
+      if (this._type === 'treemap') {
+        // Pour treemap, nous avons besoin de données au format:
+        // [{name: string, value: number}, ...]
+        if (commonChart.series.length) {
+          const treemapData = [];
+
+          for (const serie of commonChart.series) {
+            for (let i = 0; i < serie.data.length; i++) {
+              const point = serie.data[i];
+              const value =
+                typeof point === 'object' && point !== null && 'y' in point
+                  ? point.y
+                  : point;
+
+              const name =
+                typeof point === 'object' && point !== null && 'x' in point
+                  ? point.x?.toString()
+                  : `Point ${i}`;
+
+              treemapData.push({
+                name,
+                value,
+                color: serie.color,
+              });
+            }
+          }
+
+          this._options.series = [
+            {
+              type: 'treemap',
+              data: treemapData,
+              name: commonChart.series[0].name || 'Treemap',
+            },
+          ];
+        }
+      } else if (this._type === 'heatmap') {
+        // Pour heatmap, nous avons besoin de données au format:
+        // [[x, y, value], ...]
+        if (commonChart.series.length) {
+          const heatmapData = [];
+          const xCategories = new Set<string>();
+          const yCategories = new Set<string>();
+
+          for (const serie of commonChart.series) {
+            // Pour chaque point, extraire les valeurs x, y et value
+            for (const point of serie.data) {
+              let x, y, value;
+
+              if (typeof point === 'object' && point !== null) {
+                if ('x' in point && 'y' in point) {
+                  // Format {x, y}
+                  x = point.x?.toString() || '';
+                  value = point.y;
+                  y = serie.name || '';
+                }
+              } else {
+                // Format simple
+                value = point;
+                x = `Point ${heatmapData.length}`;
+                y = serie.name || '';
+              }
+
+              if (x !== undefined && y !== undefined && value !== undefined) {
+                xCategories.add(x);
+                yCategories.add(y);
+                heatmapData.push([x, y, value]);
+              }
+            }
+          }
+
+          // Configurer les catégories pour les axes
+          const xAxis = Array.isArray(this._options.xAxis)
+            ? this._options.xAxis[0]
+            : this._options.xAxis;
+          xAxis.categories = Array.from(xCategories);
+
+          const yAxis = Array.isArray(this._options.yAxis)
+            ? this._options.yAxis[0]
+            : this._options.yAxis;
+          yAxis.categories = Array.from(yCategories);
+
+          this._options.xAxis = xAxis;
+          this._options.yAxis = yAxis;
+
+          this._options.series = [
+            {
+              type: 'heatmap',
+              data: heatmapData,
+              name: 'Heatmap',
+            },
+          ];
+        }
+      }
+
+      // Définir les dimensions explicites pour éviter les erreurs NaN
+      if (!this._options.chart) this._options.chart = {};
+      const containerWidth = this.el.nativeElement.offsetWidth || undefined;
+      const containerHeight = this.el.nativeElement.offsetHeight || undefined;
+      this._options.chart.width = containerWidth;
+      this._options.chart.height = containerHeight;
+
+      // Création ou mise à jour du graphique
+      this.ngZone.runOutsideAngular(() => {
+        if (this.chart && !this._shouldRedraw) {
+          // Mise à jour du graphique existant
+          this.chart.update(this._options, true);
+        } else {
+          // Destruction du graphique existant si nécessaire
+          if (this.chart) {
+            this.chart.destroy();
+          }
+
+          // Création d'un nouveau graphique
+          try {
+            this.chart = Highcharts.chart(this.el.nativeElement, this._options);
+            this._shouldRedraw = false;
+          } catch (chartError) {
+            console.error(
+              '[HIGHCHARTS TREEMAP] Erreur lors de la création du graphique:',
+              chartError
+            );
+          }
+        }
+      });
+
+      this.debug &&
+        console.log(
+          new Date().getMilliseconds(),
+          '[HIGHCHARTS TREEMAP] Graphique mis à jour avec',
+          this._options
+        );
+    } catch (error) {
+      console.error(
+        '[HIGHCHARTS TREEMAP] Erreur lors de la mise à jour du graphique:',
+        error
+      );
     }
   }
 }

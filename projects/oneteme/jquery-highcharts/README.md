@@ -39,7 +39,7 @@ export class AppModule {}
 ### 2. Création d'un graphique
 
 ```html
-<chart type="line" [config]="monConfig" [data]="mesData"></chart>
+<chart type="line" [config]="maConfig" [data]="mesDatas"></chart>
 ```
 
 ```typescript

@@ -7,7 +7,7 @@ import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
   standalone: true,
-  selector: '[bar-chart]',
+  selector: '[apex-bar-chart]',
 })
 export class BarChartDirective<X extends XaxisType>
   implements ChartView<X, number>, OnChanges, OnDestroy

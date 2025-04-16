@@ -23,8 +23,25 @@ import {
   CommonChart,
   mergeDeep,
 } from '@oneteme/jquery-core';
+import { ICONS } from '../assets/icons/icons';
+
+import more from 'highcharts/highcharts-more';
+import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
+import Annotations from 'highcharts/modules/annotations';
+import Accessibility from 'highcharts/modules/accessibility';
+import Funnel from 'highcharts/modules/funnel';
+import Treemap from 'highcharts/modules/treemap';
+import Exporting from 'highcharts/modules/exporting';
 import * as Highcharts from 'highcharts';
-import { ICONS } from '../../assets/icons/icons';
+
+more(Highcharts);
+NoDataToDisplay(Highcharts);
+Annotations(Highcharts);
+Accessibility(Highcharts);
+Funnel(Highcharts);
+Treemap(Highcharts);
+Exporting(Highcharts);
+
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
@@ -38,7 +55,7 @@ export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
   ></div>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ChartComponent<X extends XaxisType, Y extends YaxisType>
+export class HighchartsComponent<X extends XaxisType, Y extends YaxisType>
   implements OnInit, OnChanges, AfterViewInit, OnDestroy
 {
   protected _charts: {
@@ -80,10 +97,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType>
   @Output() chartInstance = new EventEmitter<Highcharts.Chart>();
   @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
 
-  constructor(
-    private readonly el: ElementRef,
-    private readonly zone: NgZone,
-  ) {}
+  constructor(private readonly el: ElementRef, private readonly zone: NgZone) {}
 
   ngOnInit(): void {
     if (this.debug) {
@@ -108,23 +122,40 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType>
       this.updateChartType(changes['_type'].currentValue);
     }
 
-    if (
-      (changes['data'] || changes['config']) &&
-      !changes['data']?.firstChange &&
-      !changes['config']?.firstChange
-    ) {
-      this.updateData();
-      this.updateFlag = true;
-    }
+    // if (
+    //   (changes['data'] || changes['config']) &&
+    //   !changes['data']?.firstChange &&
+    //   !changes['config']?.firstChange
+    // ) {
+    //   this.updateData();
+    //   this.updateFlag = true;
+    // }
 
-    if (changes['isLoading'] && this.chart) {
-      this.toggleLoading(this.isLoading);
-    }
+    // if (changes['isLoading'] && this.chart) {
+    //   this.toggleLoading(this.isLoading);
+    // }
 
-    if (this.chart && this.updateFlag) {
+    // if (this.chart && this.updateFlag) {
+    //   this.updateChart();
+    //   this.updateFlag = false;
+    // }
+
+    if (this.config && this.data) {
+      if (changes.type) {
+        this.updateChartType(changes.type.currentValue);
+      }
+      if (changes.isLoading) {
+        this.toggleLoading(this.isLoading);
+      }
+      if (changes.config) {
+        this.updateConfig();
+      }
+      if (changes.config || changes.data) {
+        this.updateData();
+      }
       this.updateChart();
-      this.updateFlag = false;
     }
+
   }
 
   ngOnDestroy(): void {
@@ -191,6 +222,11 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType>
     }
   }
 
+  private updateConfig(): void {
+    // Re-initialize chart options when config changes
+    this.chartOptions = mergeDeep(this.chartOptions, this.getBaseOptions());
+  }
+
   private updateData(): void {
     // Utiliser jquery-core pour transformer les données
     this.commonChart = buildChart(
@@ -221,7 +257,6 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType>
   }
 
   private getBaseOptions(): Highcharts.Options {
-
     if (!this.config) {
       this.config = {};
     }
