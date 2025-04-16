@@ -132,44 +132,46 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
   options: any,
   config: ChartProvider<X, Y>
 ) {
+  // Initialiser options si c'est undefined
+  options ??= {};
 
-  const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
+const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
   const updatedOptions = mergeDeep(
     options,
     {
       chart: {
-        height: config.height ?? '100%',
-        width: config.width ?? '100%',
-        stacked: config.stacked,
+        height: config?.height ?? '100%',
+        width: config?.width ?? '100%',
+        stacked: config?.stacked,
         toolbar: {
-          show: config.showToolbar ?? false,
+          show: config?.showToolbar ?? false,
         },
       },
       title: {
-        text: config.title,
+        text: config?.title,
       },
       subtitle: {
-        text: config.subtitle,
+        text: config?.subtitle,
       },
       xaxis: {
         title: {
-          text: config.xtitle,
+          text: config?.xtitle,
         },
       },
       yaxis: {
         title: {
-          text: config.ytitle,
+          text: config?.ytitle,
         },
       },
     },
-    config.options
+    config?.options ?? {}
   );
 
-  const userSetHorizontal = config.options?.plotOptions?.bar?.horizontal !== undefined;
+  const userSetHorizontal = config?.options?.plotOptions?.bar?.horizontal !== undefined;
 
   if (existingBarHorizontal !== undefined && !userSetHorizontal) {
-    if (!updatedOptions.plotOptions) updatedOptions.plotOptions = {};
-    if (!updatedOptions.plotOptions.bar) updatedOptions.plotOptions.bar = {};
+    updatedOptions.plotOptions ??= {};
+    updatedOptions.plotOptions.bar ??= {};
     updatedOptions.plotOptions.bar.horizontal = existingBarHorizontal;
   }
 

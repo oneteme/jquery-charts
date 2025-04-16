@@ -25,7 +25,7 @@ export class BasicTestComponent implements OnInit {
   @ViewChild('highchart') highchart: HighchartsComponent<string, number>;
 
   // Contrôle de l'affichage
-  showApexChart = true;
+  showApexChart = false;
   showHighcharts = true;
   layoutMode: 'row' | 'column' = 'column';
   isPanelExpanded = false;
@@ -99,7 +99,7 @@ export class BasicTestComponent implements OnInit {
     this.chartConfig = {
       title: 'Répartition par catégorie',
       subtitle: 'Données 2025',
-      // showToolbar: true,
+      showToolbar: true,
       series: [
         {
           data: {
@@ -191,23 +191,6 @@ export class BasicTestComponent implements OnInit {
    */
   reloadData(): void {
     this.loadChartData();
-  }
-
-  /**
-   * Gère les événements de la barre d'outils du graphique
-   */
-  onChartEvent(event: 'previous' | 'next' | 'pivot'): void {
-    console.log('Événement de graphique reçu:', event);
-
-    if (event === 'pivot') {
-      if (this.chartConfig) {
-        this.chartConfig = {
-          ...this.chartConfig,
-          pivot: !this.chartConfig.pivot,
-        };
-        this.loadChartData();
-      }
-    }
   }
 
   /**
