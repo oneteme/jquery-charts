@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
-import { HighchartsComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
+import { ChartComponent as HighchartsComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
 
 @Component({
@@ -36,7 +36,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = true;
-  dataDelay = 3500;
+  dataDelay = 10;
 
   // Exemples de données pour graphiques simples (pie, donut)
   private readonly simpleData = [
@@ -99,7 +99,7 @@ export class BasicTestComponent implements OnInit {
     this.chartConfig = {
       title: 'Répartition par catégorie',
       subtitle: 'Données 2025',
-      // showToolbar: true,
+      showToolbar: true,
       series: [
         {
           data: {

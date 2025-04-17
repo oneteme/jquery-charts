@@ -1,0 +1,39 @@
+<div style="height: 100%; width: 100%">
+  <div
+    *ngIf="
+      type === 'pie' ||
+      type === 'donut' ||
+      type === 'funnel' ||
+      type === 'pyramid'
+    "
+    simple-chart
+    [type]="type"
+    [config]="config"
+    [data]="data"
+    [isLoading]="isLoading"
+    [debug]="debug"
+    (customEvent)="change($event)"
+  ></div>
+  <div
+    *ngIf="
+      type === 'bar' ||
+      type === 'column' ||
+      type === 'columnpyramid' ||
+      type === 'line' ||
+      type === 'area' ||
+      type === 'spline' ||
+      type === 'areaspline' ||
+      type === 'columnrange' ||
+      type === 'arearange' ||
+      type === 'areasplinerange'
+    "
+    complex-chart
+    [type]="type"
+    [config]="config"
+    [data]="data"
+    [isLoading]="isLoading"
+    [debug]="debug"
+    [canPivot]="_charts[type]?.canPivot"
+    (customEvent)="change($event)"
+  ></div>
+</div>

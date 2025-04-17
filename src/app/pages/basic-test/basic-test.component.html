@@ -39,14 +39,14 @@
         <small>({{ chartType }})</small>
       </h2>
       <div class="chart-box">
-        <highcharts-chart
+        <highcharts
         #highchart
         [type]="chartType"
         [config]="chartConfig"
         [data]="chartData"
         [isLoading]="isLoading"
         [debug]="true"
-      ></highcharts-chart>
+      ></highcharts>
       </div>
     </div>
   </div>
