@@ -36,7 +36,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = true;
-  dataDelay = 500;
+  dataDelay = 3500;
 
   // Exemples de données pour graphiques simples (pie, donut)
   private readonly simpleData = [
@@ -99,7 +99,7 @@ export class BasicTestComponent implements OnInit {
     this.chartConfig = {
       title: 'Répartition par catégorie',
       subtitle: 'Données 2025',
-      showToolbar: true,
+      // showToolbar: true,
       series: [
         {
           data: {
@@ -121,15 +121,12 @@ export class BasicTestComponent implements OnInit {
     this.chartData = [...this.simpleData];
   }
 
-  /**
-   * Configure un graphique complexe (line, bar, column)
-   */
+  // Configure un graphique complexe (line, bar, column)
   private configureComplexChart(): void {
-    // Configuration pour les graphiques avec séries multiples
     this.chartConfig = {
       title: 'Performance par mois',
       subtitle: 'Données 2025',
-      showToolbar: true,
+      // showToolbar: true,
       xtitle: 'Mois',
       ytitle: 'Valeur',
       stacked: false,
@@ -155,25 +152,20 @@ export class BasicTestComponent implements OnInit {
     this.chartData = [...this.complexData];
   }
 
-  /**
-   * Change le type de graphique (simple)
-   */
+  // Change le type de graphique avec données simples
   setSimpleChartType(type: ChartType): void {
     this.chartType = type;
     this.loadChartData();
   }
 
-  /**
-   * Change le type de graphique (complexe)
-   */
+  // Change le type de graphique avec données complexes
+
   setComplexChartType(type: ChartType): void {
     this.chartType = type;
     this.loadChartData();
   }
 
-  /**
-   * Bascule entre graphique simple et complexe
-   */
+  // Bascule entre graphique simple et complexe
   toggleChartComplexity(): void {
     this.isSimpleChart = !this.isSimpleChart;
 
@@ -186,16 +178,12 @@ export class BasicTestComponent implements OnInit {
     this.loadChartData();
   }
 
-  /**
-   * Force le rechargement des données
-   */
+  // Force le rechargement des données
   reloadData(): void {
     this.loadChartData();
   }
 
-  /**
-   * Bascule l'état du panneau de contrôle
-   */
+  // affiche ou non le panneau de contrôle
   toggleControlPanel(): void {
     this.isPanelExpanded = !this.isPanelExpanded;
   }
