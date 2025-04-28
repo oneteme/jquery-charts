@@ -36,145 +36,107 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = true;
-  dataDelay = 10;
+  dataDelay = 1000;
 
-  // Exemples de données pour graphiques simples (pie, donut)
-  private readonly simpleData = [
-    { category: 'Catégorie A', value: 30 },
-    { category: 'Catégorie B', value: 25 },
-    { category: 'Catégorie C', value: 20 },
-    { category: 'Catégorie D', value: 15 },
-    { category: 'Catégorie E', value: 10 },
-  ];
+  // Types de graphiques regroupés par catégorie
+  readonly chartTypes = {
+    simple: ['pie', 'donut', 'polar', 'radar', 'funnel', 'pyramid'] as ChartType[],
+    complex: [
+      'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 
+      'areaspline', 'columnrange', 'arearange', 'areasplinerange'
+    ] as ChartType[]
+  };
 
-  // Exemples de données pour graphiques complexes (bar, column, line)
-  private readonly complexData = [
-    { month: 'Jan', team: 'Équipe A', value: 44 },
-    { month: 'Fév', team: 'Équipe A', value: 55 },
-    { month: 'Mar', team: 'Équipe A', value: 57 },
-    { month: 'Avr', team: 'Équipe A', value: 56 },
-    { month: 'Mai', team: 'Équipe A', value: 61 },
-    { month: 'Juin', team: 'Équipe A', value: 58 },
-    { month: 'Jan', team: 'Équipe B', value: 76 },
-    { month: 'Fév', team: 'Équipe B', value: 85 },
-    { month: 'Mar', team: 'Équipe B', value: 101 },
-    { month: 'Avr', team: 'Équipe B', value: 98 },
-    { month: 'Mai', team: 'Équipe B', value: 87 },
-    { month: 'Juin', team: 'Équipe B', value: 105 },
-    { month: 'Jan', team: 'Équipe C', value: 35 },
-    { month: 'Fév', team: 'Équipe C', value: 41 },
-    { month: 'Mar', team: 'Équipe C', value: 36 },
-    { month: 'Avr', team: 'Équipe C', value: 33 },
-    { month: 'Mai', team: 'Équipe C', value: 42 },
-    { month: 'Juin', team: 'Équipe C', value: 30 },
-  ];
+  // Configuration de base commune pour tous les graphiques
+  private readonly baseConfig = {
+    options: {
+      legend: { position: 'bottom' },
+      tooltip: { enabled: true }
+    }
+  };
 
-  constructor() {}
+  // Données pour les deux types de graphiques
+  private readonly chartData$ = {
+    simple: [
+      { category: 'Catégorie A', value: 30 },
+      { category: 'Catégorie B', value: 25 },
+      { category: 'Catégorie C', value: 20 },
+      { category: 'Catégorie D', value: 15 },
+      { category: 'Catégorie E', value: 10 }
+    ],
+    complex: [
+      { month: 'Jan', team: 'Équipe A', value: 44 },
+      { month: 'Fév', team: 'Équipe A', value: 55 },
+      { month: 'Mar', team: 'Équipe A', value: 57 },
+      { month: 'Avr', team: 'Équipe A', value: 56 },
+      { month: 'Mai', team: 'Équipe A', value: 61 },
+      { month: 'Juin', team: 'Équipe A', value: 58 },
+      { month: 'Jan', team: 'Équipe B', value: 76 },
+      { month: 'Fév', team: 'Équipe B', value: 85 },
+      { month: 'Mar', team: 'Équipe B', value: 101 },
+      { month: 'Avr', team: 'Équipe B', value: 98 },
+      { month: 'Mai', team: 'Équipe B', value: 87 },
+      { month: 'Juin', team: 'Équipe B', value: 105 },
+      { month: 'Jan', team: 'Équipe C', value: 35 },
+      { month: 'Fév', team: 'Équipe C', value: 41 },
+      { month: 'Mar', team: 'Équipe C', value: 36 },
+      { month: 'Avr', team: 'Équipe C', value: 33 },
+      { month: 'Mai', team: 'Équipe C', value: 42 },
+      { month: 'Juin', team: 'Équipe C', value: 30 }
+    ]
+  };
 
+  // Accesseurs pour rétrocompatibilité avec le template
+  get simpleChartTypes(): ChartType[] { return this.chartTypes.simple; }
+  get complexChartTypes(): ChartType[] { return this.chartTypes.complex; }
+  
   ngOnInit(): void {
     this.loadChartData();
   }
 
-  /**
-   * Charge les données du graphique en fonction du type sélectionné
-   */
+  // Charge les données du graphique en fonction du type sélectionné
   loadChartData(): void {
-    // Simuler un délai de chargement
     this.chartData = [];
+    this.isLoading = true;
 
     setTimeout(() => {
-      if (this.isSimpleChart) {
-        this.configureSimpleChart();
-      } else {
-        this.configureComplexChart();
-      }
+      const chartMode = this.isSimpleChart ? 'simple' : 'complex';
+      this.configureChart(chartMode);
+      this.isLoading = false;
     }, this.dataDelay);
   }
 
-  /**
-   * Configure un graphique simple (pie, donut)
-   */
-  private configureSimpleChart(): void {
-    // Configuration pour les graphiques de type pie/donut
+  // Configure un graphique selon son type
+  private configureChart(mode: 'simple' | 'complex'): void {
+    const isSimple = mode === 'simple';
+    
     this.chartConfig = {
-      title: 'Répartition par catégorie',
+      ...this.baseConfig,
+      title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
       subtitle: 'Données 2025',
-      showToolbar: true,
-      series: [
-        {
-          data: {
-            x: field('category'),
-            y: field('value'),
-          },
-        },
-      ],
-      options: {
-        legend: {
-          position: 'bottom',
-        },
-        tooltip: {
-          enabled: true,
-        },
-      },
+      ...(isSimple ? {} : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
+      series: [{
+        ...(isSimple ? {} : { name: field('team') }),
+        data: {
+          x: field(isSimple ? 'category' : 'month'),
+          y: field('value')
+        }
+      }]
     };
 
-    this.chartData = [...this.simpleData];
+    this.chartData = [...this.chartData$[mode]];
   }
 
-  // Configure un graphique complexe (line, bar, column)
-  private configureComplexChart(): void {
-    this.chartConfig = {
-      title: 'Performance par mois',
-      subtitle: 'Données 2025',
-      // showToolbar: true,
-      xtitle: 'Mois',
-      ytitle: 'Valeur',
-      stacked: false,
-      series: [
-        {
-          name: field('team'),
-          data: {
-            x: field('month'),
-            y: field('value'),
-          },
-        },
-      ],
-      options: {
-        legend: {
-          position: 'bottom',
-        },
-        tooltip: {
-          enabled: true,
-        },
-      },
-    };
-
-    this.chartData = [...this.complexData];
-  }
-
-  // Change le type de graphique avec données simples
-  setSimpleChartType(type: ChartType): void {
-    this.chartType = type;
-    this.loadChartData();
-  }
-
-  // Change le type de graphique avec données complexes
-
-  setComplexChartType(type: ChartType): void {
-    this.chartType = type;
+  // Méthode appelée quand le type de graphique change dans le select
+  changeChartType(): void {
+    this.isSimpleChart = this.chartTypes.simple.includes(this.chartType);
     this.loadChartData();
   }
 
   // Bascule entre graphique simple et complexe
   toggleChartComplexity(): void {
     this.isSimpleChart = !this.isSimpleChart;
-
-    if (this.isSimpleChart) {
-      this.chartType = 'pie';
-    } else {
-      this.chartType = 'column';
-    }
-
+    this.chartType = this.isSimpleChart ? 'pie' : 'column';
     this.loadChartData();
   }
 

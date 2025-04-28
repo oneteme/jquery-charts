@@ -4,16 +4,16 @@ import { ChartProvider, ChartView, buildSingleSerieChart, mergeDeep } from '@one
 import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
 import Annotations from 'highcharts/modules/annotations';
 import Accessibility from 'highcharts/modules/accessibility';
-import Funnel from 'highcharts/modules/funnel';
 import Exporting from 'highcharts/modules/exporting';
+import more from 'highcharts/highcharts-more';
 import { createHighchart, destroyChart, initBaseOptions, updateChartOptions, updateLoading, setupToolbar, configurePieOptions } from './utils';
 import * as Highcharts from 'highcharts';
 
 // Initialisation des modules Highcharts
+more(Highcharts);
 NoDataToDisplay(Highcharts);
 Annotations(Highcharts);
 Accessibility(Highcharts);
-Funnel(Highcharts);
 Exporting(Highcharts);
 
 @Directive({
@@ -31,8 +31,14 @@ export class SimpleChartDirective
   @Input() isLoading: boolean = false;
   @Input() debug: boolean = false;
   @Output() customEvent: EventEmitter<string> = new EventEmitter();
-  @Input({ alias: 'type' }) type: 'pie' | 'donut' | 'pyramid' | 'funnel' =
-    'pie';
+  @Input({ alias: 'type' }) type:
+    | 'pie'
+    | 'donut'
+    | 'pyramid'
+    | 'funnel'
+    | 'variablepie'
+    | 'solidgauge'
+    | 'gauge' = 'pie';
 
   chart: Highcharts.Chart;
   private _chartConfig: ChartProvider<string, number> = {};
@@ -40,16 +46,15 @@ export class SimpleChartDirective
   private _shouldRedraw: boolean = true;
 
   constructor() {
-    // Initialiser les options de base
-    this._options = initBaseOptions('pie', this.isLoading, this.debug);
+    // Initialiser les options de base avec l'état de chargement par défaut
+    // isLoading est initialisé à false par défaut, donc on force à true si la propriété isLoading est true
+    this._options = initBaseOptions(this.type, true, this.debug);
   }
 
   ngOnInit(): void {
     // S'assurer que l'élément est proprement initialisé avant toute création de graphique
-    setTimeout(() => {
-      this.updateConfig();
-      this.createChart();
-    }, 0);
+    this.updateConfig();
+    this.createChart();
   }
 
   ngOnDestroy(): void {
@@ -58,49 +63,73 @@ export class SimpleChartDirective
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.debug) {
-      console.log('Détection de changements', JSON.parse(JSON.stringify(changes)));
+      console.log(
+        'Détection de changements',
+        JSON.parse(JSON.stringify(changes))
+      );
     }
 
     this.ngZone.runOutsideAngular(() => {
       if (this.config && this.data) {
-        const needsOptionsUpdate = Object.keys(changes).some(
-          (key) => !['debug'].includes(key)
-        );
-
-        if (changes.type) {
-          this.updateChartType();
-        }
-
-        if (changes.isLoading) {
-          updateLoading(this._options, this.chart, this.isLoading, this.debug);
-        }
-
-        if (changes.config) {
-          this.updateConfig();
-        }
-
-        if (changes.config || changes.data) {
-          this.updateData();
-        }
-
-        if (this._shouldRedraw) {
-          if (this.debug)
-            console.log('Recréation complète du graphique nécessaire', changes);
-          destroyChart(this.chart, this.debug);
-          this.createChart();
-          this._shouldRedraw = false;
-        } else if (needsOptionsUpdate && this.chart) {
-          if (this.debug)
-            console.log('Mise à jour des options du graphique', changes);
-          this.updateChart();
-        }
+        this.processChanges(changes);
       }
     });
   }
 
-  /**
-   * Met à jour le type de graphique
-   */
+  // Traite les changements détectés par ngOnChanges
+  private processChanges(changes: SimpleChanges): void {
+    const needsOptionsUpdate = this.hasRelevantChanges(changes);
+
+    this.handleSpecificChanges(changes);
+
+    this.applyChartChanges(changes, needsOptionsUpdate);
+  }
+
+  // Vérifie s'il y a des changements pertinents nécessitant une mise à jour des options
+  private hasRelevantChanges(changes: SimpleChanges): boolean {
+    return Object.keys(changes).some((key) => !['debug'].includes(key));
+  }
+
+  // Gère les changements apportés à des propriétés spécifiques
+  private handleSpecificChanges(changes: SimpleChanges): void {
+    if (changes.type) {
+      this.updateChartType();
+    }
+
+    if (changes.isLoading) {
+      updateLoading(this._options, this.chart, this.isLoading, this.debug);
+    }
+
+    if (changes.config) {
+      this.updateConfig();
+    }
+
+    if (changes.config || changes.data) {
+      this.updateData();
+    }
+  }
+
+  // Applique les changements au graphique
+  private applyChartChanges(
+    changes: SimpleChanges,
+    needsOptionsUpdate: boolean
+  ): void {
+    if (this._shouldRedraw) {
+      if (this.debug) {
+        console.log('Recréation complète du graphique nécessaire', changes);
+      }
+      destroyChart(this.chart, this.debug);
+      this.createChart();
+      this._shouldRedraw = false;
+    } else if (needsOptionsUpdate && this.chart) {
+      if (this.debug) {
+        console.log('Mise à jour des options du graphique', changes);
+      }
+      this.updateChart();
+    }
+  }
+
+  // Met à jour le type de graphique
   updateChartType() {
     if (this.debug) console.log('Mise à jour du type de graphique:', this.type);
 
@@ -121,9 +150,7 @@ export class SimpleChartDirective
     }
   }
 
-  /**
-   * Met à jour la configuration du graphique
-   */
+  // Met à jour la configuration du graphique
   updateConfig() {
     if (this.debug) console.log('Mise à jour de la configuration');
 
@@ -168,9 +195,7 @@ export class SimpleChartDirective
     };
   }
 
-  /**
-   * Met à jour les données du graphique en utilisant jquery-core
-   */
+  // Met à jour les données du graphique en utilisant jquery-core
   updateData() {
     if (this.debug) console.log('Mise à jour des données');
 
@@ -210,9 +235,7 @@ export class SimpleChartDirective
     });
   }
 
-  /**
-   * Met à jour le graphique existant avec les nouvelles options
-   */
+  // Met à jour le graphique existant avec les nouvelles options
   updateChart() {
     if (this.chart) {
       try {
@@ -229,9 +252,7 @@ export class SimpleChartDirective
     }
   }
 
-  /**
-   * Crée un nouveau graphique Highcharts
-   */
+  // Crée un nouveau graphique Highcharts
   createChart() {
     // Créer le graphique avec la fonction utilitaire
     const createdChart = createHighchart(
@@ -246,7 +267,7 @@ export class SimpleChartDirective
       if (this.debug) console.log('Graphique créé avec succès');
     } else {
       // Si la création a échoué, réessayer après un court délai
-      setTimeout(() => this.createChart(), 50);
+      // setTimeout(() => this.createChart(), 50);
     }
   }
 }

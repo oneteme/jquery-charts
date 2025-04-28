@@ -16,6 +16,8 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   } = {
     pie: { possibleType: ['pie', 'donut'] },
     donut: { possibleType: ['pie', 'donut'] },
+    polar: { possibleType: ['polar'], canPivot: false },
+    radar: { possibleType: ['radar'], canPivot: false },
     line: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     area: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     spline: { possibleType: ['line', 'area', 'spline', 'areaspline'] },

@@ -236,12 +236,6 @@ export function createHighchart(
         el.nativeElement,
         chartOptions
       );
-
-      if (debug) {
-        // Vérifier que le graphique a été correctement créé
-        console.log('Graphique créé avec succès, dimensions:');
-      }
-
       return chartInstance;
     });
   } catch (error) {

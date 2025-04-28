@@ -4,9 +4,9 @@
   <div class="description">
     <p>
       Cette page permet de tester l'intégration de la bibliothèque jQuery-Charts
-      avec jquery-core + jquery-apexcharts et/ou jquery-highcharts et de reproduire
-      certains effets de bord relevés. Vous pouvez utiliser le panneau de
-      contrôle en bas pour configurer les tests.
+      avec jquery-core + jquery-apexcharts et/ou jquery-highcharts et de
+      reproduire certains effets de bord relevés. Vous pouvez utiliser le
+      panneau de contrôle en bas pour configurer les tests.
     </p>
   </div>
 
@@ -22,14 +22,14 @@
         <small>({{ chartType }})</small>
       </h2>
       <div class="chart-box">
-          <chart
-            #apexChart
-            [type]="chartType"
-            [config]="chartConfig"
-            [data]="chartData"
-            [isLoading]="isLoading"
-          ></chart>
-        </div>
+        <chart
+          #apexChart
+          [type]="chartType"
+          [config]="chartConfig"
+          [data]="chartData"
+          [isLoading]="isLoading"
+        ></chart>
+      </div>
     </div>
 
     <!-- Highcharts -->
@@ -40,13 +40,13 @@
       </h2>
       <div class="chart-box">
         <highcharts
-        #highchart
-        [type]="chartType"
-        [config]="chartConfig"
-        [data]="chartData"
-        [isLoading]="isLoading"
-        [debug]="true"
-      ></highcharts>
+          #highchart
+          [type]="chartType"
+          [config]="chartConfig"
+          [data]="chartData"
+          [isLoading]="isLoading"
+          [debug]="true"
+        ></highcharts>
       </div>
     </div>
   </div>
@@ -147,101 +147,37 @@
         </div>
       </div>
 
-      <!-- Mode graphique avec bouton toggle -->
+      <!-- Sélection du type de graphique avec liste déroulante -->
       <div class="control-section">
-        <div class="control-group mode-toggle">
-          <button
-            (click)="toggleChartComplexity()"
-            class="btn mode-btn"
-            [class.active-simple]="isSimpleChart"
-            [class.active-complex]="!isSimpleChart"
+        <div class="control-group">
+          <label for="chart-type-select">Type de graphique:</label>
+          <select
+            id="chart-type-select"
+            class="chart-type-select"
+            [(ngModel)]="chartType"
+            (change)="changeChartType()"
           >
-            <span class="mode-label simple" [class.active]="isSimpleChart"
-              >Simple</span
-            >
-            <span class="toggle-track">
-              <span class="toggle-thumb" [class.right]="!isSimpleChart"></span>
-            </span>
-            <span class="mode-label complex" [class.active]="!isSimpleChart"
-              >Complexe</span
-            >
-          </button>
-        </div>
-      </div>
-
-      <!-- Types de graphiques simples -->
-      <div class="control-section" *ngIf="isSimpleChart">
-        <div class="control-group chart-types">
-          <button
-            (click)="setSimpleChartType('pie')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'pie'"
-            title="Pie Chart"
-          >
-            <span class="chart-icon pie">○</span>
-          </button>
-          <button
-            (click)="setSimpleChartType('donut')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'donut'"
-            title="Donut Chart"
-          >
-            <span class="chart-icon donut">◉</span>
-          </button>
-          <button
-            (click)="setSimpleChartType('polar')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'polar'"
-            title="Polar Chart"
-          >
-            <span class="chart-icon polar">◐</span>
-          </button>
-          <button
-            (click)="setSimpleChartType('radar')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'radar'"
-            title="Radar Chart"
-          >
-            <span class="chart-icon radar">◎</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Types de graphiques complexes -->
-      <div class="control-section" *ngIf="!isSimpleChart">
-        <div class="control-group chart-types">
-          <button
-            (click)="setComplexChartType('column')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'column'"
-            title="Column Chart"
-          >
-            <span class="chart-icon column">▌</span>
-          </button>
-          <button
-            (click)="setComplexChartType('bar')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'bar'"
-            title="Bar Chart"
-          >
-            <span class="chart-icon bar">▬</span>
-          </button>
-          <button
-            (click)="setComplexChartType('line')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'line'"
-            title="Line Chart"
-          >
-            <span class="chart-icon line">┬</span>
-          </button>
-          <button
-            (click)="setComplexChartType('area')"
-            class="btn chart-btn"
-            [class.active]="chartType === 'area'"
-            title="Area Chart"
-          >
-            <span class="chart-icon area">▲</span>
-          </button>
+            <optgroup label="Graphiques simples">
+              <option value="pie">Pie</option>
+              <option value="donut">Donut</option>
+              <option value="polar">Polar</option>
+              <option value="radar">Radar</option>
+              <option value="funnel">Funnel</option>
+              <option value="pyramid">Pyramid</option>
+            </optgroup>
+            <optgroup label="Graphiques complexes">
+              <option value="bar">Bar</option>
+              <option value="column">Column</option>
+              <option value="columnpyramid">Column Pyramid</option>
+              <option value="line">Line</option>
+              <option value="area">Area</option>
+              <option value="spline">Spline</option>
+              <option value="areaspline">Area Spline</option>
+              <option value="columnrange">Column Range</option>
+              <option value="arearange">Area Range</option>
+              <option value="areasplinerange">Area Spline Range</option>
+            </optgroup>
+          </select>
         </div>
       </div>
 
