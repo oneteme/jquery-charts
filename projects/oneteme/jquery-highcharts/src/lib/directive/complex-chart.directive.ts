@@ -1,23 +1,5 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-  inject,
-} from '@angular/core';
-import {
-  ChartProvider,
-  ChartView,
-  XaxisType,
-  YaxisType,
-  buildChart,
-  mergeDeep,
-} from '@oneteme/jquery-core';
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject } from '@angular/core';
+import { ChartProvider, ChartView, XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-core';
 
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
@@ -27,14 +9,7 @@ import Annotations from 'highcharts/modules/annotations';
 import Accessibility from 'highcharts/modules/accessibility';
 import Treemap from 'highcharts/modules/treemap';
 import Heatmap from 'highcharts/modules/heatmap';
-import {
-  createHighchart,
-  destroyChart,
-  initBaseOptions,
-  updateChartOptions,
-  updateLoading,
-  ChartCustomEvent,
-} from './utils';
+import { createHighchart, destroyChart, initBaseOptions, updateChartOptions, updateLoading, ChartCustomEvent } from './utils';
 
 // Initialisation des modules Highcharts
 more(Highcharts);
@@ -85,11 +60,7 @@ export class ComplexChartDirective<X extends XaxisType>
   constructor() {
     // Initialiser les options de base
     this._options = initBaseOptions(
-      this.el,
-      this.customEvent,
-      this.ngZone,
       this.type,
-      this.canPivot,
       this.isLoading,
       this.debug
     );
@@ -168,7 +139,6 @@ export class ComplexChartDirective<X extends XaxisType>
     this._options = updateChartOptions(
       this._options,
       this._chartConfig,
-      this.el,
       this.debug
     );
 
@@ -258,12 +228,6 @@ export class ComplexChartDirective<X extends XaxisType>
       if (this.debug) console.log('Graphique créé avec succès');
     } else {
       console.error('Échec de la création du graphique');
-      // Si la création échoue, on peut réessayer après un court délai
-      // this.ngZone.runOutsideAngular(() => {
-      //   setTimeout(() => {
-      //     if (!this.chart) this.createChart();
-      //   }, 100);
-      // });
     }
   }
 }

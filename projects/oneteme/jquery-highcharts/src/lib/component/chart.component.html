@@ -14,7 +14,7 @@
     [data]="data"
     [isLoading]="isLoading"
     [debug]="debug"
-    [canPivot]="_charts[type]?.canPivot"
+    [canPivot]="canPivot"
     (customEvent)="change($event)"
   ></div>
   <div
@@ -42,7 +42,7 @@
     [data]="data"
     [isLoading]="isLoading"
     [debug]="debug"
-    [canPivot]="_charts[type]?.canPivot"
+    [canPivot]="canPivot"
     (customEvent)="change($event)"
   ></div>
 </div>

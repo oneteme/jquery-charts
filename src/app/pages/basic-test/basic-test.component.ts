@@ -36,7 +36,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = true;
-  dataDelay = 1000;
+  dataDelay = 200;
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {

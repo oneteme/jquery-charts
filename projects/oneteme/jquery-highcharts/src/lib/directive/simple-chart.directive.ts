@@ -78,12 +78,8 @@ export class SimpleChartDirective
   constructor() {
     // Initialiser les options de base avec l'état de chargement par défaut
     this._options = initBaseOptions(
-      this.el,
-      this.customEvent,
-      this.ngZone,
       this.type,
-      this.canPivot,
-      true, // isLoading initial à true
+      this.isLoading,
       this.debug
     );
   }
@@ -197,7 +193,6 @@ export class SimpleChartDirective
     this._options = updateChartOptions(
       this._options,
       this._chartConfig,
-      this.el,
       this.debug
     );
 

@@ -61,11 +61,7 @@ function handleMouseLeave(event) {
  * @returns Options de base pour Highcharts
  */
 export function initBaseOptions(
-  node: ElementRef,
-  customEvent: EventEmitter<ChartCustomEvent>,
-  ngZone: NgZone,
   chartType: string,
-  canPivot: boolean = true,
   isLoading: boolean = false,
   debug: boolean = false
 ): any {
@@ -74,27 +70,12 @@ export function initBaseOptions(
   if (debug) console.log('Initialisation des options de base pour', chartType);
 
   return {
+    shouldRedraw: true,
     lang: {
       noData: loadingText,
     },
-    shouldRedraw: true,
     chart: {
       type: chartType,
-      animation: true,
-      backgroundColor: 'transparent',
-      events: {
-        load: function () {
-          if (debug) console.log('Graphique chargé, préparation de la toolbar');
-          // La toolbar sera ajoutée après le chargement complet du graphique
-        },
-        render: function () {
-          if (debug) console.log('Graphique rendu');
-          // Le rendu est fait, on peut maintenant configurer la toolbar
-        },
-      },
-    },
-    tooltip: {
-      enabled: true,
     },
     // pour supprimer la toolbar par défaut de Highcharts
     exporting: {
@@ -106,33 +87,21 @@ export function initBaseOptions(
       },
     },
     credits: { enabled: false },
-    title: {
-      text: undefined,
-    },
-    subtitle: {
-      text: undefined,
-    },
+    series: [],
+    xAxis: {},
+    plotOptions: {},
   };
 }
 
-/**
- * Met à jour les options communes d'un graphique
- * @param options Options actuelles
- * @param config Configuration du graphique
- * @param el Référence à l'élément DOM
- * @param debug Mode debug
- * @returns Options mises à jour
- */
 export function updateChartOptions(
   options: any,
   config: ChartProvider<any, any>,
-  el: ElementRef,
   debug: boolean = false
 ): any {
   if (debug)
     console.log('Mise à jour des options du graphique avec config:', config);
 
-  // Vérifier que config n'est pas undefined
+  // Vérif si config n'est pas undefined
   if (!config) {
     console.warn('La configuration du graphique est undefined');
     return options;
@@ -172,7 +141,7 @@ export function setupToolbar(
   config: ChartProvider<any, any>,
   customEvent: EventEmitter<ChartCustomEvent>,
   ngZone: NgZone,
-  canPivot: boolean = false,
+  canPivot: boolean = true,
   debug: boolean = false
 ): void {
   if (!chart || !config.showToolbar) return;
@@ -205,7 +174,10 @@ export function setupToolbar(
     prevButton.innerHTML = ICONS.previous;
     prevButton.className = 'custom-icon';
     prevButton.title = 'Graphique précédent';
-    prevButton.addEventListener('click', () => {
+    prevButton.addEventListener('click', (event) => {
+      // Empêcher la propagation de l'événement vers le conteneur
+      event.stopPropagation();
+      event.preventDefault();
       ngZone.run(() => customEvent.emit('previous'));
     });
     toolbar.appendChild(prevButton);
@@ -215,7 +187,10 @@ export function setupToolbar(
     nextButton.innerHTML = ICONS.next;
     nextButton.className = 'custom-icon';
     nextButton.title = 'Graphique suivant';
-    nextButton.addEventListener('click', () => {
+    nextButton.addEventListener('click', (event) => {
+      // Empêcher la propagation de l'événement vers le conteneur
+      event.stopPropagation();
+      event.preventDefault();
       ngZone.run(() => customEvent.emit('next'));
     });
     toolbar.appendChild(nextButton);
@@ -226,11 +201,19 @@ export function setupToolbar(
       pivotButton.innerHTML = ICONS.pivot;
       pivotButton.className = 'custom-icon';
       pivotButton.title = 'Pivot';
-      pivotButton.addEventListener('click', () => {
+      pivotButton.addEventListener('click', (event) => {
+        // Empêcher la propagation de l'événement vers le conteneur
+        event.stopPropagation();
+        event.preventDefault();
         ngZone.run(() => customEvent.emit('pivot'));
       });
       toolbar.appendChild(pivotButton);
     }
+
+    // Empêcher la propagation des événements de la toolbar vers le conteneur
+    toolbar.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
 
     // Ajouter le toolbar au container
     container.appendChild(toolbar);
@@ -250,21 +233,13 @@ export function setupToolbar(
   }
 }
 
-/**
- * Crée un graphique Highcharts avec gestion des dimensions
- * @param el Référence à l'élément DOM
- * @param options Options du graphique
- * @param ngZone Service NgZone
- * @param debug Mode debug
- * @returns Instance du graphique Highcharts créée
- */
 export function createHighchart(
   el: ElementRef,
   options: any,
   config: ChartProvider<any, any>,
   customEvent: EventEmitter<ChartCustomEvent>,
   ngZone: NgZone,
-  canPivot: boolean = false,
+  canPivot: boolean = true,
   debug: boolean = false
 ): Highcharts.Chart {
   try {
@@ -281,10 +256,10 @@ export function createHighchart(
     chartOptions.chart = chartOptions.chart || {};
 
     // Définir explicitement la taille du conteneur avant de créer le graphique
-    const containerHeight = config.height ? parseInt(String(config.height)) : null;
-    const containerWidth = config.width ? parseInt(String(config.width)) : null;
+    const containerHeight = config.height ? parseInt(String(config.height)) : undefined;
+    const containerWidth = config.width ? parseInt(String(config.width)) : undefined;
 
-    if (debug) console.log(`Dimensions du conteneur: ${containerWidth}x${containerHeight}`);
+    if (debug) console.log(`Dimensions du conteneur: ${containerWidth}x${containerHeight}. la config : ${JSON.stringify(config)}`);
 
     // Définir explicitement la taille dans les options
     chartOptions.chart.width = containerWidth;
@@ -343,7 +318,7 @@ export function updateLoading(
   });
 
   if (chart) {
-    chart.update({ lang: { noData: loadingText } }, false);
+    chart.update({ lang: { noData: loadingText } }, false, false, true);
   }
 }
 

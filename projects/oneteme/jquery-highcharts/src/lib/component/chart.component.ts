@@ -21,9 +21,9 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
 
     funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'], canPivot: false },
     pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'], canPivot: false },
-    bar: { possibleType: ['bar', 'column', 'columnpyramid'], canPivot: true },
-    column: { possibleType: ['bar', 'column', 'columnpyramid'], canPivot: true },
-    columnpyramid: { possibleType: ['bar', 'column', 'columnpyramid'], canPivot: true },
+    bar: { possibleType: ['bar', 'column', 'columnpyramid'] },
+    column: { possibleType: ['bar', 'column', 'columnpyramid'] },
+    columnpyramid: { possibleType: ['bar', 'column', 'columnpyramid'] },
     line: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     area: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     spline: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
@@ -66,6 +66,14 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   }
 
   /**
+   * Vérifie si le type de graphique actuel permet le pivotage
+   * Par défaut, tous les types sont pivotables sauf si canPivot est explicitement défini à false
+   */
+  get canPivot(): boolean {
+    return this._charts[this._type]?.canPivot !== false;
+  }
+
+  /**
    * Change le type de graphique ou effectue une rotation des données
    * @param event Événement personnalisé (previous, next, pivot)
    */
@@ -90,7 +98,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
       }
     }
 
-    if (event === 'pivot' && this._charts[this._type]?.canPivot !== false) {
+    if (event === 'pivot' && this.canPivot) {
       this.config = this.config.pivot
         ? { ...this.config, pivot: false }
         : { ...this.config, pivot: true };
