@@ -40,19 +40,41 @@ export class BasicTestComponent implements OnInit {
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
-    simple: ['pie', 'donut', 'polar', 'radar', 'funnel', 'pyramid'] as ChartType[],
+    simple: [
+      'pie',
+      'donut',
+      'polar',
+      'radar',
+      'radial',
+      'funnel',
+      'pyramid',
+    ] as ChartType[],
     complex: [
-      'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 
-      'areaspline', 'columnrange', 'arearange', 'areasplinerange'
-    ] as ChartType[]
+      'bar',
+      'column',
+      'columnpyramid',
+      'line',
+      'area',
+      'spline',
+      'areaspline',
+      'columnrange',
+      'arearange',
+      'areasplinerange',
+      'scatter',
+      'bubble',
+      'heatmap',
+      'treemap',
+      'lollipop',
+    ] as ChartType[],
   };
 
   // Configuration de base commune pour tous les graphiques
   private readonly baseConfig = {
     options: {
+      // Tout ce qu'on veut en commun pour tous les graphiques
       legend: { position: 'bottom' },
-      tooltip: { enabled: true }
-    }
+      tooltip: { enabled: true },
+    },
   };
 
   // Données pour les deux types de graphiques
@@ -62,7 +84,7 @@ export class BasicTestComponent implements OnInit {
       { category: 'Catégorie B', value: 25 },
       { category: 'Catégorie C', value: 20 },
       { category: 'Catégorie D', value: 15 },
-      { category: 'Catégorie E', value: 10 }
+      { category: 'Catégorie E', value: 10 },
     ],
     complex: [
       { month: 'Jan', team: 'Équipe A', value: 44 },
@@ -82,14 +104,18 @@ export class BasicTestComponent implements OnInit {
       { month: 'Mar', team: 'Équipe C', value: 36 },
       { month: 'Avr', team: 'Équipe C', value: 33 },
       { month: 'Mai', team: 'Équipe C', value: 42 },
-      { month: 'Juin', team: 'Équipe C', value: 30 }
-    ]
+      { month: 'Juin', team: 'Équipe C', value: 30 },
+    ],
   };
 
   // Accesseurs pour rétrocompatibilité avec le template
-  get simpleChartTypes(): ChartType[] { return this.chartTypes.simple; }
-  get complexChartTypes(): ChartType[] { return this.chartTypes.complex; }
-  
+  get simpleChartTypes(): ChartType[] {
+    return this.chartTypes.simple;
+  }
+  get complexChartTypes(): ChartType[] {
+    return this.chartTypes.complex;
+  }
+
   ngOnInit(): void {
     this.loadChartData();
   }
@@ -97,31 +123,32 @@ export class BasicTestComponent implements OnInit {
   // Charge les données du graphique en fonction du type sélectionné
   loadChartData(): void {
     this.chartData = [];
-    this.isLoading = true;
 
     setTimeout(() => {
       const chartMode = this.isSimpleChart ? 'simple' : 'complex';
       this.configureChart(chartMode);
-      this.isLoading = false;
     }, this.dataDelay);
   }
 
   // Configure un graphique selon son type
   private configureChart(mode: 'simple' | 'complex'): void {
     const isSimple = mode === 'simple';
-    
+
     this.chartConfig = {
       ...this.baseConfig,
       title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
       subtitle: 'Données 2025',
       ...(isSimple ? {} : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
-      series: [{
-        ...(isSimple ? {} : { name: field('team') }),
-        data: {
-          x: field(isSimple ? 'category' : 'month'),
-          y: field('value')
-        }
-      }]
+      series: [
+        {
+          ...(isSimple ? {} : { name: field('team') }),
+          data: {
+            x: field(isSimple ? 'category' : 'month'),
+            y: field('value'),
+          },
+        },
+      ],
+      showToolbar: true,
     };
 
     this.chartData = [...this.chartData$[mode]];

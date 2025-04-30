@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ChartProvider, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ComplexChartDirective } from '../directive/complex-chart.directive';
 import { SimpleChartDirective } from '../directive/simple-chart.directive';
 
@@ -12,21 +12,22 @@ import { SimpleChartDirective } from '../directive/simple-chart.directive';
 })
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   protected _charts: {
-    [key: string]: { possibleType: string[]; canPivot?: boolean };
+    [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
-    pie: { possibleType: ['pie', 'donut'] },
-    donut: { possibleType: ['pie', 'donut'] },
+    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'] },
+    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'] },
     polar: { possibleType: ['polar'], canPivot: false },
     radar: { possibleType: ['radar'], canPivot: false },
+
+    funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'], canPivot: false },
+    pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'], canPivot: false },
+    bar: { possibleType: ['bar', 'column', 'columnpyramid'], canPivot: true },
+    column: { possibleType: ['bar', 'column', 'columnpyramid'], canPivot: true },
+    columnpyramid: { possibleType: ['bar', 'column', 'columnpyramid'], canPivot: true },
     line: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     area: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     spline: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
     areaspline: { possibleType: ['line', 'area', 'spline', 'areaspline'] },
-    bar: { possibleType: ['bar', 'column', 'columnpyramid'] },
-    column: { possibleType: ['bar', 'column', 'columnpyramid'] },
-    columnpyramid: { possibleType: ['bar', 'column', 'columnpyramid'] },
-    funnel: { possibleType: ['funnel', 'pyramid'], canPivot: false },
-    pyramid: { possibleType: ['funnel', 'pyramid'], canPivot: false },
     columnrange: {
       possibleType: ['columnrange', 'arearange', 'areasplinerange'],
       canPivot: false,
@@ -39,11 +40,19 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
       possibleType: ['columnrange', 'arearange', 'areasplinerange'],
       canPivot: false,
     },
+    scatter: { possibleType: ['scatter', 'bubble'] },
+    bubble: { possibleType: ['scatter', 'bubble'] },
+    radialBar: { possibleType: ['radialBar'] },
+    gauge: { possibleType: ['gauge'] },
+    variablepie: { possibleType: ['variablepie'] },
+    heatmap: { possibleType: ['heatmap'] },
+    treemap: { possibleType: ['treemap'] },
+    lollipop: { possibleType: ['lollipop'] },
   };
 
-  _type: string;
+  _type: ChartType;
 
-  @Input({ alias: 'type', required: true }) set value(type: string) {
+  @Input({ alias: 'type', required: true }) set value(type: ChartType) {
     this._type = type;
   }
   @Input({ required: true }) config: ChartProvider<X, Y>;

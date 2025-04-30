@@ -1,13 +1,39 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, inject, OnInit } from '@angular/core';
-import { ChartProvider, ChartView, buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+  inject,
+} from '@angular/core';
+import {
+  ChartProvider,
+  ChartView,
+  buildSingleSerieChart,
+  mergeDeep,
+} from '@oneteme/jquery-core';
 
+import * as Highcharts from 'highcharts';
+import more from 'highcharts/highcharts-more';
 import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
 import Annotations from 'highcharts/modules/annotations';
 import Accessibility from 'highcharts/modules/accessibility';
 import Exporting from 'highcharts/modules/exporting';
-import more from 'highcharts/highcharts-more';
-import { createHighchart, destroyChart, initBaseOptions, updateChartOptions, updateLoading, setupToolbar, configurePieOptions } from './utils';
-import * as Highcharts from 'highcharts';
+import Funnel from 'highcharts/modules/funnel';
+import Treemap from 'highcharts/modules/treemap';
+import {
+  createHighchart,
+  destroyChart,
+  initBaseOptions,
+  updateChartOptions,
+  updateLoading,
+  configurePieOptions,
+  ChartCustomEvent,
+} from './utils';
 
 // Initialisation des modules Highcharts
 more(Highcharts);
@@ -15,13 +41,16 @@ NoDataToDisplay(Highcharts);
 Annotations(Highcharts);
 Accessibility(Highcharts);
 Exporting(Highcharts);
+// ExportData(Highcharts);
+Funnel(Highcharts);
+Treemap(Highcharts);
 
 @Directive({
   selector: '[simple-chart]',
   standalone: true,
 })
 export class SimpleChartDirective
-  implements ChartView<string, number>, OnChanges, OnDestroy, OnInit
+  implements ChartView<string, number>, OnChanges, OnDestroy
 {
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
@@ -30,15 +59,16 @@ export class SimpleChartDirective
   @Input({ required: true }) data: any[];
   @Input() isLoading: boolean = false;
   @Input() debug: boolean = false;
-  @Output() customEvent: EventEmitter<string> = new EventEmitter();
+  @Input() canPivot: boolean = true;
+  @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
   @Input({ alias: 'type' }) type:
     | 'pie'
     | 'donut'
-    | 'pyramid'
+    | 'polar'
+    | 'radar'
     | 'funnel'
-    | 'variablepie'
-    | 'solidgauge'
-    | 'gauge' = 'pie';
+    | 'pyramid'
+    | 'treemap' = 'pie';
 
   chart: Highcharts.Chart;
   private _chartConfig: ChartProvider<string, number> = {};
@@ -47,14 +77,15 @@ export class SimpleChartDirective
 
   constructor() {
     // Initialiser les options de base avec l'état de chargement par défaut
-    // isLoading est initialisé à false par défaut, donc on force à true si la propriété isLoading est true
-    this._options = initBaseOptions(this.type, true, this.debug);
-  }
-
-  ngOnInit(): void {
-    // S'assurer que l'élément est proprement initialisé avant toute création de graphique
-    this.updateConfig();
-    this.createChart();
+    this._options = initBaseOptions(
+      this.el,
+      this.customEvent,
+      this.ngZone,
+      this.type,
+      this.canPivot,
+      true, // isLoading initial à true
+      this.debug
+    );
   }
 
   ngOnDestroy(): void {
@@ -181,18 +212,6 @@ export class SimpleChartDirective
 
     // Mettre à jour le type de graphique
     this._options.chart.type = actualType;
-    this._options.chart.events = {
-      load: () => {
-        setupToolbar(
-          this.chart,
-          this._chartConfig,
-          this.customEvent,
-          this.ngZone,
-          false,
-          this.debug
-        );
-      },
-    };
   }
 
   // Met à jour les données du graphique en utilisant jquery-core
@@ -258,7 +277,10 @@ export class SimpleChartDirective
     const createdChart = createHighchart(
       this.el,
       this._options,
+      this.config, // Passer la config pour la toolbar
+      this.customEvent,
       this.ngZone,
+      this.canPivot,
       this.debug
     );
 
@@ -266,8 +288,7 @@ export class SimpleChartDirective
       this.chart = createdChart;
       if (this.debug) console.log('Graphique créé avec succès');
     } else {
-      // Si la création a échoué, réessayer après un court délai
-      // setTimeout(() => this.createChart(), 50);
+      console.error('Échec de la création du graphique');
     }
   }
 }

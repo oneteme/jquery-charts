@@ -1,4 +1,4 @@
-<div style="height: 100%; width: 100%">
+<div>
   <div
     *ngIf="
       type === 'pie' ||
@@ -14,6 +14,7 @@
     [data]="data"
     [isLoading]="isLoading"
     [debug]="debug"
+    [canPivot]="_charts[type]?.canPivot"
     (customEvent)="change($event)"
   ></div>
   <div
@@ -27,7 +28,13 @@
       type === 'areaspline' ||
       type === 'columnrange' ||
       type === 'arearange' ||
-      type === 'areasplinerange'
+      type === 'areasplinerange' ||
+      type === 'scatter' ||
+      type === 'bubble' ||
+      type === 'heatmap' ||
+      type === 'treemap' ||
+      type === 'radialBar' ||
+      type === 'lollipop'
     "
     complex-chart
     [type]="type"

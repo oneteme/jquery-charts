@@ -1,23 +1,48 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, OnInit, Output, SimpleChanges, inject } from '@angular/core';
-import { ChartProvider, ChartView, XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-core';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+  inject,
+} from '@angular/core';
+import {
+  ChartProvider,
+  ChartView,
+  XaxisType,
+  YaxisType,
+  buildChart,
+  mergeDeep,
+} from '@oneteme/jquery-core';
 
+import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
+import Exporting from 'highcharts/modules/exporting';
 import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
 import Annotations from 'highcharts/modules/annotations';
 import Accessibility from 'highcharts/modules/accessibility';
-import Funnel from 'highcharts/modules/funnel';
 import Treemap from 'highcharts/modules/treemap';
-import Exporting from 'highcharts/modules/exporting';
-import * as Highcharts from 'highcharts';
-import { createHighchart, destroyChart, initBaseOptions, updateChartOptions, updateLoading, setupToolbar } from './utils';
+import Heatmap from 'highcharts/modules/heatmap';
+import {
+  createHighchart,
+  destroyChart,
+  initBaseOptions,
+  updateChartOptions,
+  updateLoading,
+  ChartCustomEvent,
+} from './utils';
 
 // Initialisation des modules Highcharts
 more(Highcharts);
 NoDataToDisplay(Highcharts);
 Annotations(Highcharts);
 Accessibility(Highcharts);
-Funnel(Highcharts);
 Treemap(Highcharts);
+Heatmap(Highcharts);
 Exporting(Highcharts);
 
 @Directive({
@@ -25,7 +50,7 @@ Exporting(Highcharts);
   standalone: true,
 })
 export class ComplexChartDirective<X extends XaxisType>
-  implements ChartView<X, YaxisType>, OnChanges, OnDestroy, OnInit
+  implements ChartView<X, YaxisType>, OnChanges, OnDestroy
 {
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
@@ -35,7 +60,7 @@ export class ComplexChartDirective<X extends XaxisType>
   @Input() isLoading: boolean = false;
   @Input() debug: boolean = false;
   @Input() canPivot: boolean = true;
-  @Output() customEvent: EventEmitter<string> = new EventEmitter();
+  @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
   @Input({ alias: 'type' }) type:
     | 'bar'
     | 'column'
@@ -47,7 +72,10 @@ export class ComplexChartDirective<X extends XaxisType>
     | 'columnrange'
     | 'arearange'
     | 'areasplinerange'
-    | 'lollipop' = 'bar';
+    | 'scatter'
+    | 'bubble'
+    | 'heatmap'
+    | 'treemap' = 'bar';
 
   chart: Highcharts.Chart;
   private _chartConfig: ChartProvider<X, YaxisType> = {};
@@ -56,15 +84,15 @@ export class ComplexChartDirective<X extends XaxisType>
 
   constructor() {
     // Initialiser les options de base
-    this._options = initBaseOptions(this.type, this.isLoading, this.debug);
-  }
-
-  ngOnInit(): void {
-    // S'assurer que l'élément est proprement initialisé avant toute création de graphique
-    setTimeout(() => {
-      this.updateConfig();
-      this.createChart();
-    }, 0);
+    this._options = initBaseOptions(
+      this.el,
+      this.customEvent,
+      this.ngZone,
+      this.type,
+      this.canPivot,
+      this.isLoading,
+      this.debug
+    );
   }
 
   ngOnDestroy(): void {
@@ -146,11 +174,6 @@ export class ComplexChartDirective<X extends XaxisType>
 
     // Mettre à jour le type de graphique
     this._options.chart.type = this.type;
-    this._options.chart.events = {
-      load: () => {
-        setupToolbar(this.chart, this._chartConfig, this.customEvent, this.ngZone, this.canPivot, this.debug);
-      },
-    };
 
     // Options spécifiques aux graphiques complexes
     mergeDeep(this._options, {
@@ -187,7 +210,9 @@ export class ComplexChartDirective<X extends XaxisType>
           series: commonChart.series || [],
         });
       } else {
-        console.warn('Aucune catégorie ou données de série trouvée dans commonChart');
+        console.warn(
+          'Aucune catégorie ou données de série trouvée dans commonChart'
+        );
       }
     } catch (error) {
       console.error('Erreur lors du traitement des données:', error);
@@ -218,14 +243,27 @@ export class ComplexChartDirective<X extends XaxisType>
    */
   createChart() {
     // Créer le graphique avec la fonction utilitaire
-    const createdChart = createHighchart(this.el, this._options, this.ngZone, this.debug);
+    const createdChart = createHighchart(
+      this.el,
+      this._options,
+      this.config, // Passer la config pour la toolbar
+      this.customEvent, // pour la toolbar
+      this.ngZone,
+      this.canPivot, // pour la toolbar
+      this.debug
+    );
 
     if (createdChart) {
       this.chart = createdChart;
       if (this.debug) console.log('Graphique créé avec succès');
     } else {
-      // Si la création a échoué, réessayer après un court délai
-      setTimeout(() => this.createChart(), 50);
+      console.error('Échec de la création du graphique');
+      // Si la création échoue, on peut réessayer après un court délai
+      // this.ngZone.runOutsideAngular(() => {
+      //   setTimeout(() => {
+      //     if (!this.chart) this.createChart();
+      //   }, 100);
+      // });
     }
   }
 }
