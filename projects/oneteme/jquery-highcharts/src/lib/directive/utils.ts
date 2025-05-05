@@ -5,11 +5,6 @@ import { ICONS } from '../../assets/icons/icons';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
-/**
- * Détruit proprement un graphique Highcharts
- * @param chart Instance du graphique à détruire
- * @param debug Mode debug pour afficher des logs
- */
 export function destroyChart(
   chart: Highcharts.Chart,
   debug: boolean = false
