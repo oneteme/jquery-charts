@@ -104,14 +104,8 @@ export function initBaseOptions(
     chart: {
       type: chartType || 'line',
     },
-    exporting: {
-      enabled: false,
-      buttons: {
-        contextButton: {
-          enabled: false,
-        },
-      },
-    },
+
+    // Ne pas désactiver l'export par défaut, laissez l'utilisateur le configurer
     credits: { enabled: false },
     series: [],
     xAxis: {},
@@ -188,12 +182,18 @@ export function setupToolbar(options: ToolbarOptions): void {
     const toolbar = document.createElement('div');
     toolbar.className = 'highcharts-custom-toolbar';
     toolbar.style.position = 'absolute';
-    toolbar.style.right = '3px';
-    toolbar.style.top = '0px';
+
+    // Vérifier si le bouton d'export de Highcharts est visible
+    const hasExportButton = chart.options.exporting?.enabled === true;
+
+    // Ajuster la position en fonction de la présence du bouton d'export
+    toolbar.style.right = hasExportButton ? '2.9em' : '3px';
+    toolbar.style.top = hasExportButton ? '1.1em' : '0px';
+    toolbar.style.color = hasExportButton ? '#555555' : '#000';
     toolbar.style.zIndex = '10';
     toolbar.style.display = 'flex';
     toolbar.style.visibility = 'hidden'; // Masqué par défaut
-    toolbar.style.gap = '5px';
+    toolbar.style.gap = '11px';
 
     // Ajouter les boutons de navigation
     toolbar.appendChild(
@@ -249,7 +249,6 @@ function determineDimensions(
   config: ChartProvider<any, any>,
   debug: boolean = false
 ): { width: number; height: number } {
-
   // Si des dimensions sont spécifiées dans la configuration, les utiliser
   let configWidth: number | undefined = undefined;
   if (config.width) {
@@ -278,10 +277,16 @@ function determineDimensions(
   }
 
   let finalWidth: number, finalHeight: number;
-  if ((!isNaN(configWidth) && configWidth > 0) || (!isNaN(configHeight) && configHeight > 0)) {
+  if (
+    (!isNaN(configWidth) && configWidth > 0) ||
+    (!isNaN(configHeight) && configHeight > 0)
+  ) {
     finalWidth = configWidth;
     finalHeight = configHeight;
-  } else if ((parentWidth && parentWidth > 0) || (parentHeight && parentHeight > 0)) {
+  } else if (
+    (parentWidth && parentWidth > 0) ||
+    (parentHeight && parentHeight > 0)
+  ) {
     finalHeight = configHeight ?? parentHeight;
     finalWidth = configHeight ?? parentWidth;
   } else {
@@ -305,7 +310,7 @@ function determineDimensions(
     );
   }
 
-  return { width: finalWidth,  height: finalHeight };
+  return { width: finalWidth, height: finalHeight };
 }
 
 /**

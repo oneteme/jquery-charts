@@ -36,7 +36,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = true;
-  dataDelay = 2000;
+  dataDelay = 200;
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
@@ -74,6 +74,15 @@ export class BasicTestComponent implements OnInit {
       // Tout ce qu'on veut en commun pour tous les graphiques
       legend: { position: 'bottom' },
       tooltip: { enabled: true },
+      exporting: {
+        enabled: true,
+        buttons: {
+          contextButton: {
+            enabled: true,
+            // menuItems: ['downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
+          },
+        },
+      },
     },
   };
 

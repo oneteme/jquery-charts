@@ -9,6 +9,7 @@ import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
 import Annotations from 'highcharts/modules/annotations';
 import Accessibility from 'highcharts/modules/accessibility';
 import Exporting from 'highcharts/modules/exporting';
+import ExportDataModule from 'highcharts/modules/export-data';
 import Funnel from 'highcharts/modules/funnel';
 
 // Initialisation des modules Highcharts
@@ -17,6 +18,7 @@ NoDataToDisplay(Highcharts);
 Annotations(Highcharts);
 Accessibility(Highcharts);
 Exporting(Highcharts);
+ExportDataModule(Highcharts);
 Funnel(Highcharts);
 
 // Directive pour graph simple = données simples (pie, donut, polar, radar, funnel, pyramid)
@@ -95,7 +97,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         series: {
         dataLabels: {
           enabled: true,
-          // format: '{point.name}: {point.y}'
         }
         }
       }
