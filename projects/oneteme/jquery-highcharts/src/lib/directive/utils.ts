@@ -5,35 +5,69 @@ import { ICONS } from '../../assets/icons/icons';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
+/**
+ * Interface pour les options de création de graphique
+ */
+export interface ChartCreationOptions {
+  el: ElementRef;
+  options: any;
+  config: ChartProvider<any, any>;
+  customEvent: EventEmitter<ChartCustomEvent>;
+  ngZone: NgZone;
+  canPivot?: boolean;
+  isLoading?: boolean;
+  debug?: boolean;
+}
+
+/**
+ * Interface pour les options de la toolbar
+ */
+export interface ToolbarOptions {
+  chart: Highcharts.Chart;
+  config: ChartProvider<any, any>;
+  customEvent: EventEmitter<ChartCustomEvent>;
+  ngZone: NgZone;
+  canPivot?: boolean;
+  debug?: boolean;
+}
+
+/**
+ * Détruit proprement un graphique Highcharts
+ */
 export function destroyChart(
   chart: Highcharts.Chart,
   debug: boolean = false
 ): void {
-  if (chart) {
-    try {
-      // Supprimer la toolbar personnalisée avant de détruire le graphique
-      if (chart.container) {
-        const toolbar = chart.container.querySelector(
-          '.highcharts-custom-toolbar'
-        );
-        if (toolbar) {
-          // Supprimer les écouteurs d'événements sur le conteneur
-          const container = chart.container;
-          container.removeEventListener('mousemove', handleMouseMove);
-          container.removeEventListener('mouseleave', handleMouseLeave);
-          toolbar.remove();
-        }
-      }
+  if (!chart) return;
 
-      chart.destroy();
-      if (debug) console.log('Graphique détruit avec succès');
-    } catch (error) {
-      console.error('Erreur lors de la destruction du graphique:', error);
-    }
+  try {
+    removeToolbar(chart);
+    chart.destroy();
+    if (debug) console.log('Graphique détruit avec succès');
+  } catch (error) {
+    console.error('Erreur lors de la destruction du graphique:', error);
   }
 }
 
-// Gestionnaires d'événements pour la visibilité de la toolbar
+/**
+ * Supprime la toolbar personnalisée d'un graphique
+ */
+function removeToolbar(chart: Highcharts.Chart): void {
+  if (!chart.container) return;
+
+  const toolbar = chart.container.querySelector('.highcharts-custom-toolbar');
+  if (!toolbar) return;
+
+  // Supprimer les écouteurs d'événements sur le conteneur
+  const container = chart.container;
+  container.removeEventListener('mousemove', handleMouseMove);
+  container.removeEventListener('mouseleave', handleMouseLeave);
+  toolbar.remove();
+}
+
+/**
+ * Gère l'affichage de la toolbar au survol
+ */
 function handleMouseMove(event) {
   const toolbar = event.currentTarget.querySelector(
     '.highcharts-custom-toolbar'
@@ -41,6 +75,9 @@ function handleMouseMove(event) {
   if (toolbar) toolbar.style.visibility = 'visible';
 }
 
+/**
+ * Masque la toolbar lorsque la souris quitte le graphique
+ */
 function handleMouseLeave(event) {
   const toolbar = event.currentTarget.querySelector(
     '.highcharts-custom-toolbar'
@@ -50,10 +87,6 @@ function handleMouseLeave(event) {
 
 /**
  * Initialise les options de base communes à tous les graphiques Highcharts
- * @param chartType Type de graphique (pie, column, bar, etc.)
- * @param isLoading État de chargement initial
- * @param debug Mode debug
- * @returns Options de base pour Highcharts
  */
 export function initBaseOptions(
   chartType: string,
@@ -61,7 +94,6 @@ export function initBaseOptions(
   debug: boolean = false
 ): any {
   const loadingText = isLoading ? 'Chargement des données...' : 'Aucune donnée';
-
   if (debug) console.log('Initialisation des options de base pour', chartType);
 
   return {
@@ -70,9 +102,8 @@ export function initBaseOptions(
       noData: loadingText,
     },
     chart: {
-      type: chartType,
+      type: chartType || 'line',
     },
-    // pour supprimer la toolbar par défaut de Highcharts
     exporting: {
       enabled: false,
       buttons: {
@@ -85,73 +116,73 @@ export function initBaseOptions(
     series: [],
     xAxis: {},
     plotOptions: {},
-  };
-}
-
-export function updateChartOptions(
-  options: any,
-  config: ChartProvider<any, any>,
-  debug: boolean = false
-): any {
-  if (debug)
-    console.log('Mise à jour des options du graphique avec config:', config);
-
-  // Vérif si config n'est pas undefined
-  if (!config) {
-    console.warn('La configuration du graphique est undefined');
-    return options;
-  }
-
-  // Options communes de base
-  const baseOptions = {
-    chart: {
-      height: config.height ?? '100%',
-      width: config.width ?? '100%',
-      stacked: config.stacked,
-    },
-    title: {
-      text: config.title,
-    },
-    subtitle: {
-      text: config.subtitle,
-    },
-    xAxis: {
-      title: {
-        text: config.xtitle,
+    // Configuration pour l'affichage du message "Pas de données"
+    noData: {
+      style: {
+        fontSize: '16px',
+        color: '#666',
+        fontWeight: 'bold',
       },
     },
-    yAxis: {
-      title: {
-        text: config.ytitle,
+    // Configuration du loading
+    loading: {
+      labelStyle: {
+        color: '#666',
+        fontSize: '16px',
+        fontWeight: 'bold',
+      },
+      style: {
+        backgroundColor: 'rgba(255, 255, 255, 0.8)',
+        opacity: 1,
       },
     },
   };
-
-  // Fusionner les options de base avec les options personnalisées
-  return mergeDeep({}, options, baseOptions, config.options ?? {});
 }
 
-export function setupToolbar(
-  chart: Highcharts.Chart,
-  config: ChartProvider<any, any>,
-  customEvent: EventEmitter<ChartCustomEvent>,
+/**
+ * Crée un bouton pour la toolbar personnalisée
+ */
+function createToolbarButton(
+  icon: string,
+  title: string,
+  eventName: ChartCustomEvent,
   ngZone: NgZone,
-  canPivot: boolean = true,
-  debug: boolean = false
-): void {
-  if (!chart || !config.showToolbar) return;
+  emitter: EventEmitter<ChartCustomEvent>
+): HTMLButtonElement {
+  const button = document.createElement('button');
+  button.innerHTML = icon;
+  button.className = 'custom-icon';
+  button.title = title;
 
-  const container = chart.container;
-  if (!container) return;
+  button.addEventListener('click', (event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    ngZone.run(() => emitter.emit(eventName));
+  });
+
+  return button;
+}
+
+/**
+ * Configure la toolbar personnalisée du graphique
+ */
+export function setupToolbar(options: ToolbarOptions): void {
+  const {
+    chart,
+    config,
+    customEvent,
+    ngZone,
+    canPivot = true,
+    debug = false,
+  } = options;
+
+  if (!chart || !config.showToolbar) return;
+  if (!chart.container) return;
 
   try {
     // Supprimer toute toolbar existante
-    const existingToolbar = container.querySelector(
-      '.highcharts-custom-toolbar'
-    );
-    if (existingToolbar) {
-      existingToolbar.remove();
-    }
+    removeToolbar(chart);
+    const container = chart.container;
 
     // Créer un conteneur pour les boutons de navigation
     const toolbar = document.createElement('div');
@@ -164,45 +195,31 @@ export function setupToolbar(
     toolbar.style.visibility = 'hidden'; // Masqué par défaut
     toolbar.style.gap = '5px';
 
-    // Bouton Précédent
-    const prevButton = document.createElement('button');
-    prevButton.innerHTML = ICONS.previous;
-    prevButton.className = 'custom-icon';
-    prevButton.title = 'Graphique précédent';
-    prevButton.addEventListener('click', (event) => {
-      // Empêcher la propagation de l'événement vers le conteneur
-      event.stopPropagation();
-      event.preventDefault();
-      ngZone.run(() => customEvent.emit('previous'));
-    });
-    toolbar.appendChild(prevButton);
+    // Ajouter les boutons de navigation
+    toolbar.appendChild(
+      createToolbarButton(
+        ICONS.previous,
+        'Graphique précédent',
+        'previous',
+        ngZone,
+        customEvent
+      )
+    );
 
-    // Bouton Suivant
-    const nextButton = document.createElement('button');
-    nextButton.innerHTML = ICONS.next;
-    nextButton.className = 'custom-icon';
-    nextButton.title = 'Graphique suivant';
-    nextButton.addEventListener('click', (event) => {
-      // Empêcher la propagation de l'événement vers le conteneur
-      event.stopPropagation();
-      event.preventDefault();
-      ngZone.run(() => customEvent.emit('next'));
-    });
-    toolbar.appendChild(nextButton);
+    toolbar.appendChild(
+      createToolbarButton(
+        ICONS.next,
+        'Graphique suivant',
+        'next',
+        ngZone,
+        customEvent
+      )
+    );
 
-    // Bouton Pivot (si autorisé)
     if (canPivot) {
-      const pivotButton = document.createElement('button');
-      pivotButton.innerHTML = ICONS.pivot;
-      pivotButton.className = 'custom-icon';
-      pivotButton.title = 'Pivot';
-      pivotButton.addEventListener('click', (event) => {
-        // Empêcher la propagation de l'événement vers le conteneur
-        event.stopPropagation();
-        event.preventDefault();
-        ngZone.run(() => customEvent.emit('pivot'));
-      });
-      toolbar.appendChild(pivotButton);
+      toolbar.appendChild(
+        createToolbarButton(ICONS.pivot, 'Pivot', 'pivot', ngZone, customEvent)
+      );
     }
 
     // Empêcher la propagation des événements de la toolbar vers le conteneur
@@ -210,12 +227,10 @@ export function setupToolbar(
       event.stopPropagation();
     });
 
-    // Ajouter le toolbar au container
+    // Ajouter la toolbar au container
     container.appendChild(toolbar);
 
-    // Ajouter les événements de visibilité (comme dans l'implémentation ApexCharts)
-    container.removeEventListener('mousemove', handleMouseMove);
-    container.removeEventListener('mouseleave', handleMouseLeave);
+    // Ajouter les événements de visibilité
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', handleMouseLeave);
 
@@ -228,6 +243,74 @@ export function setupToolbar(
   }
 }
 
+// Détermine les dimensions du graphique en fonction de la configuration
+function determineDimensions(
+  el: ElementRef,
+  config: ChartProvider<any, any>,
+  debug: boolean = false
+): { width: number; height: number } {
+
+  // Si des dimensions sont spécifiées dans la configuration, les utiliser
+  let configWidth: number | undefined = undefined;
+  if (config.width) {
+    configWidth =
+      typeof config.width === 'number'
+        ? config.width
+        : parseInt(String(config.width), 10);
+  }
+
+  let configHeight: number | undefined = undefined;
+  if (config.height) {
+    configHeight =
+      typeof config.height === 'number'
+        ? config.height
+        : parseInt(String(config.height), 10);
+  }
+
+  // Obtenir les dimensions du parent si possible
+  let parentWidth = undefined;
+  let parentHeight = undefined;
+
+  if (el?.nativeElement?.parentElement) {
+    const parent = el.nativeElement.parentElement;
+    parentWidth = parent.clientWidth ?? parent.offsetWidth;
+    parentHeight = parent.clientHeight ?? parent.offsetHeight;
+  }
+
+  let finalWidth: number, finalHeight: number;
+  if ((!isNaN(configWidth) && configWidth > 0) || (!isNaN(configHeight) && configHeight > 0)) {
+    finalWidth = configWidth;
+    finalHeight = configHeight;
+  } else if ((parentWidth && parentWidth > 0) || (parentHeight && parentHeight > 0)) {
+    finalHeight = configHeight ?? parentHeight;
+    finalWidth = configHeight ?? parentWidth;
+  } else {
+    finalWidth = null;
+    finalHeight = null;
+  }
+
+  if (debug) {
+    console.log(
+      `Dimensions du parent: ${parentWidth ?? 'non disponible'}x${
+        parentHeight ?? 'non disponible'
+      }`
+    );
+    console.log(
+      `Dimensions configurées: ${configWidth ?? 'non spécifié'}x${
+        configHeight ?? 'non spécifié'
+      }`
+    );
+    console.log(
+      `Dimensions finales du graphique: ${finalWidth}x${finalHeight}`
+    );
+  }
+
+  return { width: finalWidth,  height: finalHeight };
+}
+
+/**
+ * Crée une instance de graphique Highcharts
+ */
 export function createHighchart(
   el: ElementRef,
   options: any,
@@ -235,56 +318,67 @@ export function createHighchart(
   customEvent: EventEmitter<ChartCustomEvent>,
   ngZone: NgZone,
   canPivot: boolean = true,
+  isLoading: boolean = false,
   debug: boolean = false
 ): Highcharts.Chart {
   try {
-    // Vérifier que l'élément DOM est disponible
     if (!el?.nativeElement) {
       if (debug) console.log('Élément DOM non disponible pour le rendu');
       return null;
     }
 
-    // Cloner les options pour éviter de modifier l'original
+    // Clone options pour éviter de modifier l'original
     const chartOptions: Highcharts.Options = Highcharts.merge({}, options);
-
-    // Forcer des dimensions explicites
     chartOptions.chart = chartOptions.chart || {};
 
-    // Définir explicitement la taille du conteneur avant de créer le graphique
-    const containerHeight = config.height ? parseInt(String(config.height)) : undefined;
-    const containerWidth = config.width ? parseInt(String(config.width)) : undefined;
+    // Déterminer les dimensions
+    const { width, height } = determineDimensions(el, config, debug);
 
-    if (debug) console.log(`Dimensions du conteneur: ${containerWidth}x${containerHeight}. la config : ${JSON.stringify(config)}`);
+    // N'appliquer les dimensions que si elles sont spécifiées
+    if (width !== undefined) chartOptions.chart.width = width;
+    if (height !== undefined) chartOptions.chart.height = height;
 
-    // Définir explicitement la taille dans les options
-    chartOptions.chart.width = containerWidth;
-    chartOptions.chart.height = containerHeight;
+    // Si aucune dimension n'est spécifiée, utiliser 100%
+    if (width === undefined && height === undefined) {
+      chartOptions.chart.height = '100%';
+      chartOptions.chart.width = '100%';
+    }
 
-    // Ajouter un événement pour configurer la toolbar après le rendu du graphique
-    const originalRenderCallback = chartOptions.chart.events?.render;
-    chartOptions.chart.events = chartOptions.chart.events || {};
-    chartOptions.chart.events.render = function (this: Highcharts.Chart) {
-      // Appeler le callback d'origine s'il existe
-      if (typeof originalRenderCallback === 'function') {
-        originalRenderCallback.call(this);
-      }
+    if (debug)
+      console.log(
+        `Dimensions du graphique: ${chartOptions.chart.width || 'auto'}x${
+          chartOptions.chart.height || 'auto'
+        }`
+      );
 
-      // Configurer la toolbar personnalisée
-      ngZone.runOutsideAngular(() => {
-        setupToolbar(this, config, customEvent, ngZone, canPivot, debug);
-      });
-    };
+    // Configurer les événements du graphique pour la toolbar
+    configureChartEvents(chartOptions, {
+      chart: null, // Sera défini après création
+      config,
+      customEvent,
+      ngZone,
+      canPivot,
+      debug,
+    });
 
     if (debug) console.log('Création du graphique avec options:', chartOptions);
 
-    return ngZone.runOutsideAngular(() => {
-      // Créer le graphique avec des dimensions explicites
-      const chartInstance = (Highcharts as any).chart(
-        el.nativeElement,
-        chartOptions
-      );
-      return chartInstance;
+    // Créer l'instance du graphique
+    const chartInstance = ngZone.runOutsideAngular(() => {
+      return (Highcharts as any).chart(el.nativeElement, chartOptions);
     });
+
+    // Appliquer l'état de chargement si nécessaire
+    if (isLoading) {
+      setChartLoadingState(
+        chartInstance,
+        true,
+        'Chargement des données...',
+        debug
+      );
+    }
+
+    return chartInstance;
   } catch (error) {
     console.error('Erreur lors de la création du graphique:', error);
     return null;
@@ -292,11 +386,102 @@ export function createHighchart(
 }
 
 /**
- * Met à jour l'état de chargement du graphique
- * @param options Options actuelles du graphique
- * @param chart Instance du graphique (optionnel)
- * @param isLoading Nouvel état de chargement
- * @param debug Mode debug
+ * Configure les événements du graphique pour ajouter la toolbar après le rendu
+ */
+function configureChartEvents(
+  chartOptions: Highcharts.Options,
+  toolbarOptions: ToolbarOptions
+): void {
+  const originalRenderCallback = chartOptions.chart?.events?.render;
+  chartOptions.chart.events = chartOptions.chart.events || {};
+
+  chartOptions.chart.events.render = function (this: Highcharts.Chart) {
+    // Appeler le callback d'origine s'il existe
+    if (typeof originalRenderCallback === 'function') {
+      originalRenderCallback.call(this);
+    }
+
+    // Mettre à jour l'instance du graphique dans les options de la toolbar
+    toolbarOptions.chart = this;
+
+    // Configurer la toolbar personnalisée
+    toolbarOptions.ngZone.runOutsideAngular(() => {
+      setupToolbar(toolbarOptions);
+    });
+  };
+}
+
+/**
+ * Met à jour l'état de chargement d'un graphique
+ */
+export function setChartLoadingState(
+  chart: Highcharts.Chart | null,
+  isLoading: boolean,
+  loadingText: string = 'Chargement des données...',
+  debug: boolean = false
+): void {
+  if (!chart) {
+    if (debug)
+      console.warn(
+        'Aucune instance de graphique fournie pour la mise à jour du chargement.'
+      );
+    return;
+  }
+
+  if (debug)
+    console.log(
+      `Mise à jour de l'état de chargement: ${
+        isLoading ? 'Chargement en cours' : 'Chargement terminé'
+      }`
+    );
+
+  if (isLoading) {
+    // Configurer et afficher l'indicateur de chargement
+    chart.showLoading(loadingText);
+
+    // S'assurer que le message est correctement stylisé
+    const loadingEl = chart.container?.querySelector('.highcharts-loading');
+    if (loadingEl) {
+      loadingEl.setAttribute('style', 'opacity: 1; visibility: visible');
+    }
+
+    const loadingTextEl = chart.container?.querySelector(
+      '.highcharts-loading-inner'
+    );
+    if (loadingTextEl) {
+      loadingTextEl.setAttribute(
+        'style',
+        'font-size: 16px; font-weight: bold; color: #666'
+      );
+    }
+  } else {
+    // Masquer l'indicateur de chargement
+    chart.hideLoading();
+
+    // Vérifier si le graphique a des données
+    const hasSeries = chart.series.length > 0;
+    const hasData =
+      hasSeries &&
+      chart.series.some(
+        (series) => series.visible && series.points && series.points.length > 0
+      );
+
+    if (!hasData) {
+      // Mettre à jour le message "pas de données"
+      chart.update(
+        {
+          lang: { noData: 'Aucune donnée disponible' },
+        },
+        false,
+        false,
+        false
+      );
+    }
+  }
+}
+
+/**
+ * Met à jour l'état de chargement du graphique et ses options
  */
 export function updateLoading(
   options: any,
@@ -308,20 +493,19 @@ export function updateLoading(
 
   if (debug) console.log('Mise à jour du statut de chargement:', loadingText);
 
+  // Mettre à jour les options
   mergeDeep(options, {
     lang: { noData: loadingText },
   });
 
+  // Si un graphique est fourni, utiliser la fonction centralisée
   if (chart) {
-    chart.update({ lang: { noData: loadingText } }, false, false, true);
+    setChartLoadingState(chart, isLoading, loadingText, debug);
   }
 }
 
 /**
  * Configure les options spécifiques au type de graphique pie/donut
- * @param options Options actuelles
- * @param type Type de graphique (pie ou donut)
- * @param debug Mode debug
  */
 export function configurePieOptions(
   options: any,
@@ -330,7 +514,7 @@ export function configurePieOptions(
 ): void {
   if (debug) console.log('Configuration des options spécifiques pour', type);
 
-  // Configuration spécifique pour le donut
+  // Configuration spécifique pour le pie/donut
   mergeDeep(options, {
     plotOptions: {
       pie: {
