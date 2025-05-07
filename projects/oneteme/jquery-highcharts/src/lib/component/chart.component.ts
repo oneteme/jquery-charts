@@ -14,13 +14,13 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
-    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'] },
-    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'] },
-    polar: { possibleType: ['polar'], canPivot: false },
-    radar: { possibleType: ['radar'], canPivot: false },
-
-    funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'], canPivot: false },
-    pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid'], canPivot: false },
+    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'] },
+    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'] },
+    polar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
+    radar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
+    funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
+    pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
+    pictorial: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
     bar: { possibleType: ['bar', 'column', 'columnpyramid'] },
     column: { possibleType: ['bar', 'column', 'columnpyramid'] },
     columnpyramid: { possibleType: ['bar', 'column', 'columnpyramid'] },

@@ -1,5 +1,12 @@
 import { ElementRef, EventEmitter, NgZone } from '@angular/core';
-import { ChartProvider, mergeDeep } from '@oneteme/jquery-core';
+import {
+  ChartProvider,
+  CommonChart,
+  Coordinate2D,
+  mergeDeep,
+  XaxisType,
+  YaxisType,
+} from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
 import { ICONS } from '../../assets/icons/icons';
 
@@ -533,8 +540,100 @@ export function configurePieOptions(
         innerSize: type === 'donut' ? '50%' : 0,
       },
     },
+    // tooltip: {
+    //   pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>',
+    // },
+  });
+}
+
+/**
+ * Configure les options spécifiques pour les graphiques de type polar et radar
+ */
+export function configurePolarRadarOptions(
+  options: any,
+  chartType: 'polar' | 'radar',
+  debug: boolean = false
+): void {
+  if (debug) console.log(`Configuration des options pour ${chartType}`);
+
+  // Configuration de base pour les graphiques polaires et radar
+  mergeDeep(options, {
+    chart: {
+      polar: true,
+    },
+    pane: {
+      size: '80%',
+    },
+    xAxis: {
+      tickmarkPlacement: 'on',
+      lineWidth: 0,
+    },
+    yAxis: {
+      gridLineInterpolation: chartType === 'radar' ? 'polygon' : 'circle',
+      lineWidth: 0,
+      min: 0,
+    },
     tooltip: {
-      pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>',
+      shared: true,
+    },
+    plotOptions: {
+      series: {
+        pointStart: 0,
+        connectEnds: true,
+      },
+      column: {
+        pointPadding: 0,
+        groupPadding: 0,
+      },
     },
   });
+
+  // Configuration spécifique au type
+  if (chartType === 'radar') {
+    // Pour les graphiques radar, nous voulons que les séries soient des lignes
+    mergeDeep(options, {
+      chart: {
+        type: 'line',
+      },
+    });
+  } else if (chartType === 'polar') {
+    // Pour les graphiques polaires, nous voulons que les séries soient des colonnes
+    mergeDeep(options, {
+      chart: {
+        type: 'column',
+      },
+    });
+  }
+}
+
+/**
+ * Détermine le type de données pour l'axe X
+ */
+export function determineXAxisDataType(value: any): string {
+  if (value instanceof Date) {
+    return 'datetime';
+  } else if (typeof value === 'number') {
+    return 'numeric';
+  } else {
+    return 'category';
+  }
+}
+
+/**
+ * Détermine le type d'axe X en fonction des données
+ */
+export function getType<
+  X extends XaxisType,
+  Y extends YaxisType | Coordinate2D
+>(commonChart: CommonChart<X, Y>): string {
+  if (commonChart.series.length && commonChart.series[0].data.length) {
+    if (commonChart.continue) {
+      const x = (<CommonChart<X, Coordinate2D>>commonChart).series[0].data[0].x;
+      return determineXAxisDataType(x);
+    } else {
+      const categ = commonChart.categories[0];
+      return determineXAxisDataType(categ);
+    }
+  }
+  return 'datetime';
 }

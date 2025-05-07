@@ -45,9 +45,10 @@ export class BasicTestComponent implements OnInit {
       'donut',
       'polar',
       'radar',
-      'radial',
+      'radialBar',
       'funnel',
       'pyramid',
+      'pictorial',
     ] as ChartType[],
     complex: [
       'bar',

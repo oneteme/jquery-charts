@@ -1,7 +1,7 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { configurePieOptions } from './utils';
+import { configurePieOptions, configurePolarRadarOptions } from './utils';
 
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
@@ -33,7 +33,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     | 'polar'
     | 'radar'
     | 'funnel'
-    | 'pyramid' = 'pie';
+    | 'pyramid'
+    | 'pictorial' = 'pie';
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));
@@ -52,6 +53,11 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       configurePieOptions(this._options, 'donut', this.debug);
     } else if (actualType === 'pie') {
       configurePieOptions(this._options, 'pie', this.debug);
+    } else if (actualType === 'polar' || actualType === 'radar') {
+      // Pour les graphiques polar et radar, on utilise notre fonction de configuration spécifique
+      configurePolarRadarOptions(this._options, actualType, this.debug);
+      this._shouldRedraw = true;
+      return; // Les options de type ont été entièrement configurées
     }
 
     if (this._options.chart?.type !== actualType) {
@@ -82,24 +88,24 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       {},
       this._options,
       {
-      chart: {
-        type: actualType,
-        height: this._chartConfig.height ?? '100%',
-        width: this._chartConfig.width ?? '100%',
-      },
-      title: {
-        text: this._chartConfig.title,
-      },
-      subtitle: {
-        text: this._chartConfig.subtitle,
-      },
-      plotOptions: {
-        series: {
-        dataLabels: {
-          enabled: true,
-        }
-        }
-      }
+        chart: {
+          type: actualType,
+          height: this._chartConfig.height ?? '100%',
+          width: this._chartConfig.width ?? '100%',
+        },
+        title: {
+          text: this._chartConfig.title,
+        },
+        subtitle: {
+          text: this._chartConfig.subtitle,
+        },
+        plotOptions: {
+          series: {
+            dataLabels: {
+              enabled: true,
+            },
+          },
+        },
       },
       this._chartConfig.options ?? {}
     );
@@ -111,6 +117,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         this.type === 'donut' ? 'donut' : 'pie',
         this.debug
       );
+    } else if (actualType === 'polar' || actualType === 'radar') {
+      configurePolarRadarOptions(this._options, actualType, this.debug);
     }
   }
 
@@ -122,30 +130,58 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
     if (this.debug) console.log('Données traitées:', commonChart);
 
-    const formattedData = commonChart.series
-      .flatMap((s) => s.data.filter((d) => d != null))
-      .map((data, index) => {
-        const serieValue: any = {
-          name: commonChart.categories[index],
-          y: data,
-        };
+    if (this.type === 'polar' || this.type === 'radar') {
+      // Format spécifique pour les graphiques polar et radar
+      this._options.xAxis = this._options.xAxis ?? {};
+      this._options.xAxis.categories = commonChart.categories || [];
 
-        if (commonChart.series[0]?.color) {
-          serieValue.color = commonChart.series[0].color;
-        }
+      // Determine the appropriate chart type based on this.type
+      let seriesType: string;
+      if (this.type === 'radar') {
+        seriesType = 'line';
+      } else if (this.type === 'polar') {
+        seriesType = 'column';
+      } else if (this.type === 'area') {
+        seriesType = 'area';
+      } else {
+        seriesType = this._options.chart.type;
+      }
 
-        return serieValue;
+      const series = commonChart.series.map((serie) => ({
+        name: serie.name || chartConfig.xtitle || 'Valeur',
+        data: serie.data,
+        color: serie.color,
+        type: seriesType,
+      }));
+
+      mergeDeep(this._options, { series });
+    } else {
+      // Format pour les graphiques pie, donut, funnel, pyramid, etc.
+      const formattedData = commonChart.series
+        .flatMap((s) => s.data.filter((d) => d != null))
+        .map((data, index) => {
+          const serieValue: any = {
+            name: commonChart.categories[index],
+            y: data,
+          };
+
+          if (commonChart.series[0]?.color) {
+            serieValue.color = commonChart.series[0].color;
+          }
+
+          return serieValue;
+        });
+
+      if (this.debug) console.log('Données formatées:', formattedData);
+
+      mergeDeep(this._options, {
+        series: [
+          {
+            name: chartConfig.xtitle || 'Valeur',
+            data: formattedData,
+          },
+        ],
       });
-
-    if (this.debug) console.log('Données formatées:', formattedData);
-
-    mergeDeep(this._options, {
-      series: [
-        {
-          name: chartConfig.ytitle || 'Valeur',
-          data: formattedData,
-        },
-      ],
-    });
+    }
   }
 }

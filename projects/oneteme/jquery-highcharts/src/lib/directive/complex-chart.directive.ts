@@ -1,6 +1,7 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
+import { getType } from './utils';
 
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
@@ -119,11 +120,17 @@ export class ComplexChartDirective<
 
       if (this.debug) console.log('Données traitées:', commonChart);
 
+      // Déterminer le type d'axe X en fonction des données
+      const xAxisType = getType(commonChart);
+
+      if (this.debug) console.log("Type d'axe X détecté:", xAxisType);
+
       // Mise à jour des options avec les nouvelles données
       if (commonChart?.categories) {
         mergeDeep(this._options, {
           xAxis: {
             categories: commonChart.categories,
+            type: xAxisType, // Utiliser le type détecté automatiquement
           },
           series: commonChart.series || [],
         });

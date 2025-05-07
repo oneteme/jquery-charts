@@ -3,10 +3,11 @@
     *ngIf="
       type === 'pie' ||
       type === 'donut' ||
+      type === 'funnel' ||
+      type === 'pyramid'||
       type === 'polar' ||
       type === 'radar' ||
-      type === 'funnel' ||
-      type === 'pyramid'
+      type === 'pictorial'
     "
     simple-chart
     [type]="type"
