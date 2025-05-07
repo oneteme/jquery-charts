@@ -14,13 +14,14 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
-    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'] },
-    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'] },
-    polar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
-    radar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
-    funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
-    pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
-    pictorial: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'pictorial'], canPivot: false },
+    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+    polar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+    radar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+    funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+    pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+    radialBar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'], canPivot: false },
+
     bar: { possibleType: ['bar', 'column', 'columnpyramid'] },
     column: { possibleType: ['bar', 'column', 'columnpyramid'] },
     columnpyramid: { possibleType: ['bar', 'column', 'columnpyramid'] },
@@ -42,12 +43,8 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     },
     scatter: { possibleType: ['scatter', 'bubble'] },
     bubble: { possibleType: ['scatter', 'bubble'] },
-    radialBar: { possibleType: ['radialBar'] },
-    gauge: { possibleType: ['gauge'] },
-    variablepie: { possibleType: ['variablepie'] },
     heatmap: { possibleType: ['heatmap'] },
     treemap: { possibleType: ['treemap'] },
-    lollipop: { possibleType: ['lollipop'] },
   };
 
   _type: ChartType;

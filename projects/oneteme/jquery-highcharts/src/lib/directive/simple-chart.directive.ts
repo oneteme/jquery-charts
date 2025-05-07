@@ -1,7 +1,7 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { configurePieOptions, configurePolarRadarOptions } from './utils';
+import { configurePieOptions, configureCircleGraphOptions } from './utils';
 
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
@@ -34,7 +34,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     | 'radar'
     | 'funnel'
     | 'pyramid'
-    | 'pictorial' = 'pie';
+    | 'radialBar' = 'pie';
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));
@@ -53,9 +53,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       configurePieOptions(this._options, 'donut', this.debug);
     } else if (actualType === 'pie') {
       configurePieOptions(this._options, 'pie', this.debug);
-    } else if (actualType === 'polar' || actualType === 'radar') {
+    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar') {
       // Pour les graphiques polar et radar, on utilise notre fonction de configuration spécifique
-      configurePolarRadarOptions(this._options, actualType, this.debug);
+      configureCircleGraphOptions(this._options, actualType, this.debug);
       this._shouldRedraw = true;
       return; // Les options de type ont été entièrement configurées
     }
@@ -117,8 +117,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         this.type === 'donut' ? 'donut' : 'pie',
         this.debug
       );
-    } else if (actualType === 'polar' || actualType === 'radar') {
-      configurePolarRadarOptions(this._options, actualType, this.debug);
+    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar') {
+      configureCircleGraphOptions(this._options, actualType, this.debug);
     }
   }
 
@@ -135,23 +135,11 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._options.xAxis = this._options.xAxis ?? {};
       this._options.xAxis.categories = commonChart.categories || [];
 
-      // Determine the appropriate chart type based on this.type
-      let seriesType: string;
-      if (this.type === 'radar') {
-        seriesType = 'line';
-      } else if (this.type === 'polar') {
-        seriesType = 'column';
-      } else if (this.type === 'area') {
-        seriesType = 'area';
-      } else {
-        seriesType = this._options.chart.type;
-      }
-
       const series = commonChart.series.map((serie) => ({
         name: serie.name || chartConfig.xtitle || 'Valeur',
         data: serie.data,
         color: serie.color,
-        type: seriesType,
+        type: this.type,
       }));
 
       mergeDeep(this._options, { series });

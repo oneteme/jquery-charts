@@ -31,7 +31,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'radialBar';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoading: boolean = true;
@@ -48,7 +48,7 @@ export class BasicTestComponent implements OnInit {
       'radialBar',
       'funnel',
       'pyramid',
-      'pictorial',
+      'radialBar',
     ] as ChartType[],
     complex: [
       'bar',
@@ -65,7 +65,6 @@ export class BasicTestComponent implements OnInit {
       'bubble',
       'heatmap',
       'treemap',
-      'lollipop',
     ] as ChartType[],
   };
 

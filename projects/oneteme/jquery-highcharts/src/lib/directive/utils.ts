@@ -1,21 +1,11 @@
 import { ElementRef, EventEmitter, NgZone } from '@angular/core';
-import {
-  ChartProvider,
-  CommonChart,
-  Coordinate2D,
-  mergeDeep,
-  XaxisType,
-  YaxisType,
-} from '@oneteme/jquery-core';
+import { ChartProvider, CommonChart, Coordinate2D, mergeDeep, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
 import { ICONS } from '../../assets/icons/icons';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
-/**
- * Interface pour les options de création de graphique
- */
-export interface ChartCreationOptions {
+export type ChartCreationOptions = {
   el: ElementRef;
   options: any;
   config: ChartProvider<any, any>;
@@ -29,7 +19,7 @@ export interface ChartCreationOptions {
 /**
  * Interface pour les options de la toolbar
  */
-export interface ToolbarOptions {
+export type ToolbarOptions = {
   chart: Highcharts.Chart;
   config: ChartProvider<any, any>;
   customEvent: EventEmitter<ChartCustomEvent>;
@@ -549,9 +539,9 @@ export function configurePieOptions(
 /**
  * Configure les options spécifiques pour les graphiques de type polar et radar
  */
-export function configurePolarRadarOptions(
+export function configureCircleGraphOptions(
   options: any,
-  chartType: 'polar' | 'radar',
+  chartType: 'pie' | 'donut' |'polar' | 'radar' | 'radialBar',
   debug: boolean = false
 ): void {
   if (debug) console.log(`Configuration des options pour ${chartType}`);
@@ -560,50 +550,57 @@ export function configurePolarRadarOptions(
   mergeDeep(options, {
     chart: {
       polar: true,
+      type: chartType === 'radar' ? 'line' : 'column',
+      inverted: chartType === 'radialBar',
     },
     pane: {
       size: '80%',
+      innerSize: chartType === 'radialBar' ? '20%' : '0%',
+      endAngle: chartType === 'radialBar' ? 270 : 360, // juste pour l'exemple mais pas oublier de commenter
     },
     xAxis: {
       tickmarkPlacement: 'on',
       lineWidth: 0,
+      gridLineWidth: chartType === 'radialBar' ? 0 : 1,
+      labels: {
+        enabled: chartType !== 'radialBar',
+      }
     },
     yAxis: {
       gridLineInterpolation: chartType === 'radar' ? 'polygon' : 'circle',
       lineWidth: 0,
       min: 0,
+      gridLineWidth: chartType === 'radialBar' ? 0 : 1,
+      labels: {
+        enabled: chartType === 'radialBar',
+      }
     },
     tooltip: {
       shared: true,
     },
     plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: {
+          enabled: true,
+          format: '<b>{point.name}</b>: {point.percentage:.1f} %',
+        },
+        showInLegend: true,
+        innerSize: chartType === 'donut' ? '50%' : 0,
+      },
       series: {
         pointStart: 0,
         connectEnds: true,
       },
       column: {
+        stacking: 'normal',
         pointPadding: 0,
         groupPadding: 0,
+        borderRadius: '50%'
       },
     },
   });
-
-  // Configuration spécifique au type
-  if (chartType === 'radar') {
-    // Pour les graphiques radar, nous voulons que les séries soient des lignes
-    mergeDeep(options, {
-      chart: {
-        type: 'line',
-      },
-    });
-  } else if (chartType === 'polar') {
-    // Pour les graphiques polaires, nous voulons que les séries soient des colonnes
-    mergeDeep(options, {
-      chart: {
-        type: 'column',
-      },
-    });
-  }
 }
 
 /**
