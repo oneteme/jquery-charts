@@ -1,7 +1,7 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { getType } from './utils';
+import { getType } from './utils/chart-utils';
 
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';

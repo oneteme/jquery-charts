@@ -1,7 +1,10 @@
 import { ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, Directive } from '@angular/core';
 import { ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
-import { ChartCustomEvent, createHighchart, destroyChart, initBaseOptions, updateLoading } from './utils';
+import { ChartCustomEvent } from './utils/types';
+import { createHighchart, destroyChart } from './utils/chart-creation';
+import { updateLoading } from './utils/chart-loading';
+import { initBaseOptions } from './utils/chart-options';
 
 @Directive()
 export abstract class BaseChartDirective<

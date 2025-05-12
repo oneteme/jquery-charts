@@ -1,7 +1,7 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { configurePieOptions, configureCircleGraphOptions } from './utils';
+import { configureCircleGraphOptions } from './utils/chart-options';
 
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
@@ -50,9 +50,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     let actualType = this.type;
     if (actualType === 'donut') {
       actualType = 'pie';
-      configurePieOptions(this._options, 'donut', this.debug);
+      configureCircleGraphOptions(this._options, 'donut', this.debug);
     } else if (actualType === 'pie') {
-      configurePieOptions(this._options, 'pie', this.debug);
+      configureCircleGraphOptions(this._options, 'pie', this.debug);
     } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar') {
       // Pour les graphiques polar et radar, on utilise notre fonction de configuration spécifique
       configureCircleGraphOptions(this._options, actualType, this.debug);
@@ -112,7 +112,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
     // Configurer les options spécifiques au type
     if (actualType === 'pie') {
-      configurePieOptions(
+      configureCircleGraphOptions(
         this._options,
         this.type === 'donut' ? 'donut' : 'pie',
         this.debug
