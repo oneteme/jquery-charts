@@ -3,7 +3,6 @@ import { ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-
 import * as Highcharts from 'highcharts';
 import { ChartCustomEvent } from './utils/types';
 import { createHighchart, destroyChart } from './utils/chart-creation';
-import { updateLoading } from './utils/chart-loading';
 import { initBaseOptions } from './utils/chart-options';
 
 @Directive()
@@ -58,10 +57,6 @@ export abstract class BaseChartDirective<
     // Gestion des différents types de changements
     if (changes.type) {
       this.updateChartType();
-    }
-
-    if (changes.isLoading) {
-      updateLoading(this._options, this.chart, this.isLoading, this.debug);
     }
 
     if (changes.config) {
@@ -133,7 +128,7 @@ export abstract class BaseChartDirective<
   }
 
   // implémentées dans complex et simple chart directive
-  protected abstract updateChartType(): void; 
+  protected abstract updateChartType(): void;
   protected abstract updateConfig(): void;
   protected abstract updateData(): void;
 }

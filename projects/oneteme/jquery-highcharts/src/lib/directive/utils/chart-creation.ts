@@ -4,7 +4,6 @@ import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
 import { ChartCustomEvent } from './types';
 import { configureChartEvents, removeToolbar } from './chart-toolbar';
-import { setChartLoadingState } from './chart-loading';
 
 // Initialisation des modules Highcharts
 more(Highcharts);
@@ -158,16 +157,6 @@ export function createHighchart(
     const chartInstance = ngZone.runOutsideAngular(() => {
       return (Highcharts as any).chart(el.nativeElement, chartOptions);
     });
-
-    // Appliquer l'état de chargement si nécessaire
-    if (isLoading) {
-      setChartLoadingState(
-        chartInstance,
-        true,
-        'Chargement des données...',
-        debug
-      );
-    }
 
     return chartInstance;
   } catch (error) {
