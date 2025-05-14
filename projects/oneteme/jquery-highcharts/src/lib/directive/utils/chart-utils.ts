@@ -1,4 +1,4 @@
-import { CommonChart, Coordinate2D, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartProvider, CommonChart, Coordinate2D, XaxisType, YaxisType } from '@oneteme/jquery-core';
 
 export function determineXAxisDataType(value: any): string {
   if (value instanceof Date) {
@@ -24,4 +24,28 @@ export function getType<
     }
   }
   return 'datetime';
+}
+
+export function sanitizeChartDimensions(
+  chartOptions: Highcharts.Options,
+  config: ChartProvider<any, any>
+) {
+  if (!chartOptions.chart) chartOptions.chart = {};
+  // Nettoyage width/height : ne garder que les valeurs numériques valides
+  if (typeof config.width === 'number' && !isNaN(config.width)) {
+    chartOptions.chart.width = config.width;
+  } else if (
+    chartOptions.chart.width &&
+    typeof chartOptions.chart.width !== 'number'
+  ) {
+    delete chartOptions.chart.width;
+  }
+  if (typeof config.height === 'number' && !isNaN(config.height)) {
+    chartOptions.chart.height = config.height;
+  } else if (
+    chartOptions.chart.height &&
+    typeof chartOptions.chart.height !== 'number'
+  ) {
+    delete chartOptions.chart.height;
+  }
 }
