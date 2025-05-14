@@ -115,7 +115,6 @@ export abstract class BaseChartDirective<
       this.customEvent,
       this.ngZone,
       this.canPivot,
-      this.isLoading,
       this.debug
     );
 

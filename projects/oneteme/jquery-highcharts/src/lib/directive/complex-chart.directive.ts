@@ -12,7 +12,6 @@ import Accessibility from 'highcharts/modules/accessibility';
 import Treemap from 'highcharts/modules/treemap';
 import Heatmap from 'highcharts/modules/heatmap';
 
-// Initialisation des modules Highcharts
 more(Highcharts);
 Exporting(Highcharts);
 NoDataToDisplay(Highcharts);
@@ -21,7 +20,6 @@ Accessibility(Highcharts);
 Treemap(Highcharts);
 Heatmap(Highcharts);
 
-// Directive pour graph complex = données complexes (bar, column, line, area, spline, etc.)
 @Directive({
   selector: '[complex-chart]',
   standalone: true,
@@ -49,7 +47,6 @@ export class ComplexChartDirective<
     super(inject(ElementRef), inject(NgZone));
   }
 
-  // MAJ du type
   protected override updateChartType(): void {
     if (this.debug) console.log('Mise à jour du type de graphique:', this.type);
 
@@ -61,13 +58,11 @@ export class ComplexChartDirective<
     }
   }
 
-  // MAJ de la config
   protected override updateConfig(): void {
     if (this.debug) console.log('Mise à jour de la configuration');
 
     this._chartConfig = this.config;
 
-    // Mettre à jour les options avec les données de configuration
     this._options = mergeDeep(
       {},
       this._options,
@@ -94,7 +89,6 @@ export class ComplexChartDirective<
             text: this._chartConfig.ytitle,
           },
         },
-        // Options spécifiques aux graphiques complexes
         plotOptions: {
           series: {
             stacking: this._chartConfig.stacked ? 'normal' : undefined,
@@ -108,9 +102,6 @@ export class ComplexChartDirective<
     );
   }
 
-  /**
-   * Met à jour les données du graphique en utilisant jquery-core
-   */
   protected override updateData(): void {
     if (this.debug) console.log('Mise à jour des données');
 
@@ -120,17 +111,15 @@ export class ComplexChartDirective<
 
       if (this.debug) console.log('Données traitées:', commonChart);
 
-      // Déterminer le type d'axe X en fonction des données
       const xAxisType = getType(commonChart);
 
       if (this.debug) console.log("Type d'axe X détecté:", xAxisType);
 
-      // Mise à jour des options avec les nouvelles données
       if (commonChart?.categories) {
         mergeDeep(this._options, {
           xAxis: {
             categories: commonChart.categories,
-            type: xAxisType, // Utiliser le type détecté automatiquement
+            type: xAxisType,
           },
           series: commonChart.series || [],
         });

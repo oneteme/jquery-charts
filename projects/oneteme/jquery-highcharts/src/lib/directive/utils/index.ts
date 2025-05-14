@@ -1,4 +1,3 @@
-// Re-export all functions and types from the modules
 export * from './types';
 export * from './chart-creation';
 export * from './chart-options';

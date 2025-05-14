@@ -12,7 +12,6 @@ import Exporting from 'highcharts/modules/exporting';
 import ExportDataModule from 'highcharts/modules/export-data';
 import Funnel from 'highcharts/modules/funnel';
 
-// Initialisation des modules Highcharts
 more(Highcharts);
 NoDataToDisplay(Highcharts);
 Annotations(Highcharts);
@@ -21,7 +20,6 @@ Exporting(Highcharts);
 ExportDataModule(Highcharts);
 Funnel(Highcharts);
 
-// Directive pour graph simple = données simples (pie, donut, polar, radar, funnel, pyramid)
 @Directive({
   selector: '[simple-chart]',
   standalone: true,
@@ -40,13 +38,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     super(inject(ElementRef), inject(NgZone));
   }
 
-  /**
-   * Met à jour le type de graphique
-   */
   protected override updateChartType(): void {
     if (this.debug) console.log('Mise à jour du type de graphique:', this.type);
 
-    // Ajustement pour le type donut (qui est en fait un pie avec innerSize dans Highcharts)
     let actualType = this.type;
     if (actualType === 'donut') {
       actualType = 'pie';
@@ -54,10 +48,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     } else if (actualType === 'pie') {
       configureCircleGraphOptions(this._options, 'pie', this.debug);
     } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar') {
-      // Pour les graphiques polar et radar, on utilise notre fonction de configuration spécifique
       configureCircleGraphOptions(this._options, actualType, this.debug);
       this._shouldRedraw = true;
-      return; // Les options de type ont été entièrement configurées
+      return;
     }
 
     if (this._options.chart?.type !== actualType) {
@@ -68,22 +61,16 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     }
   }
 
-  /**
-   * Met à jour la configuration du graphique
-   */
   protected override updateConfig(): void {
     if (this.debug) console.log('Mise à jour de la configuration');
 
     this._chartConfig = this.config;
 
-    // Ajustement pour le type donut
     let actualType = this.type;
     if (actualType === 'donut') {
       actualType = 'pie';
     }
 
-    // Mettre à jour les options avec les données de configuration
-    // For simple charts, we only need specific configurations
     this._options = mergeDeep(
       {},
       this._options,
@@ -110,7 +97,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._chartConfig.options ?? {}
     );
 
-    // Configurer les options spécifiques au type
     if (actualType === 'pie') {
       configureCircleGraphOptions(
         this._options,
@@ -131,7 +117,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     if (this.debug) console.log('Données traitées:', commonChart);
 
     if (this.type === 'polar' || this.type === 'radar') {
-      // Format spécifique pour les graphiques polar et radar
       this._options.xAxis = this._options.xAxis ?? {};
       this._options.xAxis.categories = commonChart.categories || [];
 
@@ -144,7 +129,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
       mergeDeep(this._options, { series });
     } else {
-      // Format pour les graphiques pie, donut, funnel, pyramid, etc.
       const formattedData = commonChart.series
         .flatMap((s) => s.data.filter((d) => d != null))
         .map((data, index) => {
@@ -152,11 +136,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
             name: commonChart.categories[index],
             y: data,
           };
-
           if (commonChart.series[0]?.color) {
             serieValue.color = commonChart.series[0].color;
           }
-
           return serieValue;
         });
 

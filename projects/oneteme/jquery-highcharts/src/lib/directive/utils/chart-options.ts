@@ -1,8 +1,5 @@
 import { mergeDeep } from '@oneteme/jquery-core';
 
-/**
- * Initialise les options de base communes à tous les graphiques Highcharts
- */
 export function initBaseOptions(
   chartType: string,
   isLoading: boolean = false,
@@ -27,9 +24,6 @@ export function initBaseOptions(
   };
 }
 
-/**
- * Configure les options pour les graphiques de type pie ou donut
- */
 function configurePieOptions(options: any, chartType: 'pie' | 'donut'): void {
   mergeDeep(options, {
     plotOptions: {
@@ -47,9 +41,6 @@ function configurePieOptions(options: any, chartType: 'pie' | 'donut'): void {
   });
 }
 
-/**
- * Configure les options pour les graphiques de type polar, radar ou radialBar
- */
 function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'radialBar'): void {
   mergeDeep(options, {
     chart: {
@@ -97,9 +88,6 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
   });
 }
 
-/**
- * Configure les options spécifiques pour les graphiques de type circulaire
- */
 export function configureCircleGraphOptions(
   options: any,
   chartType: 'pie' | 'donut' |'polar' | 'radar' | 'radialBar',
