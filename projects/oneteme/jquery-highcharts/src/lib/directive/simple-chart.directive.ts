@@ -1,5 +1,5 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
-import { buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
+import { buildChart, buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
 import { configureCircleGraphOptions } from './utils/chart-options';
 
@@ -112,11 +112,15 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     if (this.debug) console.log('Mise à jour des données');
 
     const chartConfig = { ...this._chartConfig, continue: false };
-    const commonChart = buildSingleSerieChart(this.data, chartConfig, null);
+    // const commonChart = buildSingleSerieChart(this.data, chartConfig, null);
+    const commonChart =
+          this.data.length != 1 && this.type == 'radar'
+            ? buildChart(this.data, chartConfig, null)
+            : buildSingleSerieChart(this.data, chartConfig, null);
 
     if (this.debug) console.log('Données traitées:', commonChart);
 
-    if (this.type === 'polar' || this.type === 'radar') {
+    if (this.type === 'polar' || this.type === 'radar' || this.type === 'radialBar') {
       this._options.xAxis = this._options.xAxis ?? {};
       this._options.xAxis.categories = commonChart.categories || [];
 

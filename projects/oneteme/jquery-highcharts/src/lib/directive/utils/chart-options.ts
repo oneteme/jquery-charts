@@ -66,12 +66,14 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
       lineWidth: 0,
       min: 0,
       gridLineWidth: chartType === 'radialBar' ? 0 : 1,
+      reversedStacks: chartType === 'radialBar' ? false : undefined,
       labels: {
-        enabled: chartType === 'radialBar',
+        enabled: chartType === 'radialBar' ? true : undefined,
       }
     },
     tooltip: {
       shared: true,
+      pointFormat: '<span style="color:{series.color}">\u25CF</span> {series.name}: <b>{point.y}</b><br/>'
     },
     plotOptions: {
       series: {
@@ -80,8 +82,9 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
       },
       column: {
         stacking: 'normal',
+        borderWidth: 0,
         pointPadding: 0,
-        groupPadding: 0,
+        groupPadding: 0.15,
         borderRadius: '50%'
       },
     },
@@ -98,6 +101,6 @@ export function configureCircleGraphOptions(
   if (chartType === 'pie' || chartType === 'donut') {
     configurePieOptions(options, chartType);
   } else {
-    configurePolarOptions(options, chartType as 'polar' | 'radar' | 'radialBar');
+    configurePolarOptions(options, chartType);
   }
 }
