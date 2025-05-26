@@ -51,14 +51,7 @@ function createToolbarButton(
 }
 
 export function setupToolbar(options: ToolbarOptions): void {
-  const {
-    chart,
-    config,
-    customEvent,
-    ngZone,
-    canPivot = true,
-    debug = false,
-  } = options;
+  const { chart, config, customEvent, ngZone, canPivot = true, debug = false } = options;
 
   if (!chart || !config.showToolbar) return;
   if (!chart.container) return;
@@ -81,31 +74,14 @@ export function setupToolbar(options: ToolbarOptions): void {
     toolbar.style.visibility = 'hidden'; // Masqué par défaut
     toolbar.style.gap = '11px';
 
-    toolbar.appendChild(
-      createToolbarButton(
-        ICONS.previous,
-        'Graphique précédent',
-        'previous',
-        ngZone,
-        customEvent
-      )
-    );
-
-    toolbar.appendChild(
-      createToolbarButton(
-        ICONS.next,
-        'Graphique suivant',
-        'next',
-        ngZone,
-        customEvent
-      )
-    );
+    toolbar.appendChild(createToolbarButton(ICONS.percent, 'Afficher les valeurs en pourcentages', 'togglePercent', ngZone, customEvent));
+    toolbar.appendChild(createToolbarButton(ICONS.previous, 'Graphique précédent', 'previous', ngZone, customEvent));
+    toolbar.appendChild(createToolbarButton(ICONS.next, 'Graphique suivant', 'next', ngZone, customEvent));
 
     if (canPivot) {
-      toolbar.appendChild(
-        createToolbarButton(ICONS.pivot, 'Pivot', 'pivot', ngZone, customEvent)
-      );
+      toolbar.appendChild(createToolbarButton(ICONS.pivot, 'Pivot', 'pivot', ngZone, customEvent));
     }
+
     toolbar.addEventListener('click', (event) => {
       event.stopPropagation();
     });

@@ -31,7 +31,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'funnel';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoading: boolean = true;
@@ -89,8 +89,13 @@ export class BasicTestComponent implements OnInit {
   // Données pour les deux types de graphiques
   private readonly chartData$ = {
     simple: [
-      { category: 'Catégorie A', value: 30 },
-      { category: 'Catégorie B', value: 25 },
+      // { category: 'Catégorie A', value: 30 },
+      // { category: 'Catégorie B', value: 25 },
+      // { category: 'Catégorie C', value: 20 },
+      // { category: 'Catégorie D', value: 15 },
+      // { category: 'Catégorie E', value: 10 },
+      { category: 'Catégorie A', value: 60 },
+      { category: 'Catégorie B', value: 50 },
       { category: 'Catégorie C', value: 20 },
       { category: 'Catégorie D', value: 15 },
       { category: 'Catégorie E', value: 10 },

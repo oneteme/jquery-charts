@@ -2,7 +2,7 @@ import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import { ChartProvider } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
 
-export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
+export type ChartCustomEvent = 'previous' | 'next' | 'pivot' | 'togglePercent';
 
 export type ChartCreationOptions = {
   el: ElementRef;
