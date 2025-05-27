@@ -32,15 +32,12 @@ function configurePieOptions(options: any, chartType: 'pie' | 'donut'): void {
         cursor: 'pointer',
         dataLabels: {
           enabled: true,
-          format: '<b>{point.name}</b>: {point.y}', // valeur classique par défaut
+          format: '<b>{point.name}</b>: {point.y}',
         },
-        showInLegend: true,
+        // showInLegend: true,
         innerSize: chartType === 'donut' ? '50%' : 0,
       },
     },
-    tooltip: {
-      pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>' // valeur classique par défaut
-    }
   });
 }
 
@@ -89,6 +86,7 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
     },
     plotOptions: {
       series: {
+        pointPlacement: 'between',
         pointStart: 0,
         connectEnds: true,
         showInLegend: true,
@@ -124,15 +122,10 @@ function configureFunnelOptions(options: any, chartType: 'funnel' | 'pyramid'): 
       verticalAlign: 'bottom',
       layout: 'horizontal'
     },
-    tooltip: {
-        shared: true,
-        useHTML: true,
-        headerFormat: '<table><tr><th style="padding-bottom: 0.2em; border-bottom: 1px solid silver;" colspan="2">{series.name}</th></tr>',
-        pointFormat: '<tr><td style="color: {point.color}">{point.name} ' +
-            '</td>' +
-            '<td style="text-align: right"><b>{point.y}</b></td></tr>',
-        footerFormat: '</table>',
-    },
+    // tooltip: {
+    //   headerFormat: '',
+    //   pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>' // valeur classique par défaut
+    // },
     // tooltip: {
     //   useHTML: true,
     //   headerFormat: '<span style="font-size: 12px">{point.key}</span><br/>',
@@ -173,11 +166,11 @@ export function configureSimpleGraphOptions(
 ): void {
   if (debug) console.log(`Configuration des options pour ${chartType}`);
   if (chartType === 'pie' || chartType === 'donut') {
-    configurePieOptions(options, chartType as 'pie' | 'donut');
+    configurePieOptions(options, chartType);
   } else if (chartType === 'funnel' || chartType === 'pyramid') {
-    configureFunnelOptions(options, chartType as 'funnel' | 'pyramid');
+    configureFunnelOptions(options, chartType);
   } else {
-    configurePolarOptions(options, chartType as 'polar' | 'radar' | 'radialBar');
+    configurePolarOptions(options, chartType);
   }
 }
 
@@ -186,39 +179,36 @@ export function configureSimpleGraphOptions(
  * pour les types pie, donut, funnel, pyramid
  */
 export function togglePercentDisplay(options: any, showPercent: boolean) {
-  // Pie/Donut
+  const chartTypes = ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'];
+
+  // Helper function to set format for a specific plotOption
+  const setFormatForPlotOption = (plotOption: any) => {
+    if (!plotOption) return;
+
+    if (plotOption.dataLabels) {
+      plotOption.dataLabels.format = showPercent
+        ? '<b>{point.name}</b>: {point.percentage:.1f}%'
+        : '<b>{point.name}</b>: {point.y}';
+    }
+  };
+
+  // Update dataLabels format for all applicable chart types
+  chartTypes.forEach(type => {
+    if (options.plotOptions?.[type]) {
+      options.plotOptions[type].dataLabels = options.plotOptions[type].dataLabels ?? {};
+      setFormatForPlotOption(options.plotOptions[type]);
+    }
+  });
+
+  // Special case for pie which is used by donut too
   if (options.plotOptions?.pie) {
-    options.plotOptions.pie.dataLabels = options.plotOptions.pie.dataLabels ?? {};
-    options.plotOptions.pie.dataLabels.format = showPercent
-      ? '<b>{point.name}</b>: {point.percentage:.1f} %'
-      : '<b>{point.name}</b>: {point.y}';
-    if (options.tooltip) {
-      options.tooltip.pointFormat = showPercent
-        ? '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.percentage:.1f}%</b><br/>'
-        : '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>';
-    }
+    setFormatForPlotOption(options.plotOptions.pie);
   }
-  // Funnel/Pyramid
-  if (options.plotOptions?.funnel) {
-    options.plotOptions.funnel.dataLabels = options.plotOptions.funnel.dataLabels ?? {};
-    options.plotOptions.funnel.dataLabels.format = showPercent
-      ? '<b>{point.name}</b>: {point.percentage:.1f}%'
-      : '<b>{point.name}</b>: {point.y}';
-    if (options.tooltip) {
-      options.tooltip.pointFormat = showPercent
-        ? '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.percentage:.1f}%</b><br/>'
-        : '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>';
-    }
-  }
-  if (options.plotOptions?.pyramid) {
-    options.plotOptions.pyramid.dataLabels = options.plotOptions.pyramid.dataLabels ?? {};
-    options.plotOptions.pyramid.dataLabels.format = showPercent
-      ? '<b>{point.name}</b>: {point.percentage:.1f}%'
-      : '<b>{point.name}</b>: {point.y}';
-    if (options.tooltip) {
-      options.tooltip.pointFormat = showPercent
-        ? '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.percentage:.1f}%</b><br/>'
-        : '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>';
-    }
+
+  // Update tooltip format if it exists
+  if (options.tooltip) {
+    options.tooltip.pointFormat = showPercent
+      ? '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.percentage:.1f}%</b><br/>'
+      : '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>';
   }
 }

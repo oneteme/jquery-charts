@@ -66,10 +66,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       configureSimpleGraphOptions(this._options, 'donut', this.debug);
     } else if (actualType === 'pie') {
       configureSimpleGraphOptions(this._options, 'pie', this.debug);
-    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar') {
-      configureSimpleGraphOptions(this._options, actualType, this.debug);
-      this._shouldRedraw = true;
-    } else if (actualType === 'funnel' || actualType === 'pyramid') {
+    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar' || 
+               actualType === 'funnel' || actualType === 'pyramid') {
       configureSimpleGraphOptions(this._options, actualType, this.debug);
       this._shouldRedraw = true;
     }
