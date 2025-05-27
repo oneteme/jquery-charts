@@ -181,41 +181,5 @@ function configureMapOptions(options: any, chartType: 'map'): void {
   });
 }
 
-/**
- * Active ou désactive l'affichage en pourcentage pour les dataLabels et tooltips
- * pour les types pie, donut, funnel, pyramid
- */
-export function togglePercentDisplay(options: any, showPercent: boolean) {
-  const chartTypes = ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar'];
-
-  // Helper function to set format for a specific plotOption
-  const setFormatForPlotOption = (plotOption: any) => {
-    if (!plotOption) return;
-
-    if (plotOption.dataLabels) {
-      plotOption.dataLabels.format = showPercent
-        ? '<b>{point.name}</b>: {point.percentage:.1f}%'
-        : '<b>{point.name}</b>: {point.y}';
-    }
-  };
-
-  // Update dataLabels format for all applicable chart types
-  chartTypes.forEach(type => {
-    if (options.plotOptions?.[type]) {
-      options.plotOptions[type].dataLabels = options.plotOptions[type].dataLabels ?? {};
-      setFormatForPlotOption(options.plotOptions[type]);
-    }
-  });
-
-  // Special case for pie which is used by donut too
-  if (options.plotOptions?.pie) {
-    setFormatForPlotOption(options.plotOptions.pie);
-  }
-
-  // Update tooltip format if it exists
-  if (options.tooltip) {
-    options.tooltip.pointFormat = showPercent
-      ? '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.percentage:.1f}%</b><br/>'
-      : '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>';
-  }
-}
+// La fonction togglePercentDisplay a été migrée vers chart-utils.ts
+// Utilisez togglePercentDisplay ou togglePercentDisplaySimple de chart-utils.ts

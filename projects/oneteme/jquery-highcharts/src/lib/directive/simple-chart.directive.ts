@@ -41,14 +41,26 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));
-  }
-
-  ngOnInit() {
+  }  ngOnInit() {
     this.customEvent.subscribe((event) => {
       if (event === 'togglePercent') {
         this.showPercent = !this.showPercent;
-        import('./utils/chart-options').then(({ togglePercentDisplay }) => {
-          togglePercentDisplay(this._options, this.showPercent);
+        import('./utils/chart-utils').then(({ togglePercentDisplay }) => {
+          const analysisResult = togglePercentDisplay(
+            this._options,
+            {
+              showPercent: this.showPercent,
+              autoDetect: true,
+              decimalPlaces: 1,
+              debug: this.debug
+            },
+            this.data
+          );
+
+          if (this.debug && analysisResult) {
+            console.log('Résultat de l\'analyse des données:', analysisResult);
+          }
+
           if (this.chart) {
             this.chart.update(this._options, true, true);
           }
@@ -66,7 +78,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       configureSimpleGraphOptions(this._options, 'donut', this.debug);
     } else if (actualType === 'pie') {
       configureSimpleGraphOptions(this._options, 'pie', this.debug);
-    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar' || 
+    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar' ||
                actualType === 'funnel' || actualType === 'pyramid') {
       configureSimpleGraphOptions(this._options, actualType, this.debug);
       this._shouldRedraw = true;

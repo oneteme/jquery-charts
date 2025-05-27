@@ -23,3 +23,28 @@ export type ToolbarOptions = {
   canPivot?: boolean;
   debug?: boolean;
 }
+
+/**
+ * Interface pour les résultats d'analyse des données
+ */
+export interface DataAnalysisResult {
+  isAlreadyPercentage: boolean;
+  hasDecimalValues: boolean;
+  maxValue: number;
+  minValue: number;
+  averageValue: number;
+  totalValue: number;
+  dataCount: number;
+  suggestedFormat: 'percentage' | 'decimal' | 'integer';
+}
+
+/**
+ * Configuration pour l'affichage en pourcentage
+ */
+export interface PercentageDisplayConfig {
+  showPercent: boolean;
+  forceConversion?: boolean; // Force la conversion même si les données semblent déjà être en %
+  decimalPlaces?: number; // Nombre de décimales pour l'affichage
+  autoDetect?: boolean; // Détection automatique si les données sont déjà en %
+  debug?: boolean;
+}
