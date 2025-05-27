@@ -1,11 +1,53 @@
+// Variables pour les couleurs et transitions
+$primary-color: #007bff;
+$primary-light: #e7f5ff;
+$primary-border: #90c8f9;
+$gray-50: #f8f9fa;
+$gray-100: #e8e8e8;
+$gray-200: #dee2e6;
+$gray-300: #d8d8d8;
+$gray-500: #555;
+$gray-600: #333;
+$gray-700: #999;
+$transition-base: all 0.2s ease;
+$transition-medium: all 0.3s ease;
+$border-radius: 6px;
+
+// Mixin pour les boutons de base
+@mixin base-button {
+  background: $gray-50;
+  border: 1px solid $gray-200;
+  border-radius: $border-radius;
+  transition: $transition-base;
+  cursor: pointer;
+
+  &:hover {
+    background: $primary-light;
+    border-color: $primary-border;
+  }
+
+  &.active {
+    background: $primary-light;
+    border-color: $primary-border;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+}
+
+// Mixin pour les icônes
+@mixin base-icon($size: 16px) {
+  width: $size;
+  height: $size;
+  filter: invert(0.5);
+  transition: $transition-base;
+}
+
 .basic-test-container {
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
   position: relative;
-
   h1 {
-    color: #333;
+    color: $gray-600;
     margin-bottom: 20px;
   }
 
@@ -21,29 +63,25 @@
     position: fixed;
     left: 20px;
     bottom: 20px;
-    width: 220px;
-    background-color: #ffffff;
+    width: 220px;    background-color: #ffffff;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    border: 1px solid #e8e8e8;
-    transition: all 0.3s ease;
+    z-index: 98;
+    border: 1px solid $gray-100;
+    transition: $transition-medium;
     overflow: hidden;
 
     .panel-header {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 12px 15px;
-      background-color: #f8f9fa;
-      border-bottom: 1px solid #e8e8e8;
-      overflow: hidden;
-
-      h3 {
+      align-items: center;      padding: 12px 15px;
+      background-color: $gray-50;
+      border-bottom: 1px solid $gray-100;
+      overflow: hidden;      h3 {
         margin: 0;
         font-size: 14px;
         font-weight: 600;
-        color: #333;
+        color: $gray-600;
       }
 
       .toggle-button {
@@ -52,24 +90,23 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background: #e8e8e8;
+        background: $gray-100;
         border: none;
         border-radius: 4px;
         cursor: pointer;
         font-size: 18px;
-        color: #555;
-        transition: all 0.2s ease;
+        color: $gray-500;
+        transition: $transition-base;
 
         &:hover {
-          background: #d8d8d8;
+          background: $gray-300;
         }
       }
     }
 
-    .panel-content {
-      width: 100%;
+    .panel-content {      width: 100%;
       max-height: 400px;
-      transition: all 0.3s ease;
+      transition: $transition-medium;
       padding: 12px;
       overflow-y: hidden;
 
@@ -84,9 +121,7 @@
 
         &:last-child {
           margin-bottom: 0px;
-        }
-
-        .control-group {
+        }        .control-group {
           display: flex;
           flex-wrap: wrap;
           gap: 8px;
@@ -105,63 +140,102 @@
           &.mode-toggle {
             justify-content: center;
             margin: 10px 0;
-          }
+          }          // Classe full-width correctement placée
+          &.full-width {
+            flex-direction: column;
 
-          .visibility-btn {
+            label {
+              display: block;
+              margin-bottom: 4px;
+              font-weight: 500;
+              color: $gray-600;
+            }
+
+            // Conteneur pour le select avec chevron personnalisé
+            .select-wrapper {
+              position: relative;
+              width: 100%;
+
+              .chart-type-select {
+                width: 100%;
+                padding: 8px 32px 8px 12px; // Ajout d'espace à droite pour le chevron
+                border: 1px solid $gray-200;
+                border-radius: $border-radius;
+                background: white;
+                font-size: 14px;
+                color: $gray-600;
+                cursor: pointer;
+                transition: $transition-base;
+                appearance: none; // Supprime le chevron natif du navigateur
+
+                &:focus {
+                  outline: none;
+                  border-color: $primary-border;
+                  box-shadow: 0 0 0 2px rgba(144, 200, 249, 0.2);
+                }
+
+                &:hover {
+                  border-color: $primary-border;
+                }
+              }
+
+              // Chevron personnalisé avec pseudo-élément sur le conteneur
+              &::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                right: 8px;
+                width: 16px;
+                height: 16px;
+                background-image: url('../../../assets/icons/chevron.svg');
+                background-repeat: no-repeat;
+                background-position: center;
+                background-size: 16px 16px;
+                transform: translateY(-50%) rotate(90deg); // Rotation de base vers le bas
+                transition: transform 0.2s ease;
+                pointer-events: none; // Empêche l'interférence avec les clics
+              }
+
+              // Animation du chevron à l'ouverture du select
+              &:focus-within::after {
+                transform: translateY(-50%) rotate(270deg); // Rotation supplémentaire pour l'ouverture
+              }
+            }
+          }.visibility-btn {
+            @include base-button;
             display: flex;
             align-items: center;
             gap: 8px;
             padding: 8px 12px;
             width: 100%;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
 
             .eye-icon {
-              width: 16px;
-              height: 16px;
-              filter: invert(0.5);
-              transition: all 0.2s ease;
+              @include base-icon;
             }
 
-            &.active {
-              background: #e7f5ff;
-              border-color: #90c8f9;
-
-              .eye-icon {
-                filter: invert(0.3);
-              }
+            &.active .eye-icon {
+              filter: invert(0.3);
             }
           }
 
           .layout-btn {
+            @include base-button;
             flex: 1;
             padding: 8px;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
 
             .layout-icon {
-              width: 20px;
-              height: 20px;
-              filter: invert(0.5);
-              transition: all 0.2s ease;
+              @include base-icon(20px);
 
               &.horizontal {
                 transform: rotate(90deg);
               }
             }
 
-            &.active {
-              background: #e7f5ff;
-              border-color: #90c8f9;
-
-              .layout-icon {
-                filter: invert(0.3);
-              }
+            &.active .layout-icon {
+              filter: invert(0.3);
             }
           }
 
@@ -172,16 +246,14 @@
             padding: 8px 12px;
             background: none;
             border: none;
-            cursor: pointer;
-
-            .mode-label {
+            cursor: pointer;            .mode-label {
               font-size: 13px;
-              color: #999;
+              color: $gray-700;
               font-weight: 600;
-              transition: all 0.2s ease;
+              transition: $transition-base;
 
               &.active {
-                color: #333;
+                color: $gray-600;
               }
             }
 
@@ -191,7 +263,7 @@
               height: 20px;
               background: #e2e2e2;
               border-radius: 10px;
-              transition: all 0.3s ease;
+              transition: $transition-medium;
 
               .toggle-thumb {
                 position: absolute;
@@ -201,7 +273,7 @@
                 height: 16px;
                 background: white;
                 border-radius: 50%;
-                transition: all 0.3s ease;
+                transition: $transition-medium;
 
                 &.right {
                   left: 18px;
@@ -216,64 +288,40 @@
             &.active-complex .toggle-track {
               background: #90c8f9;
             }
-          }
-
-          .chart-btn {
+          }          .chart-btn {
+            @include base-button;
             aspect-ratio: 1;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 6px;
-            transition: all 0.2s ease;
 
             .chart-icon {
               font-size: 20px;
-              color: #555;
+              color: $gray-500;
 
               &.bar {
                 transform: rotate(90deg);
               }
             }
 
-            &.active {
-              background: #e7f5ff;
-              border-color: #90c8f9;
-              box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-
-              .chart-icon {
-                color: #007bff;
-              }
-            }
-          }
-        }
-
-        .reload-btn {
+            &.active .chart-icon {
+              color: $primary-color;
+            }          }
+        }.reload-btn {
+          @include base-button;
           width: 100%;
           padding: 10px 0;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
-          background: #f8f9fa;
-          border: 1px solid #dee2e6;
-          border-radius: 6px;
-          transition: all 0.2s ease;
 
           .reload-icon {
-            width: 16px;
-            height: 16px;
-            filter: invert(0.5);
+            @include base-icon;
           }
 
-          &:hover {
-            background: #e7f5ff;
-            border-color: #90c8f9;
-
-            .reload-icon {
-              filter: invert(0.3);
-            }
+          &:hover .reload-icon {
+            filter: invert(0.3);
           }
         }
       }
@@ -284,7 +332,7 @@
     display: flex;
     flex-direction: column;
     gap: 30px;
-    margin: 30px 0;
+    margin: 0;
 
     &.horizontal-layout {
       flex-direction: row;
@@ -296,9 +344,8 @@
       }
     }
 
-    .chart-wrapper {
-      margin-bottom: 30px;
-      transition: all 0.3s ease;
+    .chart-wrapper {      margin-bottom: 30px;
+      transition: $transition-medium;
 
       &.hidden {
         display: none;
@@ -323,7 +370,7 @@
         border-radius: 5px;
         padding: 20px;
         background: white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
         position: relative;
 
         .chart-placeholder {
@@ -351,28 +398,29 @@
     }
   }
 
-  .apex-chart, .highcharts-chart {
+  .apex-chart,
+  .highcharts-chart {
     width: 100%;
     height: 100%;
   }
-
   .debug-info {
-    margin-top: 30px;
+    margin: 10px 0;
     padding: 15px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #4AA3A2;
+    background-color: $gray-50;
+    border-left: 4px solid #4aa3a2;
     border-radius: 4px;
 
     h3 {
       margin-top: 0;
-      color: #333;
+      color: $gray-600;
     }
 
     code {
       background-color: #eef1f2;
       padding: 2px 5px;
       border-radius: 3px;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+        monospace;
     }
 
     p {

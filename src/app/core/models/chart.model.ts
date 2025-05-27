@@ -7,6 +7,7 @@ export type BarChartData = ChartData<string | XaxisType, number>;
 export type LineChartData = ChartData<string, number>;
 export type TreemapChartData = ChartData<XaxisType, YaxisType>;
 export type HeatmapChartData = ChartData<XaxisType, YaxisType>;
+export type MapChartData = ChartData<string, number>;
 export type RangeChartData = ChartData<XaxisType, number[]>;
 export type FunnelChartData = ChartData<XaxisType, number>;
 export type ComboChartData = ChartData<string, number>;

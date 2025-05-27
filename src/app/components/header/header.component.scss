@@ -6,7 +6,6 @@
   top: 0;
   width: 100%;
   z-index: 99;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 
   .nav {
     display: flex;
@@ -118,9 +117,7 @@
 
         &:hover {
           transform: scale(1.2);
-        }
-
-        img {
+        }        img {
           height: 24px;
           width: 24px;
           opacity: 0.7;
@@ -133,6 +130,17 @@
       }
     }
   }
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 10000;
+  background-image: linear-gradient(to right, #4bc3c3 7%, #41a57d 7% 9%, #96cd32 9% 14%, #1423dc 14% 24%, #2382d2 24% 29%, #1423dc 29% 30%, #ffc328 30% 34%, #41a57d 34% 37%, #4bc3c3 37% 43%, #1423dc 43% 47%, #96cd32 47% 50%, #4bc3c3 50% 57%, #41a57d 57% 59%, #96cd32 59% 64%, #1423dc 64% 74%, #2382d2 74% 79%, #1423dc 79% 80%, #ffc328 80% 83%, #41a57d 83% 87%, #4bc3c3 87% 93%, #1423dc 93% 97%, #96cd32 97% 100%);
 }
 
 @media (max-width: 768px) {

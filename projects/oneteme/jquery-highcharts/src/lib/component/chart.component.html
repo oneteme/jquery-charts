@@ -45,4 +45,17 @@
     [canPivot]="canPivot"
     (customEvent)="change($event)"
   ></div>
+  <div
+    *ngIf="
+      type === 'map'
+    "
+    map-chart
+    [type]="type"
+    [config]="config"
+    [data]="data"
+    [isLoading]="isLoading"
+    [debug]="debug"
+    [canPivot]="canPivot"
+    (customEvent)="change($event)"
+  ></div>
 </div>

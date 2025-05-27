@@ -66,6 +66,9 @@ export class BasicTestComponent implements OnInit {
       'heatmap',
       'treemap',
     ] as ChartType[],
+    map: [
+      'map',
+    ] as ChartType[],
   };
 
   // Configuration de base commune pour tous les graphiques
@@ -128,6 +131,9 @@ export class BasicTestComponent implements OnInit {
   }
   get complexChartTypes(): ChartType[] {
     return this.chartTypes.complex;
+  }
+  get mapChartType():  ChartType[] {
+    return this.chartTypes.map;
   }
 
   ngOnInit(): void {

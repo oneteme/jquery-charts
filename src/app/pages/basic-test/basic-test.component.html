@@ -145,18 +145,16 @@
             />
           </button>
         </div>
-      </div>
-
-      <!-- Sélection du type de graphique avec liste déroulante -->
-      <div class="control-section">
-        <div class="control-group">
-          <label for="chart-type-select">Type de graphique:</label>
-          <select
-            id="chart-type-select"
-            class="chart-type-select"
-            [(ngModel)]="chartType"
-            (change)="changeChartType()"
-          >
+      </div>      <!-- Sélection du type de graphique avec liste déroulante -->
+      <div class="control-section">        <div class="control-group full-width">
+          <label for="chart-type-select">Type de graphique :</label>
+          <div class="select-wrapper">
+            <select
+              id="chart-type-select"
+              class="chart-type-select"
+              [(ngModel)]="chartType"
+              (change)="changeChartType()"
+            >
             <optgroup label="Graphiques simples">
               <option value="pie">Pie</option>
               <option value="donut">Donut</option>
@@ -181,8 +179,11 @@
               <option value="bubble">Bubble</option>
               <option value="heatmap">Heatmap</option>
               <option value="treemap">Treemap</option>
+            </optgroup>            <optgroup label="Graphique map">
+              <option value="map">Map</option>
             </optgroup>
-          </select>
+            </select>
+          </div>
         </div>
       </div>
 

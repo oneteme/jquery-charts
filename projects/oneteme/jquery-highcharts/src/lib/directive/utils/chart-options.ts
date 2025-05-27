@@ -174,6 +174,13 @@ export function configureSimpleGraphOptions(
   }
 }
 
+function configureMapOptions(options: any, chartType: 'map'): void {
+  mergeDeep(options, {
+    plotOptions: {
+    },
+  });
+}
+
 /**
  * Active ou désactive l'affichage en pourcentage pour les dataLabels et tooltips
  * pour les types pie, donut, funnel, pyramid

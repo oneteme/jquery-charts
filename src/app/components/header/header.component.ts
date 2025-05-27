@@ -26,6 +26,7 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
         </div>
       </nav>
     </header>
+    <div class="colored-border"></div>
   `,
   styleUrls: ['./header.component.scss'],
 })

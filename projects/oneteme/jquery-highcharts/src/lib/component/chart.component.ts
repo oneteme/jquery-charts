@@ -45,6 +45,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     bubble: { possibleType: ['scatter', 'bubble'] },
     heatmap: { possibleType: ['heatmap'] },
     treemap: { possibleType: ['treemap'] },
+    map: { possibleType: ['map'], canPivot: false },
   };
 
   _type: ChartType;
