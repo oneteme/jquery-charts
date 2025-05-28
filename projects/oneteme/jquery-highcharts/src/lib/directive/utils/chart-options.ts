@@ -88,6 +88,7 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
         borderRadius: '50%'
       },
     },
+    legend: false
   });
 }
 

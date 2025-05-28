@@ -2,7 +2,7 @@ import { ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, 
 import { ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
 import { ChartCustomEvent } from './utils/types';
-import { createChart, destroyChart } from './utils/chart-creation';
+import { createHighchartsChart, destroyChart } from './utils/chart-creation';
 import { initBaseChartOptions } from './utils/chart-options';
 
 @Directive()
@@ -108,7 +108,7 @@ export abstract class BaseChartDirective<
 
   // Crée un nouveau graph
   protected createChart(): void {
-    const createdChart = createChart(
+    const createdChart = createHighchartsChart(
       this.el,
       this._options,
       this.config,

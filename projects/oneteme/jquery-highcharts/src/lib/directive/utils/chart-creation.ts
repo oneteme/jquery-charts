@@ -23,7 +23,7 @@ export function destroyChart(
   }
 }
 
-export function createChart(
+export function createHighchartsChart(
   el: ElementRef,
   options: any,
   config: ChartProvider<any, any>,
