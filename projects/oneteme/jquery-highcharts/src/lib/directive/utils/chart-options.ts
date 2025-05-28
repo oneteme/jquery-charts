@@ -1,6 +1,6 @@
 import { mergeDeep } from '@oneteme/jquery-core';
 
-export function initBaseOptions(
+export function initBaseChartOptions(
   chartType: string,
   isLoading: boolean = false,
   debug: boolean = false
@@ -16,7 +16,7 @@ export function initBaseOptions(
     chart: {
       type: chartType,
     },
-    // Ne pas désactiver l'export par défaut, laissez l'utilisateur le configurer
+    // Ne pas désactiver l'export par défaut, laissez l'utilisateur le configurer s'il le souhaite
     credits: { enabled: false },
     series: [],
     xAxis: {},
@@ -31,10 +31,8 @@ function configurePieOptions(options: any, chartType: 'pie' | 'donut'): void {
         allowPointSelect: true,
         cursor: 'pointer',
         dataLabels: {
-          enabled: true,
-          format: '<b>{point.name}</b>: {point.y}',
+          enabled: false
         },
-        // showInLegend: true,
         innerSize: chartType === 'donut' ? '50%' : 0,
       },
     },
@@ -49,15 +47,8 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
       inverted: chartType === 'radialBar',
     },
     pane: {
-      size: '80%',
       innerSize: chartType === 'radialBar' ? '20%' : '0%',
       endAngle: chartType === 'radialBar' ? 270 : 360,
-    },
-    legend: {
-      enabled: true,
-      align: 'center',
-      verticalAlign: 'bottom',
-      layout: 'horizontal'
     },
     xAxis: {
       tickmarkPlacement: 'on',
@@ -70,19 +61,11 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
     yAxis: {
       gridLineInterpolation: chartType === 'radar' ? 'polygon' : 'circle',
       lineWidth: 0,
-      min: 0,
       gridLineWidth: chartType === 'radialBar' ? 0 : 1,
       reversedStacks: chartType === 'radialBar' ? false : undefined,
       labels: {
         enabled: true
       }
-    },
-    tooltip: {
-      shared: true,
-      useHTML: true,
-      headerFormat: '<span style="font-size: 10px">{point.key}</span><br/>',
-      pointFormat: '<span style="color:{point.color}">\u25CF</span> <span style="font-weight: 700">{series.name}</span>: <b>{point.y}</b><br/>',
-      valueDecimals: 2
     },
     plotOptions: {
       series: {
@@ -91,10 +74,7 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
         connectEnds: true,
         showInLegend: true,
         dataLabels: {
-          enabled: true,
-          formatter: function() {
-            return '<b>' + this.point.name + '</b>: ' + this.y;
-          }
+          enabled: false,
         },
         marker: {
           enabled: true
@@ -113,47 +93,17 @@ function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'rad
 
 function configureFunnelOptions(options: any, chartType: 'funnel' | 'pyramid'): void {
   mergeDeep(options, {
-    chart: {
-      type: chartType,
-    },
-    legend: {
-      enabled: true,
-      align: 'center',
-      verticalAlign: 'bottom',
-      layout: 'horizontal'
-    },
-    // tooltip: {
-    //   headerFormat: '',
-    //   pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: <b>{point.y}</b><br/>' // valeur classique par défaut
-    // },
-    // tooltip: {
-    //   useHTML: true,
-    //   headerFormat: '<span style="font-size: 12px">{point.key}</span><br/>',
-    //   pointFormat: '<span style="color:{point.color}">●</span> {point.name} {point.y}' // valeur classique par défaut
-    // },
     plotOptions: {
       funnel: {
         dataLabels: {
-          enabled: true,
-          format: '<b>{point.name}</b>: {point.y}', // valeur classique par défaut
-          softConnector: true
+          enabled: false
         },
         reversed: chartType === 'pyramid',
-        neckWidth: '30%',
-        neckHeight: '25%',
-        width: '80%',
-        center: ['50%', '50%'],
-        showInLegend: true
       },
       pyramid: {
         dataLabels: {
-          enabled: true,
-          format: '<b>{point.name}</b>: {point.y}', // valeur classique par défaut
-          softConnector: true
-        },
-        width: '80%',
-        center: ['50%', '50%'],
-        showInLegend: true
+          enabled: false
+        }
       }
     }
   });
@@ -180,6 +130,3 @@ function configureMapOptions(options: any, chartType: 'map'): void {
     },
   });
 }
-
-// La fonction togglePercentDisplay a été migrée vers chart-utils.ts
-// Utilisez togglePercentDisplay ou togglePercentDisplaySimple de chart-utils.ts

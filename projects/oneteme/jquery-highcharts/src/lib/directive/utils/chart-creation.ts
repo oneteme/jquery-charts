@@ -3,7 +3,7 @@ import { ChartProvider } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
 import more from 'highcharts/highcharts-more';
 import { ChartCustomEvent } from './types';
-import { configureChartEvents, removeToolbar } from './chart-toolbar';
+// import { configureChartEvents, removeToolbar } from './chart-toolbar';
 import { sanitizeChartDimensions } from './chart-utils';
 
 more(Highcharts);
@@ -15,7 +15,7 @@ export function destroyChart(
   if (!chart) return;
 
   try {
-    removeToolbar(chart);
+    // removeToolbar(chart);
     chart.destroy();
     if (debug) console.log('Graphique détruit avec succès');
   } catch (error) {
@@ -23,9 +23,7 @@ export function destroyChart(
   }
 }
 
-
-
-export function createHighchart(
+export function createChart(
   el: ElementRef,
   options: any,
   config: ChartProvider<any, any>,
@@ -43,14 +41,14 @@ export function createHighchart(
     const chartOptions: Highcharts.Options = Highcharts.merge({}, options);
     sanitizeChartDimensions(chartOptions, config);
 
-    configureChartEvents(chartOptions, {
-      chart: null,
-      config,
-      customEvent,
-      ngZone,
-      canPivot,
-      debug,
-    });
+    // configureChartEvents(chartOptions, {
+    //   chart: null,
+    //   config,
+    //   customEvent,
+    //   ngZone,
+    //   canPivot,
+    //   debug,
+    // });
 
     if (debug) console.log('Création du graphique avec options:', chartOptions);
 

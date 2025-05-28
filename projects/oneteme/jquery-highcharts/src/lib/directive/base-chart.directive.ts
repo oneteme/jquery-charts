@@ -2,8 +2,8 @@ import { ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, 
 import { ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import * as Highcharts from 'highcharts';
 import { ChartCustomEvent } from './utils/types';
-import { createHighchart, destroyChart } from './utils/chart-creation';
-import { initBaseOptions } from './utils/chart-options';
+import { createChart, destroyChart } from './utils/chart-creation';
+import { initBaseChartOptions } from './utils/chart-options';
 
 @Directive()
 export abstract class BaseChartDirective<
@@ -28,7 +28,7 @@ export abstract class BaseChartDirective<
     protected readonly el: ElementRef,
     protected readonly ngZone: NgZone
   ) {
-    this._options = initBaseOptions(
+    this._options = initBaseChartOptions(
       this.type || '',
       this.isLoading,
       this.debug
@@ -108,7 +108,7 @@ export abstract class BaseChartDirective<
 
   // Crée un nouveau graph
   protected createChart(): void {
-    const createdChart = createHighchart(
+    const createdChart = createChart(
       this.el,
       this._options,
       this.config,
