@@ -1,5 +1,110 @@
 import { mergeDeep } from '@oneteme/jquery-core';
 
+// Configuration par type de graphique pour éviter la duplication
+const CHART_TYPE_CONFIGS = {
+  pie: {
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: { enabled: false },
+        innerSize: 0,
+      },
+    },
+  },
+  donut: {
+    plotOptions: {
+      pie: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: { enabled: false },
+        innerSize: '50%',
+      },
+    },
+  },
+  polar: {
+    chart: { polar: true, type: 'column' },
+    pane: { innerSize: '0%', endAngle: 360 },
+    xAxis: { tickmarkPlacement: 'on', lineWidth: 0, gridLineWidth: 1 },
+    yAxis: { gridLineInterpolation: 'circle', lineWidth: 0, gridLineWidth: 1 },
+    plotOptions: {
+      series: {
+        pointPlacement: 'between',
+        pointStart: 0,
+        connectEnds: true,
+        showInLegend: true,
+      },
+      column: {
+        stacking: 'normal',
+        borderWidth: 0,
+        pointPadding: 0,
+        groupPadding: 0.15,
+        borderRadius: '50%',
+      },
+    },
+    legend: false,
+  },
+  radar: {
+    chart: { polar: true, type: 'line' },
+    pane: { innerSize: '0%', endAngle: 360 },
+    xAxis: { tickmarkPlacement: 'on', lineWidth: 0, gridLineWidth: 1 },
+    yAxis: { gridLineInterpolation: 'polygon', lineWidth: 0, gridLineWidth: 1 },
+    plotOptions: {
+      series: {
+        pointPlacement: 'between',
+        pointStart: 0,
+        connectEnds: true,
+        showInLegend: true,
+        marker: { enabled: true },
+      },
+    },
+    legend: false,
+  },
+  radialBar: {
+    chart: { polar: true, type: 'column', inverted: true },
+    pane: { innerSize: '20%', endAngle: 270 },
+    xAxis: {
+      tickmarkPlacement: 'on',
+      lineWidth: 0,
+      gridLineWidth: 0,
+      labels: { enabled: false },
+    },
+    yAxis: {
+      gridLineInterpolation: 'circle',
+      lineWidth: 0,
+      gridLineWidth: 0,
+      reversedStacks: false,
+    },
+    plotOptions: {
+      series: {
+        pointPlacement: 'between',
+        pointStart: 0,
+        connectEnds: true,
+        showInLegend: true,
+      },
+      column: {
+        stacking: 'normal',
+        borderWidth: 0,
+        pointPadding: 0,
+        groupPadding: 0.15,
+        borderRadius: '50%',
+      },
+    },
+    legend: false,
+  },
+  funnel: {
+    plotOptions: {
+      funnel: { dataLabels: { enabled: false }, reversed: false },
+    },
+  },
+  pyramid: {
+    plotOptions: {
+      funnel: { dataLabels: { enabled: false }, reversed: true },
+      pyramid: { dataLabels: { enabled: false } },
+    },
+  },
+} as const;
+
 export function initBaseChartOptions(
   chartType: string,
   isLoading: boolean = false,
@@ -10,13 +115,8 @@ export function initBaseChartOptions(
 
   return {
     shouldRedraw: true,
-    lang: {
-      noData: loadingText,
-    },
-    chart: {
-      type: chartType,
-    },
-    // Ne pas désactiver l'export par défaut, laissez l'utilisateur le configurer s'il le souhaite
+    lang: { noData: loadingText },
+    chart: { type: chartType },
     credits: { enabled: false },
     series: [],
     xAxis: {},
@@ -24,110 +124,17 @@ export function initBaseChartOptions(
   };
 }
 
-function configurePieOptions(options: any, chartType: 'pie' | 'donut'): void {
-  mergeDeep(options, {
-    plotOptions: {
-      pie: {
-        allowPointSelect: true,
-        cursor: 'pointer',
-        dataLabels: {
-          enabled: false
-        },
-        innerSize: chartType === 'donut' ? '50%' : 0,
-      },
-    },
-  });
-}
-
-function configurePolarOptions(options: any, chartType: 'polar' | 'radar' | 'radialBar'): void {
-  mergeDeep(options, {
-    chart: {
-      polar: true,
-      type: chartType === 'radar' ? 'line' : 'column',
-      inverted: chartType === 'radialBar',
-    },
-    pane: {
-      innerSize: chartType === 'radialBar' ? '20%' : '0%',
-      endAngle: chartType === 'radialBar' ? 270 : 360,
-    },
-    xAxis: {
-      tickmarkPlacement: 'on',
-      lineWidth: 0,
-      gridLineWidth: chartType === 'radialBar' ? 0 : 1,
-      labels: {
-        enabled: chartType !== 'radialBar'
-      }
-    },
-    yAxis: {
-      gridLineInterpolation: chartType === 'radar' ? 'polygon' : 'circle',
-      lineWidth: 0,
-      gridLineWidth: chartType === 'radialBar' ? 0 : 1,
-      reversedStacks: chartType === 'radialBar' ? false : undefined,
-      labels: {
-        enabled: true
-      }
-    },
-    plotOptions: {
-      series: {
-        pointPlacement: 'between',
-        pointStart: 0,
-        connectEnds: true,
-        showInLegend: true,
-        dataLabels: {
-          enabled: false,
-        },
-        marker: {
-          enabled: true
-        }
-      },
-      column: {
-        stacking: 'normal',
-        borderWidth: 0,
-        pointPadding: 0,
-        groupPadding: 0.15,
-        borderRadius: '50%'
-      },
-    },
-    legend: false
-  });
-}
-
-function configureFunnelOptions(options: any, chartType: 'funnel' | 'pyramid'): void {
-  mergeDeep(options, {
-    plotOptions: {
-      funnel: {
-        dataLabels: {
-          enabled: false
-        },
-        reversed: chartType === 'pyramid',
-      },
-      pyramid: {
-        dataLabels: {
-          enabled: false
-        }
-      }
-    }
-  });
-}
-
 export function configureSimpleGraphOptions(
   options: any,
-  chartType: 'pie' | 'donut' | 'polar' | 'radar' | 'radialBar' | 'funnel' | 'pyramid',
+  chartType: keyof typeof CHART_TYPE_CONFIGS,
   debug: boolean = false
 ): void {
   if (debug) console.log(`Configuration des options pour ${chartType}`);
-  if (chartType === 'pie' || chartType === 'donut') {
-    configurePieOptions(options, chartType);
-  } else if (chartType === 'funnel' || chartType === 'pyramid') {
-    configureFunnelOptions(options, chartType);
-  } else {
-    configurePolarOptions(options, chartType);
-  }
-}
 
-function configureMapOptions(options: any, chartType: 'map'): void {
-  mergeDeep(options, {
-    plotOptions: {
-    },
-  });
+  const config = CHART_TYPE_CONFIGS[chartType];
+  if (config) {
+    mergeDeep(options, config);
+  } else if (debug) {
+    console.warn(`Configuration non trouvée pour le type: ${chartType}`);
+  }
 }
