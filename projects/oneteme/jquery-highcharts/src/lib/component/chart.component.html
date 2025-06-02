@@ -1,14 +1,6 @@
 <div>
   <div
-    *ngIf="
-      type === 'pie' ||
-      type === 'donut' ||
-      type === 'funnel' ||
-      type === 'pyramid' ||
-      type === 'polar' ||
-      type === 'radar' ||
-      type === 'radialBar'
-    "
+    *ngIf="isSimpleChart"
     simple-chart
     [type]="type"
     [config]="config"
@@ -18,24 +10,9 @@
     [canPivot]="canPivot"
     (customEvent)="change($event)"
   ></div>
+  
   <div
-    *ngIf="
-      type === 'bar' ||
-      type === 'column' ||
-      type === 'columnpyramid' ||
-      type === 'line' ||
-      type === 'area' ||
-      type === 'spline' ||
-      type === 'areaspline' ||
-      type === 'columnrange' ||
-      type === 'arearange' ||
-      type === 'areasplinerange' ||
-      type === 'scatter' ||
-      type === 'bubble' ||
-      type === 'heatmap' ||
-      type === 'treemap' ||
-      type === 'lollipop'
-    "
+    *ngIf="isComplexChart"
     complex-chart
     [type]="type"
     [config]="config"
@@ -45,10 +22,9 @@
     [canPivot]="canPivot"
     (customEvent)="change($event)"
   ></div>
+  
   <div
-    *ngIf="
-      type === 'map'
-    "
+    *ngIf="isMapChart"
     map-chart
     [type]="type"
     [config]="config"

@@ -3,23 +3,6 @@ import { XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-cor
 import { BaseChartDirective } from './base-chart.directive';
 import { getType } from './utils/chart-utils';
 
-import * as Highcharts from 'highcharts';
-import more from 'highcharts/highcharts-more';
-import Exporting from 'highcharts/modules/exporting';
-import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
-import Annotations from 'highcharts/modules/annotations';
-import Accessibility from 'highcharts/modules/accessibility';
-import Treemap from 'highcharts/modules/treemap';
-import Heatmap from 'highcharts/modules/heatmap';
-
-more(Highcharts);
-Exporting(Highcharts);
-NoDataToDisplay(Highcharts);
-Annotations(Highcharts);
-Accessibility(Highcharts);
-Treemap(Highcharts);
-Heatmap(Highcharts);
-
 @Directive({
   selector: '[complex-chart]',
   standalone: true,
@@ -27,21 +10,7 @@ Heatmap(Highcharts);
 export class ComplexChartDirective<
   X extends XaxisType
 > extends BaseChartDirective<X, YaxisType> {
-  @Input({ alias: 'type' }) override type:
-    | 'bar'
-    | 'column'
-    | 'columnpyramid'
-    | 'line'
-    | 'area'
-    | 'spline'
-    | 'areaspline'
-    | 'columnrange'
-    | 'arearange'
-    | 'areasplinerange'
-    | 'scatter'
-    | 'bubble'
-    | 'heatmap'
-    | 'treemap' = 'bar';
+  @Input({ alias: 'type' }) override type: 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'columnrange' | 'arearange' | 'areasplinerange' | 'scatter' | 'bubble' | 'heatmap' | 'treemap' = 'bar';
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));

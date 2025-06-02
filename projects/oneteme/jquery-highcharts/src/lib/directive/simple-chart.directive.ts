@@ -1,35 +1,14 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, inject } from '@angular/core';
-import { buildChart, buildSingleSerieChart, mergeDeep } from '@oneteme/jquery-core';
+import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
+import { buildSingleSerieChart, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
 import { configureSimpleGraphOptions } from './utils/chart-options';
-
-import * as Highcharts from 'highcharts';
-import more from 'highcharts/highcharts-more';
-import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
-import Annotations from 'highcharts/modules/annotations';
-import Accessibility from 'highcharts/modules/accessibility';
-import Exporting from 'highcharts/modules/exporting';
-import ExportDataModule from 'highcharts/modules/export-data';
-import Funnel from 'highcharts/modules/funnel';
-import { ChartCustomEvent } from './utils/types';
-
-more(Highcharts);
-NoDataToDisplay(Highcharts);
-Annotations(Highcharts);
-Accessibility(Highcharts);
-Exporting(Highcharts);
-ExportDataModule(Highcharts);
-Funnel(Highcharts);
 
 @Directive({
   selector: '[simple-chart]',
   standalone: true,
 })
 export class SimpleChartDirective extends BaseChartDirective<string, number> {
-  @Input({ alias: 'type' }) override type:
-    'pie' | 'donut' | 'polar' | 'radar' | 'funnel' | 'pyramid' | 'radialBar' = 'pie';
-
-  customEvent = new EventEmitter<ChartCustomEvent>();
+  @Input({ alias: 'type' }) override type: 'pie' | 'donut' | 'polar' | 'radar' | 'funnel' | 'pyramid' | 'radialBar' = 'pie';
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));
@@ -44,7 +23,13 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       configureSimpleGraphOptions(this._options, 'donut', this.debug);
     } else if (actualType === 'pie') {
       configureSimpleGraphOptions(this._options, 'pie', this.debug);
-    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar' || actualType === 'funnel' || actualType === 'pyramid') {
+    } else if (
+      actualType === 'polar' ||
+      actualType === 'radar' ||
+      actualType === 'radialBar' ||
+      actualType === 'funnel' ||
+      actualType === 'pyramid'
+    ) {
       configureSimpleGraphOptions(this._options, actualType, this.debug);
       this._shouldRedraw = true;
     }
@@ -99,7 +84,11 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         this.type === 'donut' ? 'donut' : 'pie',
         this.debug
       );
-    } else if (actualType === 'polar' || actualType === 'radar' || actualType === 'radialBar') {
+    } else if (
+      actualType === 'polar' ||
+      actualType === 'radar' ||
+      actualType === 'radialBar'
+    ) {
       configureSimpleGraphOptions(this._options, actualType, this.debug);
     }
   }
@@ -109,14 +98,21 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
     const chartConfig = { ...this._chartConfig, continue: false };
     const commonChart =
-          this.data.length != 1 && this.type == 'radar'
-            ? buildChart(this.data, chartConfig, null)
-            : buildSingleSerieChart(this.data, chartConfig, null);
+      this.data.length != 1 && this.type == 'radar'
+        ? buildChart(this.data, chartConfig, null)
+        : buildSingleSerieChart(this.data, chartConfig, null);
 
     if (this.debug) console.log('Données traitées:', commonChart);
 
-    if (this.type === 'polar' || this.type === 'radar' || this.type === 'radialBar') {
-      this._options.xAxis = this._options.xAxis ?? {};
+    if (
+      this.type === 'polar' ||
+      this.type === 'radar' ||
+      this.type === 'radialBar'
+    ) {
+      // Assurer que xAxis existe et est un objet
+      if (!this._options.xAxis || Array.isArray(this._options.xAxis)) {
+        this._options.xAxis = {};
+      }
       this._options.xAxis.categories = commonChart.categories || [];
 
       if (this.data.length != 1 && this.type == 'radar') {
@@ -142,16 +138,18 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
           formattedData.push({
             name: commonChart.categories[i],
             y: commonChart.series[0]?.data[i] || 0,
-            color: commonChart.series[0]?.color
+            color: commonChart.series[0]?.color,
           });
         }
 
-        const series = [{
-          name: chartConfig.title || 'Valeurs',
-          data: formattedData,
-          type: this.type === 'radar' ? 'line' : 'column',
-          showInLegend: true
-        }];
+        const series = [
+          {
+            name: chartConfig.title || 'Valeurs',
+            data: formattedData,
+            type: this.type === 'radar' ? 'line' : 'column',
+            showInLegend: true,
+          },
+        ];
 
         mergeDeep(this._options, { series });
       }
@@ -177,7 +175,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
           {
             name: chartConfig.title || 'Valeurs',
             data: formattedData,
-            showInLegend: true
+            showInLegend: true,
           },
         ],
       });

@@ -4,6 +4,7 @@ import * as Highcharts from 'highcharts';
 import { ChartCustomEvent } from './utils/types';
 import { createHighchartsChart, destroyChart } from './utils/chart-creation';
 import { initBaseChartOptions } from './utils/chart-options';
+import { initializeHighchartsModules } from './utils/highcharts-modules';
 
 @Directive()
 export abstract class BaseChartDirective<
@@ -28,6 +29,9 @@ export abstract class BaseChartDirective<
     protected readonly el: ElementRef,
     protected readonly _zone: NgZone
   ) {
+    // Initialiser les modules une seule fois
+    initializeHighchartsModules();
+
     this._options = initBaseChartOptions(
       this.type || '',
       this.isLoading,

@@ -1,20 +1,6 @@
 import { Directive, inject, ElementRef, NgZone, Input } from '@angular/core';
 import { XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { initBaseChartOptions } from './utils';
-import * as Highcharts from 'highcharts';
-import HighchartsMap from 'highcharts/modules/map';
-import Exporting from 'highcharts/modules/exporting';
-import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
-import Annotations from 'highcharts/modules/annotations';
-import Accessibility from 'highcharts/modules/accessibility';
-
-// Initialisation des modules Highcharts
-HighchartsMap(Highcharts);
-Exporting(Highcharts);
-NoDataToDisplay(Highcharts);
-Annotations(Highcharts);
-Accessibility(Highcharts);
 
 @Directive({
   selector: '[map-chart]',
@@ -29,8 +15,6 @@ export class MapChartDirective<X extends XaxisType> extends BaseChartDirective<X
 
   protected override updateChartType(): void {
     if (this.debug) console.log('Mise à jour du type de carte géographique');
-
-    this._options = initBaseChartOptions('map', this.isLoading, this.debug);
 
     // Configuration spécifique pour les cartes
     mergeDeep(this._options, {

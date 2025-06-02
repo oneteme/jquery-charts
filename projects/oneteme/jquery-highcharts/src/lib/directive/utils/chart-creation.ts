@@ -1,12 +1,9 @@
 import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import { ChartProvider } from '@oneteme/jquery-core';
-import * as Highcharts from 'highcharts';
-import more from 'highcharts/highcharts-more';
+import { Highcharts } from './highcharts-modules';
 import { ChartCustomEvent } from './types';
 // import { configureChartEvents, removeToolbar } from './chart-toolbar';
 import { sanitizeChartDimensions } from './chart-utils';
-
-more(Highcharts);
 
 export function destroyChart(
   chart: Highcharts.Chart,
