@@ -9,7 +9,7 @@ import { initBaseChartOptions } from './utils/chart-options';
 export abstract class BaseChartDirective<
   X extends XaxisType,
   Y extends YaxisType
-> implements ChartView<X, Y>, OnChanges, OnDestroy
+> implements ChartView<X, Y>, OnDestroy, OnChanges
 {
   @Input({ required: true }) config: ChartProvider<X, Y>;
   @Input({ required: true }) data: any[];
@@ -26,7 +26,7 @@ export abstract class BaseChartDirective<
 
   constructor(
     protected readonly el: ElementRef,
-    protected readonly ngZone: NgZone
+    protected readonly _zone: NgZone
   ) {
     this._options = initBaseChartOptions(
       this.type || '',
@@ -44,7 +44,7 @@ export abstract class BaseChartDirective<
       console.log('Détection de changements', changes);
     }
 
-    this.ngZone.runOutsideAngular(() => {
+    this._zone.runOutsideAngular(() => {
       if (this.config && this.data) {
         this.processChanges(changes);
       }
@@ -113,7 +113,7 @@ export abstract class BaseChartDirective<
       this._options,
       this.config,
       this.customEvent,
-      this.ngZone,
+      this._zone,
       this.canPivot,
       this.debug
     );
