@@ -25,13 +25,13 @@ export class BasicTestComponent implements OnInit {
   @ViewChild('highchart') highchart: HighchartsComponent<string, number>;
 
   // Contrôle de l'affichage
-  showApexChart = false;
+  showApexChart = true;
   showHighcharts = true;
-  layoutMode: 'row' | 'column' = 'column';
+  layoutMode: 'row' | 'column' = 'row';
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'line';
+  chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoading: boolean = true;
@@ -40,36 +40,9 @@ export class BasicTestComponent implements OnInit {
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
-    simple: [
-      'pie',
-      'donut',
-      'polar',
-      'radar',
-      'radialBar',
-      'funnel',
-      'pyramid',
-      'radialBar',
-    ] as ChartType[],
-    complex: [
-      'bar',
-      'column',
-      'columnpyramid',
-      'line',
-      'area',
-      'spline',
-      'areaspline',
-      'columnrange',
-      'arearange',
-      'areasplinerange',
-      'scatter',
-      'bubble',
-      'heatmap',
-      'treemap',
-    ] as ChartType[],
-    map: [
-      'map',
-    ] as ChartType[],
-  };
+    simple: ['pie', 'donut', 'polar', 'radar', 'radialBar', 'funnel', 'pyramid', 'radialBar'] as ChartType[],
+    complex: ['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap'] as ChartType[],
+    map: ['map'] as ChartType[] };
 
   // Configuration de base commune pour tous les graphiques
   private readonly baseConfig = {

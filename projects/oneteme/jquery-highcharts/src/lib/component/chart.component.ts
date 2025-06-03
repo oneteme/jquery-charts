@@ -54,15 +54,10 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     return this._type;
   }
 
-  // Constantes statiques pour éviter les créations d'arrays répétées
   private static readonly SIMPLE_CHART_TYPES = new Set(['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar']);
 
   private static readonly COMPLEX_CHART_TYPES = new Set(['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap']);
 
-  /**
-   * Vérifie si le type de graphique actuel permet le pivotage
-   * Par défaut, tous les types sont pivotables sauf si canPivot est explicitement défini à false
-   */
   get canPivot(): boolean {
     return this._charts[this._type]?.canPivot !== false;
   }
@@ -79,10 +74,6 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     return this._type === 'map';
   }
 
-  /**
-   * Change le type de graphique ou effectue une rotation des données
-   * @param event Événement personnalisé (previous, next, pivot)
-   */
   change(event: string): void {
     const charts = this._charts[this._type]?.possibleType;
 
