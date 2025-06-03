@@ -7,7 +7,7 @@ import { BaseChartDirective } from './base-chart.directive';
   standalone: true,
 })
 export class MapChartDirective<X extends XaxisType> extends BaseChartDirective<X, YaxisType> {
-  @Input({ alias: 'type' }) override type: 'map' = 'map';
+  @Input({ alias: 'type' }) override type = 'map' as const;
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));

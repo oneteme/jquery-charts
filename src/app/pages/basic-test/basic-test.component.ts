@@ -31,12 +31,12 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'radar';
+  chartType: ChartType = 'line';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoading: boolean = true;
-  isSimpleChart = true;
-  dataDelay = 200;
+  isSimpleChart = false;
+  dataDelay = 1000;
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
