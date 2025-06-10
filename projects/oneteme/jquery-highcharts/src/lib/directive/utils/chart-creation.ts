@@ -2,21 +2,51 @@ import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import { ChartProvider } from '@oneteme/jquery-core';
 import { Highcharts } from './highcharts-modules';
 import { ChartCustomEvent } from './types';
-// import { configureChartEvents, removeToolbar } from './chart-toolbar';
 import { sanitizeChartDimensions } from './chart-utils';
+import { LoadingManager } from './loading-manager';
 
 export function destroyChart(
   chart: Highcharts.Chart,
+  loadingManager?: LoadingManager,
   debug: boolean = false
 ): void {
   if (!chart) return;
 
   try {
-    // removeToolbar(chart);
-    chart.destroy();
-    if (debug) console.log('Graphique détruit avec succès');
+    // Nettoyer le loading manager en premier
+    if (loadingManager) {
+      loadingManager.destroy();
+    }
+
+    // Nettoyer aussi le message "aucune donnée" s'il existe (pour compatibilité)
+    if (chart.container) {
+      const noDataMessage = chart.container.querySelector('.highcharts-no-data-message');
+      if (noDataMessage) {
+        noDataMessage.remove();
+      }
+    }
+
+    // Vérifications de sécurité avant destruction
+    if (chart && typeof chart.destroy === 'function') {
+      if (chart.renderer && !chart.renderer.forExport) {
+        chart.destroy();
+        if (debug) console.log('Graphique détruit avec succès');
+      } else if (debug) {
+        console.log('Graphique déjà détruit ou en cours d\'export');
+      }
+    } else if (debug) {
+      console.log('Graphique invalide, pas de destruction nécessaire');
+    }
   } catch (error) {
-    console.error('Erreur lors de la destruction du graphique:', error);
+    if (debug) console.error('Erreur lors de la destruction du graphique:', error);
+
+    try {
+      if (chart.container?.parentNode) {
+        chart.container.innerHTML = '';
+      }
+    } catch (cleanupError) {
+      if (debug) console.error('Erreur lors du nettoyage manuel:', cleanupError);
+    }
   }
 }
 
@@ -26,36 +56,68 @@ export function createHighchartsChart(
   config: ChartProvider<any, any>,
   customEvent: EventEmitter<ChartCustomEvent>,
   ngZone: NgZone,
+  loadingManager: LoadingManager,
   canPivot: boolean = true,
   debug: boolean = false
-): Highcharts.Chart {
-  try {
-    if (!el?.nativeElement) {
-      if (debug) console.log('Élément DOM non disponible pour le rendu');
-      return null;
+): Promise<Highcharts.Chart | null> {
+  return new Promise((resolve) => {
+    try {
+      if (!el?.nativeElement) {
+        if (debug) console.log('Élément DOM non disponible pour le rendu');
+        resolve(null);
+        return;
+      }
+
+      const chartOptions: Highcharts.Options = Highcharts.merge({}, options);
+      sanitizeChartDimensions(chartOptions, config);
+
+      if (debug) console.log('Création du graphique avec options:', chartOptions);
+
+      ngZone.runOutsideAngular(() => {
+        const chartInstance = (Highcharts as any).chart(
+          el.nativeElement,
+          chartOptions,
+          function (chart: Highcharts.Chart) {
+            // Callback appelé quand le graphique est complètement rendu
+            if (debug) console.log('Graphique rendu');
+
+            // Masquer le loading seulement s'il est visible (donc activé)
+            if (loadingManager.visible) {
+              if (debug) console.log('Masquage du loading...');
+              loadingManager.hide().then(() => {
+                // Animer l'apparition du graphique
+                if (chart.container) {
+                  chart.container.style.opacity = '0';
+                  chart.container.style.transition = 'opacity 300ms ease-out';
+
+                  requestAnimationFrame(() => {
+                    if (chart.container) {
+                      chart.container.style.opacity = '1';
+                    }
+                  });
+                }
+
+                if (debug) console.log('Animation de transition terminée');
+              });
+            } else {
+              // Si le loading n'était pas visible, afficher directement le graphique
+              if (chart.container) {
+                chart.container.style.opacity = '1';
+              }
+              if (debug) console.log('Graphique affiché directement (pas de loading)');
+            }
+          }
+        );
+
+        resolve(chartInstance);
+      });
+    } catch (error) {
+      console.error('Erreur lors de la création du graphique:', error);
+      // En cas d'erreur, masquer le loading seulement s'il était activé
+      if (loadingManager.visible) {
+        loadingManager.hide();
+      }
+      resolve(null);
     }
-
-    const chartOptions: Highcharts.Options = Highcharts.merge({}, options);
-    sanitizeChartDimensions(chartOptions, config);
-
-    // configureChartEvents(chartOptions, {
-    //   chart: null,
-    //   config,
-    //   customEvent,
-    //   ngZone,
-    //   canPivot,
-    //   debug,
-    // });
-
-    if (debug) console.log('Création du graphique avec options:', chartOptions);
-
-    const chartInstance = ngZone.runOutsideAngular(() => {
-      return (Highcharts as any).chart(el.nativeElement, chartOptions);
-    });
-
-    return chartInstance;
-  } catch (error) {
-    console.error('Erreur lors de la création du graphique:', error);
-    return null;
-  }
+  });
 }

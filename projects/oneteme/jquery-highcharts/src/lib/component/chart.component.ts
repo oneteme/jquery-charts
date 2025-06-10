@@ -46,7 +46,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   }
   @Input({ required: true }) config: ChartProvider<X, Y>;
   @Input({ required: true }) data: any[];
-  @Input() isLoading: boolean;
+  @Input() isLoading: boolean = false;
   @Input() debug: boolean;
   @Output() customEvent: EventEmitter<string> = new EventEmitter();
 

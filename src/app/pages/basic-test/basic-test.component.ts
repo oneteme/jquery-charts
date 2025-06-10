@@ -25,9 +25,9 @@ export class BasicTestComponent implements OnInit {
   @ViewChild('highchart') highchart: HighchartsComponent<string, number>;
 
   // Contrôle de l'affichage
-  showApexChart = true;
+  showApexChart = false;
   showHighcharts = true;
-  layoutMode: 'row' | 'column' = 'row';
+  layoutMode: 'row' | 'column' = 'column';
   isPanelExpanded = false;
 
   // Configuration du graphique
@@ -36,7 +36,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = false;
-  dataDelay = 1000;
+  dataDelay = 2000;
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
@@ -70,6 +70,7 @@ export class BasicTestComponent implements OnInit {
       // { category: 'Catégorie C', value: 20 },
       // { category: 'Catégorie D', value: 15 },
       // { category: 'Catégorie E', value: 10 },
+
       { category: 'Catégorie A', value: 60 },
       { category: 'Catégorie B', value: 50 },
       { category: 'Catégorie C', value: 20 },

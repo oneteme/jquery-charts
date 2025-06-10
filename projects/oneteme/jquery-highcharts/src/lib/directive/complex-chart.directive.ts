@@ -30,6 +30,12 @@ export class ComplexChartDirective<
   protected override updateConfig(): void {
     if (this.debug) console.log('Mise à jour de la configuration');
 
+    // Vérification de sécurité
+    if (!this.config) {
+      if (this.debug) console.log('Configuration manquante dans updateConfig');
+      return;
+    }
+
     this._chartConfig = this.config;
 
     this._options = mergeDeep(
@@ -74,6 +80,14 @@ export class ComplexChartDirective<
   protected override updateData(): void {
     if (this.debug) console.log('Mise à jour des données');
 
+    // Vérifications de sécurité
+    if (!this.config || !this.data) {
+      if (this.debug) console.log('Configuration ou données manquantes dans updateData');
+      // S'assurer que les séries sont vides pour éviter les erreurs
+      mergeDeep(this._options, { series: [] });
+      return;
+    }
+
     try {
       const chartConfig = { ...this._chartConfig, continue: false };
       const commonChart = buildChart(this.data, chartConfig, null);
@@ -84,21 +98,39 @@ export class ComplexChartDirective<
 
       if (this.debug) console.log("Type d'axe X détecté:", xAxisType);
 
-      if (commonChart?.categories) {
+      if (commonChart?.categories && commonChart?.series) {
+        // Validation des données avant mise à jour
+        const validSeries = Array.isArray(commonChart.series) ? commonChart.series : [];
+        const validCategories = Array.isArray(commonChart.categories) ? commonChart.categories : [];
+
         mergeDeep(this._options, {
           xAxis: {
-            categories: commonChart.categories,
+            categories: validCategories,
             type: xAxisType,
           },
-          series: commonChart.series || [],
+          series: validSeries,
         });
+
+        // Si on a des données valides mais pas de graphique existant, forcer la création
+        if (validSeries.length > 0 && !this.chart && !this._shouldRedraw) {
+          if (this.debug) console.log('Données valides détectées, force la création du graphique');
+          this._shouldRedraw = true;
+        }
       } else {
-        console.warn(
-          'Aucune catégorie ou données de série trouvée dans commonChart'
-        );
+        if (this.debug) console.log('Données temporairement vides, attente des vraies données');
+        // S'assurer que les séries sont définies comme un tableau vide
+        mergeDeep(this._options, {
+          series: [],
+          xAxis: { categories: [] }
+        });
       }
     } catch (error) {
       console.error('Erreur lors du traitement des données:', error);
+      // En cas d'erreur, s'assurer que les options restent dans un état valide
+      mergeDeep(this._options, {
+        series: [],
+        xAxis: { categories: [] }
+      });
     }
   }
 }

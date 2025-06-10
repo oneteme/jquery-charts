@@ -107,15 +107,12 @@ const CHART_TYPE_CONFIGS = {
 
 export function initBaseChartOptions(
   chartType: string,
-  isLoading: boolean = false,
   debug: boolean = false
 ): any {
-  const loadingText = isLoading ? 'Chargement des données...' : 'Aucune donnée';
   if (debug) console.log('Initialisation des options de base pour', chartType);
 
   return {
     shouldRedraw: true,
-    lang: { noData: loadingText },
     chart: { type: chartType },
     credits: { enabled: false },
     series: [],
@@ -129,11 +126,29 @@ export function configureSimpleGraphOptions(
   chartType: keyof typeof CHART_TYPE_CONFIGS,
   debug: boolean = false
 ): void {
-  if (debug) console.log(`Configuration des options pour ${chartType}`);
+  if (debug) console.log(`Configuration des options pour ${chartType}`, 'options avant:', JSON.stringify(options.plotOptions?.pie));
 
   const config = CHART_TYPE_CONFIGS[chartType];
   if (config) {
-    mergeDeep(options, config);
+    // Pour pie/donut, forcer complètement la réinitialisation
+    if (chartType === 'pie' || chartType === 'donut') {
+      if (!options.plotOptions) options.plotOptions = {};
+      
+      // Réinitialisation complète et forcée des options pie
+      options.plotOptions.pie = {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: { enabled: false },
+        innerSize: chartType === 'donut' ? '50%' : 0,
+      };
+      
+      if (debug) console.log(`Options pie forcées pour ${chartType}:`, JSON.stringify(options.plotOptions.pie));
+    } else {
+      // Pour les autres types, appliquer la configuration normale
+      mergeDeep(options, config);
+    }
+    
+    if (debug) console.log(`Options finales après configuration ${chartType}:`, JSON.stringify(options.plotOptions));
   } else if (debug) {
     console.warn(`Configuration non trouvée pour le type: ${chartType}`);
   }

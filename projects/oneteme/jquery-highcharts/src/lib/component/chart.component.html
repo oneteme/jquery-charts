@@ -1,4 +1,4 @@
-<div>
+<div style="height: 100%; width: 100%;">
   <div
     *ngIf="isSimpleChart"
     simple-chart
@@ -9,8 +9,9 @@
     [debug]="debug"
     [canPivot]="canPivot"
     (customEvent)="change($event)"
+    style="height: 100%; width: 100%;"
   ></div>
-  
+
   <div
     *ngIf="isComplexChart"
     complex-chart
@@ -21,8 +22,9 @@
     [debug]="debug"
     [canPivot]="canPivot"
     (customEvent)="change($event)"
+    style="height: 100%; width: 100%;"
   ></div>
-  
+
   <div
     *ngIf="isMapChart"
     map-chart
@@ -33,5 +35,6 @@
     [debug]="debug"
     [canPivot]="canPivot"
     (customEvent)="change($event)"
+    style="height: 100%; width: 100%;"
   ></div>
 </div>

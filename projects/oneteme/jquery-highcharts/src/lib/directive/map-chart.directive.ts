@@ -43,10 +43,13 @@ export class MapChartDirective<X extends XaxisType> extends BaseChartDirective<X
 
     this._chartConfig = this.config;
 
-    // Fusionner les options de configuration utilisateur
     mergeDeep(
       this._options,
       {
+        chart: {
+          height: this._chartConfig.height ?? '100%',
+          width: this._chartConfig.width ?? '100%',
+        },
         title: { text: this._chartConfig.title },
         subtitle: { text: this._chartConfig.subtitle },
         exporting: {
