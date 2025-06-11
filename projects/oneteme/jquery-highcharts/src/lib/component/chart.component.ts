@@ -3,11 +3,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ComplexChartDirective } from '../directive/complex-chart.directive';
 import { SimpleChartDirective } from '../directive/simple-chart.directive';
-import { MapChartDirective } from '../directive/map-chart.directive';
+// import { MapChartDirective } from '../directive/map-chart.directive';
 
 @Component({
   standalone: true,
-  imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective, MapChartDirective ],
+  imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective,
+    //  MapChartDirective
+   ],
   selector: 'h-chart',
   templateUrl: './chart.component.html',
 })
