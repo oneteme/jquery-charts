@@ -49,3 +49,30 @@ export function sanitizeChartDimensions(
     delete chartOptions.chart.height;
   }
 }
+
+export function validateSpecialChartData(data: any[], chartType: string): boolean {
+  if (!data || data.length === 0) return false;
+
+  switch (chartType) {
+    case 'treemap':
+      // Valider que les données ont des valeurs numériques positives
+      return data.every(item => 
+        item && 
+        typeof item.value === 'number' && 
+        item.value > 0 &&
+        (item.name || item.category || item.month)
+      );
+
+    case 'heatmap':
+      // Valider que les données ont des axes X et Y définis
+      return data.every(item => 
+        item && 
+        typeof item.value === 'number' &&
+        (item.month || item.category || item.name) &&
+        (item.team || item.series)
+      );
+
+    default:
+      return true;
+  }
+}

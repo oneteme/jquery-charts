@@ -1,4 +1,5 @@
 import { mergeDeep } from '@oneteme/jquery-core';
+import { Highcharts } from './highcharts-modules';
 
 // Configuration par type de graphique pour éviter la duplication
 const CHART_TYPE_CONFIGS = {
@@ -103,6 +104,40 @@ const CHART_TYPE_CONFIGS = {
       pyramid: { dataLabels: { enabled: false } },
     },
   },
+  treemap: {
+    plotOptions: {
+      treemap: {
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: { enabled: true, format: '{point.name}<br/>{point.value}' },
+        levelIsConstant: false,
+        levels: [
+          {
+            level: 1,
+            dataLabels: { enabled: true },
+            borderWidth: 3
+          }
+        ]
+      }
+    },
+    colorAxis: {
+      minColor: '#FFFFFF',
+      maxColor: Highcharts.getOptions().colors[0]
+    }
+  },
+  heatmap: {
+    plotOptions: {
+      heatmap: {
+        dataLabels: { enabled: true, color: '#000000' },
+        cursor: 'pointer'
+      }
+    },
+    colorAxis: {
+      min: 0,
+      minColor: '#FFFFFF',
+      maxColor: Highcharts.getOptions().colors[0]
+    }
+  },
 } as const;
 
 export function initBaseChartOptions(
@@ -132,8 +167,8 @@ export function configureSimpleGraphOptions(
   if (config) {
     // Pour pie/donut, forcer complètement la réinitialisation
     if (chartType === 'pie' || chartType === 'donut') {
-      if (!options.plotOptions) options.plotOptions = {};
-      
+      options.plotOptions ??= {};
+
       // Réinitialisation complète et forcée des options pie
       options.plotOptions.pie = {
         allowPointSelect: true,
@@ -141,13 +176,29 @@ export function configureSimpleGraphOptions(
         dataLabels: { enabled: false },
         innerSize: chartType === 'donut' ? '50%' : 0,
       };
-      
+
       if (debug) console.log(`Options pie forcées pour ${chartType}:`, JSON.stringify(options.plotOptions.pie));
     } else {
       // Pour les autres types, appliquer la configuration normale
       mergeDeep(options, config);
     }
-    
+
+    if (debug) console.log(`Options finales après configuration ${chartType}:`, JSON.stringify(options.plotOptions));
+  } else if (debug) {
+    console.warn(`Configuration non trouvée pour le type: ${chartType}`);
+  }
+}
+
+export function configureComplexGraphOptions(
+  options: any,
+  chartType: 'treemap' | 'heatmap',
+  debug: boolean = false
+): void {
+  if (debug) console.log(`Configuration des options complexes pour ${chartType}`);
+
+  const config = CHART_TYPE_CONFIGS[chartType];
+  if (config) {
+    mergeDeep(options, config);
     if (debug) console.log(`Options finales après configuration ${chartType}:`, JSON.stringify(options.plotOptions));
   } else if (debug) {
     console.warn(`Configuration non trouvée pour le type: ${chartType}`);

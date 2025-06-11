@@ -26,7 +26,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'treemap';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoading: boolean = true;
@@ -74,6 +74,7 @@ export class BasicTestComponent implements OnInit {
       { category: 'Catégorie E', value: 10 },
     ],
     complex: [
+      // Données complex
       { month: 'Jan', team: 'Équipe A', value: 44 },
       { month: 'Fév', team: 'Équipe A', value: 55 },
       { month: 'Mar', team: 'Équipe A', value: 57 },
@@ -92,7 +93,48 @@ export class BasicTestComponent implements OnInit {
       { month: 'Avr', team: 'Équipe C', value: 33 },
       { month: 'Mai', team: 'Équipe C', value: 42 },
       { month: 'Juin', team: 'Équipe C', value: 30 },
+
+      // Données pour les graphs type range
+      // { month: 'Jan', team: 'Équipe A', value: [-2, 8] },
+      // { month: 'Fév', team: 'Équipe A', value: [-1, 11] },
+      // { month: 'Mar', team: 'Équipe A', value: [2, 15] },
+      // { month: 'Avr', team: 'Équipe A', value: [5, 19] },
+      // { month: 'Mai', team: 'Équipe A', value: [9, 24] },
+      // { month: 'Juin', team: 'Équipe A', value: [13, 28] },
+      // { month: 'Juil', team: 'Équipe A', value: [15, 32] },
+      // { month: 'Aoû', team: 'Équipe A', value: [14, 30] },
+      // { month: 'Sep', team: 'Équipe A', value: [10, 25] },
+      // { month: 'Oct', team: 'Équipe A', value: [6, 18] },
+      // { month: 'Nov', team: 'Équipe A', value: [2, 12] },
+      // { month: 'Déc', team: 'Équipe A', value: [-1, 9] },
+
+      // { month: 'Jan', team: 'Équipe B', value: [1, 12] },
+      // { month: 'Fév', team: 'Équipe B', value: [3, 15] },
+      // { month: 'Mar', team: 'Équipe B', value: [5, 18] },
+      // { month: 'Avr', team: 'Équipe B', value: [8, 22] },
+      // { month: 'Mai', team: 'Équipe B', value: [12, 28] },
+      // { month: 'Juin', team: 'Équipe B', value: [16, 32] },
+      // { month: 'Juil', team: 'Équipe B', value: [18, 35] },
+      // { month: 'Aoû', team: 'Équipe B', value: [17, 33] },
+      // { month: 'Sep', team: 'Équipe B', value: [14, 29] },
+      // { month: 'Oct', team: 'Équipe B', value: [9, 24] },
+      // { month: 'Nov', team: 'Équipe B', value: [5, 16] },
+      // { month: 'Déc', team: 'Équipe B', value: [2, 13] },
+
+      // { month: 'Jan', team: 'Équipe C', value: [-5, 5] },
+      // { month: 'Fév', team: 'Équipe C', value: [-3, 8] },
+      // { month: 'Mar', team: 'Équipe C', value: [0, 12] },
+      // { month: 'Avr', team: 'Équipe C', value: [3, 16] },
+      // { month: 'Mai', team: 'Équipe C', value: [7, 21] },
+      // { month: 'Juin', team: 'Équipe C', value: [10, 25] },
+      // { month: 'Juil', team: 'Équipe C', value: [12, 28] },
+      // { month: 'Aoû', team: 'Équipe C', value: [11, 26] },
+      // { month: 'Sep', team: 'Équipe C', value: [8, 22] },
+      // { month: 'Oct', team: 'Équipe C', value: [4, 17] },
+      // { month: 'Nov', team: 'Équipe C', value: [0, 10] },
+      // { month: 'Déc', team: 'Équipe C', value: [-4, 6] },
     ],
+    map: []
   };
 
   // Accesseurs pour rétrocompatibilité avec le template

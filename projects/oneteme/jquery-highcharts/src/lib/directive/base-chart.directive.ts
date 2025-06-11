@@ -175,20 +175,19 @@ export abstract class BaseChartDirective<
   protected finalizeDataState(changes: SimpleChanges): void {
     const hasReceivedData = changes.data && this.data !== undefined;
     const hasConfig = !!this.config;
-    
+
     // Vérifier si on a reçu un changement de données
     if (hasReceivedData && hasConfig) {
       if (this.debug) console.log('Changement de données détecté, évaluation de l\'état final...');
-      
+
       const hasNoData = !this.data || this.data.length === 0;
-      const hasNoSeries = !this._options.series || this._options.series.length === 0 ||
-                          (Array.isArray(this._options.series) && this._options.series.every(s => !s.data || (Array.isArray(s.data) && s.data.length === 0)));
-      
+      const hasNoSeries = !this._options.series || this._options.series.length === 0 || (Array.isArray(this._options.series) && this._options.series.every(s => !s.data || (Array.isArray(s.data) && s.data.length === 0)));
+
       // Si on n'a pas de données ET que le loading n'est pas activé
       // ALORS on doit afficher le message "aucune donnée"
       if ((hasNoData || hasNoSeries) && !this.isLoading) {
         if (this.debug) console.log('Données vides reçues avec loading désactivé -> affichage message aucune donnée');
-        
+
         // Forcer l'affichage du message "aucune donnée"
         if (this.loadingManager.visible) {
           this.loadingManager.hide().then(() => {
@@ -199,18 +198,18 @@ export abstract class BaseChartDirective<
           this.noDataManager.show();
         }
       }
-      
+
       // Si on n'a pas de données MAIS que le loading est activé
       // ALORS attendre que isLoading devienne false pour réévaluer
       else if ((hasNoData || hasNoSeries) && this.isLoading) {
         if (this.debug) console.log('Données vides reçues avec loading activé -> attente de la fin du loading');
-        
+
         // S'assurer que le loading est visible et le message masqué
         if (!this.loadingManager.visible) {
           this.loadingManager.show();
         }
         this.noDataManager.hide();
-        
+
         // Programmer une réévaluation après un délai raisonnable
         // pour gérer le cas où isLoading ne changerait jamais
         setTimeout(() => {
@@ -220,9 +219,9 @@ export abstract class BaseChartDirective<
               this.noDataManager.show();
             });
           }
-        }, 5000); // Timeout de sécurité de 5 secondes
+        }, 3000);
       }
-      
+
       // Si on a des données valides
       else if (!hasNoData && !hasNoSeries) {
         if (this.debug) console.log('Données valides détectées -> masquer tous les messages');
