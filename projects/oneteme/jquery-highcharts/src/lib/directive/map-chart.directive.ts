@@ -1,46 +1,40 @@
 import { Directive, inject, ElementRef, NgZone, Input } from '@angular/core';
-import { XaxisType, YaxisType, buildChart, mergeDeep } from '@oneteme/jquery-core';
+import { XaxisType, YaxisType, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
+import { Highcharts, initializeHighchartsModules } from './utils/highcharts-modules';
+import { sanitizeChartDimensions } from './utils/chart-utils';
 
 @Directive({
   selector: '[map-chart]',
   standalone: true,
 })
-export class MapChartDirective<X extends XaxisType> extends BaseChartDirective<X, YaxisType> {
+export class MapChartDirective<X extends XaxisType> extends BaseChartDirective<
+  X,
+  YaxisType
+> {
   @Input({ alias: 'type' }) override type = 'map' as const;
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));
+    initializeHighchartsModules();
   }
 
   protected override updateChartType(): void {
-    if (this.debug) console.log('Mise à jour du type de carte géographique');
-
-    // Configuration spécifique pour les cartes
     mergeDeep(this._options, {
+      chart: {
+        type: 'map'
+      },
       mapNavigation: {
         enabled: true,
-        buttonOptions: {
-          verticalAlign: 'bottom'
-        }
+        enableButtons: true
       },
       colorAxis: {
         min: 0,
         minColor: '#E6EFFF',
         maxColor: '#004CCC'
-      },
-      legend: {
-        enabled: true
-      },
-      tooltip: {
-        enabled: true
       }
     });
-  }
-
-  protected override updateConfig(): void {
-    if (this.debug) console.log('Mise à jour de la configuration de la carte');
-
+  }  protected override updateConfig(): void {
     this._chartConfig = this.config;
 
     mergeDeep(
@@ -63,47 +57,67 @@ export class MapChartDirective<X extends XaxisType> extends BaseChartDirective<X
       },
       this._chartConfig.options ?? {}
     );
+
+    // Utiliser sanitizeChartDimensions pour corriger les dimensions
+    sanitizeChartDimensions(this._options, this._chartConfig);
+  }protected override updateData(): void {
+    this.processMapData();
   }
-
-  protected override updateData(): void {
-    if (this.debug) console.log('Mise à jour des données de la carte');
-
+  private processMapData(): void {
     try {
-      // Utilisation de buildChart pour traiter les données selon la configuration
-      const chartConfig = { ...this._chartConfig, continue: false };
-      const commonChart = buildChart(this.data, chartConfig, null);
-
-      if (this.debug) console.log('Données traitées pour la carte:', commonChart);
+      // Vérifier que nous avons des données
+      if (!this.data || this.data.length === 0) {
+        mergeDeep(this._options, {
+          series: [{
+            type: 'map',
+            name: 'Aucune donnée',
+            data: []
+          }]
+        });
+        this.createChart();
+        return;
+      }
 
       // Transformation des données pour Highcharts Maps
       const mapData = this.data.map((item: any, index: number) => ({
         name: item.name ?? `Région ${index + 1}`,
-        value: item.value ?? 0,
+        value: typeof item.value === 'number' ? item.value : 0,
         code: item.code ?? `CODE_${index}`,
-        // L'utilisateur peut fournir des données géographiques via les options
+        'hc-key': item.code ?? `fr-${index}`,
         ...item
       }));
 
+      // Configuration de la série
       mergeDeep(this._options, {
         series: [{
           type: 'map',
-          name: commonChart.series?.[0]?.name ?? 'Données',
+          name: this._chartConfig?.series?.[0]?.name || 'Données',
           data: mapData,
           dataLabels: {
             enabled: true,
             format: '{point.name}'
           },
-          states: {
-            hover: {
-              color: '#BADA55'
-            }
+          tooltip: {
+            pointFormat: '{point.name}: <b>{point.value:,.0f}</b>'
           }
         }]
       });
 
-      if (this.debug) console.log('Configuration finale de la carte:', this._options);
+      this.createChart();
     } catch (error) {
       console.error('Erreur lors du traitement des données de carte:', error);
+    }
+  }protected override createChart(): void {
+    if ((Highcharts as any).mapChart) {
+      this.chart = (Highcharts as any).mapChart(
+        this.el.nativeElement,
+        this._options
+      );
+    } else {
+      this.chart = Highcharts.chart(
+        this.el.nativeElement,
+        this._options
+      );
     }
   }
 }

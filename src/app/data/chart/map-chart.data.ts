@@ -14,7 +14,7 @@ export const mapChartConfig: ChartProvider<string, number> = {
   ],
   options: {
     chart: {
-      map: 'custom'
+      map: 'custom/france-regions'
     },
     mapNavigation: {
       enabled: true,
@@ -42,18 +42,18 @@ export const mapChartConfig: ChartProvider<string, number> = {
 export const mapChartData: MapChartData = {
   config: mapChartConfig,
   data: [
-    { name: 'Île-de-France', code: 'IDF', value: 12000000 },
-    { name: 'Provence-Alpes-Côte d\'Azur', code: 'PACA', value: 5100000 },
-    { name: 'Auvergne-Rhône-Alpes', code: 'ARA', value: 8100000 },
-    { name: 'Occitanie', code: 'OCC', value: 5900000 },
-    { name: 'Nouvelle-Aquitaine', code: 'NAQ', value: 6000000 },
-    { name: 'Hauts-de-France', code: 'HDF', value: 5900000 },
-    { name: 'Grand Est', code: 'GE', value: 5500000 },
-    { name: 'Pays de la Loire', code: 'PDL', value: 3800000 },
-    { name: 'Bretagne', code: 'BRE', value: 3300000 },
-    { name: 'Normandie', code: 'NOR', value: 3300000 },
-    { name: 'Bourgogne-Franche-Comté', code: 'BFC', value: 2800000 },
-    { name: 'Centre-Val de Loire', code: 'CVL', value: 2600000 },
-    { name: 'Corse', code: 'COR', value: 340000 }
+    { name: 'Île-de-France', code: '11', value: 12000000 },
+    { name: 'Provence-Alpes-Côte d\'Azur', code: '93', value: 5100000 },
+    { name: 'Auvergne-Rhône-Alpes', code: '84', value: 8100000 },
+    { name: 'Occitanie', code: '76', value: 5900000 },
+    { name: 'Nouvelle-Aquitaine', code: '75', value: 6000000 },
+    { name: 'Hauts-de-France', code: '32', value: 5900000 },
+    { name: 'Grand Est', code: '44', value: 5500000 },
+    { name: 'Pays de la Loire', code: '52', value: 3800000 },
+    { name: 'Bretagne', code: '53', value: 3300000 },
+    { name: 'Normandie', code: '28', value: 3300000 },
+    { name: 'Bourgogne-Franche-Comté', code: '27', value: 2800000 },
+    { name: 'Centre-Val de Loire', code: '24', value: 2600000 },
+    { name: 'Corse', code: '94', value: 340000 }
   ],
 };

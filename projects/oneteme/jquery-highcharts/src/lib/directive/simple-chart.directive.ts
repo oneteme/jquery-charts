@@ -109,7 +109,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       // Vérifier si on a des données valides mais pas de graphique existant
       if (this._options.series && Array.isArray(this._options.series) &&
           this._options.series.length > 0 &&
-          this._options.series[0] && this._options.series[0].data &&
+          this._options.series[0]?.data &&
           Array.isArray(this._options.series[0].data) &&
           this._options.series[0].data.length > 0 &&
           !this.chart && !this._shouldRedraw) {
@@ -185,7 +185,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
   private handlePieData(commonChart: any, chartConfig: any): void {
     try {
-      if (!commonChart || !commonChart.series || !Array.isArray(commonChart.series)) {
+      if (!commonChart?.series || !Array.isArray(commonChart.series)) {
         mergeDeep(this._options, { series: [] });
         return;
       }
@@ -193,7 +193,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       const formattedData = commonChart.series
         .flatMap((s: { data: any[]; }) => Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : [])
         .map((data: any, index: string | number) => ({
-          name: commonChart.categories && commonChart.categories[index] ? commonChart.categories[index] : `Item ${index}`,
+          name: commonChart?.categories?.[index] ?? `Item ${index}`,
           y: typeof data === 'number' ? data : 0,
           ...(commonChart.series[0]?.color && {
             color: commonChart.series[0].color,

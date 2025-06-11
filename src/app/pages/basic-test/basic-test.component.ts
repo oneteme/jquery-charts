@@ -5,19 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
 import { ChartComponent as HighchartsComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
+import { mapChartData } from 'src/app/data/chart/map-chart.data';
 
 @Component({
   selector: 'app-basic-test',
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    FormsModule,
-    ApexChartComponent,
-    HighchartsComponent,
-  ],
+  imports: [CommonModule, RouterModule, FormsModule, ApexChartComponent, HighchartsComponent],
 })
 export class BasicTestComponent implements OnInit {
   // Références aux composants de graphiques
@@ -36,7 +31,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = false;
-  dataDelay = 2000;
+  dataDelay = 200;
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
@@ -112,45 +107,105 @@ export class BasicTestComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadChartData();
-  }
-
-  // Charge les données du graphique en fonction du type sélectionné
+  }  // Charge les données du graphique en fonction du type sélectionné
   loadChartData(): void {
+    // Réinitialisation complète des données et configuration
     this.chartData = [];
+    // Nettoyer les données GeoJSON spécifiques aux cartes si on passe à un autre type
+    const isMapChart = this.chartTypes.map.includes(this.chartType);
+    if (!isMapChart && (window as any).Highcharts?.maps?.['custom/france-regions']) {
+      console.log('Nettoyage des données GeoJSON car on passe à un graphique non-map');
+      delete (window as any).Highcharts.maps['custom/france-regions'];
+    }
 
     setTimeout(() => {
-      const chartMode = this.isSimpleChart ? 'simple' : 'complex';
+      // Extract nested ternary into separate logic
+      let chartMode: 'simple' | 'complex' | 'map';
+      if (isMapChart) {
+        chartMode = 'map';
+      } else if (this.isSimpleChart) {
+        chartMode = 'simple';
+      } else {
+        chartMode = 'complex';
+      }
+
       this.configureChart(chartMode);
     }, this.dataDelay);
   }
 
   // Configure un graphique selon son type
-  private configureChart(mode: 'simple' | 'complex'): void {
+  private configureChart(mode: 'simple' | 'complex' | 'map'): void {
     const isSimple = mode === 'simple';
+    const isMap = mode === 'map';
 
-    this.chartConfig = {
-      ...this.baseConfig,
-      title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
-      subtitle: 'Données 2025',
-      ...(isSimple ? {} : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
-      series: [
-        {
-          ...(isSimple ? {} : { name: field('team') }),
-          data: {
-            x: field(isSimple ? 'category' : 'month'),
-            y: field('value'),
+    if (isMap) {
+      // Configuration pour les graphiques map
+      this.chartConfig = mapChartData.config;
+      this.chartData = [...mapChartData.data];
+      this.loadGeoJsonData();
+    } else {
+      // Configuration pour les graphiques simple/complex existants
+      this.chartConfig = {
+        ...this.baseConfig,
+        title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
+        subtitle: 'Données 2025',
+        ...(isSimple ? {} : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
+        series: [
+          {
+            ...(isSimple ? {} : { name: field('team') }),
+            data: {
+              x: field(isSimple ? 'category' : 'month'),
+              y: field('value'),
+            },
           },
-        },
-      ],
-      showToolbar: true,
-    };
+        ],
+        showToolbar: true,
+      };
 
-    this.chartData = [...this.chartData$[mode]];
+      this.chartData = [...this.chartData$[mode]];
+    }
   }
+  // Charge les données GeoJSON pour les cartes
+  private async loadGeoJsonData(): Promise<void> {
+    try {
+      console.log('Chargement des données GeoJSON...');
+      const response = await fetch('assets/france-geojson/regions-version-simplifiee.geojson');
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+      }
 
+      const geoJsonData = await response.json();
+      console.log('Données GeoJSON chargées:', geoJsonData);
+
+      // Injecte les données GeoJSON dans Highcharts.maps
+      if ((window as any).Highcharts) {
+        (window as any).Highcharts.maps = (window as any).Highcharts.maps ?? {};
+        (window as any).Highcharts.maps['custom/france-regions'] = geoJsonData;
+        console.log('Données GeoJSON injectées dans Highcharts.maps');
+
+        // Mise à jour de la configuration pour utiliser la carte
+        this.chartConfig = {
+          ...this.chartConfig,
+          options: {
+            ...this.chartConfig.options,
+            chart: {
+              ...this.chartConfig.options?.chart,
+              map: 'custom/france-regions'
+            }
+          }
+        };
+        console.log('Configuration de carte mise à jour:', this.chartConfig);
+      } else {
+        console.error('Highcharts non disponible sur window');
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des données GeoJSON:', error);
+    }
+  }
   // Méthode appelée quand le type de graphique change dans le select
   changeChartType(): void {
-    this.isSimpleChart = this.chartTypes.simple.includes(this.chartType);
+    const isMapChart = this.chartTypes.map.includes(this.chartType);
+    this.isSimpleChart = !isMapChart && this.chartTypes.simple.includes(this.chartType);
     this.loadChartData();
   }
 
