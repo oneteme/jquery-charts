@@ -39,14 +39,14 @@
         <small>({{ chartType }})</small>
       </h2>
       <div class="chart-box">
-        <highcharts
+        <h-chart
           #highchart
           [type]="chartType"
           [config]="chartConfig"
           [data]="chartData"
           [isLoading]="isLoading"
           [debug]="true"
-        ></highcharts>
+        ></h-chart>
       </div>
     </div>
   </div>
@@ -77,7 +77,6 @@
       </button>
     </div>
     <div class="panel-content" [class.collapsed]="!isPanelExpanded">
-      <!-- Visibilité des graphiques -->
       <div class="control-section">
         <div class="control-group">
           <button
@@ -87,11 +86,7 @@
             title="Afficher/Masquer ApexCharts"
           >
             <img
-              [src]="
-                showApexChart
-                  ? 'assets/icons/open-eye.svg'
-                  : 'assets/icons/eye-closed.svg'
-              "
+              [src]="showApexChart ? 'assets/icons/open-eye.svg' : 'assets/icons/eye-closed.svg'"
               alt="Visibilité"
               class="eye-icon"
             />
@@ -104,11 +99,7 @@
             title="Afficher/Masquer Highcharts"
           >
             <img
-              [src]="
-                showHighcharts
-                  ? 'assets/icons/open-eye.svg'
-                  : 'assets/icons/eye-closed.svg'
-              "
+              [src]="showHighcharts ? 'assets/icons/open-eye.svg' : 'assets/icons/eye-closed.svg'"
               alt="Visibilité"
               class="eye-icon"
             />
@@ -117,7 +108,6 @@
         </div>
       </div>
 
-      <!-- Disposition des graphiques -->
       <div class="control-section">
         <div class="control-group button-group">
           <button
@@ -145,8 +135,9 @@
             />
           </button>
         </div>
-      </div>      <!-- Sélection du type de graphique avec liste déroulante -->
-      <div class="control-section">        <div class="control-group full-width">
+      </div>
+      <div class="control-section">
+        <div class="control-group full-width">
           <label for="chart-type-select">Type de graphique :</label>
           <div class="select-wrapper">
             <select
@@ -179,9 +170,10 @@
               <option value="bubble">Bubble</option>
               <option value="heatmap">Heatmap</option>
               <option value="treemap">Treemap</option>
-            </optgroup>            <optgroup label="Graphique map">
-              <option value="map">Map</option>
             </optgroup>
+            <!-- <optgroup label="Graphique map">
+              <option value="map">Map</option>
+            </optgroup> -->
             </select>
           </div>
         </div>

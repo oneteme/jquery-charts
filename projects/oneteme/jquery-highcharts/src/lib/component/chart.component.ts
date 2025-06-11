@@ -8,7 +8,7 @@ import { MapChartDirective } from '../directive/map-chart.directive';
 @Component({
   standalone: true,
   imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective, MapChartDirective ],
-  selector: 'highcharts',
+  selector: 'h-chart',
   templateUrl: './chart.component.html',
 })
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {

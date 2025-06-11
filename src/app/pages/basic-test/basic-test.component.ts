@@ -66,6 +66,7 @@ export class BasicTestComponent implements OnInit {
       // { category: 'Catégorie D', value: 15 },
       // { category: 'Catégorie E', value: 10 },
 
+      // Total pas égal à 100 pour test les %
       { category: 'Catégorie A', value: 60 },
       { category: 'Catégorie B', value: 50 },
       { category: 'Catégorie C', value: 20 },
