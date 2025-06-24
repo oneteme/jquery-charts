@@ -136,6 +136,7 @@ export class LoadingManager {
       transition: opacity ${this.config.fadeInDuration}ms ease-in-out;
       border-radius: inherit;
       pointer-events: none;
+      cursor: default;
     `;
 
     const spinner = this.overlay.querySelector(
