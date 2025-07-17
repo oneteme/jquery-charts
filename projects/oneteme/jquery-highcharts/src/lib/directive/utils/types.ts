@@ -4,9 +4,9 @@ import * as Highcharts from 'highcharts';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot' | 'togglePercent';
 
-export type ChartCreationOptions = {
+export interface ChartCreationOptions {
   el: ElementRef;
-  options: any;
+  options: Highcharts.Options;
   config: ChartProvider<any, any>;
   customEvent: EventEmitter<ChartCustomEvent>;
   ngZone: NgZone;
@@ -15,11 +15,31 @@ export type ChartCreationOptions = {
   debug?: boolean;
 }
 
-export type ToolbarOptions = {
+export interface ToolbarOptions {
   chart: Highcharts.Chart;
   config: ChartProvider<any, any>;
   customEvent: EventEmitter<ChartCustomEvent>;
   ngZone: NgZone;
   canPivot?: boolean;
   debug?: boolean;
+}
+
+export function isTreemapData(data: any[]): boolean {
+  return data.every(
+    (item) =>
+      item &&
+      typeof item.value === 'number' &&
+      item.value > 0 &&
+      (item.name || item.category || item.month)
+  );
+}
+
+export function isHeatmapData(data: any[]): boolean {
+  return data.every(
+    (item) =>
+      item &&
+      typeof item.value === 'number' &&
+      (item.month || item.category || item.name) &&
+      (item.team || item.series)
+  );
 }

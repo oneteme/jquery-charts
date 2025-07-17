@@ -26,16 +26,16 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'treemap';
+  chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoading: boolean = true;
   isSimpleChart = false;
-  dataDelay = 200;
+  dataDelay = 100;
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
-    simple: ['pie', 'donut', 'polar', 'radar', 'radialBar', 'funnel', 'pyramid', 'radialBar'] as ChartType[],
+    simple: ['pie', 'donut', 'polar', 'radar', 'radialBar', 'funnel', 'pyramid'] as ChartType[],
     complex: ['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap'] as ChartType[],
     map: ['map'] as ChartType[] };
 
@@ -137,7 +137,6 @@ export class BasicTestComponent implements OnInit {
     map: []
   };
 
-  // Accesseurs pour rétrocompatibilité avec le template
   get simpleChartTypes(): ChartType[] {
     return this.chartTypes.simple;
   }
@@ -150,11 +149,9 @@ export class BasicTestComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadChartData();
-  }  // Charge les données du graphique en fonction du type sélectionné
+  }
   loadChartData(): void {
-    // Réinitialisation complète des données et configuration
     this.chartData = [];
-    // Nettoyer les données GeoJSON spécifiques aux cartes si on passe à un autre type
     const isMapChart = this.chartTypes.map.includes(this.chartType);
     if (!isMapChart && (window as any).Highcharts?.maps?.['custom/france-regions']) {
       console.log('Nettoyage des données GeoJSON car on passe à un graphique non-map');
@@ -162,7 +159,6 @@ export class BasicTestComponent implements OnInit {
     }
 
     setTimeout(() => {
-      // Extract nested ternary into separate logic
       let chartMode: 'simple' | 'complex' | 'map';
       if (isMapChart) {
         chartMode = 'map';
@@ -176,18 +172,15 @@ export class BasicTestComponent implements OnInit {
     }, this.dataDelay);
   }
 
-  // Configure un graphique selon son type
   private configureChart(mode: 'simple' | 'complex' | 'map'): void {
     const isSimple = mode === 'simple';
     const isMap = mode === 'map';
 
     if (isMap) {
-      // Configuration pour les graphiques map
       this.chartConfig = mapChartData.config;
       this.chartData = [...mapChartData.data];
       this.loadGeoJsonData();
     } else {
-      // Configuration pour les graphiques simple/complex existants
       this.chartConfig = {
         ...this.baseConfig,
         title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
@@ -208,7 +201,6 @@ export class BasicTestComponent implements OnInit {
       this.chartData = [...this.chartData$[mode]];
     }
   }
-  // Charge les données GeoJSON pour les cartes
   private async loadGeoJsonData(): Promise<void> {
     try {
       console.log('Chargement des données GeoJSON...');
@@ -220,13 +212,11 @@ export class BasicTestComponent implements OnInit {
       const geoJsonData = await response.json();
       console.log('Données GeoJSON chargées:', geoJsonData);
 
-      // Injecte les données GeoJSON dans Highcharts.maps
       if ((window as any).Highcharts) {
         (window as any).Highcharts.maps = (window as any).Highcharts.maps ?? {};
         (window as any).Highcharts.maps['custom/france-regions'] = geoJsonData;
         console.log('Données GeoJSON injectées dans Highcharts.maps');
 
-        // Mise à jour de la configuration pour utiliser la carte
         this.chartConfig = {
           ...this.chartConfig,
           options: {
@@ -245,26 +235,22 @@ export class BasicTestComponent implements OnInit {
       console.error('Erreur lors du chargement des données GeoJSON:', error);
     }
   }
-  // Méthode appelée quand le type de graphique change dans le select
   changeChartType(): void {
     const isMapChart = this.chartTypes.map.includes(this.chartType);
     this.isSimpleChart = !isMapChart && this.chartTypes.simple.includes(this.chartType);
     this.loadChartData();
   }
 
-  // Bascule entre graphique simple et complexe
   toggleChartComplexity(): void {
     this.isSimpleChart = !this.isSimpleChart;
     this.chartType = this.isSimpleChart ? 'pie' : 'column';
     this.loadChartData();
   }
 
-  // Force le rechargement des données
   reloadData(): void {
     this.loadChartData();
   }
 
-  // affiche ou non le panneau de contrôle
   toggleControlPanel(): void {
     this.isPanelExpanded = !this.isPanelExpanded;
   }

@@ -15,43 +15,36 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   protected override updateChartType(): void {
-    if (this.debug) console.log('Mise à jour du type de graphique:', this.type);
+    this.debug && console.log('Mise à jour du type de graphique:', this.type);
 
     const actualType = this.getActualChartType();
     const previousType = this._options.chart?.type;
 
-    // Détecter les changements pie/donut AVANT d'appliquer la nouvelle configuration
     const currentInnerSize = this._options.plotOptions?.pie?.innerSize;
     const newInnerSize = this.type === 'donut' ? '50%' : 0;
 
-    // Si on change de pie à donut ou vice versa, forcer le redraw
     if (currentInnerSize !== newInnerSize) {
-      if (this.debug) console.log('Changement pie/donut détecté:', currentInnerSize, '->', newInnerSize);
+      this.debug && console.log('Changement pie/donut détecté:', currentInnerSize, '->', newInnerSize);
       this._shouldRedraw = true;
     }
 
-    // Configuration spécifique au type
     configureSimpleGraphOptions(this._options, this.type, this.debug);
 
-    // Forcer le redraw pour les types polaires/radar qui changent fondamentalement la structure
-    if (this.isPolarType()) {
-      this._shouldRedraw = true;
-    }
+    if (this.isPolarType()) this._shouldRedraw = true;
 
     if (previousType !== actualType) {
       mergeDeep(this._options, { chart: { type: actualType } });
       this._shouldRedraw = true;
     }
 
-    if (this.debug) console.log('_shouldRedraw après updateChartType:', this._shouldRedraw);
+    this.debug && console.log('_shouldRedraw après updateChartType:', this._shouldRedraw);
   }
 
   protected override updateConfig(): void {
-    if (this.debug) console.log('Mise à jour de la configuration');
+    this.debug && console.log('Mise à jour de la configuration');
 
-    // Vérification de sécurité
     if (!this.config) {
-      if (this.debug) console.log('Configuration manquante dans updateConfig');
+      this.debug && console.log('Configuration manquante dans updateConfig');
       return;
     }
 
@@ -79,17 +72,14 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._chartConfig.options ?? {}
     );
 
-    // Application des configurations spécifiques après merge
     configureSimpleGraphOptions(this._options, this.type, this.debug);
   }
 
   protected override updateData(): void {
-    if (this.debug) console.log('Mise à jour des données');
+    this.debug && console.log('Mise à jour des données');
 
-    // Vérifications de sécurité
     if (!this.config || !this.data) {
-      if (this.debug) console.log('Configuration ou données manquantes dans updateData');
-      // S'assurer que les séries sont vides pour éviter les erreurs
+      this.debug && console.log('Configuration ou données manquantes dans updateData');
       mergeDeep(this._options, { series: [] });
       return;
     }
@@ -98,7 +88,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       const chartConfig = { ...this._chartConfig, continue: false };
       const commonChart = this.buildCommonChart(chartConfig);
 
-      if (this.debug) console.log('Données traitées:', commonChart);
+      this.debug && console.log('Données traitées:', commonChart);
 
       if (this.isPolarType()) {
         this.handlePolarData(commonChart, chartConfig);
@@ -106,24 +96,20 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         this.handlePieData(commonChart, chartConfig);
       }
 
-      // Vérifier si on a des données valides mais pas de graphique existant
       if (this._options.series && Array.isArray(this._options.series) &&
           this._options.series.length > 0 &&
           this._options.series[0]?.data &&
           Array.isArray(this._options.series[0].data) &&
           this._options.series[0].data.length > 0 &&
           !this.chart && !this._shouldRedraw) {
-        if (this.debug) console.log('Données valides détectées pour simple chart, force la création du graphique');
+        this.debug && console.log('Données valides détectées pour simple chart, force la création du graphique');
         this._shouldRedraw = true;
       }
     } catch (error) {
       console.error('Erreur lors du traitement des données dans simple chart:', error);
-      // En cas d'erreur, s'assurer que les options restent dans un état valide
       mergeDeep(this._options, { series: [] });
     }
   }
-
-  // Méthodes utilitaires privées
   private getActualChartType(): string {
     return this.type === 'donut' ? 'pie' : this.type;
   }
@@ -139,7 +125,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   private handlePolarData(commonChart: any, chartConfig: any): void {
-    // Assurer que xAxis existe et est un objet
     if (!this._options.xAxis || Array.isArray(this._options.xAxis)) {
       this._options.xAxis = {};
     }
@@ -200,7 +185,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
           }),
         }));
 
-      if (this.debug) console.log('Données formatées:', formattedData);
+      this.debug && console.log('Données formatées:', formattedData);
 
       mergeDeep(this._options, {
         series: [

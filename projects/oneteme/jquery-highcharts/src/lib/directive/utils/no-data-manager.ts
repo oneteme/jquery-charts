@@ -42,16 +42,13 @@ export class NoDataManager {
     const container = this.elementRef.nativeElement;
     if (!container) return;
 
-    // S'assurer que le conteneur peut héberger du contenu positionné
     this.ensureContainerCanHost(container);
 
-    // Supprimer le message existant s'il y en a un
     this.hide();
 
     this.createNoDataElement(customMessage || this.config.message);
     container.appendChild(this.noDataElement);
 
-    // Animation d'apparition
     requestAnimationFrame(() => {
       if (this.noDataElement) {
         this.noDataElement.style.opacity = '1';
@@ -63,7 +60,6 @@ export class NoDataManager {
   hide(): void {
     if (!this.isVisible || !this.noDataElement) return;
 
-    // Animation de disparition
     this.noDataElement.style.opacity = '0';
 
     setTimeout(() => {
@@ -93,18 +89,14 @@ export class NoDataManager {
   private ensureContainerCanHost(container: HTMLElement): void {
     const computedStyle = getComputedStyle(container);
 
-    // S'assurer que le conteneur peut héberger du contenu positionné
     if (computedStyle.position === 'static') {
       container.style.position = 'relative';
     }
 
-    // Créer un contexte de superposition pour empêcher le débordement
     if (computedStyle.zIndex === 'auto') {
       container.style.zIndex = '1';
     }
 
-    // Ne pas forcer de dimensions, mais s'assurer que le conteneur
-    // hérite correctement des dimensions de son parent
     if (computedStyle.display === 'inline') {
       container.style.display = 'inline-block';
     }
@@ -121,7 +113,6 @@ export class NoDataManager {
       </div>
     `;
 
-    // Styles pour le message "aucune donnée"
     this.noDataElement.style.cssText = `
       position: absolute;
       top: 0;

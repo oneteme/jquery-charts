@@ -11,7 +11,7 @@ export interface LoadingConfig {
 }
 
 const DEFAULT_CONFIG: Required<LoadingConfig> = {
-  text: '', // Supprimé le texte par défaut
+  text: '',
   backgroundColor: '#ffffff',
   textColor: '#666666',
   spinnerColor: '#0066cc',
@@ -24,6 +24,7 @@ export class LoadingManager {
   private overlay: HTMLElement | null = null;
   private isVisible: boolean = false;
   private readonly config: Required<LoadingConfig>;
+  private animationFrame: number | null = null;
 
   constructor(
     private readonly elementRef: ElementRef,
@@ -38,14 +39,12 @@ export class LoadingManager {
     const container = this.elementRef.nativeElement;
     if (!container) return;
 
-    // S'assurer que le conteneur peut héberger du contenu positionné
     this.ensureContainerCanHost(container);
 
     this.createOverlay();
     container.appendChild(this.overlay);
 
-    // Animation d'apparition
-    requestAnimationFrame(() => {
+    this.animationFrame = requestAnimationFrame(() => {
       if (this.overlay) {
         this.overlay.style.opacity = '1';
         this.isVisible = true;
@@ -60,7 +59,11 @@ export class LoadingManager {
         return;
       }
 
-      // Animation de disparition
+      if (this.animationFrame) {
+        cancelAnimationFrame(this.animationFrame);
+        this.animationFrame = null;
+      }
+
       this.overlay.style.opacity = '0';
 
       setTimeout(() => {
@@ -71,12 +74,12 @@ export class LoadingManager {
     });
   }
 
-  updateText(text: string): void {
-    // Méthode conservée pour compatibilité mais ne fait plus rien
-    // car nous n'affichons plus de texte
-  }
-
   destroy(): void {
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = null;
+    }
+
     this.removeOverlay();
     this.isVisible = false;
   }
@@ -88,23 +91,18 @@ export class LoadingManager {
   private ensureContainerCanHost(container: HTMLElement): void {
     const computedStyle = getComputedStyle(container);
 
-    // S'assurer que le conteneur peut héberger du contenu positionné
     if (computedStyle.position === 'static') {
       container.style.position = 'relative';
     }
 
-    // Créer un contexte de superposition pour empêcher le débordement
     if (computedStyle.zIndex === 'auto') {
       container.style.zIndex = '1';
     }
 
-    // S'assurer que le overflow est contrôlé
     if (computedStyle.overflow === 'visible') {
       container.style.overflow = 'hidden';
     }
 
-    // Ne pas forcer de dimensions, mais s'assurer que le conteneur
-    // hérite correctement des dimensions de son parent
     if (computedStyle.display === 'inline') {
       container.style.display = 'inline-block';
     }
@@ -119,8 +117,6 @@ export class LoadingManager {
       <div class="loading-spinner"></div>
     `;
 
-    // L'overlay utilise position absolute avec un z-index modéré
-    // pour rester dans le contexte de son conteneur
     this.overlay.style.cssText = `
       position: absolute;
       top: 0;

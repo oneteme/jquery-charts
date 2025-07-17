@@ -13,12 +13,8 @@ export function destroyChart(
   if (!chart) return;
 
   try {
-    // Nettoyer le loading manager en premier
-    if (loadingManager) {
-      loadingManager.destroy();
-    }
+    loadingManager && loadingManager.destroy();
 
-    // Nettoyer aussi le message "aucune donnée" s'il existe (pour compatibilité)
     if (chart.container) {
       const noDataMessage = chart.container.querySelector('.highcharts-no-data-message');
       if (noDataMessage) {
@@ -26,11 +22,10 @@ export function destroyChart(
       }
     }
 
-    // Vérifications de sécurité avant destruction
     if (chart && typeof chart.destroy === 'function') {
       if (chart.renderer && !chart.renderer.forExport) {
         chart.destroy();
-        if (debug) console.log('Graphique détruit avec succès');
+        debug && console.log('Graphique détruit avec succès');
       } else if (debug) {
         console.log('Graphique déjà détruit ou en cours d\'export');
       }
@@ -38,7 +33,7 @@ export function destroyChart(
       console.log('Graphique invalide, pas de destruction nécessaire');
     }
   } catch (error) {
-    if (debug) console.error('Erreur lors de la destruction du graphique:', error);
+    debug && console.error('Erreur lors de la destruction du graphique:', error);
 
     try {
       if (chart.container?.parentNode) {
@@ -63,7 +58,7 @@ export function createHighchartsChart(
   return new Promise((resolve) => {
     try {
       if (!el?.nativeElement) {
-        if (debug) console.log('Élément DOM non disponible pour le rendu');
+        debug && console.log('Élément DOM non disponible pour le rendu');
         resolve(null);
         return;
       }
@@ -71,21 +66,17 @@ export function createHighchartsChart(
       const chartOptions: Highcharts.Options = Highcharts.merge({}, options);
       sanitizeChartDimensions(chartOptions, config);
 
-      if (debug) console.log('Création du graphique avec options:', chartOptions);
+      debug ?? console.log('Création du graphique avec options:', chartOptions);
 
       ngZone.runOutsideAngular(() => {
         const chartInstance = (Highcharts as any).chart(
           el.nativeElement,
           chartOptions,
           function (chart: Highcharts.Chart) {
-            // Callback appelé quand le graphique est complètement rendu
-            if (debug) console.log('Graphique rendu');
-
-            // Masquer le loading seulement s'il est visible (donc activé)
+            debug ?? console.log('Graphique rendu');
             if (loadingManager.visible) {
-              if (debug) console.log('Masquage du loading...');
+              debug ?? console.log('Masquage du loading...');
               loadingManager.hide().then(() => {
-                // Animer l'apparition du graphique
                 if (chart.container) {
                   chart.container.style.opacity = '0';
                   chart.container.style.transition = 'opacity 300ms ease-out';
@@ -97,14 +88,13 @@ export function createHighchartsChart(
                   });
                 }
 
-                if (debug) console.log('Animation de transition terminée');
+                debug && console.log('Animation de transition terminée');
               });
             } else {
-              // Si le loading n'était pas visible, afficher directement le graphique
               if (chart.container) {
                 chart.container.style.opacity = '1';
               }
-              if (debug) console.log('Graphique affiché directement (pas de loading)');
+              debug && console.log('Graphique affiché directement (pas de loading)');
             }
           }
         );
@@ -113,10 +103,7 @@ export function createHighchartsChart(
       });
     } catch (error) {
       console.error('Erreur lors de la création du graphique:', error);
-      // En cas d'erreur, masquer le loading seulement s'il était activé
-      if (loadingManager.visible) {
-        loadingManager.hide();
-      }
+      loadingManager.visible && loadingManager.hide();
       resolve(null);
     }
   });

@@ -33,10 +33,8 @@ export abstract class BaseChartDirective<
     protected readonly el: ElementRef,
     protected readonly _zone: NgZone
   ) {
-    // Initialiser les modules une seule fois
     initializeHighchartsModules();
 
-    // Initialiser les managers
     this.loadingManager = new LoadingManager(this.el, {
       fadeInDuration: 200,
       fadeOutDuration: 400,
@@ -47,13 +45,8 @@ export abstract class BaseChartDirective<
       fadeOutDuration: 200,
     });
 
-    this._options = initBaseChartOptions(
-      this.type || '',
-      this.debug
-    );
+    this._options = initBaseChartOptions(this.type || '', this.debug);
 
-    // Afficher le loading dès le montage du composant si isLoading est true (par défaut)
-    // ou si on n'a pas encore de données
     setTimeout(() => {
       if (this.isLoading && (!this.data || this.data.length === 0)) {
         this.loadingManager.show();
@@ -62,41 +55,43 @@ export abstract class BaseChartDirective<
   }
 
   ngOnDestroy(): void {
+    // nettoye tous les timeouts
+    if ((this as any)._loadingTimeoutId) {
+      clearTimeout((this as any)._loadingTimeoutId);
+    }
     destroyChart(this.chart, this.loadingManager, this.debug);
     this.noDataManager.destroy();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.debug) {
-      console.log('Détection de changements', changes);
+    this.debug && console.log('Détection de changements', changes);
+
+    if (!this.hasRelevantChanges(changes)) {
+      return;
     }
 
     this._zone.runOutsideAngular(() => {
-      // Gérer l'affichage initial du loading
       if (changes.isLoading || changes.data || changes.config) {
         this.handleInitialLoading();
       }
 
-      // Vérifier que nous avons les données nécessaires avant de traiter
       if (this.config && this.data !== undefined) {
         this.processChanges(changes);
       } else if (this.debug) {
         console.log('Config ou data manquants, attente...', {
           hasConfig: !!this.config,
-          hasData: this.data !== undefined
+          hasData: this.data !== undefined,
         });
       }
     });
   }
 
   protected handleInitialLoading(): void {
-    // Afficher le loading seulement si isLoading est true ET qu'on n'a pas de données
     if (this.isLoading && (!this.data || this.data.length === 0)) {
       if (!this.loadingManager.visible) {
         this.loadingManager.show();
       }
     } else if (!this.isLoading && this.loadingManager.visible) {
-      // Si isLoading devient false, masquer le loading immédiatement
       this.loadingManager.hide();
     }
   }
@@ -104,45 +99,34 @@ export abstract class BaseChartDirective<
   protected processChanges(changes: SimpleChanges): void {
     const needsOptionsUpdate = this.hasRelevantChanges(changes);
 
-    // Gestion du loading
     if (changes.isLoading) {
       if (changes.isLoading.currentValue) {
-        if (this.debug) console.log('Affichage du loading...');
+        this.debug && console.log('Affichage du loading...');
         this.loadingManager.show();
-        // Masquer le message "aucune donnée" si le loading est activé
         this.noDataManager.hide();
 
-        // Masquer le graphique existant si présent
         if (this.chart?.container) {
           this.chart.container.style.opacity = '0';
         }
       } else {
-        if (this.debug) console.log('isLoading désactivé, masquage du loading...');
-        // Si l'utilisateur désactive explicitement le loading, le masquer immédiatement
+        this.debug && console.log('isLoading désactivé, masquage du loading...');
         this.loadingManager.hide();
 
-        // Réafficher le graphique si présent
         if (this.chart?.container) {
           this.chart.container.style.opacity = '1';
         }
       }
     }
 
-    // Gestion des différents types de changements - avec vérifications de sécurité
     if (changes.type && this.config) {
-      if (this.debug) console.log('Changement de type détecté:', changes.type.previousValue, '->', changes.type.currentValue);
+      this.debug && console.log('Changement de type détecté:', changes.type.previousValue, '->', changes.type.currentValue);
       this.updateChartType();
     }
 
-    if (changes.config && this.config) {
-      this.updateConfig();
-    }
+    if (changes.config && this.config) this.updateConfig();
 
-    if ((changes.config || changes.data) && this.config && this.data !== undefined) {
-      this.updateData();
-    }
+    if ((changes.config || changes.data) && this.config && this.data !== undefined) this.updateData();
 
-    // Application des changements au graphique
     if (this._shouldRedraw) {
       if (this.debug) {
         console.log('Recréation complète du graphique nécessaire', changes);
@@ -153,100 +137,100 @@ export abstract class BaseChartDirective<
       this.createChart();
       this._shouldRedraw = false;
     } else if (needsOptionsUpdate && this.chart) {
-      if (this.debug) {
-        console.log('Mise à jour des options du graphique', changes);
-      }
+      this.debug && console.log('Mise à jour des options du graphique', changes);
       this.updateChart();
     } else if (needsOptionsUpdate && !this.chart && this.config) {
-      if (this.debug) {
-        console.log('Pas de graphique existant, création nécessaire', changes);
-      }
+      this.debug && console.log('Pas de graphique existant, création nécessaire', changes);
       this.createChart();
     }
 
-    // IMPORTANT : Vérifier l'état "aucune donnée" APRÈS tous les traitements
-    // Et forcer la désactivation du loading si on a des données (même vides) et que la config est prête
     setTimeout(() => {
       this.finalizeDataState(changes);
     }, 0);
   }
 
-  // Nouvelle méthode pour finaliser l'état après traitement des données
   protected finalizeDataState(changes: SimpleChanges): void {
     const hasReceivedData = changes.data && this.data !== undefined;
     const hasConfig = !!this.config;
 
-    // Vérifier si on a reçu un changement de données
     if (hasReceivedData && hasConfig) {
-      if (this.debug) console.log('Changement de données détecté, évaluation de l\'état final...');
+      this.debug && console.log(
+        "Changement de données détecté, évaluation de l'état final..."
+      );
 
       const hasNoData = !this.data || this.data.length === 0;
-      const hasNoSeries = !this._options.series || this._options.series.length === 0 || (Array.isArray(this._options.series) && this._options.series.every(s => !s.data || (Array.isArray(s.data) && s.data.length === 0)));
+      const hasNoSeries = !this._options.series ||
+        this._options.series.length === 0 ||
+        (Array.isArray(this._options.series) &&
+          this._options.series.every(
+            (s) => !s.data || (Array.isArray(s.data) && s.data.length === 0)
+          ));
 
-      // Si on n'a pas de données ET que le loading n'est pas activé
-      // ALORS on doit afficher le message "aucune donnée"
       if ((hasNoData || hasNoSeries) && !this.isLoading) {
-        if (this.debug) console.log('Données vides reçues avec loading désactivé -> affichage message aucune donnée');
+        this.debug && console.log(
+          'Données vides reçues avec loading désactivé -> affichage message aucune donnée'
+        );
 
-        // Forcer l'affichage du message "aucune donnée"
         if (this.loadingManager.visible) {
           this.loadingManager.hide().then(() => {
-            if (this.debug) console.log('Loading masqué, affichage du message aucune donnée');
+            this.debug && console.log('Loading masqué, affichage du message aucune donnée');
             this.noDataManager.show();
           });
-        } else {
-          this.noDataManager.show();
-        }
-      }
+        } else this.noDataManager.show();
+      } else if ((hasNoData || hasNoSeries) && this.isLoading) {
+        this.debug && console.log(
+          'Données vides reçues avec loading activé -> attente de la fin du loading'
+        );
 
-      // Si on n'a pas de données MAIS que le loading est activé
-      // ALORS attendre que isLoading devienne false pour réévaluer
-      else if ((hasNoData || hasNoSeries) && this.isLoading) {
-        if (this.debug) console.log('Données vides reçues avec loading activé -> attente de la fin du loading');
-
-        // S'assurer que le loading est visible et le message masqué
         if (!this.loadingManager.visible) {
           this.loadingManager.show();
         }
         this.noDataManager.hide();
 
-        // Programmer une réévaluation après un délai raisonnable
-        // pour gérer le cas où isLoading ne changerait jamais
-        setTimeout(() => {
+        const timeoutId = setTimeout(() => {
           if (this.isLoading && (!this.data || this.data.length === 0)) {
-            if (this.debug) console.log('Timeout atteint avec loading toujours actif et pas de données -> forcer affichage message');
+            this.debug && console.log(
+              'Timeout atteint avec loading toujours actif et pas de données -> forcer affichage message'
+            );
             this.loadingManager.hide().then(() => {
               this.noDataManager.show();
             });
           }
-        }, 3000);
-      }
+        }, (this.config as any)?.loadingTimeout || 5000); // à modifier au besoin
 
-      // Si on a des données valides
-      else if (!hasNoData && !hasNoSeries) {
-        if (this.debug) console.log('Données valides détectées -> masquer tous les messages');
+        (this as any)._loadingTimeoutId = timeoutId;
+      } else if (!hasNoData && !hasNoSeries) {
+        this.debug && console.log('Données valides détectées -> masquer tous les messages');
         this.noDataManager.hide();
-        // Le loading sera géré par createChart
+
+        if ((this as any)._loadingTimeoutId) {
+          clearTimeout((this as any)._loadingTimeoutId);
+          (this as any)._loadingTimeoutId = null;
+        }
       }
     }
   }
 
-  // permet de filtrer le params "debug" pour ne pas mettre à jour
+  // filtre params "debug" pour ne pas mettre à jour
   protected hasRelevantChanges(changes: SimpleChanges): boolean {
     return Object.keys(changes).some((key) => !['debug'].includes(key));
   }
 
-  // Met à jour les options du graph existant
   protected updateChart(): void {
     if (!this.chart) {
-      if (this.debug) console.log('Pas de graphique existant pour la mise à jour, création...');
+      this.debug && console.log(
+        'Pas de graphique existant pour la mise à jour, création...'
+      );
       this.createChart();
       return;
     }
 
-    // Vérifications de sécurité pour s'assurer que le graphique est dans un état valide
-    if (!this.chart.options || !this.chart.renderer || this.chart.renderer.forExport) {
-      if (this.debug) console.log('Graphique dans un état invalide, recréation...');
+    if (
+      !this.chart.options ||
+      !this.chart.renderer ||
+      this.chart.renderer.forExport
+    ) {
+      this.debug && console.log('Graphique dans un état invalide, recréation...');
       destroyChart(this.chart, undefined, this.debug);
       this.chart = null;
       this.createChart();
@@ -254,7 +238,6 @@ export abstract class BaseChartDirective<
     }
 
     try {
-      // Vérifier que les options sont valides avant la mise à jour
       if (!this._options || typeof this._options !== 'object') {
         if (this.debug) console.log('Options invalides pour la mise à jour');
         return;
@@ -264,41 +247,43 @@ export abstract class BaseChartDirective<
       if (this.debug) console.log('Graphique mis à jour avec succès');
     } catch (error) {
       console.error('Erreur lors de la mise à jour du graphique:', error);
-      // En cas d'erreur de mise à jour, recréer le graphique
       try {
         destroyChart(this.chart, undefined, this.debug);
       } catch (destroyError) {
-        console.error('Erreur lors de la destruction après échec de mise à jour:', destroyError);
+        console.error(
+          'Erreur lors de la destruction après échec de mise à jour:',
+          destroyError
+        );
       }
       this.chart = null;
       this.createChart();
     }
   }
 
-  // Crée un nouveau graph
   protected createChart(): void {
-    // Vérifications de sécurité
     if (!this.config) {
-      if (this.debug) console.log('Pas de configuration disponible');
+      this.debug && console.log('Pas de configuration disponible');
       return;
     }
 
-    // Si on n'a pas de données valides
     if (!this.data || this.data.length === 0) {
-      if (this.debug) console.log('Pas de données disponibles pour createChart');
-      // Ne pas maintenir le loading indéfiniment - laisser finalizeDataState gérer
+      this.debug && console.log('Pas de données disponibles pour createChart');
+        console.log('Pas de données disponibles pour createChart');
       return;
     }
 
-    // Vérifier si les options contiennent des séries valides
-    if (!this._options.series || this._options.series.length === 0 ||
-        (Array.isArray(this._options.series) && this._options.series.every(s => !s.data || (Array.isArray(s.data) && s.data.length === 0)))) {
-      if (this.debug) console.log('Pas de séries valides dans les options pour createChart');
-      // Ne pas maintenir le loading indéfiniment - laisser finalizeDataState gérer
+    if (
+      !this._options.series ||
+      this._options.series.length === 0 ||
+      (Array.isArray(this._options.series) &&
+        this._options.series.every(
+          (s) => !s.data || (Array.isArray(s.data) && s.data.length === 0)
+        ))
+    ) {
+      this.debug && console.log('Pas de séries valides dans les options pour createChart');
       return;
     }
 
-    // Masquer le message "aucune donnée" avant de créer le graphique
     this.noDataManager.hide();
 
     createHighchartsChart(
@@ -313,10 +298,9 @@ export abstract class BaseChartDirective<
     ).then((createdChart) => {
       if (createdChart) {
         this.chart = createdChart;
-        if (this.debug) console.log('Graphique créé avec succès');
+        this.debug && console.log('Graphique créé avec succès');
       } else {
         console.error('Échec de la création du graphique');
-        // En cas d'échec, laisser finalizeDataState gérer l'affichage
       }
     });
   }

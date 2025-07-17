@@ -36,8 +36,8 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     areasplinerange: { possibleType: ['columnrange', 'arearange', 'areasplinerange'], canPivot: false },
     scatter: { possibleType: ['scatter', 'bubble'] },
     bubble: { possibleType: ['scatter', 'bubble'] },
-    heatmap: { possibleType: ['heatmap'], canPivot: false },
-    treemap: { possibleType: ['treemap'], canPivot: false },
+    heatmap: { possibleType: ['heatmap', 'treemap'], canPivot: false },
+    treemap: { possibleType: ['treemap', 'heatmap'], canPivot: false },
     // map: { possibleType: ['map'], canPivot: false },
   };
 

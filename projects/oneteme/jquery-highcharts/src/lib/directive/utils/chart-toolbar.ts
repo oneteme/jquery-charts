@@ -46,7 +46,6 @@ function createToolbarButton(
     event.preventDefault();
     ngZone.run(() => emitter.emit(eventName));
   });
-
   return button;
 }
 
@@ -89,7 +88,7 @@ export function setupToolbar(options: ToolbarOptions): void {
     container.addEventListener('mousemove', handleMouseMove);
     container.addEventListener('mouseleave', handleMouseLeave);
 
-    if (debug) console.log("Barre d'outils personnalisée configurée");
+    debug && console.log("Barre d'outils personnalisée configurée");
   } catch (error) {
     console.error(
       "Erreur lors de la configuration de la barre d'outils:",

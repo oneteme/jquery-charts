@@ -1,14 +1,32 @@
 import { mergeDeep } from '@oneteme/jquery-core';
 import { Highcharts } from './highcharts-modules';
 
-// Configuration par type de graphique pour éviter la duplication
+const COMMON_POLAR_CONFIG = {
+  pane: { innerSize: '0%', endAngle: 360 },
+  xAxis: { tickmarkPlacement: 'on', lineWidth: 0, gridLineWidth: 1 },
+  yAxis: { lineWidth: 0, gridLineWidth: 1 },
+  plotOptions: {
+    series: {
+      pointPlacement: 'between',
+      pointStart: 0,
+      connectEnds: true,
+      showInLegend: true,
+    },
+  },
+  legend: false,
+};
+
+const COMMON_PIE_PLOT_OPTIONS = {
+  allowPointSelect: true,
+  cursor: 'pointer',
+  dataLabels: { enabled: false },
+};
+
 const CHART_TYPE_CONFIGS = {
   pie: {
     plotOptions: {
       pie: {
-        allowPointSelect: true,
-        cursor: 'pointer',
-        dataLabels: { enabled: false },
+        ...COMMON_PIE_PLOT_OPTIONS,
         innerSize: 0,
       },
     },
@@ -16,25 +34,20 @@ const CHART_TYPE_CONFIGS = {
   donut: {
     plotOptions: {
       pie: {
-        allowPointSelect: true,
-        cursor: 'pointer',
-        dataLabels: { enabled: false },
+        ...COMMON_PIE_PLOT_OPTIONS,
         innerSize: '50%',
       },
     },
   },
   polar: {
     chart: { polar: true, type: 'column' },
-    pane: { innerSize: '0%', endAngle: 360 },
-    xAxis: { tickmarkPlacement: 'on', lineWidth: 0, gridLineWidth: 1 },
-    yAxis: { gridLineInterpolation: 'circle', lineWidth: 0, gridLineWidth: 1 },
+    ...COMMON_POLAR_CONFIG,
+    yAxis: {
+      ...COMMON_POLAR_CONFIG.yAxis,
+      gridLineInterpolation: 'circle',
+    },
     plotOptions: {
-      series: {
-        pointPlacement: 'between',
-        pointStart: 0,
-        connectEnds: true,
-        showInLegend: true,
-      },
+      ...COMMON_POLAR_CONFIG.plotOptions,
       column: {
         stacking: 'normal',
         borderWidth: 0,
@@ -43,23 +56,21 @@ const CHART_TYPE_CONFIGS = {
         borderRadius: '50%',
       },
     },
-    legend: false,
   },
   radar: {
     chart: { polar: true, type: 'line' },
-    pane: { innerSize: '0%', endAngle: 360 },
-    xAxis: { tickmarkPlacement: 'on', lineWidth: 0, gridLineWidth: 1 },
-    yAxis: { gridLineInterpolation: 'polygon', lineWidth: 0, gridLineWidth: 1 },
+    ...COMMON_POLAR_CONFIG,
+    yAxis: {
+      ...COMMON_POLAR_CONFIG.yAxis,
+      gridLineInterpolation: 'polygon',
+    },
     plotOptions: {
+      ...COMMON_POLAR_CONFIG.plotOptions,
       series: {
-        pointPlacement: 'between',
-        pointStart: 0,
-        connectEnds: true,
-        showInLegend: true,
+        ...COMMON_POLAR_CONFIG.plotOptions.series,
         marker: { enabled: true },
       },
     },
-    legend: false,
   },
   radialBar: {
     chart: { polar: true, type: 'column', inverted: true },
@@ -115,28 +126,28 @@ const CHART_TYPE_CONFIGS = {
           {
             level: 1,
             dataLabels: { enabled: true },
-            borderWidth: 3
-          }
-        ]
-      }
+            borderWidth: 3,
+          },
+        ],
+      },
     },
     colorAxis: {
       minColor: '#FFFFFF',
-      maxColor: Highcharts.getOptions().colors[0]
-    }
+      maxColor: Highcharts.getOptions().colors[0],
+    },
   },
   heatmap: {
     plotOptions: {
       heatmap: {
         dataLabels: { enabled: true, color: '#000000' },
-        cursor: 'pointer'
-      }
+        cursor: 'pointer',
+      },
     },
     colorAxis: {
       min: 0,
       minColor: '#FFFFFF',
-      maxColor: Highcharts.getOptions().colors[0]
-    }
+      maxColor: Highcharts.getOptions().colors[0],
+    },
   },
 } as const;
 
@@ -144,7 +155,7 @@ export function initBaseChartOptions(
   chartType: string,
   debug: boolean = false
 ): any {
-  if (debug) console.log('Initialisation des options de base pour', chartType);
+  debug && console.log('Initialisation des options de base pour', chartType);
 
   return {
     shouldRedraw: true,
@@ -156,37 +167,50 @@ export function initBaseChartOptions(
   };
 }
 
+function safeConfigMerge(
+  options: any,
+  config: any,
+  debug: boolean = false
+): void {
+  try {
+    mergeDeep(options, config);
+  } catch (error) {
+    debug && console.error('Erreur lors du merge des configurations:', error);
+  }
+}
+
 export function configureSimpleGraphOptions(
   options: any,
   chartType: keyof typeof CHART_TYPE_CONFIGS,
   debug: boolean = false
 ): void {
-  if (debug) console.log(`Configuration des options pour ${chartType}`, 'options avant:', JSON.stringify(options.plotOptions?.pie));
+  debug && console.log(`Configuration des options pour ${chartType}`);
 
   const config = CHART_TYPE_CONFIGS[chartType];
-  if (config) {
-    // Pour pie/donut, forcer complètement la réinitialisation
-    if (chartType === 'pie' || chartType === 'donut') {
-      options.plotOptions ??= {};
-
-      // Réinitialisation complète et forcée des options pie
-      options.plotOptions.pie = {
-        allowPointSelect: true,
-        cursor: 'pointer',
-        dataLabels: { enabled: false },
-        innerSize: chartType === 'donut' ? '50%' : 0,
-      };
-
-      if (debug) console.log(`Options pie forcées pour ${chartType}:`, JSON.stringify(options.plotOptions.pie));
-    } else {
-      // Pour les autres types, appliquer la configuration normale
-      mergeDeep(options, config);
-    }
-
-    if (debug) console.log(`Options finales après configuration ${chartType}:`, JSON.stringify(options.plotOptions));
-  } else if (debug) {
-    console.warn(`Configuration non trouvée pour le type: ${chartType}`);
+  if (!config) {
+    debug && console.warn(`Configuration non trouvée pour le type: ${chartType}`);
+    return;
   }
+
+  if (chartType === 'pie' || chartType === 'donut') {
+    options.plotOptions ??= {};
+
+    options.plotOptions.pie = {
+      ...COMMON_PIE_PLOT_OPTIONS,
+      innerSize: chartType === 'donut' ? '50%' : 0,
+    };
+
+    debug && console.log(
+      `Options pie configurées pour ${chartType}:`,
+      options.plotOptions.pie
+    );
+  } else {
+    safeConfigMerge(options, config, debug);
+  }
+  debug && console.log(
+    `Options finales après configuration ${chartType}:`,
+    options.plotOptions
+  );
 }
 
 export function configureComplexGraphOptions(
@@ -194,12 +218,16 @@ export function configureComplexGraphOptions(
   chartType: 'treemap' | 'heatmap',
   debug: boolean = false
 ): void {
-  if (debug) console.log(`Configuration des options complexes pour ${chartType}`);
+  if (debug)
+    console.log(`Configuration des options complexes pour ${chartType}`);
 
   const config = CHART_TYPE_CONFIGS[chartType];
   if (config) {
     mergeDeep(options, config);
-    if (debug) console.log(`Options finales après configuration ${chartType}:`, JSON.stringify(options.plotOptions));
+    debug && console.log(
+      `Options finales après configuration ${chartType}:`,
+      JSON.stringify(options.plotOptions)
+    );
   } else if (debug) {
     console.warn(`Configuration non trouvée pour le type: ${chartType}`);
   }
