@@ -31,6 +31,7 @@ export abstract class BaseChartDirective<
   private stateChangeTimeout: number | undefined;
   private lastStateApplied: 'loading' | 'noData' | 'chart' | null = null;
   private _lastSeriesCheck: { series: any[], result: boolean } | null = null;
+  private isDestroyed: boolean = false;
 
   constructor(
     protected readonly el: ElementRef,
@@ -45,6 +46,7 @@ export abstract class BaseChartDirective<
   }
 
   ngOnDestroy(): void {
+    this.isDestroyed = true;
     if (this.stateChangeTimeout) {
       clearTimeout(this.stateChangeTimeout);
     }
@@ -138,22 +140,34 @@ export abstract class BaseChartDirective<
   }
 
   private scheduleStateCheck(needsUpdate: boolean = false): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
     if (this.stateChangeTimeout) {
       clearTimeout(this.stateChangeTimeout);
     }
     this.stateChangeTimeout = window.setTimeout(() => {
+      if (this.isDestroyed) {
+        return;
+      }
+
       try {
         const targetState = this.determineTargetState();
         this.applyState(targetState, needsUpdate);
       } catch (error) {
         console.error('Erreur lors de la vérification d\'état:', error);
-        // État de fallback sécurisé
-        this.showLoadingState();
+        // État de fallback sécurisé seulement si pas détruit
+        if (!this.isDestroyed) {
+          this.showLoadingState();
+        }
       }
     }, 0);
   }
 
   private showLoadingState(): void {
+    if (this.isDestroyed) return;
+
     this.loadingManager.show();
     if (this.chart) {
       destroyChart(this.chart, undefined, this.debug);
@@ -162,6 +176,8 @@ export abstract class BaseChartDirective<
   }
 
   private showNoDataState(): void {
+    if (this.isDestroyed) return;
+
     this.loadingManager.hide();
     this.loadingManager.showNoData();
     if (this.chart) {
@@ -171,6 +187,8 @@ export abstract class BaseChartDirective<
   }
 
   private showChartState(needsUpdate: boolean): void {
+    if (this.isDestroyed) return;
+
     this.loadingManager.hide();
     this.loadingManager.hideNoData();
 
@@ -257,24 +275,11 @@ export abstract class BaseChartDirective<
   }
 
   protected createChart(): void {
+    if (this.isDestroyed) return;
+
     const currentConfig = this.config;
     const currentData = this.data;
     const currentOptions = { ...this._options };
-
-    if (!currentConfig) {
-      this.debug && console.log('Pas de configuration disponible');
-      return;
-    }
-
-    if (!currentData || currentData.length === 0) {
-      this.debug && console.log('Pas de données disponibles pour createChart');
-      return;
-    }
-
-    if (this.hasEmptySeries()) {
-      this.debug && console.log('Pas de séries valides dans les options pour createChart');
-      return;
-    }
 
     createHighchartsChart(
       this.el,
@@ -286,6 +291,14 @@ export abstract class BaseChartDirective<
       this.canPivot,
       this.debug
     ).then((createdChart) => {
+      if (this.isDestroyed) {
+        // Nettoyage si le composant a été détruit pendant la création
+        if (createdChart) {
+          destroyChart(createdChart, undefined, this.debug);
+        }
+        return;
+      }
+
       // Vérifier que les données n'ont pas changé entre temps
       if (currentConfig === this.config && currentData === this.data) {
         if (createdChart) {
@@ -302,8 +315,10 @@ export abstract class BaseChartDirective<
         this.scheduleStateCheck();
       }
     }).catch((error) => {
-      console.error('Erreur lors de la création du graphique:', error);
-      this.scheduleStateCheck();
+      if (!this.isDestroyed) {
+        console.error('Erreur lors de la création du graphique:', error);
+        this.scheduleStateCheck();
+      }
     });
   }
 
