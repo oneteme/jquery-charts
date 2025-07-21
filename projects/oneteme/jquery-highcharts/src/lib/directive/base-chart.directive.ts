@@ -30,6 +30,7 @@ export abstract class BaseChartDirective<
   private _hasInitializedConfig: boolean = false;
   private stateChangeTimeout: number | undefined;
   private lastStateApplied: 'loading' | 'noData' | 'chart' | null = null;
+  private _lastSeriesCheck: { series: any[], result: boolean } | null = null;
 
   constructor(
     protected readonly el: ElementRef,
@@ -37,7 +38,8 @@ export abstract class BaseChartDirective<
   ) {
     initializeHighchartsModules();
 
-    this.loadingManager = new LoadingManager(this.el, this.loadingConfig);
+    // config vide, mis à jour dans ngOnChanges
+    this.loadingManager = new LoadingManager(this.el, {});
 
     this._options = initBaseChartOptions(this.type || '', this.debug);
   }
@@ -56,9 +58,13 @@ export abstract class BaseChartDirective<
       return;
     }
 
-    // Mise à jour de la config du loading si elle a changé
-    if (changes.loadingConfig && this.loadingManager) {
-      this.loadingManager.updateConfig(this.loadingConfig);
+    // Mise à jour de la config du loading si elle a changé ou initialisation
+    if (changes.loadingConfig || !this.loadingManager) {
+      if (this.loadingManager) {
+        this.loadingManager.updateConfig(this.loadingConfig);
+      } else {
+        this.loadingManager = new LoadingManager(this.el, this.loadingConfig);
+      }
     }
 
     this._zone.runOutsideAngular(() => {
@@ -78,12 +84,14 @@ export abstract class BaseChartDirective<
 
     if (changes.data && this.data !== undefined) {
       this._isDataLoaded = true;
+      this._lastSeriesCheck = null;
       this.updateData();
       needsUpdate = true;
       this.debug && console.log('Données mises à jour');
     }
 
     if (changes.type && this.config) {
+      this._lastSeriesCheck = null;
       this.updateChartType();
       needsUpdate = true;
       this.debug && console.log('Type mis à jour');
@@ -134,8 +142,14 @@ export abstract class BaseChartDirective<
       clearTimeout(this.stateChangeTimeout);
     }
     this.stateChangeTimeout = window.setTimeout(() => {
-      const targetState = this.determineTargetState();
-      this.applyState(targetState, needsUpdate);
+      try {
+        const targetState = this.determineTargetState();
+        this.applyState(targetState, needsUpdate);
+      } catch (error) {
+        console.error('Erreur lors de la vérification d\'état:', error);
+        // État de fallback sécurisé
+        this.showLoadingState();
+      }
     }, 0);
   }
 
@@ -177,16 +191,27 @@ export abstract class BaseChartDirective<
   private hasEmptySeries(): boolean {
     try {
       const series = this._options?.series;
-      if (!series || !Array.isArray(series) || series.length === 0) {
-        return true;
+
+      // Cache simple pour éviter les recalculs
+      if (this._lastSeriesCheck && this._lastSeriesCheck.series === series) {
+        return this._lastSeriesCheck.result;
       }
 
-      return series.every(s => {
+      if (!series || !Array.isArray(series) || series.length === 0) {
+        const result = true;
+        this._lastSeriesCheck = { series, result };
+        return result;
+      }
+
+      const result = series.every(s => {
         if (!s || typeof s !== 'object') return true;
         const data = s.data;
         return !data || !Array.isArray(data) || data.length === 0 ||
                data.every(point => point === null || point === undefined);
       });
+
+      this._lastSeriesCheck = { series, result };
+      return result;
     } catch (error) {
       this.debug && console.warn('Erreur lors de la vérification des séries:', error);
       return true;
@@ -232,12 +257,16 @@ export abstract class BaseChartDirective<
   }
 
   protected createChart(): void {
-    if (!this.config) {
+    const currentConfig = this.config;
+    const currentData = this.data;
+    const currentOptions = { ...this._options };
+
+    if (!currentConfig) {
       this.debug && console.log('Pas de configuration disponible');
       return;
     }
 
-    if (!this.data || this.data.length === 0) {
+    if (!currentData || currentData.length === 0) {
       this.debug && console.log('Pas de données disponibles pour createChart');
       return;
     }
@@ -249,24 +278,32 @@ export abstract class BaseChartDirective<
 
     createHighchartsChart(
       this.el,
-      this._options,
-      this.config,
+      currentOptions,
+      currentConfig,
       this.customEvent,
       this._zone,
       this.loadingManager,
       this.canPivot,
       this.debug
     ).then((createdChart) => {
-      if (createdChart) {
-        this.chart = createdChart;
-        this.debug && console.log('Graphique créé avec succès');
-        // Réévaluer l'état après création réussie
-        this.scheduleStateCheck();
+      // Vérifier que les données n'ont pas changé entre temps
+      if (currentConfig === this.config && currentData === this.data) {
+        if (createdChart) {
+          this.chart = createdChart;
+          this.debug && console.log('Graphique créé avec succès');
+        } else {
+          console.error('Échec de la création du graphique');
+        }
       } else {
-        console.error('Échec de la création du graphique');
-        // Réévaluer l'état en cas d'échec
+        this.debug && console.log('Données changées pendant la création, nettoyage et re-planification');
+        if (createdChart) {
+          destroyChart(createdChart, undefined, this.debug);
+        }
         this.scheduleStateCheck();
       }
+    }).catch((error) => {
+      console.error('Erreur lors de la création du graphique:', error);
+      this.scheduleStateCheck();
     });
   }
 
