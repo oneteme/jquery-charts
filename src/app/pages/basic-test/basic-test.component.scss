@@ -83,7 +83,7 @@ $transitions: (
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     border: 1px solid color(gray-100);
-    z-index: 98;
+    z-index: 20;
     transition: map-get($transitions, medium);
     overflow: hidden;
     margin-left: auto;

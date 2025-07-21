@@ -29,9 +29,28 @@ export class BasicTestComponent implements OnInit {
   chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
-  isLoading: boolean = true;
   isSimpleChart = false;
-  dataDelay = 100;
+  dataDelay = 3000;
+
+  // Personnalisation loading
+  loadingConfig = {
+    // Configuration du loading
+    showText: false,
+    text: 'Chargement en cours...',
+    showSpinner: true,
+    backgroundColor: '#ffffff',
+    textColor: '#333333',
+    spinnerColor: '#ff0000',
+
+    // Configuration "aucune donnée"
+    showNoDataBackground: true,
+    noDataMessage: 'Aucune donnée n\'a été trouvée...',
+    noDataBackgroundColor: '#f2f2f2',
+    noDataBorderColor: '#acacac',
+    noDataTextColor: '#000000',
+    showNoDataIcon: true,
+    noDataIcon: '📈',
+  };
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
@@ -134,7 +153,7 @@ export class BasicTestComponent implements OnInit {
       // { month: 'Nov', team: 'Équipe C', value: [0, 10] },
       // { month: 'Déc', team: 'Équipe C', value: [-4, 6] },
     ],
-    map: []
+    map: [],
   };
 
   get simpleChartTypes(): ChartType[] {
@@ -143,7 +162,7 @@ export class BasicTestComponent implements OnInit {
   get complexChartTypes(): ChartType[] {
     return this.chartTypes.complex;
   }
-  get mapChartType():  ChartType[] {
+  get mapChartType(): ChartType[] {
     return this.chartTypes.map;
   }
 
@@ -153,8 +172,13 @@ export class BasicTestComponent implements OnInit {
   loadChartData(): void {
     this.chartData = [];
     const isMapChart = this.chartTypes.map.includes(this.chartType);
-    if (!isMapChart && (window as any).Highcharts?.maps?.['custom/france-regions']) {
-      console.log('Nettoyage des données GeoJSON car on passe à un graphique non-map');
+    if (
+      !isMapChart &&
+      (window as any).Highcharts?.maps?.['custom/france-regions']
+    ) {
+      console.log(
+        'Nettoyage des données GeoJSON car on passe à un graphique non-map'
+      );
       delete (window as any).Highcharts.maps['custom/france-regions'];
     }
 
@@ -185,7 +209,9 @@ export class BasicTestComponent implements OnInit {
         ...this.baseConfig,
         title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
         subtitle: 'Données 2025',
-        ...(isSimple ? {} : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
+        ...(isSimple
+          ? {}
+          : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
         series: [
           {
             ...(isSimple ? {} : { name: field('team') }),
@@ -199,12 +225,17 @@ export class BasicTestComponent implements OnInit {
       };
 
       this.chartData = [...this.chartData$[mode]];
+      
+      // Pour tester "Aucune donnée", commenter / décommenter
+      // this.chartData = [];
     }
   }
   private async loadGeoJsonData(): Promise<void> {
     try {
       console.log('Chargement des données GeoJSON...');
-      const response = await fetch('assets/france-geojson/regions-version-simplifiee.geojson');
+      const response = await fetch(
+        'assets/france-geojson/regions-version-simplifiee.geojson'
+      );
       if (!response.ok) {
         throw new Error(`Erreur HTTP: ${response.status}`);
       }
@@ -223,9 +254,9 @@ export class BasicTestComponent implements OnInit {
             ...this.chartConfig.options,
             chart: {
               ...this.chartConfig.options?.chart,
-              map: 'custom/france-regions'
-            }
-          }
+              map: 'custom/france-regions',
+            },
+          },
         };
         console.log('Configuration de carte mise à jour:', this.chartConfig);
       } else {
@@ -237,7 +268,8 @@ export class BasicTestComponent implements OnInit {
   }
   changeChartType(): void {
     const isMapChart = this.chartTypes.map.includes(this.chartType);
-    this.isSimpleChart = !isMapChart && this.chartTypes.simple.includes(this.chartType);
+    this.isSimpleChart =
+      !isMapChart && this.chartTypes.simple.includes(this.chartType);
     this.loadChartData();
   }
 

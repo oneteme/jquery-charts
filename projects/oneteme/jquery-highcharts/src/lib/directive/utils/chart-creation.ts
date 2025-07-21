@@ -13,10 +13,10 @@ export function destroyChart(
   if (!chart) return;
 
   try {
-    loadingManager && loadingManager.destroy();
+    if (loadingManager) loadingManager.destroy();
 
     if (chart.container) {
-      const noDataMessage = chart.container.querySelector('.highcharts-no-data-message');
+      const noDataMessage = chart.container.querySelector('.highcharts-no-data-message, .highcharts-no-data-overlay');
       if (noDataMessage) {
         noDataMessage.remove();
       }
@@ -66,44 +66,20 @@ export function createHighchartsChart(
       const chartOptions: Highcharts.Options = Highcharts.merge({}, options);
       sanitizeChartDimensions(chartOptions, config);
 
-      debug ?? console.log('Création du graphique avec options:', chartOptions);
+      debug && console.log('Création du graphique avec options:', chartOptions);
 
       ngZone.runOutsideAngular(() => {
         const chartInstance = (Highcharts as any).chart(
           el.nativeElement,
           chartOptions,
           function (chart: Highcharts.Chart) {
-            debug ?? console.log('Graphique rendu');
-            if (loadingManager.visible) {
-              debug ?? console.log('Masquage du loading...');
-              loadingManager.hide().then(() => {
-                if (chart.container) {
-                  chart.container.style.opacity = '0';
-                  chart.container.style.transition = 'opacity 300ms ease-out';
-
-                  requestAnimationFrame(() => {
-                    if (chart.container) {
-                      chart.container.style.opacity = '1';
-                    }
-                  });
-                }
-
-                debug && console.log('Animation de transition terminée');
-              });
-            } else {
-              if (chart.container) {
-                chart.container.style.opacity = '1';
-              }
-              debug && console.log('Graphique affiché directement (pas de loading)');
-            }
+            debug && console.log('Graphique rendu avec succès');
+            resolve(chart);
           }
         );
-
-        resolve(chartInstance);
       });
     } catch (error) {
       console.error('Erreur lors de la création du graphique:', error);
-      loadingManager.visible && loadingManager.hide();
       resolve(null);
     }
   });

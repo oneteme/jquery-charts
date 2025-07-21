@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ComplexChartDirective } from '../directive/complex-chart.directive';
 import { SimpleChartDirective } from '../directive/simple-chart.directive';
+import { LoadingConfig } from '../directive/utils';
 // import { MapChartDirective } from '../directive/map-chart.directive';
 
 @Component({
@@ -48,7 +49,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   }
   @Input({ required: true }) config: ChartProvider<X, Y>;
   @Input({ required: true }) data: any[];
-  @Input() isLoading: boolean = false;
+  @Input() loadingConfig: LoadingConfig = {};
   @Input() debug: boolean;
   @Output() customEvent: EventEmitter<string> = new EventEmitter();
 

@@ -24,7 +24,13 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     const newInnerSize = this.type === 'donut' ? '50%' : 0;
 
     if (currentInnerSize !== newInnerSize) {
-      this.debug && console.log('Changement pie/donut détecté:', currentInnerSize, '->', newInnerSize);
+      this.debug &&
+        console.log(
+          'Changement pie/donut détecté:',
+          currentInnerSize,
+          '->',
+          newInnerSize
+        );
       this._shouldRedraw = true;
     }
 
@@ -79,7 +85,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     this.debug && console.log('Mise à jour des données');
 
     if (!this.config || !this.data) {
-      this.debug && console.log('Configuration ou données manquantes dans updateData');
+      this.debug &&
+        console.log('Configuration ou données manquantes dans updateData');
       mergeDeep(this._options, { series: [] });
       return;
     }
@@ -96,17 +103,27 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         this.handlePieData(commonChart, chartConfig);
       }
 
-      if (this._options.series && Array.isArray(this._options.series) &&
-          this._options.series.length > 0 &&
-          this._options.series[0]?.data &&
-          Array.isArray(this._options.series[0].data) &&
-          this._options.series[0].data.length > 0 &&
-          !this.chart && !this._shouldRedraw) {
-        this.debug && console.log('Données valides détectées pour simple chart, force la création du graphique');
+      if (
+        this._options.series &&
+        Array.isArray(this._options.series) &&
+        this._options.series.length > 0 &&
+        this._options.series[0]?.data &&
+        Array.isArray(this._options.series[0].data) &&
+        this._options.series[0].data.length > 0 &&
+        !this.chart &&
+        !this._shouldRedraw
+      ) {
+        this.debug &&
+          console.log(
+            'Données valides détectées pour simple chart, force la création du graphique'
+          );
         this._shouldRedraw = true;
       }
     } catch (error) {
-      console.error('Erreur lors du traitement des données dans simple chart:', error);
+      console.error(
+        'Erreur lors du traitement des données dans simple chart:',
+        error
+      );
       mergeDeep(this._options, { series: [] });
     }
   }
@@ -139,24 +156,28 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   private createMultiRadarSeries(commonChart: any, chartConfig: any): any[] {
-    return commonChart.series.map((serie: { name: any; data: any[]; color: any; }) => ({
-      name: serie.name ?? chartConfig.xtitle ?? 'Série',
-      data: serie.data.map((value, index) => ({
-        name: commonChart.categories[index],
-        y: value,
-      })),
-      pointPlacement: 'on',
-      color: serie.color,
-      type: this.type === 'radar' ? 'line' : 'column',
-    }));
+    return commonChart.series.map(
+      (serie: { name: any; data: any[]; color: any }) => ({
+        name: serie.name ?? chartConfig.xtitle ?? 'Série',
+        data: serie.data.map((value, index) => ({
+          name: commonChart.categories[index],
+          y: value,
+        })),
+        pointPlacement: 'on',
+        color: serie.color,
+        type: this.type === 'radar' ? 'line' : 'column',
+      })
+    );
   }
 
   private createSinglePolarSeries(commonChart: any, chartConfig: any): any[] {
-    const formattedData = commonChart.categories.map((category: any, i: string | number) => ({
-      name: category,
-      y: commonChart.series[0]?.data[i] ?? 0,
-      color: commonChart.series[0]?.color,
-    }));
+    const formattedData = commonChart.categories.map(
+      (category: any, i: string | number) => ({
+        name: category,
+        y: commonChart.series[0]?.data[i] ?? 0,
+        color: commonChart.series[0]?.color,
+      })
+    );
 
     return [
       {
@@ -176,7 +197,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       }
 
       const formattedData = commonChart.series
-        .flatMap((s: { data: any[]; }) => Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : [])
+        .flatMap((s: { data: any[] }) =>
+          Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : []
+        )
         .map((data: any, index: string | number) => ({
           name: commonChart?.categories?.[index] ?? `Item ${index}`,
           y: typeof data === 'number' ? data : 0,

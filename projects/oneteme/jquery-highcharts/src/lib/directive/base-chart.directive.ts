@@ -5,8 +5,7 @@ import { ChartCustomEvent } from './utils/types';
 import { createHighchartsChart, destroyChart } from './utils/chart-creation';
 import { initBaseChartOptions } from './utils/chart-options';
 import { initializeHighchartsModules } from './utils/highcharts-modules';
-import { LoadingManager } from './utils/loading-manager';
-import { NoDataManager } from './utils/no-data-manager';
+import { LoadingManager, LoadingConfig } from './utils/loading-manager';
 
 @Directive()
 export abstract class BaseChartDirective<
@@ -16,9 +15,9 @@ export abstract class BaseChartDirective<
 {
   @Input({ required: true }) config: ChartProvider<X, Y>;
   @Input({ required: true }) data: any[];
-  @Input() isLoading: boolean = false;
   @Input() debug: boolean = false;
   @Input() canPivot: boolean = true;
+  @Input() loadingConfig: LoadingConfig = {};
   @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
   @Input({ alias: 'type' }) type: string;
 
@@ -27,7 +26,8 @@ export abstract class BaseChartDirective<
   protected _options: any = {};
   protected _shouldRedraw: boolean = true;
   protected loadingManager: LoadingManager;
-  protected noDataManager: NoDataManager;
+  private _isDataLoaded: boolean = false;
+  private _hasInitializedConfig: boolean = false;
 
   constructor(
     protected readonly el: ElementRef,
@@ -35,32 +35,14 @@ export abstract class BaseChartDirective<
   ) {
     initializeHighchartsModules();
 
-    this.loadingManager = new LoadingManager(this.el, {
-      fadeInDuration: 200,
-      fadeOutDuration: 400,
-    });
-
-    this.noDataManager = new NoDataManager(this.el, {
-      fadeInDuration: 300,
-      fadeOutDuration: 200,
-    });
+    this.loadingManager = new LoadingManager(this.el, this.loadingConfig);
 
     this._options = initBaseChartOptions(this.type || '', this.debug);
-
-    setTimeout(() => {
-      if (this.isLoading && (!this.data || this.data.length === 0)) {
-        this.loadingManager.show();
-      }
-    }, 0);
   }
+  isLoading: boolean;
 
   ngOnDestroy(): void {
-    // nettoye tous les timeouts
-    if ((this as any)._loadingTimeoutId) {
-      clearTimeout((this as any)._loadingTimeoutId);
-    }
     destroyChart(this.chart, this.loadingManager, this.debug);
-    this.noDataManager.destroy();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -70,166 +52,110 @@ export abstract class BaseChartDirective<
       return;
     }
 
-    this._zone.runOutsideAngular(() => {
-      if (changes.isLoading || changes.data || changes.config) {
-        this.handleInitialLoading();
-      }
+    // Mise à jour de la config du loading si elle a changé
+    if (changes.loadingConfig) {
+      this.loadingManager = new LoadingManager(this.el, this.loadingConfig);
+    }
 
-      if (this.config && this.data !== undefined) {
-        this.processChanges(changes);
-      } else if (this.debug) {
-        console.log('Config ou data manquants, attente...', {
-          hasConfig: !!this.config,
-          hasData: this.data !== undefined,
-        });
-      }
+    this._zone.runOutsideAngular(() => {
+      this.processChanges(changes);
     });
   }
 
-  protected handleInitialLoading(): void {
-    if (this.isLoading && (!this.data || this.data.length === 0)) {
-      if (!this.loadingManager.visible) {
-        this.loadingManager.show();
-      }
-    } else if (!this.isLoading && this.loadingManager.visible) {
-      this.loadingManager.hide();
+  protected processChanges(changes: SimpleChanges): void {
+    let needsUpdate = false;
+    const hasConfig = !!this.config;
+    const hasData = this.data !== undefined;
+    const isDataEmpty = !this.data || this.data.length === 0;
+
+    if (changes.config && hasConfig) {
+      this._hasInitializedConfig = true;
+      this.updateConfig();
+      needsUpdate = true;
+      this.debug && console.log('Configuration mise à jour');
+    }
+
+    if (changes.data && hasData) {
+      this._isDataLoaded = true;
+      this.updateData();
+      needsUpdate = true;
+      this.debug && console.log('Données mises à jour');
+    }
+
+    if (changes.type && hasConfig) {
+      this.updateChartType();
+      needsUpdate = true;
+      this.debug && console.log('Type mis à jour');
+    }
+
+    // Gestion automatique des états
+    if (!this._hasInitializedConfig || !this._isDataLoaded) {
+      this.debug && console.log('État: Loading (attente config/données)');
+      this.showLoadingState();
+    } else if (isDataEmpty || this.hasEmptySeries()) {
+      this.debug && console.log('État: Aucune donnée');
+      this.showNoDataState();
+    } else {
+      this.debug && console.log('État: Affichage du graphique');
+      this.showChartState(needsUpdate);
     }
   }
 
-  protected processChanges(changes: SimpleChanges): void {
-    const needsOptionsUpdate = this.hasRelevantChanges(changes);
-
-    if (changes.isLoading) {
-      if (changes.isLoading.currentValue) {
-        this.debug && console.log('Affichage du loading...');
-        this.loadingManager.show();
-        this.noDataManager.hide();
-
-        if (this.chart?.container) {
-          this.chart.container.style.opacity = '0';
-        }
-      } else {
-        this.debug && console.log('isLoading désactivé, masquage du loading...');
-        this.loadingManager.hide();
-
-        if (this.chart?.container) {
-          this.chart.container.style.opacity = '1';
-        }
-      }
-    }
-
-    if (changes.type && this.config) {
-      this.debug && console.log('Changement de type détecté:', changes.type.previousValue, '->', changes.type.currentValue);
-      this.updateChartType();
-    }
-
-    if (changes.config && this.config) this.updateConfig();
-
-    if ((changes.config || changes.data) && this.config && this.data !== undefined) this.updateData();
-
-    if (this._shouldRedraw) {
-      if (this.debug) {
-        console.log('Recréation complète du graphique nécessaire', changes);
-        console.log('_shouldRedraw est true, destruction et recréation...');
-      }
+  private showLoadingState(): void {
+    this.loadingManager.show();
+    if (this.chart) {
       destroyChart(this.chart, undefined, this.debug);
       this.chart = null;
+    }
+  }
+
+  private showNoDataState(): void {
+    this.loadingManager.hide();
+    this.loadingManager.showNoData();
+    if (this.chart) {
+      destroyChart(this.chart, undefined, this.debug);
+      this.chart = null;
+    }
+  }
+
+  private showChartState(needsUpdate: boolean): void {
+    this.loadingManager.hide();
+    this.loadingManager.hideNoData();
+
+    if (this._shouldRedraw) {
+      if (this.chart) {
+        destroyChart(this.chart, undefined, this.debug);
+        this.chart = null;
+      }
       this.createChart();
       this._shouldRedraw = false;
-    } else if (needsOptionsUpdate && this.chart) {
-      this.debug && console.log('Mise à jour des options du graphique', changes);
+    } else if (needsUpdate && this.chart) {
       this.updateChart();
-    } else if (needsOptionsUpdate && !this.chart && this.config) {
-      this.debug && console.log('Pas de graphique existant, création nécessaire', changes);
+    } else if (!this.chart) {
       this.createChart();
     }
-
-    setTimeout(() => {
-      this.finalizeDataState(changes);
-    }, 0);
   }
 
-  protected finalizeDataState(changes: SimpleChanges): void {
-    const hasReceivedData = changes.data && this.data !== undefined;
-    const hasConfig = !!this.config;
-
-    if (hasReceivedData && hasConfig) {
-      this.debug && console.log(
-        "Changement de données détecté, évaluation de l'état final..."
-      );
-
-      const hasNoData = !this.data || this.data.length === 0;
-      const hasNoSeries = !this._options.series ||
-        this._options.series.length === 0 ||
-        (Array.isArray(this._options.series) &&
-          this._options.series.every(
-            (s) => !s.data || (Array.isArray(s.data) && s.data.length === 0)
-          ));
-
-      if ((hasNoData || hasNoSeries) && !this.isLoading) {
-        this.debug && console.log(
-          'Données vides reçues avec loading désactivé -> affichage message aucune donnée'
-        );
-
-        if (this.loadingManager.visible) {
-          this.loadingManager.hide().then(() => {
-            this.debug && console.log('Loading masqué, affichage du message aucune donnée');
-            this.noDataManager.show();
-          });
-        } else this.noDataManager.show();
-      } else if ((hasNoData || hasNoSeries) && this.isLoading) {
-        this.debug && console.log(
-          'Données vides reçues avec loading activé -> attente de la fin du loading'
-        );
-
-        if (!this.loadingManager.visible) {
-          this.loadingManager.show();
-        }
-        this.noDataManager.hide();
-
-        const timeoutId = setTimeout(() => {
-          if (this.isLoading && (!this.data || this.data.length === 0)) {
-            this.debug && console.log(
-              'Timeout atteint avec loading toujours actif et pas de données -> forcer affichage message'
-            );
-            this.loadingManager.hide().then(() => {
-              this.noDataManager.show();
-            });
-          }
-        }, (this.config as any)?.loadingTimeout || 5000); // à modifier au besoin
-
-        (this as any)._loadingTimeoutId = timeoutId;
-      } else if (!hasNoData && !hasNoSeries) {
-        this.debug && console.log('Données valides détectées -> masquer tous les messages');
-        this.noDataManager.hide();
-
-        if ((this as any)._loadingTimeoutId) {
-          clearTimeout((this as any)._loadingTimeoutId);
-          (this as any)._loadingTimeoutId = null;
-        }
-      }
-    }
+  private hasEmptySeries(): boolean {
+    return !this._options.series ||
+      this._options.series.length === 0 ||
+      (Array.isArray(this._options.series) &&
+        this._options.series.every(
+          (s) => !s.data || (Array.isArray(s.data) && s.data.length === 0)
+        ));
   }
 
-  // filtre params "debug" pour ne pas mettre à jour
   protected hasRelevantChanges(changes: SimpleChanges): boolean {
     return Object.keys(changes).some((key) => !['debug'].includes(key));
   }
 
   protected updateChart(): void {
     if (!this.chart) {
-      this.debug && console.log(
-        'Pas de graphique existant pour la mise à jour, création...'
-      );
       this.createChart();
       return;
     }
 
-    if (
-      !this.chart.options ||
-      !this.chart.renderer ||
-      this.chart.renderer.forExport
-    ) {
+    if (!this.chart.options || !this.chart.renderer || this.chart.renderer.forExport) {
       this.debug && console.log('Graphique dans un état invalide, recréation...');
       destroyChart(this.chart, undefined, this.debug);
       this.chart = null;
@@ -250,10 +176,7 @@ export abstract class BaseChartDirective<
       try {
         destroyChart(this.chart, undefined, this.debug);
       } catch (destroyError) {
-        console.error(
-          'Erreur lors de la destruction après échec de mise à jour:',
-          destroyError
-        );
+        console.error('Erreur lors de la destruction après échec de mise à jour:', destroyError);
       }
       this.chart = null;
       this.createChart();
@@ -268,23 +191,13 @@ export abstract class BaseChartDirective<
 
     if (!this.data || this.data.length === 0) {
       this.debug && console.log('Pas de données disponibles pour createChart');
-        console.log('Pas de données disponibles pour createChart');
       return;
     }
 
-    if (
-      !this._options.series ||
-      this._options.series.length === 0 ||
-      (Array.isArray(this._options.series) &&
-        this._options.series.every(
-          (s) => !s.data || (Array.isArray(s.data) && s.data.length === 0)
-        ))
-    ) {
+    if (this.hasEmptySeries()) {
       this.debug && console.log('Pas de séries valides dans les options pour createChart');
       return;
     }
-
-    this.noDataManager.hide();
 
     createHighchartsChart(
       this.el,

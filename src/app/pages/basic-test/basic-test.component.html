@@ -22,13 +22,13 @@
         <small>({{ chartType }})</small>
       </h2>
       <div class="chart-box">
-        <chart
+        <!-- <chart
           #apexChart
           [type]="chartType"
           [config]="chartConfig"
           [data]="chartData"
           [isLoading]="isLoading"
-        ></chart>
+        ></chart> -->
       </div>
     </div>
 
@@ -44,9 +44,59 @@
           [type]="chartType"
           [config]="chartConfig"
           [data]="chartData"
-          [isLoading]="isLoading"
+          [loadingConfig]="loadingConfig"
           [debug]="true"
         ></h-chart>
+
+        <!--
+
+        ! Personnaliser le loading et "aucune donnée" !
+
+        Personnalisation via [loadingConfig] :
+
+        Exemple de config complète :
+        loadingConfig = {
+          // === LOADING ===
+          // Texte du loading (par défaut: 'Chargement des données...')
+          text: 'Patientez...',
+          
+          // Afficher le texte (par défaut: true)
+          showText: true,
+          
+          // Afficher le spinner (par défaut: false)
+          showSpinner: false,
+          
+          // Couleurs du loading
+          backgroundColor: '#ffffff',
+          textColor: '#666666',
+          spinnerColor: '#0066cc',
+
+          // === AUCUNE DONNÉE ===
+          // Message "aucune donnée" (par défaut: 'Aucune donnée disponible')
+          noDataMessage: 'Aucune donnée trouvée',
+          
+          // Afficher le background avec bordure (par défaut: false)
+          showNoDataBackground: true,
+          
+          // Couleurs "aucune donnée"
+          noDataBackgroundColor: '#f8f9fa',
+          noDataBorderColor: '#ddd',
+          noDataTextColor: '#666666',
+          
+          // Afficher un icône (par défaut: false)
+          showNoDataIcon: true,
+          
+          // Personnaliser l'icône (par défaut: '📊')
+          noDataIcon: '📈'
+        }
+
+        Exemples :
+        - Message simple : { noDataMessage: 'Pas de données' }
+        - Avec background : { showNoDataBackground: true, noDataBorderColor: '#e74c3c' }
+        - Avec icône : { showNoDataIcon: true, noDataIcon: '🔍' }
+        - Style sombre : { noDataBackgroundColor: '#2c3e50', noDataTextColor: '#fff' }
+
+        -->
       </div>
     </div>
   </div>

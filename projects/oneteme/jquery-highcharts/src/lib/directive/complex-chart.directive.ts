@@ -133,14 +133,14 @@ export class ComplexChartDirective<
 
         if (validSeries.length > 0 && !this.chart && !this._shouldRedraw) {
           this.debug && console.log(
-            'Données valides détectées, force la création du graphique'
-          );
+              'Données valides détectées, force la création du graphique'
+            );
           this._shouldRedraw = true;
         }
       } else {
         this.debug && console.log(
-          'Données temporairement vides, attente des vraies données'
-        );
+            'Données temporairement vides, attente des vraies données'
+          );
         mergeDeep(this._options, {
           series: [],
           xAxis: { categories: [] },
@@ -178,10 +178,10 @@ export class ComplexChartDirective<
 
       mergeDeep(this._options, {
         series: [{
-          type: 'treemap',
-          name: this._chartConfig.title ?? 'Données',
-          data: groupedData,
-          layoutAlgorithm: 'squarified',
+            type: 'treemap',
+            name: this._chartConfig.title ?? 'Données',
+            data: groupedData,
+            layoutAlgorithm: 'squarified',
         }],
       });
 
