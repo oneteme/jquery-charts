@@ -28,6 +28,8 @@ export abstract class BaseChartDirective<
   protected loadingManager: LoadingManager;
   private _isDataLoaded: boolean = false;
   private _hasInitializedConfig: boolean = false;
+  private stateChangeTimeout: number | undefined;
+  private lastStateApplied: 'loading' | 'noData' | 'chart' | null = null;
 
   constructor(
     protected readonly el: ElementRef,
@@ -39,9 +41,11 @@ export abstract class BaseChartDirective<
 
     this._options = initBaseChartOptions(this.type || '', this.debug);
   }
-  isLoading: boolean;
 
   ngOnDestroy(): void {
+    if (this.stateChangeTimeout) {
+      clearTimeout(this.stateChangeTimeout);
+    }
     destroyChart(this.chart, this.loadingManager, this.debug);
   }
 
@@ -53,8 +57,8 @@ export abstract class BaseChartDirective<
     }
 
     // Mise à jour de la config du loading si elle a changé
-    if (changes.loadingConfig) {
-      this.loadingManager = new LoadingManager(this.el, this.loadingConfig);
+    if (changes.loadingConfig && this.loadingManager) {
+      this.loadingManager.updateConfig(this.loadingConfig);
     }
 
     this._zone.runOutsideAngular(() => {
@@ -64,41 +68,75 @@ export abstract class BaseChartDirective<
 
   protected processChanges(changes: SimpleChanges): void {
     let needsUpdate = false;
-    const hasConfig = !!this.config;
-    const hasData = this.data !== undefined;
-    const isDataEmpty = !this.data || this.data.length === 0;
 
-    if (changes.config && hasConfig) {
+    if (changes.config && this.config) {
       this._hasInitializedConfig = true;
       this.updateConfig();
       needsUpdate = true;
       this.debug && console.log('Configuration mise à jour');
     }
 
-    if (changes.data && hasData) {
+    if (changes.data && this.data !== undefined) {
       this._isDataLoaded = true;
       this.updateData();
       needsUpdate = true;
       this.debug && console.log('Données mises à jour');
     }
 
-    if (changes.type && hasConfig) {
+    if (changes.type && this.config) {
       this.updateChartType();
       needsUpdate = true;
       this.debug && console.log('Type mis à jour');
     }
 
-    // Gestion automatique des états
+    // Planifier la vérification d'état après que tous les changements soient appliqués
+    this.scheduleStateCheck(needsUpdate);
+  }
+
+  private determineTargetState(): 'loading' | 'noData' | 'chart' {
     if (!this._hasInitializedConfig || !this._isDataLoaded) {
-      this.debug && console.log('État: Loading (attente config/données)');
-      this.showLoadingState();
-    } else if (isDataEmpty || this.hasEmptySeries()) {
-      this.debug && console.log('État: Aucune donnée');
-      this.showNoDataState();
-    } else {
-      this.debug && console.log('État: Affichage du graphique');
-      this.showChartState(needsUpdate);
+      return 'loading';
     }
+
+    const isDataEmpty = !this.data || this.data.length === 0;
+    if (isDataEmpty || this.hasEmptySeries()) {
+      return 'noData';
+    }
+
+    return 'chart';
+  }
+
+  private applyState(state: 'loading' | 'noData' | 'chart', needsUpdate: boolean = false): void {
+    // Permet d'viter les appels répétés inutiles
+    if (this.lastStateApplied === state && !needsUpdate) {
+      this.debug && console.log(`État ${state} déjà appliqué, ignore`);
+      return;
+    }
+
+    this.debug && console.log(`État appliqué: ${state}`);
+    this.lastStateApplied = state;
+
+    switch (state) {
+      case 'loading':
+        this.showLoadingState();
+        break;
+      case 'noData':
+        this.showNoDataState();
+        break;
+      case 'chart':
+        this.showChartState(needsUpdate);
+        break;
+    }
+  }
+
+  private scheduleStateCheck(needsUpdate: boolean = false): void {
+    if (this.stateChangeTimeout) {
+      clearTimeout(this.stateChangeTimeout);
+    }
+    this.stateChangeTimeout = window.setTimeout(() => {
+      const targetState = this.determineTargetState();
+      this.applyState(targetState, needsUpdate);
+    }, 0);
   }
 
   private showLoadingState(): void {
@@ -137,12 +175,22 @@ export abstract class BaseChartDirective<
   }
 
   private hasEmptySeries(): boolean {
-    return !this._options.series ||
-      this._options.series.length === 0 ||
-      (Array.isArray(this._options.series) &&
-        this._options.series.every(
-          (s) => !s.data || (Array.isArray(s.data) && s.data.length === 0)
-        ));
+    try {
+      const series = this._options?.series;
+      if (!series || !Array.isArray(series) || series.length === 0) {
+        return true;
+      }
+
+      return series.every(s => {
+        if (!s || typeof s !== 'object') return true;
+        const data = s.data;
+        return !data || !Array.isArray(data) || data.length === 0 ||
+               data.every(point => point === null || point === undefined);
+      });
+    } catch (error) {
+      this.debug && console.warn('Erreur lors de la vérification des séries:', error);
+      return true;
+    }
   }
 
   protected hasRelevantChanges(changes: SimpleChanges): boolean {
@@ -212,8 +260,12 @@ export abstract class BaseChartDirective<
       if (createdChart) {
         this.chart = createdChart;
         this.debug && console.log('Graphique créé avec succès');
+        // Réévaluer l'état après création réussie
+        this.scheduleStateCheck();
       } else {
         console.error('Échec de la création du graphique');
+        // Réévaluer l'état en cas d'échec
+        this.scheduleStateCheck();
       }
     });
   }

@@ -42,7 +42,7 @@ export class LoadingManager {
   private noDataElement: HTMLElement | null = null;
   private isLoadingVisible: boolean = false;
   private isNoDataVisible: boolean = false;
-  private readonly config: Required<LoadingConfig>;
+  private config: Required<LoadingConfig>;
 
   constructor(
     private readonly elementRef: ElementRef,
@@ -90,6 +90,21 @@ export class LoadingManager {
 
     this.removeNoDataElement();
     this.isNoDataVisible = false;
+  }
+
+  updateConfig(newConfig: LoadingConfig): void {
+    this.config = { ...DEFAULT_CONFIG, ...newConfig };
+
+    if (this.isLoadingVisible) {
+      this.removeLoadingOverlay();
+      this.isLoadingVisible = false;
+      this.show();
+    }
+    if (this.isNoDataVisible) {
+      this.removeNoDataElement();
+      this.isNoDataVisible = false;
+      this.showNoData();
+    }
   }
 
   destroy(): void {
@@ -141,9 +156,9 @@ export class LoadingManager {
       border-radius: inherit;
     `;
 
-    const content = this.overlay.querySelector('.loading-content') as HTMLElement;
+    const content = this.overlay.querySelector('.loading-content');
     if (content) {
-      content.style.cssText = `
+      (content as HTMLElement).style.cssText = `
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -153,11 +168,11 @@ export class LoadingManager {
     }
 
     if (this.config.showSpinner) {
-      const spinner = this.overlay.querySelector('.loading-spinner') as HTMLElement;
+      const spinner = this.overlay.querySelector('.loading-spinner');
       if (spinner) {
         const spinnerColorWithOpacity = this.hexToRgba(this.config.spinnerColor, 0.2);
 
-        spinner.style.cssText = `
+        (spinner as HTMLElement).style.cssText = `
           width: 40px;
           height: 40px;
           border: 3px solid ${spinnerColorWithOpacity};
@@ -169,9 +184,9 @@ export class LoadingManager {
     }
 
     if (this.config.showText) {
-      const text = this.overlay.querySelector('.loading-text') as HTMLElement;
+      const text = this.overlay.querySelector('.loading-text');
       if (text) {
-        text.style.cssText = `
+        (text as HTMLElement).style.cssText = `
           color: ${this.config.textColor};
           font-size: 14px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -218,9 +233,9 @@ export class LoadingManager {
 
     this.noDataElement.style.cssText = baseStyle;
 
-    const content = this.noDataElement.querySelector('.no-data-content') as HTMLElement;
+    const content = this.noDataElement.querySelector('.no-data-content');
     if (content) {
-      content.style.cssText = `
+      (content as HTMLElement).style.cssText = `
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -231,21 +246,20 @@ export class LoadingManager {
     }
 
     if (this.config.showNoDataIcon) {
-      const icon = this.noDataElement.querySelector('.no-data-icon') as HTMLElement;
+      const icon = this.noDataElement.querySelector('.no-data-icon');
       if (icon) {
-        icon.style.cssText = `
+        (icon as HTMLElement).style.cssText = `
           font-size: 48px;
           opacity: 0.5;
         `;
       }
     }
 
-    const text = this.noDataElement.querySelector('.no-data-text') as HTMLElement;
+    const text = this.noDataElement.querySelector('.no-data-text');
     if (text) {
-      text.style.cssText = `
+      (text as HTMLElement).style.cssText = `
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         font-size: 16px;
-        font-weight: 500;
       `;
     }
   }

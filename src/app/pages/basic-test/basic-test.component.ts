@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
-import { ChartComponent as HighchartsComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
+import { ChartComponent as HighchartsChartComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
 import { mapChartData } from 'src/app/data/chart/map-chart.data';
 
@@ -12,12 +12,12 @@ import { mapChartData } from 'src/app/data/chart/map-chart.data';
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ApexChartComponent, HighchartsComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ApexChartComponent, HighchartsChartComponent],
 })
 export class BasicTestComponent implements OnInit {
   // Références aux composants de graphiques
   @ViewChild('apexChart') apexChart: ApexChartComponent<string, number>;
-  @ViewChild('highchart') highchart: HighchartsComponent<string, number>;
+  @ViewChild('highchart') highchart: HighchartsChartComponent<string, number>;
 
   // Contrôle de l'affichage
   showApexChart = false;
@@ -35,21 +35,21 @@ export class BasicTestComponent implements OnInit {
   // Personnalisation loading
   loadingConfig = {
     // Configuration du loading
-    showText: false,
-    text: 'Chargement en cours...',
-    showSpinner: true,
-    backgroundColor: '#ffffff',
-    textColor: '#333333',
-    spinnerColor: '#ff0000',
+    // showText: false,
+    // text: 'Chargement en cours...',
+    // showSpinner: true,
+    // backgroundColor: '#ffffff',
+    // textColor: '#333333',
+    // spinnerColor: '#ff0000',
 
     // Configuration "aucune donnée"
-    showNoDataBackground: true,
-    noDataMessage: 'Aucune donnée n\'a été trouvée...',
-    noDataBackgroundColor: '#f2f2f2',
-    noDataBorderColor: '#acacac',
-    noDataTextColor: '#000000',
-    showNoDataIcon: true,
-    noDataIcon: '📈',
+    // showNoDataBackground: true,
+    // noDataMessage: 'Aucune donnée n\'a été trouvée...',
+    // noDataBackgroundColor: '#f2f2f2',
+    // noDataBorderColor: '#acacac',
+    // noDataTextColor: '#000000',
+    // showNoDataIcon: true,
+    // noDataIcon: '📈',
   };
 
   // Types de graphiques regroupés par catégorie
@@ -225,7 +225,7 @@ export class BasicTestComponent implements OnInit {
       };
 
       this.chartData = [...this.chartData$[mode]];
-      
+
       // Pour tester "Aucune donnée", commenter / décommenter
       // this.chartData = [];
     }

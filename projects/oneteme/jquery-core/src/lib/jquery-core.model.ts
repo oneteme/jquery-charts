@@ -249,7 +249,7 @@ export interface ChartView<X extends XaxisType, Y extends YaxisType> {
 
   config: ChartProvider<X, Y>;
   data: any[];
-  isLoading: boolean;
+  isLoading?: boolean;
   canPivot?: boolean;
   debug?: boolean;
 }
