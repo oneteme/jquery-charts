@@ -30,8 +30,9 @@ export abstract class BaseChartDirective<
   private _hasInitializedConfig: boolean = false;
   private stateChangeTimeout: number | undefined;
   private lastStateApplied: 'loading' | 'noData' | 'chart' | null = null;
-  private _lastSeriesCheck: { series: any[], result: boolean } | null = null;
+  private _lastSeriesCheck: { series: any[]; result: boolean } | null = null;
   private isDestroyed: boolean = false;
+  private _isTypeChanging: boolean = false;
 
   constructor(
     protected readonly el: ElementRef,
@@ -93,6 +94,7 @@ export abstract class BaseChartDirective<
     }
 
     if (changes.type && this.config) {
+      this._isTypeChanging = true;
       this._lastSeriesCheck = null;
       this.updateChartType();
       needsUpdate = true;
@@ -108,6 +110,24 @@ export abstract class BaseChartDirective<
       return 'loading';
     }
 
+    if (this._isTypeChanging) {
+      const isDataEmpty = !this.data || this.data.length === 0;
+      const hasEmptySeriesResult = this.hasEmptySeries();
+
+      if (isDataEmpty || hasEmptySeriesResult) {
+        this.debug &&
+          console.log(
+            'Changement de type en cours avec données invalides, affichage du loading'
+          );
+        return 'loading';
+      } else {
+        this.debug &&
+          console.log(
+            'Changement de type en cours mais données valides, permettre la création du chart'
+          );
+      }
+    }
+
     const isDataEmpty = !this.data || this.data.length === 0;
     if (isDataEmpty || this.hasEmptySeries()) {
       return 'noData';
@@ -116,7 +136,10 @@ export abstract class BaseChartDirective<
     return 'chart';
   }
 
-  private applyState(state: 'loading' | 'noData' | 'chart', needsUpdate: boolean = false): void {
+  private applyState(
+    state: 'loading' | 'noData' | 'chart',
+    needsUpdate: boolean = false
+  ): void {
     // Permet d'viter les appels répétés inutiles
     if (this.lastStateApplied === state && !needsUpdate) {
       this.debug && console.log(`État ${state} déjà appliqué, ignore`);
@@ -156,7 +179,7 @@ export abstract class BaseChartDirective<
         const targetState = this.determineTargetState();
         this.applyState(targetState, needsUpdate);
       } catch (error) {
-        console.error('Erreur lors de la vérification d\'état:', error);
+        console.error("Erreur lors de la vérification d'état:", error);
         // État de fallback sécurisé seulement si pas détruit
         if (!this.isDestroyed) {
           this.showLoadingState();
@@ -221,17 +244,22 @@ export abstract class BaseChartDirective<
         return result;
       }
 
-      const result = series.every(s => {
+      const result = series.every((s) => {
         if (!s || typeof s !== 'object') return true;
         const data = s.data;
-        return !data || !Array.isArray(data) || data.length === 0 ||
-               data.every(point => point === null || point === undefined);
+        return (
+          !data ||
+          !Array.isArray(data) ||
+          data.length === 0 ||
+          data.every((point) => point === null || point === undefined)
+        );
       });
 
       this._lastSeriesCheck = { series, result };
       return result;
     } catch (error) {
-      this.debug && console.warn('Erreur lors de la vérification des séries:', error);
+      this.debug &&
+        console.warn('Erreur lors de la vérification des séries:', error);
       return true;
     }
   }
@@ -246,8 +274,13 @@ export abstract class BaseChartDirective<
       return;
     }
 
-    if (!this.chart.options || !this.chart.renderer || this.chart.renderer.forExport) {
-      this.debug && console.log('Graphique dans un état invalide, recréation...');
+    if (
+      !this.chart.options ||
+      !this.chart.renderer ||
+      this.chart.renderer.forExport
+    ) {
+      this.debug &&
+        console.log('Graphique dans un état invalide, recréation...');
       destroyChart(this.chart, undefined, this.debug);
       this.chart = null;
       this.createChart();
@@ -267,7 +300,10 @@ export abstract class BaseChartDirective<
       try {
         destroyChart(this.chart, undefined, this.debug);
       } catch (destroyError) {
-        console.error('Erreur lors de la destruction après échec de mise à jour:', destroyError);
+        console.error(
+          'Erreur lors de la destruction après échec de mise à jour:',
+          destroyError
+        );
       }
       this.chart = null;
       this.createChart();
@@ -281,6 +317,22 @@ export abstract class BaseChartDirective<
     const currentData = this.data;
     const currentOptions = { ...this._options };
 
+    if (!currentConfig) {
+      this.debug && console.log('Pas de configuration disponible');
+      return;
+    }
+
+    if (!currentData || currentData.length === 0) {
+      this.debug && console.log('Pas de données disponibles pour createChart');
+      return;
+    }
+
+    if (this.hasEmptySeries()) {
+      this.debug &&
+        console.log('Pas de séries valides dans les options pour createChart');
+      return;
+    }
+
     createHighchartsChart(
       this.el,
       currentOptions,
@@ -290,36 +342,48 @@ export abstract class BaseChartDirective<
       this.loadingManager,
       this.canPivot,
       this.debug
-    ).then((createdChart) => {
-      if (this.isDestroyed) {
-        // Nettoyage si le composant a été détruit pendant la création
-        if (createdChart) {
-          destroyChart(createdChart, undefined, this.debug);
+    )
+      .then((createdChart) => {
+        if (this.isDestroyed) {
+          // Nettoyage si le composant a été détruit pendant la création
+          if (createdChart) {
+            destroyChart(createdChart, undefined, this.debug);
+          }
+          return;
         }
-        return;
-      }
 
-      // Vérifier que les données n'ont pas changé entre temps
-      if (currentConfig === this.config && currentData === this.data) {
-        if (createdChart) {
-          this.chart = createdChart;
-          this.debug && console.log('Graphique créé avec succès');
+        // Vérifier que les données n'ont pas changé entre temps
+        if (currentConfig === this.config && currentData === this.data) {
+          if (createdChart) {
+            this.chart = createdChart;
+            this._isTypeChanging = false; // Réinitialiser seulement quand le graphique est créé avec succès
+            this.debug &&
+              console.log(
+                'Graphique créé avec succès, flag _isTypeChanging réinitialisé'
+              );
+          } else {
+            console.error('Échec de la création du graphique');
+            this._isTypeChanging = false; // Réinitialiser même en cas d'échec
+          }
         } else {
-          console.error('Échec de la création du graphique');
+          this.debug &&
+            console.log(
+              'Données changées pendant la création, nettoyage et re-planification'
+            );
+          if (createdChart) {
+            destroyChart(createdChart, undefined, this.debug);
+          }
+          // Ne pas réinitialiser _isTypeChanging ici, laisser la re-planification gérer
+          this.scheduleStateCheck();
         }
-      } else {
-        this.debug && console.log('Données changées pendant la création, nettoyage et re-planification');
-        if (createdChart) {
-          destroyChart(createdChart, undefined, this.debug);
+      })
+      .catch((error) => {
+        if (!this.isDestroyed) {
+          console.error('Erreur lors de la création du graphique:', error);
+          this._isTypeChanging = false; // Réinitialiser en cas d'erreur
+          this.scheduleStateCheck();
         }
-        this.scheduleStateCheck();
-      }
-    }).catch((error) => {
-      if (!this.isDestroyed) {
-        console.error('Erreur lors de la création du graphique:', error);
-        this.scheduleStateCheck();
-      }
-    });
+      });
   }
 
   // implémentées dans complex et simple chart directive
