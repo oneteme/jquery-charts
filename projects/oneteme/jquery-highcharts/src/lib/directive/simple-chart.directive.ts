@@ -2,6 +2,7 @@ import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { buildSingleSerieChart, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
 import { configureSimpleGraphOptions } from './utils/chart-options';
+import { Highcharts } from './utils/highcharts-modules';
 
 @Directive({
   selector: '[simple-chart]',
@@ -19,6 +20,14 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
     const actualType = this.getActualChartType();
     const previousType = this._options.chart?.type;
+    const wasPolar = this._options.chart?.polar === true;
+    const isPolar = this.isPolarType();
+
+    // Détecter les transitions entre types polaires ou depuis/vers polaire
+    if (wasPolar !== isPolar || (wasPolar && isPolar)) {
+      this.debug && console.log('Transition polaire détectée, force redraw');
+      this._shouldRedraw = true;
+    }
 
     const currentInnerSize = this._options.plotOptions?.pie?.innerSize;
     const newInnerSize = this.type === 'donut' ? '50%' : 0;
@@ -43,7 +52,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._shouldRedraw = true;
     }
 
-    this.debug && console.log('_shouldRedraw après updateChartType:', this._shouldRedraw);
+    this.debug &&
+      console.log('_shouldRedraw après updateChartType:', this._shouldRedraw);
   }
 
   protected override updateConfig(): void {
@@ -128,7 +138,20 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     }
   }
   private getActualChartType(): string {
-    return this.type === 'donut' ? 'pie' : this.type;
+    if (this.type === 'donut') {
+      return 'pie';
+    }
+
+    // Pour les graphiques polaires, retourner le type de base approprié
+    if (this.type === 'polar' || this.type === 'radialBar') {
+      return 'column';
+    }
+
+    if (this.type === 'radar') {
+      return 'line';
+    }
+
+    return this.type;
   }
 
   private isPolarType(): boolean {
@@ -171,11 +194,14 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   private createSinglePolarSeries(commonChart: any, chartConfig: any): any[] {
+    // Générer des couleurs distinctes pour chaque point de données
+    const colors = this.generateDistinctColors(commonChart.categories.length);
+
     const formattedData = commonChart.categories.map(
       (category: any, i: string | number) => ({
         name: category,
         y: commonChart.series[0]?.data[i] ?? 0,
-        color: commonChart.series[0]?.color,
+        color: colors[i], // Assigner une couleur unique à chaque point
       })
     );
 
@@ -189,6 +215,25 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     ];
   }
 
+  /**
+   * Génère des couleurs distinctes pour les graphiques polaires
+   * Utilise la palette de couleurs par défaut de Highcharts
+   */
+  private generateDistinctColors(count: number): string[] {
+    // Utiliser les couleurs par défaut de Highcharts depuis les options globales
+    const highchartsColors = (Highcharts as any).getOptions().colors || [
+      '#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9',
+      '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'
+    ];
+
+    const colors: string[] = [];
+    for (let i = 0; i < count; i++) {
+      colors.push(highchartsColors[i % highchartsColors.length]);
+    }
+
+    return colors;
+  }
+
   private handlePieData(commonChart: any, chartConfig: any): void {
     try {
       if (!commonChart?.series || !Array.isArray(commonChart.series)) {
@@ -196,17 +241,19 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         return;
       }
 
-      const formattedData = commonChart.series
+      const flatData = commonChart.series
         .flatMap((s: { data: any[] }) =>
           Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : []
-        )
-        .map((data: any, index: string | number) => ({
-          name: commonChart?.categories?.[index] ?? `Item ${index}`,
-          y: typeof data === 'number' ? data : 0,
-          ...(commonChart.series[0]?.color && {
-            color: commonChart.series[0].color,
-          }),
-        }));
+        );
+
+      // Générer des couleurs distinctes pour chaque point
+      const colors = this.generateDistinctColors(flatData.length);
+
+      const formattedData = flatData.map((data: any, index: string | number) => ({
+        name: commonChart?.categories?.[index] ?? `Item ${index}`,
+        y: typeof data === 'number' ? data : 0,
+        color: colors[index], // Utiliser les couleurs générées
+      }));
 
       this.debug && console.log('Données formatées:', formattedData);
 

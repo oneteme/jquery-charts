@@ -26,11 +26,11 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'pyramid';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
-  dataDelay = 3000;
+  dataDelay = 100;
 
   // Personnalisation loading
   loadingConfig = {
@@ -39,7 +39,7 @@ export class BasicTestComponent implements OnInit {
     // text: 'Chargement en cours...',
     // showSpinner: true,
     // backgroundColor: '#ffffff',
-    // textColor: '#333333',
+    // textColor: '#000000',
     // spinnerColor: '#ff0000',
 
     // Configuration "aucune donnée"

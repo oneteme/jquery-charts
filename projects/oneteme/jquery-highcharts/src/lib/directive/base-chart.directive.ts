@@ -1,10 +1,9 @@
 import { ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges, Directive } from '@angular/core';
 import { ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
-import * as Highcharts from 'highcharts';
+import { Highcharts } from './utils/highcharts-modules';
 import { ChartCustomEvent } from './utils/types';
 import { createHighchartsChart, destroyChart } from './utils/chart-creation';
 import { initBaseChartOptions } from './utils/chart-options';
-import { initializeHighchartsModules } from './utils/highcharts-modules';
 import { LoadingManager, LoadingConfig } from './utils/loading-manager';
 
 @Directive()
@@ -38,8 +37,6 @@ export abstract class BaseChartDirective<
     protected readonly el: ElementRef,
     protected readonly _zone: NgZone
   ) {
-    initializeHighchartsModules();
-
     // config vide, mis à jour dans ngOnChanges
     this.loadingManager = new LoadingManager(this.el, {});
 

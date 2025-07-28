@@ -1,5 +1,5 @@
 import { EventEmitter, NgZone } from '@angular/core';
-import * as Highcharts from 'highcharts';
+import { Highcharts } from './highcharts-modules';
 import { ICONS } from '../../../assets/icons/icons';
 import { ChartCustomEvent, ToolbarOptions } from './types';
 
@@ -70,10 +70,10 @@ export function setupToolbar(options: ToolbarOptions): void {
     toolbar.style.color = hasExportButton ? '#555555' : '#000';
     toolbar.style.zIndex = '10';
     toolbar.style.display = 'flex';
-    toolbar.style.visibility = 'hidden'; // Masqué par défaut
+    toolbar.style.visibility = 'visible'; // Masqué par défaut
     toolbar.style.gap = '11px';
 
-    toolbar.appendChild(createToolbarButton(ICONS.percent, 'Afficher les valeurs en pourcentages', 'togglePercent', ngZone, customEvent));
+    // toolbar.appendChild(createToolbarButton(ICONS.percent, 'Afficher les valeurs en pourcentages', 'togglePercent', ngZone, customEvent));
     toolbar.appendChild(createToolbarButton(ICONS.previous, 'Graphique précédent', 'previous', ngZone, customEvent));
     toolbar.appendChild(createToolbarButton(ICONS.next, 'Graphique suivant', 'next', ngZone, customEvent));
 

@@ -4,6 +4,7 @@ import { Highcharts } from './highcharts-modules';
 import { ChartCustomEvent } from './types';
 import { sanitizeChartDimensions } from './chart-utils';
 import { LoadingManager } from './loading-manager';
+import { configureChartEvents } from './chart-toolbar';
 
 export function destroyChart(
   chart: Highcharts.Chart,
@@ -67,6 +68,11 @@ export function createHighchartsChart(
       sanitizeChartDimensions(chartOptions, config);
 
       debug && console.log('Création du graphique avec options:', chartOptions);
+
+      if (config.showToolbar) {
+        const toolbarOptions = {chart: null, config, customEvent, ngZone, canPivot, debug };
+        configureChartEvents(chartOptions, toolbarOptions);
+      }
 
       ngZone.runOutsideAngular(() => {
         const chartInstance = (Highcharts as any).chart(

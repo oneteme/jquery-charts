@@ -20,6 +20,21 @@ export class ComplexChartDirective<
   protected override updateChartType(): void {
     this.debug && console.log('Mise à jour du type de graphique:', this.type);
 
+    const previousType = this._options.chart?.type;
+    const wasSpecialType = previousType === 'treemap' || previousType === 'heatmap';
+    const isSpecialType = this.type === 'treemap' || this.type === 'heatmap';
+
+    // Forcer le redraw lors des transitions vers/depuis des types spéciaux
+    if (wasSpecialType !== isSpecialType || (wasSpecialType && isSpecialType && previousType !== this.type)) {
+      this.debug && console.log('Transition vers/depuis type spécial détectée, force redraw');
+      this._shouldRedraw = true;
+      
+      // Nettoyer les configurations spéciales si on quitte un type spécial
+      if (wasSpecialType && !isSpecialType) {
+        this.cleanSpecialChartConfigs();
+      }
+    }
+
     if (this._options.chart?.type !== this.type) {
       mergeDeep(this._options, {
         chart: { type: this.type },
@@ -29,6 +44,12 @@ export class ComplexChartDirective<
 
     if (this.type === 'treemap' || this.type === 'heatmap') {
       configureComplexGraphOptions(this._options, this.type, this.debug);
+    }
+
+    // Forcer le retraitement des données lors d'un changement de type
+    if (previousType !== this.type) {
+      this.debug && console.log('Type de graphique changé, retraitement des données nécessaire');
+      this.updateData();
     }
   }
 
@@ -86,7 +107,7 @@ export class ComplexChartDirective<
   }
 
   protected override updateData(): void {
-    if (this.debug) console.log('Mise à jour des données');
+    if (this.debug) console.log('Mise à jour des données pour le type:', this.type);
 
     if (!this.config || !this.data) {
       if (this.debug)
@@ -96,58 +117,71 @@ export class ComplexChartDirective<
     }
 
     try {
+      // Traitement spécial pour treemap
       if (this.type === 'treemap') {
         this.handleTreemapData();
         return;
       }
 
+      // Traitement spécial pour heatmap
       if (this.type === 'heatmap') {
         this.handleHeatmapData();
         return;
       }
 
-      const chartConfig = { ...this._chartConfig, continue: false };
-      const commonChart = buildChart(this.data, chartConfig, null);
-
-      if (this.debug) console.log('Données traitées:', commonChart);
-
-      const xAxisType = getType(commonChart);
-
-      this.debug && console.log("Type d'axe X détecté:", xAxisType);
-
-      if (commonChart?.categories && commonChart?.series) {
-        const validSeries = Array.isArray(commonChart.series)
-          ? commonChart.series
-          : [];
-        const validCategories = Array.isArray(commonChart.categories)
-          ? commonChart.categories
-          : [];
-
-        mergeDeep(this._options, {
-          xAxis: {
-            categories: validCategories,
-            type: xAxisType,
-          },
-          series: validSeries,
-        });
-
-        if (validSeries.length > 0 && !this.chart && !this._shouldRedraw) {
-          this.debug && console.log(
-              'Données valides détectées, force la création du graphique'
-            );
-          this._shouldRedraw = true;
-        }
-      } else {
-        this.debug && console.log(
-            'Données temporairement vides, attente des vraies données'
-          );
-        mergeDeep(this._options, {
-          series: [],
-          xAxis: { categories: [] },
-        });
-      }
+      // Traitement standard pour tous les autres types
+      this.handleStandardData();
+      
     } catch (error) {
       console.error('Erreur lors du traitement des données:', error);
+      mergeDeep(this._options, {
+        series: [],
+        xAxis: { categories: [] },
+      });
+    }
+  }
+
+  /**
+   * Traite les données pour les graphiques standards (non treemap/heatmap)
+   */
+  private handleStandardData(): void {
+    const chartConfig = { ...this._chartConfig, continue: false };
+    const commonChart = buildChart(this.data, chartConfig, null);
+
+    if (this.debug) console.log('Données traitées pour graphique standard:', commonChart);
+
+    const xAxisType = getType(commonChart);
+
+    this.debug && console.log("Type d'axe X détecté:", xAxisType);
+
+    if (commonChart?.categories && commonChart?.series) {
+      const validSeries = Array.isArray(commonChart.series)
+        ? commonChart.series
+        : [];
+      const validCategories = Array.isArray(commonChart.categories)
+        ? commonChart.categories
+        : [];
+
+      mergeDeep(this._options, {
+        xAxis: {
+          categories: validCategories,
+          type: xAxisType,
+        },
+        series: validSeries,
+      });
+
+      if (validSeries.length > 0 && !this.chart && !this._shouldRedraw) {
+        this.debug &&
+          console.log(
+            'Données valides détectées pour graphique standard, force la création du graphique'
+          );
+        this._shouldRedraw = true;
+      }
+    } else {
+      this.debug &&
+        console.log(
+          'Données temporairement vides, attente des vraies données'
+        );
       mergeDeep(this._options, {
         series: [],
         xAxis: { categories: [] },
@@ -159,31 +193,58 @@ export class ComplexChartDirective<
     try {
       this.debug && console.log('Traitement des données treemap:', this.data);
 
+      // Si les données ne sont pas adaptées pour treemap, créer une structure simple
       if (!validateSpecialChartData(this.data, 'treemap')) {
-        this.debug && console.warn('Données treemap invalides');
-        mergeDeep(this._options, { series: [] });
-        return;
+        this.debug && console.log('Données non optimales pour treemap, adaptation en cours...');
+        
+        // Créer des données treemap à partir de données simples
+        const treemapData = this.data.map((item: any, index: number) => {
+          const name = item.category || item.month || item.name || `Item ${index + 1}`;
+          const value = Math.abs(typeof item.value === 'number' ? item.value : (item.y || 0));
+          
+          return {
+            name: name,
+            value: value,
+            colorValue: item.value || item.y || value,
+          };
+        });
+
+        this.debug && console.log('Données treemap adaptées:', treemapData);
+
+        mergeDeep(this._options, {
+          series: [
+            {
+              type: 'treemap',
+              name: this._chartConfig.title ?? 'Données',
+              data: treemapData,
+              layoutAlgorithm: 'squarified',
+            },
+          ],
+        });
+      } else {
+        // Traitement standard pour données déjà formatées
+        const treemapData = this.data.map((item: any, index: number) => ({
+          name: item.month ?? item.category ?? item.name ?? `Item ${index + 1}`,
+          value: Math.abs(item.value),
+          colorValue: item.value,
+          team: item.team ?? 'Groupe principal',
+        }));
+
+        const groupedData = this.groupTreemapData(treemapData);
+
+        this.debug && console.log('Données treemap formatées:', groupedData);
+
+        mergeDeep(this._options, {
+          series: [
+            {
+              type: 'treemap',
+              name: this._chartConfig.title ?? 'Données',
+              data: groupedData,
+              layoutAlgorithm: 'squarified',
+            },
+          ],
+        });
       }
-
-      const treemapData = this.data.map((item: any, index: number) => ({
-        name: item.month ?? item.category ?? item.name ?? `Item ${index + 1}`,
-        value: Math.abs(item.value),
-        colorValue: item.value,
-        team: item.team ?? 'Groupe principal',
-      }));
-
-      const groupedData = this.groupTreemapData(treemapData);
-
-      this.debug && console.log('Données treemap formatées:', groupedData);
-
-      mergeDeep(this._options, {
-        series: [{
-            type: 'treemap',
-            name: this._chartConfig.title ?? 'Données',
-            data: groupedData,
-            layoutAlgorithm: 'squarified',
-        }],
-      });
 
       if (!this.chart && !this._shouldRedraw) {
         this._shouldRedraw = true;
@@ -234,64 +295,107 @@ export class ComplexChartDirective<
     try {
       if (this.debug) console.log('Traitement des données heatmap:', this.data);
 
+      // Si les données ne sont pas optimales pour heatmap, créer une structure simple
       if (!validateSpecialChartData(this.data, 'heatmap')) {
-        this.debug && console.warn('Données heatmap invalides');
-        mergeDeep(this._options, { series: [] });
-        return;
-      }
+        this.debug && console.log('Données non optimales pour heatmap, adaptation en cours...');
+        
+        // Créer des données heatmap simples à partir de données basiques
+        const categories = this.data.map((item, index) => 
+          item.category || item.month || item.name || `Item ${index + 1}`
+        );
+        
+        const heatmapData: number[][] = this.data.map((item: any, index: number) => [
+          index, // position X
+          0,     // position Y (une seule série)
+          typeof item.value === 'number' ? item.value : (item.y || 0)
+        ]);
 
-      const categories = Array.from(
-        new Set(
-          this.data.map((item) => item.month ?? item.category ?? item.name)
-        )
-      );
-      const series = Array.from(
-        new Set(this.data.map((item) => item.team ?? 'Série'))
-      );
+        this.debug && console.log('Données heatmap adaptées:', {
+          categories,
+          data: heatmapData,
+        });
 
-      const categoryIndexMap = new Map(
-        categories.map((cat, idx) => [cat, idx])
-      );
-      const seriesIndexMap = new Map(series.map((ser, idx) => [ser, idx]));
-
-      const heatmapData: number[][] = [];
-
-      this.data.forEach((item: any) => {
-        const categoryKey = item.month ?? item.category ?? item.name;
-        const seriesKey = item.team ?? 'Série';
-
-        const x = categoryIndexMap.get(categoryKey);
-        const y = seriesIndexMap.get(seriesKey);
-        const value = typeof item.value === 'number' ? item.value : 0;
-
-        if (x !== undefined && y !== undefined) {
-          heatmapData.push([x, y, value]);
-        }
-      });
-
-      this.debug && console.log('Données heatmap formatées:', { categories, series, data: heatmapData });
-
-      mergeDeep(this._options, {
-        xAxis: {
-          categories: categories,
-          title: { text: this._chartConfig.xtitle },
-        },
-        yAxis: {
-          categories: series,
-          title: { text: this._chartConfig.ytitle },
-        },
-        series: [
-          {
-            type: 'heatmap',
-            name: this._chartConfig.title ?? 'Données',
-            data: heatmapData,
-            dataLabels: {
-              enabled: true,
-              color: '#000000',
-            },
+        mergeDeep(this._options, {
+          xAxis: {
+            categories: categories,
+            title: { text: this._chartConfig.xtitle },
           },
-        ],
-      });
+          yAxis: {
+            categories: ['Valeurs'],
+            title: { text: this._chartConfig.ytitle },
+          },
+          series: [
+            {
+              type: 'heatmap',
+              name: this._chartConfig.title ?? 'Données',
+              data: heatmapData,
+              dataLabels: {
+                enabled: true,
+                color: '#000000',
+              },
+            },
+          ],
+        });
+      } else {
+        // Traitement standard pour données multi-dimensionnelles
+        const categories = Array.from(
+          new Set(
+            this.data.map((item) => item.month ?? item.category ?? item.name)
+          )
+        );
+        const series = Array.from(
+          new Set(this.data.map((item) => item.team ?? 'Série'))
+        );
+
+        const categoryIndexMap = new Map(
+          categories.map((cat, idx) => [cat, idx])
+        );
+        const seriesIndexMap = new Map(series.map((ser, idx) => [ser, idx]));
+
+        const heatmapData: number[][] = [];
+
+        this.data.forEach((item: any) => {
+          const categoryKey = item.month ?? item.category ?? item.name;
+          const seriesKey = item.team ?? 'Série';
+
+          const x = categoryIndexMap.get(categoryKey);
+          const y = seriesIndexMap.get(seriesKey);
+          const value = typeof item.value === 'number' ? item.value : 0;
+
+          if (x !== undefined && y !== undefined) {
+            heatmapData.push([x, y, value]);
+          }
+        });
+
+        this.debug &&
+          console.log('Données heatmap formatées:', {
+            categories,
+            series,
+            data: heatmapData,
+          });
+
+        mergeDeep(this._options, {
+          xAxis: {
+            categories: categories,
+            title: { text: this._chartConfig.xtitle },
+          },
+          yAxis: {
+            categories: series,
+            title: { text: this._chartConfig.ytitle },
+          },
+          series: [
+            {
+              type: 'heatmap',
+              name: this._chartConfig.title ?? 'Données',
+              data: heatmapData,
+              dataLabels: {
+                enabled: true,
+                color: '#000000',
+              },
+            },
+          ],
+        });
+      }
 
       if (!this.chart && !this._shouldRedraw) {
         this._shouldRedraw = true;
@@ -300,5 +404,31 @@ export class ComplexChartDirective<
       console.error('Erreur lors du traitement des données heatmap:', error);
       mergeDeep(this._options, { series: [] });
     }
+  }
+
+  /**
+   * Nettoie les configurations spécifiques aux graphiques treemap et heatmap
+   */
+  private cleanSpecialChartConfigs(): void {
+    // Nettoyer les axes spéciaux pour heatmap
+    if (this._options.xAxis) {
+      delete this._options.xAxis.categories;
+    }
+    if (this._options.yAxis) {
+      delete this._options.yAxis.categories;
+    }
+    
+    // Nettoyer les configurations de couleur
+    if (this._options.colorAxis) {
+      delete this._options.colorAxis;
+    }
+    
+    // Nettoyer les plotOptions spéciaux
+    if (this._options.plotOptions) {
+      delete this._options.plotOptions.treemap;
+      delete this._options.plotOptions.heatmap;
+    }
+    
+    this.debug && console.log('Configurations spéciales nettoyées');
   }
 }

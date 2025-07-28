@@ -10,23 +10,15 @@ import HighchartsMap from 'highcharts/modules/map';
 import Treemap from 'highcharts/modules/treemap';
 import Heatmap from 'highcharts/modules/heatmap';
 
-let modulesInitialized = false;
-
-export function initializeHighchartsModules(): void {
-  if (modulesInitialized) return;
-
-  more(Highcharts);
-  NoDataToDisplay(Highcharts);
-  Annotations(Highcharts);
-  Accessibility(Highcharts);
-  Exporting(Highcharts);
-  ExportDataModule(Highcharts);
-  Funnel(Highcharts);
-  HighchartsMap(Highcharts);
-  Treemap(Highcharts);
-  Heatmap(Highcharts);
-
-  modulesInitialized = true;
-}
+more(Highcharts);
+NoDataToDisplay(Highcharts);
+Annotations(Highcharts);
+Accessibility(Highcharts);
+Exporting(Highcharts);
+ExportDataModule(Highcharts);
+Funnel(Highcharts);
+HighchartsMap(Highcharts);
+Treemap(Highcharts);
+Heatmap(Highcharts);
 
 export { Highcharts };

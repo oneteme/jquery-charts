@@ -49,10 +49,10 @@ const CHART_TYPE_CONFIGS = {
     plotOptions: {
       ...COMMON_POLAR_CONFIG.plotOptions,
       column: {
-        stacking: 'normal',
         borderWidth: 0,
         pointPadding: 0,
-        groupPadding: 0.15,
+        stacking: 'normal',
+        groupPadding: 0,
         borderRadius: '50%',
       },
     },
@@ -98,7 +98,7 @@ const CHART_TYPE_CONFIGS = {
         stacking: 'normal',
         borderWidth: 0,
         pointPadding: 0,
-        groupPadding: 0.15,
+        groupPadding: 0,
         borderRadius: '50%',
       },
     },
@@ -192,9 +192,13 @@ export function configureSimpleGraphOptions(
     return;
   }
 
+  // Nettoyer toutes les configurations précédentes pour éviter les conflits
+  cleanPolarConfigs(options);
+  cleanPieConfigs(options);
+  cleanFunnelConfigs(options);
+
   if (chartType === 'pie' || chartType === 'donut') {
     options.plotOptions ??= {};
-
     options.plotOptions.pie = {
       ...COMMON_PIE_PLOT_OPTIONS,
       innerSize: chartType === 'donut' ? '50%' : 0,
@@ -205,12 +209,85 @@ export function configureSimpleGraphOptions(
       options.plotOptions.pie
     );
   } else {
+    // Appliquer la nouvelle configuration pour tous les autres types
     safeConfigMerge(options, config, debug);
   }
+
   debug && console.log(
     `Options finales après configuration ${chartType}:`,
     options.plotOptions
   );
+}
+
+/**
+ * Vérifie si un type de graphique est polaire
+ */
+function isPolarType(chartType: string): boolean {
+  return ['polar', 'radar', 'radialBar'].includes(chartType);
+}
+
+/**
+ * Nettoie les configurations spécifiques aux graphiques polaires
+ */
+function cleanPolarConfigs(options: any): void {
+  if (options.chart) {
+    delete options.chart.polar;
+    delete options.chart.inverted;
+  }
+  
+  if (options.pane) {
+    delete options.pane;
+  }
+  
+  if (options.xAxis) {
+    delete options.xAxis.tickmarkPlacement;
+    delete options.xAxis.lineWidth;
+    delete options.xAxis.gridLineWidth;
+    delete options.xAxis.labels;
+  }
+  
+  if (options.yAxis) {
+    delete options.yAxis.lineWidth;
+    delete options.yAxis.gridLineWidth;
+    delete options.yAxis.gridLineInterpolation;
+    delete options.yAxis.reversedStacks;
+  }
+  
+  if (options.plotOptions) {
+    delete options.plotOptions.column;
+    delete options.plotOptions.line;
+    // Nettoyer aussi les configurations des graphiques complexes
+    delete options.plotOptions.treemap;
+    delete options.plotOptions.heatmap;
+    if (options.plotOptions.series) {
+      delete options.plotOptions.series.pointPlacement;
+      delete options.plotOptions.series.pointStart;
+      delete options.plotOptions.series.connectEnds;
+      delete options.plotOptions.series.marker;
+    }
+  }
+  
+  // Nettoyer les colorAxis des graphiques complexes
+  if (options.colorAxis) {
+    delete options.colorAxis;
+  }
+}/**
+ * Nettoie les configurations spécifiques aux graphiques pie/donut
+ */
+function cleanPieConfigs(options: any): void {
+  if (options.plotOptions) {
+    delete options.plotOptions.pie;
+  }
+}
+
+/**
+ * Nettoie les configurations spécifiques aux graphiques funnel/pyramid
+ */
+function cleanFunnelConfigs(options: any): void {
+  if (options.plotOptions) {
+    delete options.plotOptions.funnel;
+    delete options.plotOptions.pyramid;
+  }
 }
 
 export function configureComplexGraphOptions(
@@ -220,6 +297,11 @@ export function configureComplexGraphOptions(
 ): void {
   if (debug)
     console.log(`Configuration des options complexes pour ${chartType}`);
+
+  // Nettoyer les configurations des autres types avant d'appliquer la nouvelle
+  cleanPolarConfigs(options);
+  cleanPieConfigs(options);
+  cleanFunnelConfigs(options);
 
   const config = CHART_TYPE_CONFIGS[chartType];
   if (config) {
