@@ -74,6 +74,27 @@ const CHART_TYPE_CONFIGS = {
     },
     legend: { enabled: true },
   },
+  radarArea: {
+    chart: { polar: true, type: 'area' },
+    ...COMMON_POLAR_CONFIG,
+    yAxis: {
+      ...COMMON_POLAR_CONFIG.yAxis,
+      gridLineInterpolation: 'polygon',
+    },
+    plotOptions: {
+      ...COMMON_POLAR_CONFIG.plotOptions,
+      series: {
+        ...COMMON_POLAR_CONFIG.plotOptions.series,
+        marker: { enabled: true },
+        fillOpacity: 0.5,
+      },
+      area: {
+        fillOpacity: 0.5,
+        marker: { enabled: true },
+      },
+    },
+    legend: { enabled: true },
+  },
   radialBar: {
     chart: { polar: true, type: 'column', inverted: true },
     pane: { innerSize: '20%', endAngle: 360 },
@@ -113,7 +134,6 @@ const CHART_TYPE_CONFIGS = {
           const chart = this;
           const series = chart.series[0];
           if (series?.points) {
-            // Masquer initialement tous les points
             series.points.forEach((point) => {
               if (point.graphic) {
                 point.graphic.attr({
@@ -122,7 +142,6 @@ const CHART_TYPE_CONFIGS = {
                 });
               }
             });
-            // Animer l'apparition avec un délai échelonné
             series.points.forEach((point, index) => {
               if (point.graphic) {
                 setTimeout(() => {
@@ -301,7 +320,6 @@ export function configureSimpleGraphOptions(
     return;
   }
 
-  // Nettoyer toutes les configurations précédentes pour éviter les conflits
   cleanPolarConfigs(options);
   cleanPieConfigs(options);
   cleanAnimatedConfigs(options);
@@ -327,9 +345,6 @@ export function configureSimpleGraphOptions(
   );
 }
 
-/**
- * Nettoie les configurations spécifiques aux graphiques polaires
- */
 function cleanPolarConfigs(options: any): void {
   if (options.chart) {
     delete options.chart.polar;
@@ -367,18 +382,14 @@ function cleanPolarConfigs(options: any): void {
     }
   }
 
-  // Nettoyer les colorAxis des graphiques complexes
   if (options.colorAxis) {
     delete options.colorAxis;
   }
-}/**
- * Nettoie les configurations spécifiques aux graphiques pie/donut
- */
+}
+
 function cleanPieConfigs(options: any): void {
   if (options.plotOptions) {
-    // Supprimer toute la config pie
     delete options.plotOptions.pie;
-    // Nettoyer les propriétés polluantes sur la série
     if (options.plotOptions.series) {
       delete options.plotOptions.series.innerSize;
       delete options.plotOptions.series.borderRadius;
@@ -394,9 +405,7 @@ function cleanPieConfigs(options: any): void {
   }
 }
 
-/**
- * Nettoie les configurations spécifiques aux graphiques avec animations (funnel/pyramid/heatmap)
- */
+// Nettoie les config spé aux graphiques avec animations (funnel/pyramid/heatmap)
 function cleanAnimatedConfigs(options: any): void {
   if (options.plotOptions) {
     delete options.plotOptions.funnel;
@@ -416,7 +425,6 @@ export function configureComplexGraphOptions(
   if (debug)
     console.log(`Configuration des options complexes pour ${chartType}`);
 
-  // Nettoyer les configurations des autres types avant d'appliquer la nouvelle
   cleanPolarConfigs(options);
   cleanPieConfigs(options);
   cleanAnimatedConfigs(options);

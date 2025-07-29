@@ -9,7 +9,7 @@ import { Highcharts } from './utils/highcharts-modules';
   standalone: true,
 })
 export class SimpleChartDirective extends BaseChartDirective<string, number> {
-  @Input({ alias: 'type' }) override type: 'pie' | 'donut' | 'polar' | 'radar' | 'funnel' | 'pyramid' | 'radialBar' = 'pie';
+  @Input({ alias: 'type' }) override type: 'pie' | 'donut' | 'polar' | 'radar' | 'radarArea' | 'funnel' | 'pyramid' | 'radialBar' = 'pie';
   private _previousType: string | null = null;
 
   constructor() {
@@ -53,18 +53,22 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._shouldRedraw = true;
     }
 
-    // Si on passe vers ou depuis un graphique radar, il faut retraiter les données
-    // car radar peut utiliser des séries multiples même si le type précédent utilisait une série unique
-    const previousTypeFromRadar = this._previousType === 'radar';
-    const currentTypeIsRadar = this.type === 'radar';
-    
-    if (previousTypeFromRadar !== currentTypeIsRadar) {
-      this.debug && console.log('Changement vers/depuis radar détecté, retraitement des données nécessaire');
+    // Si on passe vers ou depuis un graphique radar/radarArea, il faut retraiter les données
+    // car radar/radarArea peut utiliser des séries multiples même si le type précédent utilisait une série unique
+    const previousTypeFromRadar = this._previousType === 'radar' || this._previousType === 'radarArea';
+    const currentTypeIsRadar = this.type === 'radar' || this.type === 'radarArea';
+
+    // Détecter aussi les changements ENTRE radar et radarArea (changement de type de série)
+    const isRadarToRadarAreaSwitch = (this._previousType === 'radar' && this.type === 'radarArea') ||
+                                    (this._previousType === 'radarArea' && this.type === 'radar');
+
+    if (previousTypeFromRadar !== currentTypeIsRadar || isRadarToRadarAreaSwitch) {
+      this.debug && console.log('Changement vers/depuis/entre radar/radarArea détecté, retraitement des données nécessaire');
+      // Forcer la suppression des anciennes séries pour forcer le type correct
+      this._options.series = [];
       // Forcer le retraitement des données
       this.updateData();
-    }
-
-    // Sauvegarder le type actuel pour la prochaine fois
+    }    // Sauvegarder le type actuel pour la prochaine fois
     this._previousType = this.type;
 
     this.debug &&
@@ -166,23 +170,27 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       return 'line';
     }
 
+    if (this.type === 'radarArea') {
+      return 'area';
+    }
+
     return this.type;
   }
 
   private isPolarType(): boolean {
-    return ['polar', 'radar', 'radialBar'].includes(this.type);
+    return ['polar', 'radar', 'radarArea', 'radialBar'].includes(this.type);
   }
 
   private buildCommonChart(chartConfig: any) {
     // Debug : analyser la configuration pour comprendre la structure des données
     const hasMultipleSeries = this.config.series?.length > 1;
     const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
-    
-    // Pour un graphique radar, on utilise buildChart (multi-séries) si :
+
+    // Pour un graphique radar ou radarArea, on utilise buildChart (multi-séries) si :
     // 1. Il y a plusieurs séries définies dans la config, OU
     // 2. Il y a une fonction name (qui génère des séries dynamiques)
-    const shouldUseMultiSeries = this.type === 'radar' && (hasMultipleSeries || hasNameFunction);
-    
+    const shouldUseMultiSeries = (this.type === 'radar' || this.type === 'radarArea') && (hasMultipleSeries || hasNameFunction);
+
     this.debug && console.log('buildCommonChart analysis:', {
       type: this.type,
       hasMultipleSeries,
@@ -192,7 +200,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       firstSeriesName: this.config.series?.[0]?.name,
       isNameFunction: typeof this.config.series?.[0]?.name === 'function'
     });
-      
+
     return shouldUseMultiSeries
       ? buildChart(this.data, chartConfig, null)
       : buildSingleSerieChart(this.data, chartConfig, null);
@@ -207,7 +215,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     // Utiliser la même logique que dans buildCommonChart
     const hasMultipleSeries = this.config.series?.length > 1;
     const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
-    const shouldUseMultiSeries = this.type === 'radar' && (hasMultipleSeries || hasNameFunction);
+    const shouldUseMultiSeries = (this.type === 'radar' || this.type === 'radarArea') && (hasMultipleSeries || hasNameFunction);
 
     this.debug && console.log('handlePolarData analysis:', {
       type: this.type,
@@ -225,47 +233,74 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
   private createMultiRadarSeries(commonChart: any, chartConfig: any): any[] {
     return commonChart.series.map(
-      (serie: { name: any; data: any[]; color: any }) => ({
-        name: serie.name ?? chartConfig.xtitle ?? 'Série',
-        data: serie.data.map((value, index) => ({
-          name: commonChart.categories[index],
-          y: value,
-        })),
-        pointPlacement: 'on',
-        color: serie.color,
-        type: this.type === 'radar' ? 'line' : 'column',
-      })
+      (serie: { name: any; data: any[]; color: any }) => {
+        let seriesType = 'column'; // valeur par défaut
+        if (this.type === 'radar') {
+          seriesType = 'line';
+        } else if (this.type === 'radarArea') {
+          seriesType = 'area';
+        }
+
+        return {
+          name: serie.name ?? chartConfig.xtitle ?? 'Série',
+          data: serie.data.map((value, index) => ({
+            name: commonChart.categories[index],
+            y: value,
+          })),
+          pointPlacement: 'on',
+          color: serie.color,
+          type: seriesType,
+        };
+      }
     );
   }
 
   private createSinglePolarSeries(commonChart: any, chartConfig: any): any[] {
-    // Générer des couleurs distinctes pour chaque point de données
-    const colors = this.generateDistinctColors(commonChart.categories.length);
+    let seriesType = 'column';
+    if (this.type === 'radar') {
+      seriesType = 'line';
+    } else if (this.type === 'radarArea') {
+      seriesType = 'area';
+    }
 
-    const formattedData = commonChart.categories.map(
-      (category: any, i: string | number) => ({
-        name: category,
-        y: commonChart.series[0]?.data[i] ?? 0,
-        color: colors[i], // Assigner une couleur unique à chaque point
-      })
-    );
+    // graph radar/radarArea, une couleur unique pour toute la série. Autres graphiques polaires (polar, radialBar), chaque point peut avoir sa couleur
+    const isRadarType = this.type === 'radar' || this.type === 'radarArea';
+
+    let formattedData;
+    let seriesColor;
+
+    if (isRadarType) {
+      formattedData = commonChart.categories.map(
+        (category: any, i: string | number) => ({
+          name: category,
+          y: commonChart.series[0]?.data[i] ?? 0,
+        })
+      );
+      seriesColor = (Highcharts as any).getOptions().colors[0];
+    } else {
+      const colors = this.generateDistinctColors(commonChart.categories.length);
+      formattedData = commonChart.categories.map(
+        (category: any, i: string | number) => ({
+          name: category,
+          y: commonChart.series[0]?.data[i] ?? 0,
+          color: colors[i],
+        })
+      );
+    }
 
     return [
       {
         name: chartConfig.title ?? 'Valeurs',
         data: formattedData,
-        type: this.type === 'radar' ? 'line' : 'column',
+        type: seriesType,
         showInLegend: true,
+        ...(isRadarType && seriesColor ? { color: seriesColor } : {}),
       },
     ];
   }
 
-  /**
-   * Génère des couleurs distinctes pour les graphiques polaires
-   * Utilise la palette de couleurs par défaut de Highcharts
-   */
+  // palette par défaut de Highcharts
   private generateDistinctColors(count: number): string[] {
-    // Utiliser les couleurs par défaut de Highcharts depuis les options globales
     const highchartsColors = (Highcharts as any).getOptions().colors || [
       '#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9',
       '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'
@@ -275,7 +310,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     for (let i = 0; i < count; i++) {
       colors.push(highchartsColors[i % highchartsColors.length]);
     }
-
     return colors;
   }
 
@@ -291,13 +325,12 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
           Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : []
         );
 
-      // Générer des couleurs distinctes pour chaque point
       const colors = this.generateDistinctColors(flatData.length);
 
       const formattedData = flatData.map((data: any, index: string | number) => ({
         name: commonChart?.categories?.[index] ?? `Item ${index}`,
         y: typeof data === 'number' ? data : 0,
-        color: colors[index], // Utiliser les couleurs générées
+        color: colors[index],
       }));
 
       this.debug && console.log('Données formatées:', formattedData);

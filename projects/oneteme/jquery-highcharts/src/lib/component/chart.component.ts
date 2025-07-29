@@ -18,10 +18,11 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
-    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    polar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    radar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
+    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
+    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
+    polar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
+    radar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
+    radarArea: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
     funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
     pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
     radialBar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
@@ -57,7 +58,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     return this._type;
   }
 
-  private static readonly SIMPLE_CHART_TYPES = new Set(['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar']);
+  private static readonly SIMPLE_CHART_TYPES = new Set(['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar']);
 
   private static readonly COMPLEX_CHART_TYPES = new Set(['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap']);
 

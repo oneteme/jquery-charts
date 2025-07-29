@@ -32,7 +32,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pyramid';
+  chartType: ChartType = 'radarArea';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
@@ -61,7 +61,7 @@ export class BasicTestComponent implements OnInit {
 
   // Types de graphiques regroupés par catégorie
   readonly chartTypes = {
-    simple: ['pie', 'donut', 'polar', 'radar', 'radialBar', 'funnel', 'pyramid'] as ChartType[],
+    simple: ['pie', 'donut', 'polar', 'radar', 'radarArea', 'radialBar', 'funnel', 'pyramid'] as ChartType[],
     complex: ['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap'] as ChartType[],
     map: ['map'] as ChartType[] };
 
