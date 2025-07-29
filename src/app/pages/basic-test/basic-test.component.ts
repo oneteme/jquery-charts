@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
+// import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
 import { ChartComponent as HighchartsChartComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
 import { mapChartData } from 'src/app/data/chart/map-chart.data';
@@ -12,11 +12,17 @@ import { mapChartData } from 'src/app/data/chart/map-chart.data';
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ApexChartComponent, HighchartsChartComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    // ApexChartComponent,
+    HighchartsChartComponent
+  ],
 })
 export class BasicTestComponent implements OnInit {
   // Références aux composants de graphiques
-  @ViewChild('apexChart') apexChart: ApexChartComponent<string, number>;
+  // @ViewChild('apexChart') apexChart: ApexChartComponent<string, number>;
   @ViewChild('highchart') highchart: HighchartsChartComponent<string, number>;
 
   // Contrôle de l'affichage
@@ -26,10 +32,11 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pyramid';
+  chartType: ChartType = 'radar';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
+  isComboChart = false;
   dataDelay = 100;
 
   // Personnalisation loading
@@ -154,6 +161,20 @@ export class BasicTestComponent implements OnInit {
       // { month: 'Déc', team: 'Équipe C', value: [-4, 6] },
     ],
     map: [],
+    combo: [
+      // Données pour les graphiques combinés scatter + line
+      { month: 'Jan', metric: 'Performance', value: 44 },
+      { month: 'Fév', metric: 'Performance', value: 55 },
+      { month: 'Mar', metric: 'Performance', value: 57 },
+      { month: 'Avr', metric: 'Performance', value: 56 },
+      { month: 'Mai', metric: 'Performance', value: 61 },
+      { month: 'Juin', metric: 'Performance', value: 58 },
+
+      // Points scatter pour anomalies
+      { month: 'Jan', metric: 'Anomalies', value: 35 },
+      { month: 'Mar', metric: 'Anomalies', value: 42 },
+      { month: 'Mai', metric: 'Anomalies', value: 38 },
+    ],
   };
 
   get simpleChartTypes(): ChartType[] {
@@ -183,8 +204,10 @@ export class BasicTestComponent implements OnInit {
     }
 
     setTimeout(() => {
-      let chartMode: 'simple' | 'complex' | 'map';
-      if (isMapChart) {
+      let chartMode: 'simple' | 'complex' | 'map' | 'combo';
+      if (this.isComboChart) {
+        chartMode = 'combo';
+      } else if (isMapChart) {
         chartMode = 'map';
       } else if (this.isSimpleChart) {
         chartMode = 'simple';
@@ -196,14 +219,17 @@ export class BasicTestComponent implements OnInit {
     }, this.dataDelay);
   }
 
-  private configureChart(mode: 'simple' | 'complex' | 'map'): void {
+  private configureChart(mode: 'simple' | 'complex' | 'map' | 'combo'): void {
     const isSimple = mode === 'simple';
     const isMap = mode === 'map';
+    const isCombo = mode === 'combo';
 
     if (isMap) {
       this.chartConfig = mapChartData.config;
       this.chartData = [...mapChartData.data];
       this.loadGeoJsonData();
+    } else if (isCombo) {
+      this.configureComboChart();
     } else {
       this.chartConfig = {
         ...this.baseConfig,
@@ -230,6 +256,67 @@ export class BasicTestComponent implements OnInit {
       // this.chartData = [];
     }
   }
+
+  private configureComboChart(): void {
+    this.chartConfig = {
+      ...this.baseConfig,
+      title: 'Ventes & Objectifs Mensuels',
+      subtitle: 'Performance commerciale 2025 - Colonnes (Ventes) + Ligne (Objectifs) + Scatter (Bonus)',
+      xtitle: 'Mois',
+      ytitle: 'Montant (€)',
+      showToolbar: true,
+    };
+
+    this.chartData = [
+      {
+        type: 'column',
+        name: 'Ventes Réalisées',
+        data: [
+          { x: 'Jan', y: 85000 },
+          { x: 'Fév', y: 92000 },
+          { x: 'Mar', y: 78000 },
+          { x: 'Avr', y: 105000 },
+          { x: 'Mai', y: 110000 },
+          { x: 'Juin', y: 95000 },
+          { x: 'Juil', y: 125000 },
+          { x: 'Aoû', y: 88000 },
+          { x: 'Sep', y: 115000 },
+          { x: 'Oct', y: 132000 },
+          { x: 'Nov', y: 145000 },
+          { x: 'Déc', y: 158000 },
+        ],
+      },
+      {
+        type: 'line',
+        name: 'Objectif Mensuel',
+        data: [
+          { x: 'Jan', y: 100000 },
+          { x: 'Fév', y: 100000 },
+          { x: 'Mar', y: 100000 },
+          { x: 'Avr', y: 105000 },
+          { x: 'Mai', y: 105000 },
+          { x: 'Juin', y: 105000 },
+          { x: 'Juil', y: 110000 },
+          { x: 'Aoû', y: 110000 },
+          { x: 'Sep', y: 110000 },
+          { x: 'Oct', y: 115000 },
+          { x: 'Nov', y: 115000 },
+          { x: 'Déc', y: 120000 },
+        ],
+      },
+      {
+        type: 'scatter',
+        name: 'Bonus Exceptionnels',
+        data: [
+          { x: 'Avr', y: 125000 },
+          { x: 'Juil', y: 140000 },
+          { x: 'Oct', y: 150000 },
+          { x: 'Déc', y: 175000 },
+        ],
+      },
+    ];
+  }
+
   private async loadGeoJsonData(): Promise<void> {
     try {
       console.log('Chargement des données GeoJSON...');
@@ -266,6 +353,21 @@ export class BasicTestComponent implements OnInit {
       console.error('Erreur lors du chargement des données GeoJSON:', error);
     }
   }
+
+  // Méthode pour revenir aux graphiques normaux
+  loadNormalChart(): void {
+    this.isComboChart = false;
+    this.loadChartData();
+  }
+
+  // Méthode pour charger les graphiques combinés
+  loadComboChart(): void {
+    this.isComboChart = true;
+    this.isSimpleChart = false;
+    this.chartType = 'line'; // Type de base mais les données prévalent
+    this.loadChartData();
+  }
+
   changeChartType(): void {
     const isMapChart = this.chartTypes.map.includes(this.chartType);
     this.isSimpleChart =

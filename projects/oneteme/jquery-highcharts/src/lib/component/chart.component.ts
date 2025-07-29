@@ -11,7 +11,7 @@ import { LoadingConfig } from '../directive/utils';
   imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective,
     //  MapChartDirective
    ],
-  selector: 'h-chart',
+  selector: 'chart',
   templateUrl: './chart.component.html',
 })
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {

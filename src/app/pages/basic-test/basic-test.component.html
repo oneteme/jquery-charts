@@ -39,14 +39,14 @@
         <small>({{ chartType }})</small>
       </h2>
       <div class="chart-box">
-        <h-chart
+        <chart
           #highchart
           [type]="chartType"
           [config]="chartConfig"
           [data]="chartData"
           [loadingConfig]="loadingConfig"
           [debug]="true"
-        ></h-chart>
+        ></chart>
 
         <!--
 
@@ -59,13 +59,13 @@
           // === LOADING ===
           // Texte du loading (par défaut: 'Chargement des données...')
           text: 'Patientez...',
-          
+
           // Afficher le texte (par défaut: true)
           showText: true,
-          
+
           // Afficher le spinner (par défaut: false)
           showSpinner: false,
-          
+
           // Couleurs du loading
           backgroundColor: '#ffffff',
           textColor: '#666666',
@@ -74,18 +74,18 @@
           // === AUCUNE DONNÉE ===
           // Message "aucune donnée" (par défaut: 'Aucune donnée disponible')
           noDataMessage: 'Aucune donnée trouvée',
-          
+
           // Afficher le background avec bordure (par défaut: false)
           showNoDataBackground: true,
-          
+
           // Couleurs "aucune donnée"
           noDataBackgroundColor: '#f8f9fa',
           noDataBorderColor: '#ddd',
           noDataTextColor: '#666666',
-          
+
           // Afficher un icône (par défaut: false)
           showNoDataIcon: true,
-          
+
           // Personnaliser l'icône (par défaut: '📊')
           noDataIcon: '📈'
         }
@@ -226,6 +226,20 @@
             </optgroup> -->
             </select>
           </div>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-group full-width">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="isComboChart"
+              (change)="isComboChart ? loadComboChart() : loadNormalChart()"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">Graph combiné</span>
+          </label>
         </div>
       </div>
 

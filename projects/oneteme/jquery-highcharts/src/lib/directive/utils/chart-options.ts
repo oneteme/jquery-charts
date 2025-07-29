@@ -13,7 +13,7 @@ const COMMON_POLAR_CONFIG = {
       showInLegend: true,
     },
   },
-  legend: false,
+  legend: true,
 };
 
 const COMMON_PIE_PLOT_OPTIONS = {
@@ -56,6 +56,7 @@ const CHART_TYPE_CONFIGS = {
         borderRadius: '50%',
       },
     },
+    legend: { enabled: true },
   },
   radar: {
     chart: { polar: true, type: 'line' },
@@ -71,6 +72,7 @@ const CHART_TYPE_CONFIGS = {
         marker: { enabled: true },
       },
     },
+    legend: { enabled: true },
   },
   radialBar: {
     chart: { polar: true, type: 'column', inverted: true },
@@ -102,14 +104,78 @@ const CHART_TYPE_CONFIGS = {
         borderRadius: '50%',
       },
     },
-    legend: false,
+    legend: { enabled: true },
   },
   funnel: {
+    chart: {
+      events: {
+        load: function() {
+          const chart = this;
+          const series = chart.series[0];
+          if (series?.points) {
+            // Masquer initialement tous les points
+            series.points.forEach((point) => {
+              if (point.graphic) {
+                point.graphic.attr({
+                  opacity: 0,
+                  translateY: -20
+                });
+              }
+            });
+            // Animer l'apparition avec un délai échelonné
+            series.points.forEach((point, index) => {
+              if (point.graphic) {
+                setTimeout(() => {
+                  point.graphic.animate({
+                    opacity: 1,
+                    translateY: 0
+                  }, {
+                    duration: 300,
+                    easing: 'easeOutBounce'
+                  });
+                }, index * 15);
+              }
+            });
+          }
+        }
+      }
+    },
     plotOptions: {
       funnel: { dataLabels: { enabled: false }, reversed: false },
     },
   },
   pyramid: {
+    chart: {
+      events: {
+        load: function() {
+          const chart = this;
+          const series = chart.series[0];
+          if (series?.points) {
+            series.points.forEach((point) => {
+              if (point.graphic) {
+                point.graphic.attr({
+                  opacity: 0,
+                  translateY: -20
+                });
+              }
+            });
+            series.points.forEach((point, index) => {
+              if (point.graphic) {
+                setTimeout(() => {
+                  point.graphic.animate({
+                    opacity: 1,
+                    translateY: 0
+                  }, {
+                    duration: 500,
+                    easing: 'easeOutBounce'
+                  });
+                }, index * 20);
+              }
+            });
+          }
+        }
+      }
+    },
     plotOptions: {
       funnel: { dataLabels: { enabled: false }, reversed: true },
       pyramid: { dataLabels: { enabled: false } },
@@ -137,6 +203,39 @@ const CHART_TYPE_CONFIGS = {
     },
   },
   heatmap: {
+    chart: {
+      events: {
+        load: function() {
+          const chart = this;
+          const series = chart.series[0];
+          if (series?.points) {
+            series.points.forEach((point) => {
+              if (point.graphic) {
+                point.graphic.attr({
+                  opacity: 0,
+                  scaleX: 0.3,
+                  scaleY: 0.3
+                });
+              }
+            });
+            series.points.forEach((point, index) => {
+              if (point.graphic) {
+                setTimeout(() => {
+                  point.graphic.animate({
+                    opacity: 1,
+                    scaleX: 1,
+                    scaleY: 1
+                  }, {
+                    duration: 400,
+                    easing: 'easeOutQuad'
+                  });
+                }, index * 25);
+              }
+            });
+          }
+        }
+      }
+    },
     plotOptions: {
       heatmap: {
         dataLabels: { enabled: true, color: '#000000' },
@@ -161,6 +260,16 @@ export function initBaseChartOptions(
     shouldRedraw: true,
     chart: { type: chartType },
     credits: { enabled: false },
+    lang: {
+      noData: 'Aucune donnée à afficher'
+    },
+    noData: {
+      style: {
+        fontWeight: 'bold',
+        fontSize: '15px',
+        color: '#666666'
+      }
+    },
     series: [],
     xAxis: {},
     plotOptions: {},
@@ -195,7 +304,7 @@ export function configureSimpleGraphOptions(
   // Nettoyer toutes les configurations précédentes pour éviter les conflits
   cleanPolarConfigs(options);
   cleanPieConfigs(options);
-  cleanFunnelConfigs(options);
+  cleanAnimatedConfigs(options);
 
   if (chartType === 'pie' || chartType === 'donut') {
     options.plotOptions ??= {};
@@ -209,7 +318,6 @@ export function configureSimpleGraphOptions(
       options.plotOptions.pie
     );
   } else {
-    // Appliquer la nouvelle configuration pour tous les autres types
     safeConfigMerge(options, config, debug);
   }
 
@@ -220,13 +328,6 @@ export function configureSimpleGraphOptions(
 }
 
 /**
- * Vérifie si un type de graphique est polaire
- */
-function isPolarType(chartType: string): boolean {
-  return ['polar', 'radar', 'radialBar'].includes(chartType);
-}
-
-/**
  * Nettoie les configurations spécifiques aux graphiques polaires
  */
 function cleanPolarConfigs(options: any): void {
@@ -234,29 +335,28 @@ function cleanPolarConfigs(options: any): void {
     delete options.chart.polar;
     delete options.chart.inverted;
   }
-  
+
   if (options.pane) {
     delete options.pane;
   }
-  
+
   if (options.xAxis) {
     delete options.xAxis.tickmarkPlacement;
     delete options.xAxis.lineWidth;
     delete options.xAxis.gridLineWidth;
     delete options.xAxis.labels;
   }
-  
+
   if (options.yAxis) {
     delete options.yAxis.lineWidth;
     delete options.yAxis.gridLineWidth;
     delete options.yAxis.gridLineInterpolation;
     delete options.yAxis.reversedStacks;
   }
-  
+
   if (options.plotOptions) {
     delete options.plotOptions.column;
     delete options.plotOptions.line;
-    // Nettoyer aussi les configurations des graphiques complexes
     delete options.plotOptions.treemap;
     delete options.plotOptions.heatmap;
     if (options.plotOptions.series) {
@@ -266,7 +366,7 @@ function cleanPolarConfigs(options: any): void {
       delete options.plotOptions.series.marker;
     }
   }
-  
+
   // Nettoyer les colorAxis des graphiques complexes
   if (options.colorAxis) {
     delete options.colorAxis;
@@ -276,17 +376,35 @@ function cleanPolarConfigs(options: any): void {
  */
 function cleanPieConfigs(options: any): void {
   if (options.plotOptions) {
+    // Supprimer toute la config pie
     delete options.plotOptions.pie;
+    // Nettoyer les propriétés polluantes sur la série
+    if (options.plotOptions.series) {
+      delete options.plotOptions.series.innerSize;
+      delete options.plotOptions.series.borderRadius;
+      delete options.plotOptions.series.startAngle;
+      delete options.plotOptions.series.endAngle;
+      delete options.plotOptions.series.center;
+      delete options.plotOptions.series.size;
+      delete options.plotOptions.series.slicedOffset;
+      delete options.plotOptions.series.allowPointSelect;
+      delete options.plotOptions.series.cursor;
+      delete options.plotOptions.series.dataLabels;
+    }
   }
 }
 
 /**
- * Nettoie les configurations spécifiques aux graphiques funnel/pyramid
+ * Nettoie les configurations spécifiques aux graphiques avec animations (funnel/pyramid/heatmap)
  */
-function cleanFunnelConfigs(options: any): void {
+function cleanAnimatedConfigs(options: any): void {
   if (options.plotOptions) {
     delete options.plotOptions.funnel;
     delete options.plotOptions.pyramid;
+    delete options.plotOptions.heatmap;
+  }
+  if (options.chart?.events) {
+    delete options.chart.events;
   }
 }
 
@@ -301,7 +419,7 @@ export function configureComplexGraphOptions(
   // Nettoyer les configurations des autres types avant d'appliquer la nouvelle
   cleanPolarConfigs(options);
   cleanPieConfigs(options);
-  cleanFunnelConfigs(options);
+  cleanAnimatedConfigs(options);
 
   const config = CHART_TYPE_CONFIGS[chartType];
   if (config) {
