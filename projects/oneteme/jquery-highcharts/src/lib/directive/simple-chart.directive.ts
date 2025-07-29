@@ -10,6 +10,7 @@ import { Highcharts } from './utils/highcharts-modules';
 })
 export class SimpleChartDirective extends BaseChartDirective<string, number> {
   @Input({ alias: 'type' }) override type: 'pie' | 'donut' | 'polar' | 'radar' | 'funnel' | 'pyramid' | 'radialBar' = 'pie';
+  private _previousType: string | null = null;
 
   constructor() {
     super(inject(ElementRef), inject(NgZone));
@@ -51,6 +52,20 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       mergeDeep(this._options, { chart: { type: actualType } });
       this._shouldRedraw = true;
     }
+
+    // Si on passe vers ou depuis un graphique radar, il faut retraiter les données
+    // car radar peut utiliser des séries multiples même si le type précédent utilisait une série unique
+    const previousTypeFromRadar = this._previousType === 'radar';
+    const currentTypeIsRadar = this.type === 'radar';
+    
+    if (previousTypeFromRadar !== currentTypeIsRadar) {
+      this.debug && console.log('Changement vers/depuis radar détecté, retraitement des données nécessaire');
+      // Forcer le retraitement des données
+      this.updateData();
+    }
+
+    // Sauvegarder le type actuel pour la prochaine fois
+    this._previousType = this.type;
 
     this.debug &&
       console.log('_shouldRedraw après updateChartType:', this._shouldRedraw);
@@ -159,7 +174,26 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   private buildCommonChart(chartConfig: any) {
-    return this.data.length !== 1 && this.type === 'radar'
+    // Debug : analyser la configuration pour comprendre la structure des données
+    const hasMultipleSeries = this.config.series?.length > 1;
+    const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
+    
+    // Pour un graphique radar, on utilise buildChart (multi-séries) si :
+    // 1. Il y a plusieurs séries définies dans la config, OU
+    // 2. Il y a une fonction name (qui génère des séries dynamiques)
+    const shouldUseMultiSeries = this.type === 'radar' && (hasMultipleSeries || hasNameFunction);
+    
+    this.debug && console.log('buildCommonChart analysis:', {
+      type: this.type,
+      hasMultipleSeries,
+      hasNameFunction,
+      shouldUseMultiSeries,
+      configSeriesLength: this.config.series?.length,
+      firstSeriesName: this.config.series?.[0]?.name,
+      isNameFunction: typeof this.config.series?.[0]?.name === 'function'
+    });
+      
+    return shouldUseMultiSeries
       ? buildChart(this.data, chartConfig, null)
       : buildSingleSerieChart(this.data, chartConfig, null);
   }
@@ -170,10 +204,21 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     }
     this._options.xAxis.categories = commonChart.categories ?? [];
 
-    const series =
-      this.data.length !== 1 && this.type === 'radar'
-        ? this.createMultiRadarSeries(commonChart, chartConfig)
-        : this.createSinglePolarSeries(commonChart, chartConfig);
+    // Utiliser la même logique que dans buildCommonChart
+    const hasMultipleSeries = this.config.series?.length > 1;
+    const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
+    const shouldUseMultiSeries = this.type === 'radar' && (hasMultipleSeries || hasNameFunction);
+
+    this.debug && console.log('handlePolarData analysis:', {
+      type: this.type,
+      shouldUseMultiSeries,
+      commonChartSeries: commonChart.series,
+      seriesCount: commonChart.series?.length
+    });
+
+    const series = shouldUseMultiSeries
+      ? this.createMultiRadarSeries(commonChart, chartConfig)
+      : this.createSinglePolarSeries(commonChart, chartConfig);
 
     mergeDeep(this._options, { series });
   }

@@ -56,7 +56,7 @@ const CHART_TYPE_CONFIGS = {
         borderRadius: '50%',
       },
     },
-    legend: { enabled: true },
+    legend: { enabled: false },
   },
   radar: {
     chart: { polar: true, type: 'line' },
@@ -76,7 +76,7 @@ const CHART_TYPE_CONFIGS = {
   },
   radialBar: {
     chart: { polar: true, type: 'column', inverted: true },
-    pane: { innerSize: '20%', endAngle: 270 },
+    pane: { innerSize: '20%', endAngle: 360 },
     xAxis: {
       tickmarkPlacement: 'on',
       lineWidth: 0,
@@ -104,7 +104,7 @@ const CHART_TYPE_CONFIGS = {
         borderRadius: '50%',
       },
     },
-    legend: { enabled: true },
+    legend: { enabled: false },
   },
   funnel: {
     chart: {
