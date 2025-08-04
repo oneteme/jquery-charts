@@ -32,7 +32,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'radarArea';
+  chartType: ChartType = 'treemap';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;

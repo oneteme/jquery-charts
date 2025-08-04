@@ -103,12 +103,14 @@ const CHART_TYPE_CONFIGS = {
       lineWidth: 0,
       gridLineWidth: 0,
       labels: { enabled: false },
+      categories: []
     },
     yAxis: {
       gridLineInterpolation: 'circle',
       lineWidth: 0,
       gridLineWidth: 0,
       reversedStacks: false,
+      min: 0
     },
     plotOptions: {
       series: {
@@ -320,9 +322,8 @@ export function configureSimpleGraphOptions(
     return;
   }
 
-  cleanPolarConfigs(options);
-  cleanPieConfigs(options);
-  cleanAnimatedConfigs(options);
+  // Nettoyage complet des configurations précédentes
+  cleanAllConfigs(options);
 
   if (chartType === 'pie' || chartType === 'donut') {
     options.plotOptions ??= {};
@@ -345,6 +346,12 @@ export function configureSimpleGraphOptions(
   );
 }
 
+function cleanAllConfigs(options: any): void {
+  cleanPolarConfigs(options);
+  cleanPieConfigs(options);
+  cleanAnimatedConfigs(options);
+}
+
 function cleanPolarConfigs(options: any): void {
   if (options.chart) {
     delete options.chart.polar;
@@ -360,6 +367,7 @@ function cleanPolarConfigs(options: any): void {
     delete options.xAxis.lineWidth;
     delete options.xAxis.gridLineWidth;
     delete options.xAxis.labels;
+    delete options.xAxis.gridLineInterpolation;
   }
 
   if (options.yAxis) {
@@ -372,6 +380,7 @@ function cleanPolarConfigs(options: any): void {
   if (options.plotOptions) {
     delete options.plotOptions.column;
     delete options.plotOptions.line;
+    delete options.plotOptions.area;
     delete options.plotOptions.treemap;
     delete options.plotOptions.heatmap;
     if (options.plotOptions.series) {
@@ -379,11 +388,17 @@ function cleanPolarConfigs(options: any): void {
       delete options.plotOptions.series.pointStart;
       delete options.plotOptions.series.connectEnds;
       delete options.plotOptions.series.marker;
+      delete options.plotOptions.series.fillOpacity;
     }
   }
 
   if (options.colorAxis) {
     delete options.colorAxis;
+  }
+
+  // Nettoyage spécifique pour éviter les résidus de configurations polaires
+  if (options.legend) {
+    delete options.legend.enabled;
   }
 }
 
@@ -425,9 +440,7 @@ export function configureComplexGraphOptions(
   if (debug)
     console.log(`Configuration des options complexes pour ${chartType}`);
 
-  cleanPolarConfigs(options);
-  cleanPieConfigs(options);
-  cleanAnimatedConfigs(options);
+  cleanAllConfigs(options);
 
   const config = CHART_TYPE_CONFIGS[chartType];
   if (config) {

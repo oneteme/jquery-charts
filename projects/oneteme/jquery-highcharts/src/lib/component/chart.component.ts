@@ -15,31 +15,37 @@ import { LoadingConfig } from '../directive/utils';
   templateUrl: './chart.component.html',
 })
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
+  private static readonly ALL_CHART_TYPES: ChartType[] = [
+    'pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'
+  ];
+
+  private static readonly RANGE_CHART_TYPES: ChartType[] = ['columnrange', 'arearange', 'areasplinerange'];
+
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
-    pie: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    donut: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    polar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    radar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    radarArea: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    funnel: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    pyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    radialBar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    bar: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    column: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    columnpyramid: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    line: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    area: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    spline: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    areaspline: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    columnrange: { possibleType: ['columnrange', 'arearange', 'areasplinerange'], canPivot: false },
-    arearange: { possibleType: ['columnrange', 'arearange', 'areasplinerange'], canPivot: false },
-    areasplinerange: { possibleType: ['columnrange', 'arearange', 'areasplinerange'], canPivot: false },
-    scatter: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    bubble: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    heatmap: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
-    treemap: { possibleType: ['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'], canPivot: false },
+    pie: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    donut: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    polar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    radar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    radarArea: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    funnel: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    pyramid: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    radialBar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    bar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    column: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    columnpyramid: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    line: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    area: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    spline: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    areaspline: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    columnrange: { possibleType: ChartComponent.RANGE_CHART_TYPES, canPivot: false },
+    arearange: { possibleType: ChartComponent.RANGE_CHART_TYPES, canPivot: false },
+    areasplinerange: { possibleType: ChartComponent.RANGE_CHART_TYPES, canPivot: false },
+    scatter: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    bubble: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    heatmap: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    treemap: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     // map: { possibleType: ['map'], canPivot: false },
   };
 

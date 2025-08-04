@@ -30,6 +30,16 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._shouldRedraw = true;
     }
 
+    // IMPORTANT: Détecter transition polar->simple AVANT le nettoyage des options
+    const simpleTypes = ['pie', 'donut', 'funnel', 'pyramid'];
+    const isPolarToSimple = wasPolar && simpleTypes.includes(this.type);
+    
+    this.debug && console.log('updateChartType: Détection polar->simple', {
+      wasPolar,
+      currentType: this.type,
+      isPolarToSimple
+    });
+
     const currentInnerSize = this._options.plotOptions?.pie?.innerSize;
     const newInnerSize = this.type === 'donut' ? '50%' : 0;
 
@@ -51,6 +61,13 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     if (previousType !== actualType) {
       mergeDeep(this._options, { chart: { type: actualType } });
       this._shouldRedraw = true;
+    }
+
+    // FORCER updateData() pour les transitions polar->simple
+    if (isPolarToSimple) {
+      this.debug && console.log('updateChartType: FORCE updateData() pour transition polar->simple');
+      this._options.series = []; // Nettoyer les anciennes séries polaires
+      this.updateData();
     }
 
     // Si on passe vers ou depuis un graphique radar/radarArea, il faut retraiter les données
@@ -111,7 +128,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   protected override updateData(): void {
-    this.debug && console.log('Mise à jour des données');
+    this.debug && console.log('updateData: Début avec type:', this.type);
 
     if (!this.config || !this.data) {
       this.debug &&
@@ -120,15 +137,40 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       return;
     }
 
+    // SOLUTION ROBUSTE : Détecter les propriétés polaires dans _options
+    // Ces propriétés persistent jusqu'au nettoyage, donc on peut les détecter
+    const hasPolarProperties = !!(
+      this._options.chart?.polar === true ||
+      this._options.pane !== undefined
+    );
+    
+    const simpleTypes = ['pie', 'donut', 'funnel', 'pyramid'];
+    const isCurrentSimpleType = simpleTypes.includes(this.type);
+    const shouldForceSimpleHandler = hasPolarProperties && isCurrentSimpleType;
+
+    this.debug && console.log('updateData: Analyse properties', {
+      type: this.type,
+      hasPolarProperties,
+      isCurrentSimpleType,
+      shouldForceSimpleHandler,
+      chartPolar: this._options.chart?.polar,
+      hasPane: this._options.pane !== undefined
+    });
+
     try {
       const chartConfig = { ...this._chartConfig, continue: false };
       const commonChart = this.buildCommonChart(chartConfig);
 
       this.debug && console.log('Données traitées:', commonChart);
 
-      if (this.isPolarType()) {
+      if (shouldForceSimpleHandler) {
+        this.debug && console.log('updateData: FORCE handlePieData (polar->simple detected)');
+        this.handlePieData(commonChart, chartConfig);
+      } else if (this.isPolarType()) {
+        this.debug && console.log('updateData: Using handlePolarData');
         this.handlePolarData(commonChart, chartConfig);
       } else {
+        this.debug && console.log('updateData: Using handlePieData');
         this.handlePieData(commonChart, chartConfig);
       }
 
