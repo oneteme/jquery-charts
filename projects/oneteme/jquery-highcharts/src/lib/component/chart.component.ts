@@ -50,14 +50,20 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   };
 
   _type: ChartType;
+  _possibleType?: ChartType[];
 
   @Input({ alias: 'type', required: true }) set value(type: ChartType) {
     this._type = type;
+    this.validateTypeWithPossibleTypes();
   }
   @Input({ required: true }) config: ChartProvider<X, Y>;
   @Input({ required: true }) data: any[];
   @Input() loadingConfig: LoadingConfig = {};
   @Input() debug: boolean;
+  @Input() set possibleType(types: ChartType[] | undefined) {
+    this._possibleType = types;
+    this.validateTypeWithPossibleTypes();
+  }
   @Output() customEvent: EventEmitter<string> = new EventEmitter();
 
   get type(): string {
@@ -84,8 +90,20 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     return this._type === 'map';
   }
 
+  private validateTypeWithPossibleTypes(): void {
+    if (this._type && this._possibleType && this._possibleType.length > 0) {
+      if (!this._possibleType.includes(this._type)) {
+        const errorMessage = `Le type de graphique "${this._type}" n'est pas inclus dans la liste des types possibles [${this._possibleType.join(', ')}]. ` +
+          `Veuillez inclure "${this._type}" dans la propriété [possibleType] ou changer le type initial.`;
+
+        console.error('ChartComponent - Erreur de validation:', errorMessage);
+        throw new Error(errorMessage);
+      }
+    }
+  }
+
   change(event: string): void {
-    const charts = this._charts[this._type]?.possibleType;
+    const charts = this._possibleType || this._charts[this._type]?.possibleType;
 
     if (charts && charts.length > 0) {
       const indexOf = charts.indexOf(this._type);
