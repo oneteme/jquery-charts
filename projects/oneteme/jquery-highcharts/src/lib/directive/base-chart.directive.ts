@@ -37,7 +37,6 @@ export abstract class BaseChartDirective<
     protected readonly el: ElementRef,
     protected readonly _zone: NgZone
   ) {
-    // config vide, mis à jour dans ngOnChanges
     this.loadingManager = new LoadingManager(this.el, {});
 
     this._options = initBaseChartOptions(this.type || '', this.debug);
@@ -58,7 +57,6 @@ export abstract class BaseChartDirective<
       return;
     }
 
-    // Mise à jour de la config du loading si elle a changé ou initialisation
     if (changes.loadingConfig || !this.loadingManager) {
       if (this.loadingManager) {
         this.loadingManager.updateConfig(this.loadingConfig);
@@ -97,8 +95,6 @@ export abstract class BaseChartDirective<
       needsUpdate = true;
       this.debug && console.log('Type mis à jour');
     }
-
-    // Planifier la vérification d'état après que tous les changements soient appliqués
     this.scheduleStateCheck(needsUpdate);
   }
 
@@ -177,7 +173,6 @@ export abstract class BaseChartDirective<
         this.applyState(targetState, needsUpdate);
       } catch (error) {
         console.error("Erreur lors de la vérification d'état:", error);
-        // État de fallback sécurisé seulement si pas détruit
         if (!this.isDestroyed) {
           this.showLoadingState();
         }
@@ -230,7 +225,6 @@ export abstract class BaseChartDirective<
     try {
       const series = this._options?.series;
 
-      // Cache simple pour éviter les recalculs
       if (this._lastSeriesCheck && this._lastSeriesCheck.series === series) {
         return this._lastSeriesCheck.result;
       }
@@ -342,25 +336,23 @@ export abstract class BaseChartDirective<
     )
       .then((createdChart) => {
         if (this.isDestroyed) {
-          // Nettoyage si le composant a été détruit pendant la création
           if (createdChart) {
             destroyChart(createdChart, undefined, this.debug);
           }
           return;
         }
 
-        // Vérifier que les données n'ont pas changé entre temps
         if (currentConfig === this.config && currentData === this.data) {
           if (createdChart) {
             this.chart = createdChart;
-            this._isTypeChanging = false; // Réinitialiser seulement quand le graphique est créé avec succès
+            this._isTypeChanging = false;
             this.debug &&
               console.log(
                 'Graphique créé avec succès, flag _isTypeChanging réinitialisé'
               );
           } else {
             console.error('Échec de la création du graphique');
-            this._isTypeChanging = false; // Réinitialiser même en cas d'échec
+            this._isTypeChanging = false;
           }
         } else {
           this.debug &&
@@ -370,14 +362,13 @@ export abstract class BaseChartDirective<
           if (createdChart) {
             destroyChart(createdChart, undefined, this.debug);
           }
-          // Ne pas réinitialiser _isTypeChanging ici, laisser la re-planification gérer
           this.scheduleStateCheck();
         }
       })
       .catch((error) => {
         if (!this.isDestroyed) {
           console.error('Erreur lors de la création du graphique:', error);
-          this._isTypeChanging = false; // Réinitialiser en cas d'erreur
+          this._isTypeChanging = false;
           this.scheduleStateCheck();
         }
       });

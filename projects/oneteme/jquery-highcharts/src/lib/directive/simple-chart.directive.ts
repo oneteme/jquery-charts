@@ -24,16 +24,14 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     const wasPolar = this._options.chart?.polar === true;
     const isPolar = this.isPolarType();
 
-    // Détecter les transitions entre types polaires ou depuis/vers polaire
     if (wasPolar !== isPolar || (wasPolar && isPolar)) {
       this.debug && console.log('Transition polaire détectée, force redraw');
       this._shouldRedraw = true;
     }
 
-    // IMPORTANT: Détecter transition polar->simple AVANT le nettoyage des options
     const simpleTypes = ['pie', 'donut', 'funnel', 'pyramid'];
     const isPolarToSimple = wasPolar && simpleTypes.includes(this.type);
-    
+
     this.debug && console.log('updateChartType: Détection polar->simple', {
       wasPolar,
       currentType: this.type,
@@ -63,29 +61,22 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._shouldRedraw = true;
     }
 
-    // FORCER updateData() pour les transitions polar->simple
     if (isPolarToSimple) {
       this.debug && console.log('updateChartType: FORCE updateData() pour transition polar->simple');
-      this._options.series = []; // Nettoyer les anciennes séries polaires
+      this._options.series = [];
       this.updateData();
     }
 
-    // Si on passe vers ou depuis un graphique radar/radarArea, il faut retraiter les données
-    // car radar/radarArea peut utiliser des séries multiples même si le type précédent utilisait une série unique
     const previousTypeFromRadar = this._previousType === 'radar' || this._previousType === 'radarArea';
     const currentTypeIsRadar = this.type === 'radar' || this.type === 'radarArea';
 
-    // Détecter aussi les changements ENTRE radar et radarArea (changement de type de série)
-    const isRadarToRadarAreaSwitch = (this._previousType === 'radar' && this.type === 'radarArea') ||
-                                    (this._previousType === 'radarArea' && this.type === 'radar');
+    const isRadarToRadarAreaSwitch = (this._previousType === 'radar' && this.type === 'radarArea') || (this._previousType === 'radarArea' && this.type === 'radar');
 
     if (previousTypeFromRadar !== currentTypeIsRadar || isRadarToRadarAreaSwitch) {
       this.debug && console.log('Changement vers/depuis/entre radar/radarArea détecté, retraitement des données nécessaire');
-      // Forcer la suppression des anciennes séries pour forcer le type correct
       this._options.series = [];
-      // Forcer le retraitement des données
       this.updateData();
-    }    // Sauvegarder le type actuel pour la prochaine fois
+    }
     this._previousType = this.type;
 
     this.debug &&
@@ -137,13 +128,11 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       return;
     }
 
-    // SOLUTION ROBUSTE : Détecter les propriétés polaires dans _options
-    // Ces propriétés persistent jusqu'au nettoyage, donc on peut les détecter
     const hasPolarProperties = !!(
       this._options.chart?.polar === true ||
       this._options.pane !== undefined
     );
-    
+
     const simpleTypes = ['pie', 'donut', 'funnel', 'pyramid'];
     const isCurrentSimpleType = simpleTypes.includes(this.type);
     const shouldForceSimpleHandler = hasPolarProperties && isCurrentSimpleType;
@@ -203,7 +192,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       return 'pie';
     }
 
-    // Pour les graphiques polaires, retourner le type de base approprié
     if (this.type === 'polar' || this.type === 'radialBar') {
       return 'column';
     }
@@ -224,13 +212,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   }
 
   private buildCommonChart(chartConfig: any) {
-    // Debug : analyser la configuration pour comprendre la structure des données
     const hasMultipleSeries = this.config.series?.length > 1;
     const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
 
-    // Pour un graphique radar ou radarArea, on utilise buildChart (multi-séries) si :
-    // 1. Il y a plusieurs séries définies dans la config, OU
-    // 2. Il y a une fonction name (qui génère des séries dynamiques)
     const shouldUseMultiSeries = (this.type === 'radar' || this.type === 'radarArea') && (hasMultipleSeries || hasNameFunction);
 
     this.debug && console.log('buildCommonChart analysis:', {
@@ -254,7 +238,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     }
     this._options.xAxis.categories = commonChart.categories ?? [];
 
-    // Utiliser la même logique que dans buildCommonChart
     const hasMultipleSeries = this.config.series?.length > 1;
     const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
     const shouldUseMultiSeries = (this.type === 'radar' || this.type === 'radarArea') && (hasMultipleSeries || hasNameFunction);
@@ -305,7 +288,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       seriesType = 'area';
     }
 
-    // graph radar/radarArea, une couleur unique pour toute la série. Autres graphiques polaires (polar, radialBar), chaque point peut avoir sa couleur
     const isRadarType = this.type === 'radar' || this.type === 'radarArea';
 
     let formattedData;
@@ -341,7 +323,6 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     ];
   }
 
-  // palette par défaut de Highcharts
   private generateDistinctColors(count: number): string[] {
     const highchartsColors = (Highcharts as any).getOptions().colors || [
       '#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9',
