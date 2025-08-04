@@ -3,6 +3,7 @@ import { buildSingleSerieChart, buildChart, mergeDeep } from '@oneteme/jquery-co
 import { BaseChartDirective } from './base-chart.directive';
 import { configureSimpleGraphOptions } from './utils/chart-options';
 import { Highcharts } from './utils/highcharts-modules';
+import { generateDistinctColors, isPolarChartType, isSimpleChartType, getActualHighchartsType } from './utils/chart-utils';
 
 @Directive({
   selector: '[simple-chart]',
@@ -19,18 +20,17 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
   protected override updateChartType(): void {
     this.debug && console.log('Mise à jour du type de graphique:', this.type);
 
-    const actualType = this.getActualChartType();
+    const actualType = getActualHighchartsType(this.type);
     const previousType = this._options.chart?.type;
     const wasPolar = this._options.chart?.polar === true;
-    const isPolar = this.isPolarType();
+    const isPolar = isPolarChartType(this.type);
 
     if (wasPolar !== isPolar || (wasPolar && isPolar)) {
       this.debug && console.log('Transition polaire détectée, force redraw');
       this._shouldRedraw = true;
     }
 
-    const simpleTypes = ['pie', 'donut', 'funnel', 'pyramid'];
-    const isPolarToSimple = wasPolar && simpleTypes.includes(this.type);
+    const isPolarToSimple = wasPolar && isSimpleChartType(this.type);
 
     this.debug && console.log('updateChartType: Détection polar->simple', {
       wasPolar,
@@ -54,7 +54,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
     configureSimpleGraphOptions(this._options, this.type, this.debug);
 
-    if (this.isPolarType()) this._shouldRedraw = true;
+    if (isPolarChartType(this.type)) this._shouldRedraw = true;
 
     if (previousType !== actualType) {
       mergeDeep(this._options, { chart: { type: actualType } });
@@ -92,7 +92,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     }
 
     this._chartConfig = this.config;
-    const actualType = this.getActualChartType();
+    const actualType = getActualHighchartsType(this.type);
 
     this._options = mergeDeep(
       {},
@@ -133,8 +133,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._options.pane !== undefined
     );
 
-    const simpleTypes = ['pie', 'donut', 'funnel', 'pyramid'];
-    const isCurrentSimpleType = simpleTypes.includes(this.type);
+    const isCurrentSimpleType = isSimpleChartType(this.type);
     const shouldForceSimpleHandler = hasPolarProperties && isCurrentSimpleType;
 
     this.debug && console.log('updateData: Analyse properties', {
@@ -155,7 +154,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       if (shouldForceSimpleHandler) {
         this.debug && console.log('updateData: FORCE handlePieData (polar->simple detected)');
         this.handlePieData(commonChart, chartConfig);
-      } else if (this.isPolarType()) {
+      } else if (isPolarChartType(this.type)) {
         this.debug && console.log('updateData: Using handlePolarData');
         this.handlePolarData(commonChart, chartConfig);
       } else {
@@ -180,35 +179,9 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
         this._shouldRedraw = true;
       }
     } catch (error) {
-      console.error(
-        'Erreur lors du traitement des données dans simple chart:',
-        error
-      );
+      console.error('Erreur lors du traitement des données dans simple chart:', error);
       mergeDeep(this._options, { series: [] });
     }
-  }
-  private getActualChartType(): string {
-    if (this.type === 'donut') {
-      return 'pie';
-    }
-
-    if (this.type === 'polar' || this.type === 'radialBar') {
-      return 'column';
-    }
-
-    if (this.type === 'radar') {
-      return 'line';
-    }
-
-    if (this.type === 'radarArea') {
-      return 'area';
-    }
-
-    return this.type;
-  }
-
-  private isPolarType(): boolean {
-    return ['polar', 'radar', 'radarArea', 'radialBar'].includes(this.type);
   }
 
   private buildCommonChart(chartConfig: any) {
@@ -302,7 +275,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       );
       seriesColor = (Highcharts as any).getOptions().colors[0];
     } else {
-      const colors = this.generateDistinctColors(commonChart.categories.length);
+      const colors = generateDistinctColors(commonChart.categories.length);
       formattedData = commonChart.categories.map(
         (category: any, i: string | number) => ({
           name: category,
@@ -312,28 +285,13 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       );
     }
 
-    return [
-      {
+    return [{
         name: chartConfig.title ?? 'Valeurs',
         data: formattedData,
         type: seriesType,
         showInLegend: true,
         ...(isRadarType && seriesColor ? { color: seriesColor } : {}),
-      },
-    ];
-  }
-
-  private generateDistinctColors(count: number): string[] {
-    const highchartsColors = (Highcharts as any).getOptions().colors || [
-      '#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9',
-      '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'
-    ];
-
-    const colors: string[] = [];
-    for (let i = 0; i < count; i++) {
-      colors.push(highchartsColors[i % highchartsColors.length]);
-    }
-    return colors;
+      }];
   }
 
   private handlePieData(commonChart: any, chartConfig: any): void {
@@ -348,7 +306,7 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
           Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : []
         );
 
-      const colors = this.generateDistinctColors(flatData.length);
+      const colors = generateDistinctColors(flatData.length);
 
       const formattedData = flatData.map((data: any, index: string | number) => ({
         name: commonChart?.categories?.[index] ?? `Item ${index}`,

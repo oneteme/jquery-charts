@@ -1,4 +1,6 @@
 import { ChartProvider, CommonChart, Coordinate2D, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { Highcharts } from './highcharts-modules';
+
 
 export function determineXAxisDataType(value: any): string {
   if (value instanceof Date) {
@@ -77,5 +79,42 @@ export function validateSpecialChartData(data: any[], chartType: string): boolea
 
     default:
       return true;
+  }
+}
+
+export function generateDistinctColors(count: number): string[] {
+    const highchartsColors = (Highcharts as any).getOptions().colors || [
+      '#7cb5ec', '#434348', '#90ed7d', '#f7a35c', '#8085e9',
+      '#f15c80', '#e4d354', '#2b908f', '#f45b5b', '#91e8e1'
+    ];
+
+    const colors: string[] = [];
+    for (let i = 0; i < count; i++) {
+      colors.push(highchartsColors[i % highchartsColors.length]);
+    }
+  return colors;
+}
+
+export function isPolarChartType(type: string): boolean {
+  return ['polar', 'radar', 'radarArea', 'radialBar'].includes(type);
+}
+
+export function isSimpleChartType(type: string): boolean {
+  return ['pie', 'donut', 'funnel', 'pyramid'].includes(type);
+}
+
+export function getActualHighchartsType(type: string): string {
+  switch (type) {
+    case 'donut': 
+      return 'pie';
+    case 'polar':
+    case 'radialBar': 
+      return 'column';
+    case 'radar': 
+      return 'line';
+    case 'radarArea': 
+      return 'area';
+    default: 
+      return type;
   }
 }
