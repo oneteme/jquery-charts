@@ -46,60 +46,8 @@
           [data]="chartData"
           [loadingConfig]="loadingConfig"
           [debug]="true"
+          [possibleType]="['pie', 'donut', 'line', 'polar', 'radar','funnel', 'pyramid', 'radarArea', 'radialBar']"
         ></chart>
-
-<!-- [possibleType]="['pie', 'line', 'radar', 'column']"
-[possibleType]="['polar', 'pie', 'line', 'radar', 'column']" -->
-
-        <!--
-
-        ! Personnaliser le loading et "aucune donnée" !
-
-        Personnalisation via [loadingConfig] :
-
-        Exemple de config complète :
-        loadingConfig = {
-          // === LOADING ===
-          // Texte du loading (par défaut: 'Chargement des données...')
-          text: 'Patientez...',
-
-          // Afficher le texte (par défaut: true)
-          showText: true,
-
-          // Afficher le spinner (par défaut: false)
-          showSpinner: false,
-
-          // Couleurs du loading
-          backgroundColor: '#ffffff',
-          textColor: '#666666',
-          spinnerColor: '#0066cc',
-
-          // === AUCUNE DONNÉE ===
-          // Message "aucune donnée" (par défaut: 'Aucune donnée disponible')
-          noDataMessage: 'Aucune donnée trouvée',
-
-          // Afficher le background avec bordure (par défaut: false)
-          showNoDataBackground: true,
-
-          // Couleurs "aucune donnée"
-          noDataBackgroundColor: '#f8f9fa',
-          noDataBorderColor: '#ddd',
-          noDataTextColor: '#666666',
-
-          // Afficher un icône (par défaut: false)
-          showNoDataIcon: true,
-
-          // Personnaliser l'icône (par défaut: '📊')
-          noDataIcon: '📈'
-        }
-
-        Exemples :
-        - Message simple : { noDataMessage: 'Pas de données' }
-        - Avec background : { showNoDataBackground: true, noDataBorderColor: '#e74c3c' }
-        - Avec icône : { showNoDataIcon: true, noDataIcon: '🔍' }
-        - Style sombre : { noDataBackgroundColor: '#2c3e50', noDataTextColor: '#fff' }
-
-        -->
       </div>
     </div>
   </div>

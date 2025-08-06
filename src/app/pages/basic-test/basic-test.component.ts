@@ -32,7 +32,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'line';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
@@ -80,13 +80,7 @@ export class BasicTestComponent implements OnInit {
           },
         },
       },
-      plotOptions: {
-        series: {
-          dataLabels: {
-            enabled: false,
-          }
-        }
-      }
+      plotOptions: { series: { dataLabels: { enabled: true }}}
     },
   };
 

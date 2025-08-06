@@ -309,6 +309,27 @@ function safeConfigMerge(
   }
 }
 
+export function getBaseSimpleGraphOptions(
+  chartType: keyof typeof CHART_TYPE_CONFIGS,
+  debug: boolean = false
+): any {
+  debug && console.log(`Récupération de la config de base pour ${chartType}`);
+
+  const config = CHART_TYPE_CONFIGS[chartType];
+  if (!config) {
+    debug && console.warn(`Configuration non trouvée pour le type: ${chartType}`);
+    return {};
+  }
+
+  let baseOptions: any = {};
+
+  baseOptions = JSON.parse(JSON.stringify(config));
+
+  debug && console.log(`Config de base complète pour ${chartType}:`, baseOptions);
+
+  return baseOptions;
+}
+
 export function configureSimpleGraphOptions(
   options: any,
   chartType: keyof typeof CHART_TYPE_CONFIGS,
