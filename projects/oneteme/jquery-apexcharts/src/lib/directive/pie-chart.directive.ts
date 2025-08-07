@@ -7,7 +7,7 @@ import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
   standalone: true,
-  selector: '[apex-pie-chart]',
+  selector: '[pie-chart]',
 })
 export class PieChartDirective
   implements ChartView<string, number>, OnChanges, OnDestroy

@@ -7,7 +7,7 @@ import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
   standalone: true,
-  selector: '[apex-range-chart]',
+  selector: '[range-chart]',
 })
 export class RangeChartDirective<X extends XaxisType>
   implements ChartView<X, number[]>, OnChanges, OnDestroy

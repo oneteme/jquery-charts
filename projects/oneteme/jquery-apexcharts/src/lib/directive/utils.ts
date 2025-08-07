@@ -132,7 +132,6 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
   options: any,
   config: ChartProvider<X, Y>
 ) {
-  // Initialiser options si c'est undefined
   options ??= {};
 
 const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;

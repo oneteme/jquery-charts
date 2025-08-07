@@ -1,7 +1,7 @@
 <div style="height: 100%; width: 100%">
-  <div apex-line-chart *ngIf="_type == 'line' || _type == 'area'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-  <div apex-pie-chart *ngIf="_type == 'donut' || _type == 'polar' || _type == 'radial' || _type == 'radar' || _type == 'pie'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-  <div apex-bar-chart *ngIf="_type == 'bar' || _type == 'column' || _type == 'funnel' || _type == 'pyramid'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
-  <div apex-treemap-chart *ngIf="_type == 'treemap' || _type == 'heatmap'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-  <div apex-range-chart *ngIf="_type == 'rangeArea' || _type == 'rangeBar' || _type == 'rangeColumn'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
+  <div line-chart *ngIf="_type == 'line' || _type == 'area'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+  <div pie-chart *ngIf="_type == 'donut' || _type == 'polar' || _type == 'radial' || _type == 'radar' || _type == 'pie'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+  <div bar-chart *ngIf="_type == 'bar' || _type == 'column' || _type == 'funnel' || _type == 'pyramid'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
+  <div treemap-chart *ngIf="_type == 'treemap' || _type == 'heatmap'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
+  <div range-chart *ngIf="_type == 'rangeArea' || _type == 'rangeBar' || _type == 'rangeColumn'" [type]="_type" [config]="config" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
 </div>
