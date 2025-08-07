@@ -4,13 +4,10 @@ import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-
 import { ComplexChartDirective } from '../directive/complex-chart.directive';
 import { SimpleChartDirective } from '../directive/simple-chart.directive';
 import { LoadingConfig } from '../directive/utils';
-// import { MapChartDirective } from '../directive/map-chart.directive';
 
 @Component({
   standalone: true,
-  imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective,
-    //  MapChartDirective
-   ],
+  imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective ],
   selector: 'chart',
   templateUrl: './chart.component.html',
 })
