@@ -1,25 +1,211 @@
 <div class="basic-test-container">
-  <h1>Environnement de test jQuery-Charts</h1>
+  <h1>Page de Test des Graphiques</h1>
 
-  <p class="description">
-    Cette page permet de tester l'intégration de base de la bibliothèque jQuery-Charts avec jquery-core + jquery-apexcharts ou jquery-highcharts et de reproduire certins effets de bord relevés.
-  </p>
-
-  <div class="chart-container">
-    <chart
-      [type]="chartType"
-      [config]="chartConfig"
-      [data]="chartData"
-      [isLoading]="true"
-      [debug]="true"
-    ></chart>
+  <div class="description">
+    <p>
+      Cette page permet de tester l'intégration de la bibliothèque jQuery-Charts
+      avec jquery-core + jquery-apexcharts et/ou jquery-highcharts et de
+      reproduire certains effets de bord relevés. Vous pouvez utiliser le
+      panneau de contrôle en bas pour configurer les tests.
+    </p>
   </div>
 
+  <!-- Conteneur de graphiques -->
+  <div
+    class="charts-container"
+    [class.horizontal-layout]="layoutMode === 'row'"
+  >
+    <!-- ApexCharts -->
+    <div class="chart-wrapper" [class.hidden]="!showApexChart">
+      <h2>
+        Graph ApexCharts
+        <small>({{ chartType }})</small>
+      </h2>
+      <div class="chart-box">
+        <!-- <chart
+          #apexChart
+          [type]="chartType"
+          [config]="chartConfig"
+          [data]="chartData"
+          [isLoading]="isLoading"
+        ></chart> -->
+      </div>
+    </div>
+
+    <!-- Highcharts -->
+    <div class="chart-wrapper" [class.hidden]="!showHighcharts">
+      <h2>
+        Graph Highcharts
+        <small>({{ chartType }})</small>
+      </h2>
+      <div class="chart-box">
+        <chart
+          #highchart
+          [type]="chartType"
+          [config]="chartConfig"
+          [data]="chartData"
+          [loadingConfig]="loadingConfig"
+          
+          [possibleType]="['pie', 'donut', 'line', 'polar', 'radar','funnel', 'treemap', 'pyramid', 'radarArea', 'radialBar', 'heatmap']"
+        ></chart>
+      </div>
+    </div>
+  </div>
+
+  <!-- Debug Info -->
   <div class="debug-info">
     <h3>Informations de débogage</h3>
-    <p>Type de graphique: <code>{{ chartType }}</code></p>
-    <p>Nombre d'enregistrements: <code>{{ chartData.length }}</code></p>
-    <p>Délai d'affichage: <code>{{ dataDelay }} ms</code></p>
-    <p>Maille: <code>{{ maille }}</code></p>
+    <p>
+      Type de graphique: <code>{{ chartType }}</code>
+    </p>
+    <p>
+      Données chargées: <code>{{ chartData.length }}</code> éléments
+    </p>
+    <p>
+      Délai de chargement simulé: <code>{{ dataDelay }}</code> ms
+    </p>
+    <p>
+      Data mode : <code>{{ isSimpleChart ? "Simple" : "Complexe" }}</code>
+    </p>
+  </div>
+
+  <!-- Panneau de contrôle optimisé -->
+  <div class="control-panel">
+    <div class="panel-header">
+      <h3>Contrôles</h3>
+      <button class="toggle-button" (click)="toggleControlPanel()">
+        {{ isPanelExpanded ? "×" : "+" }}
+      </button>
+    </div>
+    <div class="panel-content" [class.collapsed]="!isPanelExpanded">
+      <div class="control-section">
+        <div class="control-group">
+          <button
+            (click)="showApexChart = !showApexChart"
+            class="btn visibility-btn"
+            [class.active]="showApexChart"
+            title="Afficher/Masquer ApexCharts"
+          >
+            <img
+              [src]="showApexChart ? 'assets/icons/open-eye.svg' : 'assets/icons/eye-closed.svg'"
+              alt="Visibilité"
+              class="eye-icon"
+            />
+            <span>ApexCharts</span>
+          </button>
+          <button
+            (click)="showHighcharts = !showHighcharts"
+            class="btn visibility-btn"
+            [class.active]="showHighcharts"
+            title="Afficher/Masquer Highcharts"
+          >
+            <img
+              [src]="showHighcharts ? 'assets/icons/open-eye.svg' : 'assets/icons/eye-closed.svg'"
+              alt="Visibilité"
+              class="eye-icon"
+            />
+            <span>Highcharts</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-group button-group">
+          <button
+            (click)="layoutMode = 'column'"
+            class="btn layout-btn"
+            [class.active]="layoutMode === 'column'"
+            title="Disposition verticale"
+          >
+            <img
+              src="assets/icons/split-view.svg"
+              class="layout-icon horizontal"
+              alt="Disposition verticale"
+            />
+          </button>
+          <button
+            (click)="layoutMode = 'row'"
+            class="btn layout-btn"
+            [class.active]="layoutMode === 'row'"
+            title="Disposition horizontale"
+          >
+            <img
+              src="assets/icons/split-view.svg"
+              class="layout-icon"
+              alt="Disposition horizontale"
+            />
+          </button>
+        </div>
+      </div>
+      <div class="control-section">
+        <div class="control-group full-width">
+          <label for="chart-type-select">Type de graphique :</label>
+          <div class="select-wrapper">
+            <select
+              id="chart-type-select"
+              class="chart-type-select"
+              [(ngModel)]="chartType"
+              (change)="changeChartType()"
+            >
+            <optgroup label="Graphiques simples">
+              <option value="pie">Pie</option>
+              <option value="donut">Donut</option>
+              <option value="funnel">Funnel</option>
+              <option value="pyramid">Pyramid</option>
+              <option value="polar">Polar</option>
+              <option value="radar">Radar</option>
+              <option value="radar">RadarArea</option>
+              <option value="radialBar">Radial Bar</option>
+            </optgroup>
+            <optgroup label="Graphiques complexes">
+              <option value="bar">Bar</option>
+              <option value="column">Column</option>
+              <option value="columnpyramid">Column Pyramid</option>
+              <option value="line">Line</option>
+              <option value="area">Area</option>
+              <option value="spline">Spline</option>
+              <option value="areaspline">Area Spline</option>
+              <option value="columnrange">Column Range</option>
+              <option value="arearange">Area Range</option>
+              <option value="areasplinerange">Area Spline Range</option>
+              <option value="scatter">Scatter</option>
+              <option value="bubble">Bubble</option>
+              <option value="heatmap">Heatmap</option>
+              <option value="treemap">Treemap</option>
+            </optgroup>
+            <!-- <optgroup label="Graphique map">
+              <option value="map">Map</option>
+            </optgroup> -->
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="control-section">
+        <div class="control-group full-width">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="isComboChart"
+              (change)="isComboChart ? loadComboChart() : loadNormalChart()"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">Graph combiné</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Bouton de rechargement -->
+      <div class="control-section">
+        <button
+          class="btn reload-btn"
+          (click)="reloadData()"
+          title="Recharger les données"
+        >
+          <img src="assets/icons/reload.svg" alt="Reload" class="reload-icon" />
+          <span>Recharger</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>

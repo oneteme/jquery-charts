@@ -11,7 +11,7 @@ import { Component } from '@angular/core';
 
           <!-- uncomment if you want to quickly access the test page  -->
 
-          <!-- <div class="separator"></div>
+          <div class="separator"></div>
           <a
             routerLink="/basic-test"
             class="test-link"
@@ -22,7 +22,7 @@ import { Component } from '@angular/core';
               alt="Test"
               class="test-icon"
             />
-          </a> -->
+          </a>
 
         </div>
         <div class="footer-right">

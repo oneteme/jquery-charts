@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-charts",
-  "version": "0.0.16",
+  "version": "0.0.17",
   "description": "jquery charts project",
   "private": false,
   "homepage": "https://github.com/oneteme/jquery-charts",
@@ -20,7 +20,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build",
+    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build \"@oneteme/jquery-highcharts\" && ng build",
     "watch-lib1": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
     "watch-lib2": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
     "watch": "concurrently \"npm run watch-lib1\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\"",
@@ -37,6 +37,7 @@
     "@angular/platform-browser-dynamic": "^16.1.0",
     "@angular/router": "^16.1.0",
     "apexcharts": "^3.44.0",
+    "highcharts": "^11.4.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.13.0"
