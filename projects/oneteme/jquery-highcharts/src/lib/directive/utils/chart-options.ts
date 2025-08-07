@@ -133,9 +133,14 @@ const CHART_TYPE_CONFIGS = {
     chart: {
       events: {
         load: function() {
-          const chart = this;
+          const chart = this as Highcharts.Chart & { _animationTimers?: number[] };
           const series = chart.series[0];
           if (series?.points) {
+            // Initialiser le tableau des timers pour ce chart
+            if (!chart._animationTimers) {
+              chart._animationTimers = [];
+            }
+
             series.points.forEach((point) => {
               if (point.graphic) {
                 point.graphic.attr({
@@ -146,15 +151,23 @@ const CHART_TYPE_CONFIGS = {
             });
             series.points.forEach((point, index) => {
               if (point.graphic) {
-                setTimeout(() => {
-                  point.graphic.animate({
-                    opacity: 1,
-                    translateY: 0
-                  }, {
-                    duration: 300,
-                    easing: 'easeOutBounce'
-                  });
-                }, index * 15);
+                const timerId = setTimeout(() => {
+                  // Vérification de sécurité : s'assurer que les éléments existent encore
+                  if (point?.graphic?.animate && typeof point.graphic.animate === 'function') {
+                    point.graphic.animate({
+                      opacity: 1,
+                      translateY: 0
+                    }, {
+                      duration: 300,
+                      easing: 'easeOutBounce'
+                    });
+                  }
+                }, index * 15) as unknown as number;
+
+                // Stocker le timer pour nettoyage ultérieur
+                if (chart._animationTimers) {
+                  chart._animationTimers.push(timerId);
+                }
               }
             });
           }
@@ -169,9 +182,13 @@ const CHART_TYPE_CONFIGS = {
     chart: {
       events: {
         load: function() {
-          const chart = this;
+          const chart = this as Highcharts.Chart & { _animationTimers?: number[] };
           const series = chart.series[0];
           if (series?.points) {
+            if (!chart._animationTimers) {
+              chart._animationTimers = [];
+            }
+
             series.points.forEach((point) => {
               if (point.graphic) {
                 point.graphic.attr({
@@ -182,15 +199,21 @@ const CHART_TYPE_CONFIGS = {
             });
             series.points.forEach((point, index) => {
               if (point.graphic) {
-                setTimeout(() => {
-                  point.graphic.animate({
-                    opacity: 1,
-                    translateY: 0
-                  }, {
-                    duration: 500,
-                    easing: 'easeOutBounce'
-                  });
-                }, index * 20);
+                const timerId = setTimeout(() => {
+                  if (point?.graphic?.animate && typeof point.graphic.animate === 'function') {
+                    point.graphic.animate({
+                      opacity: 1,
+                      translateY: 0
+                    }, {
+                      duration: 500,
+                      easing: 'easeOutBounce'
+                    });
+                  }
+                }, index * 20) as unknown as number;
+
+                if (chart._animationTimers) {
+                  chart._animationTimers.push(timerId);
+                }
               }
             });
           }
@@ -227,9 +250,13 @@ const CHART_TYPE_CONFIGS = {
     chart: {
       events: {
         load: function() {
-          const chart = this;
+          const chart = this as Highcharts.Chart & { _animationTimers?: number[] };
           const series = chart.series[0];
           if (series?.points) {
+            if (!chart._animationTimers) {
+              chart._animationTimers = [];
+            }
+
             series.points.forEach((point) => {
               if (point.graphic) {
                 point.graphic.attr({
@@ -241,16 +268,22 @@ const CHART_TYPE_CONFIGS = {
             });
             series.points.forEach((point, index) => {
               if (point.graphic) {
-                setTimeout(() => {
-                  point.graphic.animate({
-                    opacity: 1,
-                    scaleX: 1,
-                    scaleY: 1
-                  }, {
-                    duration: 400,
-                    easing: 'easeOutQuad'
-                  });
-                }, index * 25);
+                const timerId = setTimeout(() => {
+                  if (point?.graphic?.animate && typeof point.graphic.animate === 'function') {
+                    point.graphic.animate({
+                      opacity: 1,
+                      scaleX: 1,
+                      scaleY: 1
+                    }, {
+                      duration: 400,
+                      easing: 'easeOutQuad'
+                    });
+                  }
+                }, index * 25) as unknown as number;
+
+                if (chart._animationTimers) {
+                  chart._animationTimers.push(timerId);
+                }
               }
             });
           }
@@ -367,10 +400,21 @@ export function configureSimpleGraphOptions(
   );
 }
 
-function cleanAllConfigs(options: any): void {
+export function cleanAllConfigs(options: any, preserveUserConfig: boolean = false): void {
+  let userPlotOptions: any = null;
+  if (preserveUserConfig && options.plotOptions?.series) {
+    userPlotOptions = JSON.parse(JSON.stringify(options.plotOptions.series));
+  }
+
   cleanPolarConfigs(options);
   cleanPieConfigs(options);
   cleanAnimatedConfigs(options);
+
+  if (userPlotOptions && preserveUserConfig) {
+    if (!options.plotOptions) options.plotOptions = {};
+    if (!options.plotOptions.series) options.plotOptions.series = {};
+    Object.assign(options.plotOptions.series, userPlotOptions);
+  }
 }
 
 function cleanPolarConfigs(options: any): void {
@@ -417,7 +461,6 @@ function cleanPolarConfigs(options: any): void {
     delete options.colorAxis;
   }
 
-  // Nettoyage spécifique pour éviter les résidus de configurations polaires
   if (options.legend) {
     delete options.legend.enabled;
   }
@@ -441,7 +484,6 @@ function cleanPieConfigs(options: any): void {
   }
 }
 
-// Nettoie les config spé aux graphiques avec animations (funnel/pyramid/heatmap)
 function cleanAnimatedConfigs(options: any): void {
   if (options.plotOptions) {
     delete options.plotOptions.funnel;

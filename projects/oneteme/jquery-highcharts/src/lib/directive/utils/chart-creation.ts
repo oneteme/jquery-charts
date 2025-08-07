@@ -16,6 +16,13 @@ export function destroyChart(
   try {
     if (loadingManager) loadingManager.destroy();
 
+    if ((chart as any)._animationTimers) {
+      (chart as any)._animationTimers.forEach((timer: number) => {
+        clearTimeout(timer);
+      });
+      delete (chart as any)._animationTimers;
+    }
+
     if (chart.container) {
       const noDataMessage = chart.container.querySelector('.highcharts-no-data-message, .highcharts-no-data-overlay');
       if (noDataMessage) {

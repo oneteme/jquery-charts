@@ -32,7 +32,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'line';
+  chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
@@ -69,7 +69,7 @@ export class BasicTestComponent implements OnInit {
   private readonly baseConfig = {
     options: {
       // Tout ce qu'on veut en commun pour tous les graphiques
-      legend: { enabled: false, position: 'bottom' },
+      legend: { enabled: true, position: 'bottom' },
       tooltip: { enabled: true },
       exporting: {
         enabled: true,
@@ -80,7 +80,7 @@ export class BasicTestComponent implements OnInit {
           },
         },
       },
-      plotOptions: { series: { dataLabels: { enabled: true }}}
+      plotOptions: { series: { dataLabels: { enabled: false }}}
     },
   };
 

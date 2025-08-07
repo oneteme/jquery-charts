@@ -1,9 +1,9 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { buildSingleSerieChart, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { configureSimpleGraphOptions } from './utils/chart-options';
 import { Highcharts } from './utils/highcharts-modules';
 import { generateDistinctColors, isPolarChartType, isSimpleChartType, getActualHighchartsType } from './utils/chart-utils';
+import { ConfigurationManager } from './utils/config-manager';
 
 @Directive({
   selector: '[simple-chart]',
@@ -52,9 +52,25 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._shouldRedraw = true;
     }
 
-    configureSimpleGraphOptions(this._options, this.type, this.debug);
+    this._options = ConfigurationManager.applyUserConfigWithTransformation(
+      this._options,
+      this.config,
+      this.type,
+      this.debug
+    );
 
-    if (isPolarChartType(this.type)) this._shouldRedraw = true;
+    const needsDataUpdate = ConfigurationManager.handlePolarChartSpecifics(
+      this._options,
+      this.type,
+      this.debug
+    );
+
+    if (isPolarChartType(this.type)) {
+      this._shouldRedraw = true;
+      if (needsDataUpdate) {
+        this.debug && console.log('Mise à jour des données nécessaire pour graphique polaire');
+      }
+    }
 
     if (previousType !== actualType) {
       mergeDeep(this._options, { chart: { type: actualType } });
@@ -111,11 +127,15 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
             dataLabels: { enabled: true },
           },
         },
-      },
-      this._chartConfig.options ?? {}
+      }
     );
 
-    configureSimpleGraphOptions(this._options, this.type, this.debug);
+    this._options = ConfigurationManager.applyUserConfigWithTransformation(
+      this._options,
+      this._chartConfig,
+      this.type,
+      this.debug
+    );
   }
 
   protected override updateData(): void {
