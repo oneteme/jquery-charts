@@ -20,6 +20,10 @@ const COMMON_PIE_PLOT_OPTIONS = {
   allowPointSelect: true,
   cursor: 'pointer',
   dataLabels: { enabled: false },
+  tooltip: {
+    headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+    pointFormat: '<span style="color:{point.color}">\u25CF</span> {point.name}: <b>{point.percentage:.1f}%</b> ({point.y})<br/>'
+  }
 };
 
 const CHART_TYPE_CONFIGS = {
@@ -56,6 +60,10 @@ const CHART_TYPE_CONFIGS = {
         borderRadius: '50%',
       },
     },
+    tooltip: {
+      headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+      pointFormat: '<span style="color:{point.color}">\u25CF</span> {point.name}: <b>{point.y}</b><br/>'
+    },
     legend: { enabled: false },
   },
   radar: {
@@ -71,6 +79,10 @@ const CHART_TYPE_CONFIGS = {
         ...COMMON_POLAR_CONFIG.plotOptions.series,
         marker: { enabled: true },
       },
+    },
+    tooltip: {
+      headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+      pointFormat: '<span style="color:{point.color}">\u25CF</span> {point.name}: <b>{point.y}</b><br/>'
     },
     legend: { enabled: true },
   },
@@ -92,6 +104,10 @@ const CHART_TYPE_CONFIGS = {
         fillOpacity: 0.5,
         marker: { enabled: true },
       },
+    },
+    tooltip: {
+      headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+      pointFormat: '<span style="color:{point.color}">\u25CF</span> {point.name}: <b>{point.y}</b><br/>'
     },
     legend: { enabled: true },
   },
@@ -136,7 +152,6 @@ const CHART_TYPE_CONFIGS = {
           const chart = this as Highcharts.Chart & { _animationTimers?: number[] };
           const series = chart.series[0];
           if (series?.points) {
-            // Initialiser le tableau des timers pour ce chart
             if (!chart._animationTimers) {
               chart._animationTimers = [];
             }
@@ -152,7 +167,6 @@ const CHART_TYPE_CONFIGS = {
             series.points.forEach((point, index) => {
               if (point.graphic) {
                 const timerId = setTimeout(() => {
-                  // Vérification de sécurité : s'assurer que les éléments existent encore
                   if (point?.graphic?.animate && typeof point.graphic.animate === 'function') {
                     point.graphic.animate({
                       opacity: 1,
@@ -163,8 +177,6 @@ const CHART_TYPE_CONFIGS = {
                     });
                   }
                 }, index * 15) as unknown as number;
-
-                // Stocker le timer pour nettoyage ultérieur
                 if (chart._animationTimers) {
                   chart._animationTimers.push(timerId);
                 }
@@ -175,7 +187,14 @@ const CHART_TYPE_CONFIGS = {
       }
     },
     plotOptions: {
-      funnel: { dataLabels: { enabled: false }, reversed: false },
+      funnel: { 
+        dataLabels: { enabled: false }, 
+        reversed: false,
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<span style="color:{point.color}">\u25CF</span>{point.name}: <b>{point.percentage:.1f}%</b> ({point.y})<br/>'
+        }
+      },
     },
   },
   pyramid: {
@@ -221,8 +240,21 @@ const CHART_TYPE_CONFIGS = {
       }
     },
     plotOptions: {
-      funnel: { dataLabels: { enabled: false }, reversed: true },
-      pyramid: { dataLabels: { enabled: false } },
+      funnel: { 
+        dataLabels: { enabled: false }, 
+        reversed: true,
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<span style="color:{point.color}">\u25CF</span>{point.name}: <b>{point.percentage:.1f}%</b> ({point.y})<br/>'
+        }
+      },
+      pyramid: { 
+        dataLabels: { enabled: false },
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<span style="color:{point.color}">\u25CF</span>{point.name}: <b>{point.percentage:.1f}%</b> ({point.y})<br/>'
+        }
+      },
     },
   },
   treemap: {
@@ -239,6 +271,10 @@ const CHART_TYPE_CONFIGS = {
             borderWidth: 3,
           },
         ],
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<span style="color:{point.color}">\u25CF</span> <b>{point.name}</b>: {point.value}<br/>'
+        }
       },
     },
     colorAxis: {
@@ -252,6 +288,17 @@ const CHART_TYPE_CONFIGS = {
         load: function() {
           const chart = this as Highcharts.Chart & { _animationTimers?: number[] };
           const series = chart.series[0];
+          
+          chart.update({
+            tooltip: {
+              formatter: function() {
+                const xCategory = this.series.chart.xAxis[0].categories[this.point.x];
+                const yCategory = this.series.chart.yAxis[0].categories[this.point.y];
+                return `<span style="font-size:11px">${this.series.name}</span><br>${xCategory} - ${yCategory}<br/>Valeur: <b>${this.point.value}</b>`;
+              }
+            }
+          });
+          
           if (series?.points) {
             if (!chart._animationTimers) {
               chart._animationTimers = [];
@@ -294,6 +341,10 @@ const CHART_TYPE_CONFIGS = {
       heatmap: {
         dataLabels: { enabled: true, color: '#000000' },
         cursor: 'pointer',
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<b>Position ({point.x}, {point.y})</b><br/>Valeur: <b>{point.value}</b>'
+        }
       },
     },
     colorAxis: {
@@ -301,6 +352,61 @@ const CHART_TYPE_CONFIGS = {
       minColor: '#FFFFFF',
       maxColor: Highcharts.getOptions().colors[0],
     },
+  },
+  scatter: {
+    plotOptions: {
+      scatter: {
+        marker: {
+          radius: 5,
+          states: {
+            hover: {
+              enabled: true,
+              lineColor: 'rgb(100,100,100)'
+            }
+          }
+        },
+        dataLabels: {
+          enabled: false
+        },
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<span style="color:{point.color}">\u25CF</span> <b>{point.custom.month}</b>: {point.y}<br/>'
+        }
+      }
+    },
+    tooltip: {
+      shared: false
+    }
+  },
+  bubble: {
+    plotOptions: {
+      bubble: {
+        minSize: 8,
+        maxSize: 25,
+        stickyTracking: false,
+        findNearestPointBy: 'xy',
+        dataLabels: {
+          enabled: false
+        },
+        states: {
+          hover: {
+            enabled: true,
+            halo: {
+              size: 5,
+              opacity: 0.25
+            }
+          }
+        },
+        tooltip: {
+          headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
+          pointFormat: '<span style="color:{point.color}">\u25CF</span> <b>{point.custom.month}</b>: {point.y}<br/>'
+        }
+      }
+    },
+    tooltip: {
+      followPointer: false,
+      shared: false
+    }
   },
 } as const;
 
@@ -312,8 +418,19 @@ export function initBaseChartOptions(
 
   return {
     shouldRedraw: true,
-    chart: { type: chartType },
+    chart: { 
+      type: chartType,
+      backgroundColor: null
+    },
     credits: { enabled: false },
+    exporting: { 
+      enabled: false, 
+      buttons: { 
+        contextButton: { 
+          enabled: false 
+        } 
+      } 
+    },
     lang: {
       noData: 'Aucune donnée à afficher'
     },
@@ -409,6 +526,7 @@ export function cleanAllConfigs(options: any, preserveUserConfig: boolean = fals
   cleanPolarConfigs(options);
   cleanPieConfigs(options);
   cleanAnimatedConfigs(options);
+  cleanScatterBubbleConfigs(options);
 
   if (userPlotOptions && preserveUserConfig) {
     if (!options.plotOptions) options.plotOptions = {};
@@ -495,9 +613,23 @@ function cleanAnimatedConfigs(options: any): void {
   }
 }
 
+function cleanScatterBubbleConfigs(options: any): void {
+  if (options.plotOptions) {
+    delete options.plotOptions.scatter;
+    delete options.plotOptions.bubble;
+  }
+  
+  if (options.tooltip) {
+    delete options.tooltip.headerFormat;
+    delete options.tooltip.pointFormat;
+    delete options.tooltip.shared;
+    delete options.tooltip.followPointer;
+  }
+}
+
 export function configureComplexGraphOptions(
   options: any,
-  chartType: 'treemap' | 'heatmap',
+  chartType: 'treemap' | 'heatmap' | 'scatter' | 'bubble',
   debug: boolean = false
 ): void {
   if (debug)

@@ -23,13 +23,20 @@ export class ComplexChartDirective<
     const previousType = this._options.chart?.type;
     const wasSpecialType = previousType === 'treemap' || previousType === 'heatmap';
     const isSpecialType = this.type === 'treemap' || this.type === 'heatmap';
+    const wasScatterBubble = previousType === 'scatter' || previousType === 'bubble';
+    const isScatterBubble = this.type === 'scatter' || this.type === 'bubble';
 
-    if (wasSpecialType !== isSpecialType || (wasSpecialType && isSpecialType && previousType !== this.type)) {
-      this.debug && console.log('Transition vers/depuis type spécial détectée, force redraw');
+    if (wasSpecialType !== isSpecialType || 
+        (wasSpecialType && isSpecialType && previousType !== this.type) ||
+        (wasScatterBubble && previousType !== this.type) ||
+        (isScatterBubble && previousType !== this.type)) {
+      this.debug && console.log('Transition critique détectée, nettoyage nécessaire');
       this._shouldRedraw = true;
 
       if (wasSpecialType && !isSpecialType) {
         this.cleanSpecialChartConfigs();
+      } else if ((wasScatterBubble || isScatterBubble) && previousType !== this.type) {
+        this.cleanScatterBubbleConfigs();
       }
     }
 
@@ -40,7 +47,7 @@ export class ComplexChartDirective<
       this._shouldRedraw = true;
     }
 
-    if (this.type === 'treemap' || this.type === 'heatmap') {
+    if (this.type === 'treemap' || this.type === 'heatmap' || this.type === 'scatter' || this.type === 'bubble') {
       configureComplexGraphOptions(this._options, this.type, this.debug);
     }
 
@@ -91,14 +98,17 @@ export class ComplexChartDirective<
             stacking: this._chartConfig.stacked ? 'normal' : undefined,
           },
         },
-        tooltip: {
+        tooltip: (this.type === 'treemap' || this.type === 'heatmap' || this.type === 'scatter' || this.type === 'bubble') ? {} : {
           shared: true,
         },
       },
       this._chartConfig.options ?? {}
     );
 
-    if (this.type === 'treemap' || this.type === 'heatmap') {
+    if (this.type === 'treemap' || this.type === 'heatmap' || this.type === 'scatter' || this.type === 'bubble') {
+      if (this.type === 'scatter' || this.type === 'bubble') {
+        this.cleanScatterBubbleConfigs();
+      }
       configureComplexGraphOptions(this._options, this.type, this.debug);
     }
   }
@@ -121,6 +131,16 @@ export class ComplexChartDirective<
 
       if (this.type === 'heatmap') {
         this.handleHeatmapData();
+        return;
+      }
+
+      if (this.type === 'scatter') {
+        this.handleScatterData();
+        return;
+      }
+
+      if (this.type === 'bubble') {
+        this.handleBubbleData();
         return;
       }
 
@@ -187,47 +207,47 @@ export class ComplexChartDirective<
       if (!validateSpecialChartData(this.data, 'treemap')) {
         this.debug && console.log('Données non optimales pour treemap, adaptation en cours...');
 
-        const treemapData = this.data.map((item: any, index: number) => {
-          const name = item.category || item.month || item.name || `Item ${index + 1}`;
-          const value = Math.abs(typeof item.value === 'number' ? item.value : (item.y || 0));
+        const treemapPoints = this.data.map((item: any, index: number) => {
+          const pointName = item.category || item.month || item.name || `Item ${index + 1}`;
+          const pointValue = Math.abs(typeof item.value === 'number' ? item.value : (item.y || 0));
 
           return {
-            name: name,
-            value: value,
-            colorValue: item.value || item.y || value,
+            name: pointName,
+            value: pointValue,
+            colorValue: item.value || item.y || pointValue,
           };
         });
 
-        this.debug && console.log('Données treemap adaptées:', treemapData);
+        this.debug && console.log('Données treemap adaptées:', treemapPoints);
 
         mergeDeep(this._options, {
           series: [
             {
               type: 'treemap',
               name: this._chartConfig.title ?? 'Données',
-              data: treemapData,
+              data: treemapPoints,
               layoutAlgorithm: 'squarified',
             },
           ],
         });
       } else {
-        const treemapData = this.data.map((item: any, index: number) => ({
+        const treemapPoints = this.data.map((item: any, index: number) => ({
           name: item.month ?? item.category ?? item.name ?? `Item ${index + 1}`,
           value: Math.abs(item.value),
           colorValue: item.value,
           team: item.team ?? 'Groupe principal',
         }));
 
-        const groupedData = this.groupTreemapData(treemapData);
+        const groupedPoints = this.groupTreemapData(treemapPoints);
 
-        this.debug && console.log('Données treemap formatées:', groupedData);
+        this.debug && console.log('Données treemap formatées:', groupedPoints);
 
         mergeDeep(this._options, {
           series: [
             {
               type: 'treemap',
               name: this._chartConfig.title ?? 'Données',
-              data: groupedData,
+              data: groupedPoints,
               layoutAlgorithm: 'squarified',
             },
           ],
@@ -244,20 +264,20 @@ export class ComplexChartDirective<
   }
 
   private groupTreemapData(data: any[]): any[] {
-    const grouped = new Map();
+    const serieGroups = new Map();
 
     data.forEach((item) => {
-      const group = item.team ?? 'Principal';
-      if (!grouped.has(group)) {
-        grouped.set(group, []);
+      const groupKey = item.team ?? 'Principal';
+      if (!serieGroups.has(groupKey)) {
+        serieGroups.set(groupKey, []);
       }
-      grouped.get(group).push(item);
+      serieGroups.get(groupKey).push(item);
     });
 
     const result: any[] = [];
     let parentId = 0;
 
-    grouped.forEach((items, groupName) => {
+    serieGroups.forEach((items, groupName) => {
       const parentItem = {
         id: `parent-${parentId}`,
         name: groupName,
@@ -266,7 +286,7 @@ export class ComplexChartDirective<
 
       result.push(parentItem);
 
-      items.forEach((item: any, index: number) => {
+      items.forEach((item: any) => {
         result.push({
           name: item.name,
           parent: parentItem.id,
@@ -286,18 +306,17 @@ export class ComplexChartDirective<
       if (!validateSpecialChartData(this.data, 'heatmap')) {
         this.debug && console.log('Données non optimales pour heatmap, adaptation en cours...');
 
-        const categories = this.data.map((item, index) =>
+        const xCategories = this.data.map((item, index) =>
           item.category || item.month || item.name || `Item ${index + 1}`
         );
 
-        const heatmapData: number[][] = this.data.map((item: any, index: number) => [ index, 0, typeof item.value === 'number' ? item.value : (item.y || 0)
-        ]);
+        const heatmapPoints: number[][] = this.data.map((item: any, index: number) => [index, 0, typeof item.value === 'number' ? item.value : (item.y || 0)]);
 
-        this.debug && console.log('Données heatmap adaptées:', { categories, data: heatmapData });
+        this.debug && console.log('Données heatmap adaptées:', { categories: xCategories, data: heatmapPoints });
 
         mergeDeep(this._options, {
           xAxis: {
-            categories: categories,
+            categories: xCategories,
             title: { text: this._chartConfig.xtitle },
           },
           yAxis: {
@@ -308,7 +327,7 @@ export class ComplexChartDirective<
             {
               type: 'heatmap',
               name: this._chartConfig.title ?? 'Données',
-              data: heatmapData,
+              data: heatmapPoints,
               dataLabels: {
                 enabled: true,
                 color: '#000000',
@@ -317,56 +336,56 @@ export class ComplexChartDirective<
           ],
         });
       } else {
-        const categories = Array.from(
+        const xCategories = Array.from(
           new Set(
             this.data.map((item) => item.month ?? item.category ?? item.name)
           )
         );
-        const series = Array.from(
+        const yCategories = Array.from(
           new Set(this.data.map((item) => item.team ?? 'Série'))
         );
 
-        const categoryIndexMap = new Map(
-          categories.map((cat, idx) => [cat, idx])
+        const xIndexMap = new Map(
+          xCategories.map((cat, idx) => [cat, idx])
         );
-        const seriesIndexMap = new Map(series.map((ser, idx) => [ser, idx]));
+        const yIndexMap = new Map(yCategories.map((ser, idx) => [ser, idx]));
 
-        const heatmapData: number[][] = [];
+        const heatmapPoints: number[][] = [];
 
         this.data.forEach((item: any) => {
           const categoryKey = item.month ?? item.category ?? item.name;
-          const seriesKey = item.team ?? 'Série';
+          const serieKey = item.team ?? 'Série';
 
-          const x = categoryIndexMap.get(categoryKey);
-          const y = seriesIndexMap.get(seriesKey);
+          const x = xIndexMap.get(categoryKey);
+          const y = yIndexMap.get(serieKey);
           const value = typeof item.value === 'number' ? item.value : 0;
 
           if (x !== undefined && y !== undefined) {
-            heatmapData.push([x, y, value]);
+            heatmapPoints.push([x, y, value]);
           }
         });
 
         this.debug &&
           console.log('Données heatmap formatées:', {
-            categories,
-            series,
-            data: heatmapData,
+            categories: xCategories,
+            series: yCategories,
+            data: heatmapPoints,
           });
 
         mergeDeep(this._options, {
           xAxis: {
-            categories: categories,
+            categories: xCategories,
             title: { text: this._chartConfig.xtitle },
           },
           yAxis: {
-            categories: series,
+            categories: yCategories,
             title: { text: this._chartConfig.ytitle },
           },
           series: [
             {
               type: 'heatmap',
               name: this._chartConfig.title ?? 'Données',
-              data: heatmapData,
+              data: heatmapPoints,
               dataLabels: {
                 enabled: true,
                 color: '#000000',
@@ -400,8 +419,311 @@ export class ComplexChartDirective<
     if (this._options.plotOptions) {
       delete this._options.plotOptions.treemap;
       delete this._options.plotOptions.heatmap;
+      delete this._options.plotOptions.scatter;
+      delete this._options.plotOptions.bubble;
+    }
+
+    if (this._options.tooltip) {
+      delete this._options.tooltip.headerFormat;
+      delete this._options.tooltip.pointFormat;
+      delete this._options.tooltip.shared;
+      delete this._options.tooltip.followPointer;
     }
 
     this.debug && console.log('Configurations spéciales nettoyées');
+  }
+
+  private cleanScatterBubbleConfigs(): void {
+    if (this._options.plotOptions) {
+      delete this._options.plotOptions.scatter;
+      delete this._options.plotOptions.bubble;
+    }
+
+    if (this._options.tooltip) {
+      delete this._options.tooltip.headerFormat;
+      delete this._options.tooltip.pointFormat;
+      delete this._options.tooltip.shared;
+      delete this._options.tooltip.followPointer;
+    }
+
+    this.debug && console.log('Configurations scatter/bubble nettoyées');
+  }
+
+  private handleScatterData(): void {
+    try {
+      this.debug && console.log('Traitement des données scatter:', this.data);
+
+      const serieNames = [...new Set(this.data.map(item => item.team))].filter(Boolean);
+      const hasMultipleSeries = serieNames.length > 1;
+
+      this.debug && console.log('Séries détectées:', serieNames, 'Multiple:', hasMultipleSeries);
+
+      let series: any[] = [];
+
+      if (hasMultipleSeries) {
+        serieNames.forEach((serieName) => {
+          const serieData = this.data.filter(item => item.team === serieName);
+          const scatterPoints = serieData.map((item: any, index: number) => {
+            const xLabel = item.month || item.category || item.name || `Point ${index + 1}`;
+            
+            let yValue = 0;
+            if (typeof item.value === 'number') {
+              yValue = item.value;
+            } else if (typeof item.y === 'number') {
+              yValue = item.y;
+            }
+
+            return {
+              name: `${xLabel} - ${serieName}`,
+              y: yValue,
+              custom: {
+                month: xLabel
+              }
+            };
+          });
+
+          series.push({
+            type: 'scatter',
+            name: serieName,
+            data: scatterPoints
+          });
+        });
+
+        const xCategories = [...new Set(this.data.map(item => item.month || item.category || item.name))];
+        
+        mergeDeep(this._options, {
+          xAxis: {
+            categories: xCategories,
+            title: { text: this._chartConfig.xtitle || 'Catégories' }
+          },
+          yAxis: {
+            type: 'linear', 
+            title: { text: this._chartConfig.ytitle || 'Valeurs' }
+          },
+          series: series
+        });
+      } else {
+        const scatterPoints = this.data.map((item: any, index: number) => {
+          const xLabel = item.month || item.category || item.name || `Point ${index + 1}`;
+          
+          let yValue = 0;
+          if (typeof item.value === 'number') {
+            yValue = item.value;
+          } else if (typeof item.y === 'number') {
+            yValue = item.y;
+          }
+
+          return {
+            name: xLabel,
+            y: yValue,
+            custom: {
+              month: xLabel
+            }
+          };
+        });
+
+        const xCategories = this.data.map(item => item.month || item.category || item.name || `Point ${this.data.indexOf(item) + 1}`);
+
+        mergeDeep(this._options, {
+          xAxis: {
+            categories: xCategories,
+            title: { text: this._chartConfig.xtitle || 'Catégories' }
+          },
+          yAxis: {
+            type: 'linear', 
+            title: { text: this._chartConfig.ytitle || 'Valeurs' }
+          },
+          series: [{
+            type: 'scatter',
+            name: this._chartConfig.title || 'Données',
+            data: scatterPoints
+          }]
+        });
+      }
+
+      this.debug && console.log('Série scatter configurée:', series.length > 0 ? series : this._options.series);
+
+      if (!this.chart && !this._shouldRedraw) {
+        this.debug && console.log('Données scatter valides détectées, force la création du graphique');
+        this._shouldRedraw = true;
+      }
+
+    } catch (error) {
+      console.error('Erreur lors du traitement des données scatter:', error);
+      mergeDeep(this._options, { series: [] });
+    }
+  }
+
+  private handleBubbleData(): void {
+    try {
+      this.debug && console.log('Traitement des données bubble:', this.data);
+
+      const serieNames = [...new Set(this.data.map(item => item.team))].filter(Boolean);
+      const hasMultipleSeries = serieNames.length > 1;
+
+      this.debug && console.log('Séries détectées pour bubble:', serieNames, 'Multiple:', hasMultipleSeries);
+
+      const allValues = this.data.map(item => Math.abs(item.value || item.y || 0));
+      const minValue = Math.min(...allValues);
+      const maxValue = Math.max(...allValues);
+      const valueRange = maxValue - minValue || 1;
+
+      const hasCustomSizes = this.data.some(item => item.z !== undefined || item.size !== undefined);
+
+      let series: any[] = [];
+
+      if (hasMultipleSeries) {
+        serieNames.forEach((serieName) => {
+          const serieData = this.data.filter(item => item.team === serieName);
+          const bubblePoints = serieData.map((item: any, index: number) => {
+            const xLabel = item.month || item.category || item.name || `Point ${index + 1}`;
+            
+            let yValue = 0;
+            if (typeof item.value === 'number') {
+              yValue = item.value;
+            } else if (typeof item.y === 'number') {
+              yValue = item.y;
+            }
+            
+            let zValue = item.z || item.size;
+            if (zValue === undefined) {
+              if (hasCustomSizes) {
+                const normalizedValue = ((Math.abs(yValue) - minValue) / valueRange) || 0;
+                zValue = Math.max(10, Math.min(50, 10 + normalizedValue * 40));
+              } else {
+                zValue = 15;
+              }
+            }
+
+            return {
+              name: `${xLabel}`,
+              y: yValue,
+              z: Math.round(zValue * 100) / 100,
+              custom: {
+                month: xLabel,
+                serie: serieName,
+                value: yValue,
+                size: hasCustomSizes ? Math.round(zValue * 100) / 100 : null
+              }
+            };
+          });
+
+          series.push({
+            type: 'bubble',
+            name: serieName,
+            data: bubblePoints
+          });
+        });
+
+        const xCategories = [...new Set(this.data.map(item => item.month || item.category || item.name))];
+        
+        const tooltipFormat = hasCustomSizes 
+          ? '{point.custom.month}: <b>{point.y}</b><br/>Taille: <b>{point.custom.size}</b>'
+          : '{point.custom.month}: <b>{point.y}</b>';
+
+        mergeDeep(this._options, {
+          xAxis: {
+            categories: xCategories,
+            title: { text: this._chartConfig.xtitle || 'Catégories' }
+          },
+          yAxis: {
+            title: { text: this._chartConfig.ytitle || 'Valeurs' }
+          },
+          tooltip: {
+            shared: false,
+            split: false,
+            headerFormat: '<b>{series.name}</b><br>',
+            pointFormat: tooltipFormat
+          },
+          plotOptions: {
+            bubble: {
+              stickyTracking: false,
+              findNearestPointBy: 'xy'
+            }
+          },
+          series: series
+        });
+      } else {
+        const bubblePoints = this.data.map((item: any, index: number) => {
+          const xLabel = item.month || item.category || item.name || `Point ${index + 1}`;
+          
+          let yValue = 0;
+          if (typeof item.value === 'number') {
+            yValue = item.value;
+          } else if (typeof item.y === 'number') {
+            yValue = item.y;
+          }
+          
+          let zValue = item.z || item.size;
+          if (zValue === undefined) {
+            if (hasCustomSizes) {
+              const normalizedValue = ((Math.abs(yValue) - minValue) / valueRange) || 0;
+              zValue = Math.max(10, Math.min(50, 10 + normalizedValue * 40));
+            } else {
+              zValue = 15;
+            }
+          }
+
+          return {
+            name: xLabel,
+            y: yValue,
+            z: Math.round(zValue * 100) / 100,
+            custom: {
+              month: xLabel,
+              value: yValue,
+              size: hasCustomSizes ? Math.round(zValue * 100) / 100 : null
+            }
+          };
+        });
+
+        const xCategories = this.data.map(item => item.month || item.category || item.name || `Point ${this.data.indexOf(item) + 1}`);
+
+        const tooltipFormat = hasCustomSizes 
+          ? '{point.custom.month}: <b>{point.y}</b><br/>Taille: <b>{point.custom.size}</b>'
+          : '{point.custom.month}: <b>{point.y}</b>';
+
+        mergeDeep(this._options, {
+          xAxis: {
+            categories: xCategories,
+            title: { text: this._chartConfig.xtitle || 'Catégories' }
+          },
+          yAxis: {
+            title: { text: this._chartConfig.ytitle || 'Valeurs' }
+          },
+          tooltip: {
+            shared: false,
+            split: false,
+            headerFormat: '<b>{series.name}</b><br>',
+            pointFormat: tooltipFormat
+          },
+          plotOptions: {
+            bubble: {
+              stickyTracking: false,
+              findNearestPointBy: 'xy'
+            }
+          },
+          series: [{
+            type: 'bubble',
+            name: this._chartConfig.title || 'Données',
+            data: bubblePoints,
+            minSize: 8,
+            maxSize: 25,
+            stickyTracking: false
+          }]
+        });
+      }
+
+      this.debug && console.log('Série bubble configurée:', series.length > 0 ? series : this._options.series);
+      this.debug && console.log('Plage des valeurs:', { minValue, maxValue, valueRange });
+
+      if (!this.chart && !this._shouldRedraw) {
+        this.debug && console.log('Données bubble valides détectées, force la création du graphique');
+        this._shouldRedraw = true;
+      }
+
+    } catch (error) {
+      console.error('Erreur lors du traitement des données bubble:', error);
+      mergeDeep(this._options, { series: [] });
+    }
   }
 }
