@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 // import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
-import { ChartComponent as HighchartsChartComponent } from './../../../../projects/oneteme/jquery-highcharts/src/public-api';
+import { ChartComponent as HighchartsChartComponent } from '@oneteme/jquery-highcharts';
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
 import { mapChartData } from 'src/app/data/chart/map-chart.data';
 
@@ -32,7 +32,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'line';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
@@ -75,7 +75,7 @@ export class BasicTestComponent implements OnInit {
         enabled: true,
         buttons: {
           contextButton: {
-            enabled: true,
+            enabled: false,
             // menuItems: ['downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG']
           },
         },

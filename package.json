@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-charts",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "jquery charts project",
   "private": false,
   "homepage": "https://github.com/oneteme/jquery-charts",
@@ -20,11 +20,14 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
+    "b1": "ng build @oneteme/jquery-highcharts",
+    "b2": "ng build @oneteme/jquery-apexhcharts",
     "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build \"@oneteme/jquery-highcharts\" && ng build",
-    "watch-lib1": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
+    "watch-core": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
+    "watch-lib1": "ng build \"@oneteme/jquery-highcharts\" --watch --configuration development",
     "watch-lib2": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
-    "watch": "concurrently \"npm run watch-lib1\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\"",
-    "dev": "concurrently \"npm run watch-lib1\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\" \"wait-on dist/oneteme/jquery-apexcharts && npm run start\"",
+    "dev1": "concurrently \"npm run watch-core\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib1\" \"wait-on dist/oneteme/jquery-highcharts && npm run start\"",
+    "dev2": "concurrently \"npm run watch-core\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\" \"wait-on dist/oneteme/jquery-apexcharts && npm run start\"",
     "test": "ng test"
   },
   "dependencies": {
