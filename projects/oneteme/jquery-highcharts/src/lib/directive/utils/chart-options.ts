@@ -1,5 +1,6 @@
 import { mergeDeep } from '@oneteme/jquery-core';
 import { Highcharts } from './highcharts-modules';
+import { ChartCleaner } from './chart-cleaners';
 
 const COMMON_POLAR_CONFIG = {
   pane: { innerSize: '0%', endAngle: 360 },
@@ -187,8 +188,8 @@ const CHART_TYPE_CONFIGS = {
       }
     },
     plotOptions: {
-      funnel: { 
-        dataLabels: { enabled: false }, 
+      funnel: {
+        dataLabels: { enabled: false },
         reversed: false,
         tooltip: {
           headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
@@ -240,15 +241,15 @@ const CHART_TYPE_CONFIGS = {
       }
     },
     plotOptions: {
-      funnel: { 
-        dataLabels: { enabled: false }, 
+      funnel: {
+        dataLabels: { enabled: false },
         reversed: true,
         tooltip: {
           headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
           pointFormat: '<span style="color:{point.color}">\u25CF</span>{point.name}: <b>{point.percentage:.1f}%</b> ({point.y})<br/>'
         }
       },
-      pyramid: { 
+      pyramid: {
         dataLabels: { enabled: false },
         tooltip: {
           headerFormat: '<span style="font-size:11px">{series.name}</span><br>',
@@ -288,7 +289,7 @@ const CHART_TYPE_CONFIGS = {
         load: function() {
           const chart = this as Highcharts.Chart & { _animationTimers?: number[] };
           const series = chart.series[0];
-          
+
           chart.update({
             tooltip: {
               formatter: function() {
@@ -298,7 +299,7 @@ const CHART_TYPE_CONFIGS = {
               }
             }
           });
-          
+
           if (series?.points) {
             if (!chart._animationTimers) {
               chart._animationTimers = [];
@@ -418,18 +419,18 @@ export function initBaseChartOptions(
 
   return {
     shouldRedraw: true,
-    chart: { 
+    chart: {
       type: chartType,
       backgroundColor: null
     },
     credits: { enabled: false },
-    exporting: { 
-      enabled: false, 
-      buttons: { 
-        contextButton: { 
-          enabled: false 
-        } 
-      } 
+    exporting: {
+      enabled: false,
+      buttons: {
+        contextButton: {
+          enabled: false
+        }
+      }
     },
     lang: {
       noData: 'Aucune donnée à afficher'
@@ -459,26 +460,6 @@ function safeConfigMerge(
   }
 }
 
-export function getBaseSimpleGraphOptions(
-  chartType: keyof typeof CHART_TYPE_CONFIGS,
-  debug: boolean = false
-): any {
-  debug && console.log(`Récupération de la config de base pour ${chartType}`);
-
-  const config = CHART_TYPE_CONFIGS[chartType];
-  if (!config) {
-    debug && console.warn(`Configuration non trouvée pour le type: ${chartType}`);
-    return {};
-  }
-
-  let baseOptions: any = {};
-
-  baseOptions = JSON.parse(JSON.stringify(config));
-
-  debug && console.log(`Config de base complète pour ${chartType}:`, baseOptions);
-
-  return baseOptions;
-}
 
 export function configureSimpleGraphOptions(
   options: any,
@@ -493,8 +474,7 @@ export function configureSimpleGraphOptions(
     return;
   }
 
-  // Nettoyage complet des configurations précédentes
-  cleanAllConfigs(options);
+  ChartCleaner.cleanAllSpecialConfigs(options);
 
   if (chartType === 'pie' || chartType === 'donut') {
     options.plotOptions ??= {};
@@ -517,116 +497,6 @@ export function configureSimpleGraphOptions(
   );
 }
 
-export function cleanAllConfigs(options: any, preserveUserConfig: boolean = false): void {
-  let userPlotOptions: any = null;
-  if (preserveUserConfig && options.plotOptions?.series) {
-    userPlotOptions = JSON.parse(JSON.stringify(options.plotOptions.series));
-  }
-
-  cleanPolarConfigs(options);
-  cleanPieConfigs(options);
-  cleanAnimatedConfigs(options);
-  cleanScatterBubbleConfigs(options);
-
-  if (userPlotOptions && preserveUserConfig) {
-    if (!options.plotOptions) options.plotOptions = {};
-    if (!options.plotOptions.series) options.plotOptions.series = {};
-    Object.assign(options.plotOptions.series, userPlotOptions);
-  }
-}
-
-function cleanPolarConfigs(options: any): void {
-  if (options.chart) {
-    delete options.chart.polar;
-    delete options.chart.inverted;
-  }
-
-  if (options.pane) {
-    delete options.pane;
-  }
-
-  if (options.xAxis) {
-    delete options.xAxis.tickmarkPlacement;
-    delete options.xAxis.lineWidth;
-    delete options.xAxis.gridLineWidth;
-    delete options.xAxis.labels;
-    delete options.xAxis.gridLineInterpolation;
-  }
-
-  if (options.yAxis) {
-    delete options.yAxis.lineWidth;
-    delete options.yAxis.gridLineWidth;
-    delete options.yAxis.gridLineInterpolation;
-    delete options.yAxis.reversedStacks;
-  }
-
-  if (options.plotOptions) {
-    delete options.plotOptions.column;
-    delete options.plotOptions.line;
-    delete options.plotOptions.area;
-    delete options.plotOptions.treemap;
-    delete options.plotOptions.heatmap;
-    if (options.plotOptions.series) {
-      delete options.plotOptions.series.pointPlacement;
-      delete options.plotOptions.series.pointStart;
-      delete options.plotOptions.series.connectEnds;
-      delete options.plotOptions.series.marker;
-      delete options.plotOptions.series.fillOpacity;
-    }
-  }
-
-  if (options.colorAxis) {
-    delete options.colorAxis;
-  }
-
-  if (options.legend) {
-    delete options.legend.enabled;
-  }
-}
-
-function cleanPieConfigs(options: any): void {
-  if (options.plotOptions) {
-    delete options.plotOptions.pie;
-    if (options.plotOptions.series) {
-      delete options.plotOptions.series.innerSize;
-      delete options.plotOptions.series.borderRadius;
-      delete options.plotOptions.series.startAngle;
-      delete options.plotOptions.series.endAngle;
-      delete options.plotOptions.series.center;
-      delete options.plotOptions.series.size;
-      delete options.plotOptions.series.slicedOffset;
-      delete options.plotOptions.series.allowPointSelect;
-      delete options.plotOptions.series.cursor;
-      delete options.plotOptions.series.dataLabels;
-    }
-  }
-}
-
-function cleanAnimatedConfigs(options: any): void {
-  if (options.plotOptions) {
-    delete options.plotOptions.funnel;
-    delete options.plotOptions.pyramid;
-    delete options.plotOptions.heatmap;
-  }
-  if (options.chart?.events) {
-    delete options.chart.events;
-  }
-}
-
-function cleanScatterBubbleConfigs(options: any): void {
-  if (options.plotOptions) {
-    delete options.plotOptions.scatter;
-    delete options.plotOptions.bubble;
-  }
-  
-  if (options.tooltip) {
-    delete options.tooltip.headerFormat;
-    delete options.tooltip.pointFormat;
-    delete options.tooltip.shared;
-    delete options.tooltip.followPointer;
-  }
-}
-
 export function configureComplexGraphOptions(
   options: any,
   chartType: 'treemap' | 'heatmap' | 'scatter' | 'bubble',
@@ -635,11 +505,12 @@ export function configureComplexGraphOptions(
   if (debug)
     console.log(`Configuration des options complexes pour ${chartType}`);
 
-  cleanAllConfigs(options);
+  ChartCleaner.cleanAllSpecialConfigs(options);
 
   const config = CHART_TYPE_CONFIGS[chartType];
   if (config) {
     mergeDeep(options, config);
+    enforceHeatmapAxesIfNeeded(options, chartType);
     debug && console.log(
       `Options finales après configuration ${chartType}:`,
       JSON.stringify(options.plotOptions)
@@ -647,4 +518,14 @@ export function configureComplexGraphOptions(
   } else if (debug) {
     console.warn(`Configuration non trouvée pour le type: ${chartType}`);
   }
+}
+
+function enforceHeatmapAxesIfNeeded(options: any, chartType: string): void {
+  if (chartType !== 'heatmap') return;
+  options.xAxis = options.xAxis || {};
+  options.yAxis = options.yAxis || {};
+  if (!options.xAxis.type) options.xAxis.type = 'category';
+  if (!options.yAxis.type) options.yAxis.type = 'category';
+  if (!options.xAxis.labels) options.xAxis.labels = { enabled: true };
+  if (!options.yAxis.labels) options.yAxis.labels = { enabled: true };
 }

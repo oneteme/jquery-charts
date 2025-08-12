@@ -18,6 +18,8 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
 
   private static readonly RANGE_CHART_TYPES: ChartType[] = ['columnrange', 'arearange', 'areasplinerange'];
 
+  private static readonly BOXPLOT_CHART_TYPES: ChartType[] = ['boxplot'];
+
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
@@ -43,6 +45,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     bubble: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     heatmap: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     treemap: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+    boxplot: { possibleType: ChartComponent.BOXPLOT_CHART_TYPES, canPivot: false },
     // map: { possibleType: ['map'], canPivot: false },
   };
 
@@ -69,7 +72,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
 
   private static readonly SIMPLE_CHART_TYPES = new Set(['pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar']);
 
-  private static readonly COMPLEX_CHART_TYPES = new Set(['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap']);
+  private static readonly COMPLEX_CHART_TYPES = new Set(['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap', 'boxplot']);
 
   get canPivot(): boolean {
     return this._charts[this._type]?.canPivot !== false;

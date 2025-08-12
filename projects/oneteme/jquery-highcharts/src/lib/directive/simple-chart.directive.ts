@@ -1,9 +1,9 @@
 import { Directive, ElementRef, Input, NgZone, inject } from '@angular/core';
 import { buildSingleSerieChart, buildChart, mergeDeep } from '@oneteme/jquery-core';
 import { BaseChartDirective } from './base-chart.directive';
-import { Highcharts } from './utils/highcharts-modules';
-import { generateDistinctColors, isPolarChartType, isSimpleChartType, getActualHighchartsType } from './utils/chart-utils';
+import { isPolarChartType, isSimpleChartType, getActualHighchartsType } from './utils/chart-utils';
 import { ConfigurationManager } from './utils/config-manager';
+import { SimpleChartHandlerFactory } from './utils/charts-handlers/simple-handlers';
 
 @Directive({
   selector: '[simple-chart]',
@@ -67,7 +67,12 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
 
     if (isPolarChartType(this.type)) {
       this._shouldRedraw = true;
-      if (needsDataUpdate) {
+      // Si on entre dans un type polaire depuis un non-polaire, il faut régénérer catégories/series
+      if (!wasPolar) {
+        this.debug && console.log('Entrée vers un type polaire détectée, re-génération des données');
+        this._options.series = [];
+        this.updateData();
+      } else if (needsDataUpdate) {
         this.debug && console.log('Mise à jour des données nécessaire pour graphique polaire');
       }
     }
@@ -75,6 +80,11 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     if (previousType !== actualType) {
       mergeDeep(this._options, { chart: { type: actualType } });
       this._shouldRedraw = true;
+      // Forcer une régénération des données lors d'un changement de type simple
+      if (isSimpleChartType(this.type)) {
+        this._options.series = [];
+        this.updateData();
+      }
     }
 
     if (isPolarToSimple) {
@@ -153,8 +163,8 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       this._options.pane !== undefined
     );
 
-    const isCurrentSimpleType = isSimpleChartType(this.type);
-    const shouldForceSimpleHandler = hasPolarProperties && isCurrentSimpleType;
+  const isCurrentSimpleType = isSimpleChartType(this.type);
+  const shouldForceSimpleHandler = hasPolarProperties && isCurrentSimpleType && !isPolarChartType(this.type);
 
     this.debug && console.log('updateData: Analyse properties', {
       type: this.type,
@@ -169,33 +179,26 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
       const chartConfig = { ...this._chartConfig, continue: false };
       const commonChart = this.buildCommonChart(chartConfig);
 
-      this.debug && console.log('Données traitées:', commonChart);
+      this.debug && console.log('Données traitées (commonChart):', commonChart);
 
-      if (shouldForceSimpleHandler) {
-        this.debug && console.log('updateData: FORCE handlePieData (polar->simple detected)');
-        this.handlePieData(commonChart, chartConfig);
-      } else if (isPolarChartType(this.type)) {
-        this.debug && console.log('updateData: Using handlePolarData');
-        this.handlePolarData(commonChart, chartConfig);
-      } else {
-        this.debug && console.log('updateData: Using handlePieData');
-        this.handlePieData(commonChart, chartConfig);
+  const handlerType = shouldForceSimpleHandler ? 'pie' : this.type;
+      const handler = SimpleChartHandlerFactory.getHandler(handlerType);
+
+      if (!handler) {
+        this.debug && console.warn('Aucun handler simple trouvé pour', handlerType);
+        mergeDeep(this._options, { series: [] });
+        return;
       }
 
-      if (
-        this._options.series &&
-        Array.isArray(this._options.series) &&
-        this._options.series.length > 0 &&
-        this._options.series[0]?.data &&
-        Array.isArray(this._options.series[0].data) &&
-        this._options.series[0].data.length > 0 &&
-        !this.chart &&
-        !this._shouldRedraw
-      ) {
-        this.debug &&
-          console.log(
-            'Données valides détectées pour simple chart, force la création du graphique'
-          );
+      const result = handler.handle(commonChart, this._chartConfig, handlerType, this.debug);
+      mergeDeep(this._options, result);
+
+      const hasSeries = Array.isArray(result?.series) && result.series.length > 0;
+      const firstData = hasSeries && Array.isArray(result.series[0]?.data)
+        ? result.series[0].data
+        : [];
+      if (hasSeries && firstData.length > 0 && !this.chart && !this._shouldRedraw) {
+        this.debug && console.log('Données valides détectées pour simple chart, force la création du graphique');
         this._shouldRedraw = true;
       }
     } catch (error) {
@@ -223,131 +226,5 @@ export class SimpleChartDirective extends BaseChartDirective<string, number> {
     return shouldUseMultiSeries
       ? buildChart(this.data, chartConfig, null)
       : buildSingleSerieChart(this.data, chartConfig, null);
-  }
-
-  private handlePolarData(commonChart: any, chartConfig: any): void {
-    if (!this._options.xAxis || Array.isArray(this._options.xAxis)) {
-      this._options.xAxis = {};
-    }
-    this._options.xAxis.categories = commonChart.categories ?? [];
-
-    const hasMultipleSeries = this.config.series?.length > 1;
-    const hasNameFunction = typeof this.config.series?.[0]?.name === 'function';
-    const shouldUseMultiSeries = (this.type === 'radar' || this.type === 'radarArea') && (hasMultipleSeries || hasNameFunction);
-
-    this.debug && console.log('handlePolarData analysis:', {
-      type: this.type,
-      shouldUseMultiSeries,
-      commonChartSeries: commonChart.series,
-      seriesCount: commonChart.series?.length
-    });
-
-    const series = shouldUseMultiSeries
-      ? this.createMultiRadarSeries(commonChart, chartConfig)
-      : this.createSinglePolarSeries(commonChart, chartConfig);
-
-    mergeDeep(this._options, { series });
-  }
-
-  private createMultiRadarSeries(commonChart: any, chartConfig: any): any[] {
-    return commonChart.series.map(
-      (serie: { name: any; data: any[]; color: any }) => {
-        let seriesType = 'column'; // valeur par défaut
-        if (this.type === 'radar') {
-          seriesType = 'line';
-        } else if (this.type === 'radarArea') {
-          seriesType = 'area';
-        }
-
-        return {
-          name: serie.name ?? chartConfig.xtitle ?? 'Série',
-          data: serie.data.map((value, index) => ({
-            name: commonChart.categories[index],
-            y: value,
-          })),
-          pointPlacement: 'on',
-          color: serie.color,
-          type: seriesType,
-        };
-      }
-    );
-  }
-
-  private createSinglePolarSeries(commonChart: any, chartConfig: any): any[] {
-    let seriesType = 'column';
-    if (this.type === 'radar') {
-      seriesType = 'line';
-    } else if (this.type === 'radarArea') {
-      seriesType = 'area';
-    }
-
-    const isRadarType = this.type === 'radar' || this.type === 'radarArea';
-
-    let formattedData;
-    let seriesColor;
-
-    if (isRadarType) {
-      formattedData = commonChart.categories.map(
-        (category: any, i: string | number) => ({
-          name: category,
-          y: commonChart.series[0]?.data[i] ?? 0,
-        })
-      );
-      seriesColor = (Highcharts as any).getOptions().colors[0];
-    } else {
-      const colors = generateDistinctColors(commonChart.categories.length);
-      formattedData = commonChart.categories.map(
-        (category: any, i: string | number) => ({
-          name: category,
-          y: commonChart.series[0]?.data[i] ?? 0,
-          color: colors[i],
-        })
-      );
-    }
-
-    return [{
-        name: chartConfig.title ?? 'Valeurs',
-        data: formattedData,
-        type: seriesType,
-        showInLegend: true,
-        ...(isRadarType && seriesColor ? { color: seriesColor } : {}),
-      }];
-  }
-
-  private handlePieData(commonChart: any, chartConfig: any): void {
-    try {
-      if (!commonChart?.series || !Array.isArray(commonChart.series)) {
-        mergeDeep(this._options, { series: [] });
-        return;
-      }
-
-      const flatData = commonChart.series
-        .flatMap((s: { data: any[] }) =>
-          Array.isArray(s.data) ? s.data.filter((d: null) => d != null) : []
-        );
-
-      const colors = generateDistinctColors(flatData.length);
-
-      const formattedData = flatData.map((data: any, index: string | number) => ({
-        name: commonChart?.categories?.[index] ?? `Item ${index}`,
-        y: typeof data === 'number' ? data : 0,
-        color: colors[index],
-      }));
-
-      this.debug && console.log('Données formatées:', formattedData);
-
-      mergeDeep(this._options, {
-        series: [
-          {
-            name: chartConfig.title ?? 'Valeurs',
-            data: formattedData,
-            showInLegend: true,
-          },
-        ],
-      });
-    } catch (error) {
-      console.error('Erreur lors du formatage des données pie:', error);
-      mergeDeep(this._options, { series: [] });
-    }
   }
 }

@@ -2,9 +2,9 @@ import { ChartProvider, ChartType } from '@oneteme/jquery-core';
 import { Highcharts } from './highcharts-modules';
 import { unifyPlotOptionsForChart } from './types';
 import { isPolarChartType } from './chart-utils';
-import { cleanAllConfigs, configureSimpleGraphOptions } from './chart-options';
+import { ChartCleaner } from './chart-cleaners';
+import { configureSimpleGraphOptions } from './chart-options';
 
-// Types pour les configurations simples supportées
 type SimpleChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radialBar';
 
 export class ConfigurationManager {
@@ -16,24 +16,24 @@ export class ConfigurationManager {
     debug: boolean = false
   ): Highcharts.Options {
 
-    debug && console.log(`🔄 Configuration Manager: Traitement pour type ${chartType}`);
+    debug && console.log(`Configuration Manager: Traitement pour type ${chartType}`);
 
-    const cleanedOptions = this.smartCleanConfig(baseOptions, debug);
+  const cleanedOptions = this.smartCleanConfig(baseOptions, chartType, debug);
 
     const typeOptions = this.applyTypeSpecificConfig(cleanedOptions, chartType, debug);
 
     if (userConfig.options) {
-      debug && console.log('📝 Config utilisateur détectée, application des transformations...');
+      debug && console.log('Config utilisateur détectée, application des transformations...');
       this.mergeUserConfigWithTransformation(typeOptions, userConfig, chartType, debug);
     } else {
-      debug && console.log('❌ Aucune config utilisateur détectée');
+      debug && console.log('Aucune config utilisateur détectée');
     }
 
     return typeOptions;
   }
 
-  private static smartCleanConfig(options: Highcharts.Options, debug: boolean): Highcharts.Options {
-    debug && console.log('🧹 Nettoyage intelligent de la configuration');
+  private static smartCleanConfig(options: Highcharts.Options, chartType: ChartType, debug: boolean): Highcharts.Options {
+    debug && console.log('Nettoyage intelligent de la configuration');
 
     const preserved = {
       chart: { ...options.chart },
@@ -44,7 +44,8 @@ export class ConfigurationManager {
       noData: { ...options.noData }
     };
 
-    cleanAllConfigs(options, true);
+  ChartCleaner.cleanAllSpecialConfigs(options, true);
+  ChartCleaner.cleanForChartType(options, String(chartType), true);
 
     Object.assign(options, preserved);
 
@@ -56,10 +57,21 @@ export class ConfigurationManager {
     chartType: ChartType,
     debug: boolean
   ): Highcharts.Options {
-    debug && console.log(`⚙️ Application config spécifique pour ${chartType}`);
+    debug && console.log(`Application config spécifique pour ${chartType}`);
 
     if (this.isSimpleChartType(chartType)) {
-      configureSimpleGraphOptions(options, chartType as SimpleChartType, debug);
+      const preserved = {
+        title: { ...(options as any).title },
+        subtitle: { ...(options as any).subtitle },
+        credits: { ...(options as any).credits },
+        lang: { ...(options as any).lang },
+        noData: { ...(options as any).noData },
+      };
+
+  configureSimpleGraphOptions(options, chartType as any, debug);
+
+      // Réappliquer les éléments préservés
+      Object.assign(options, preserved);
     }
 
     return options;
@@ -81,16 +93,17 @@ export class ConfigurationManager {
     unifyPlotOptionsForChart(userOptions, chartType, debug);
 
     if (userOptions.plotOptions) {
-      if (!targetOptions.plotOptions) targetOptions.plotOptions = {};
+      if (!targetOptions.plotOptions) targetOptions.plotOptions = {} as any;
 
       Object.keys(userOptions.plotOptions).forEach(plotKey => {
-        if (!targetOptions.plotOptions![plotKey]) {
-          targetOptions.plotOptions![plotKey] = {};
+        const plotOptions = targetOptions.plotOptions as any;
+        if (!plotOptions[plotKey]) {
+          plotOptions[plotKey] = {};
         }
 
-        Object.assign(targetOptions.plotOptions![plotKey], userOptions.plotOptions[plotKey]);
+        Object.assign(plotOptions[plotKey], userOptions.plotOptions[plotKey]);
 
-        debug && console.log(`✅ Config utilisateur appliquée: plotOptions.${plotKey}`, userOptions.plotOptions[plotKey]);
+        debug && console.log(`Config utilisateur appliquée: plotOptions.${plotKey}`, userOptions.plotOptions[plotKey]);
       });
     }
 

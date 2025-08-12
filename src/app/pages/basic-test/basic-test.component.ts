@@ -32,7 +32,7 @@ export class BasicTestComponent implements OnInit {
   isPanelExpanded = false;
 
   // Configuration du graphique
-  chartType: ChartType = 'line';
+  chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
@@ -80,7 +80,7 @@ export class BasicTestComponent implements OnInit {
           },
         },
       },
-      plotOptions: { series: { dataLabels: { enabled: false }}}
+      plotOptions: { series: { dataLabels: { enabled: true }}}
     },
   };
 
@@ -161,6 +161,15 @@ export class BasicTestComponent implements OnInit {
       // { month: 'Nov', team: 'Équipe C', value: [0, 10] },
       // { month: 'Déc', team: 'Équipe C', value: [-4, 6] },
     ],
+    // Données pour les graphiques boxplot
+    boxplot: [
+      // Format compatible avec field() de jquery-core
+      { category: 'Q1 2024', low: 12, q1: 18, median: 23, q3: 28, high: 35 },
+      { category: 'Q2 2024', low: 15, q1: 22, median: 27, q3: 32, high: 38 },
+      { category: 'Q3 2024', low: 10, q1: 16, median: 25, q3: 30, high: 40 },
+      { category: 'Q4 2024', low: 14, q1: 20, median: 29, q3: 34, high: 42 },
+      { category: 'Q1 2025', low: 16, q1: 24, median: 31, q3: 36, high: 45 }
+    ],
     map: [],
     combo: [
       // Données pour les graphiques combinés scatter + line
@@ -205,11 +214,13 @@ export class BasicTestComponent implements OnInit {
     }
 
     setTimeout(() => {
-      let chartMode: 'simple' | 'complex' | 'map' | 'combo';
+      let chartMode: 'simple' | 'complex' | 'map' | 'combo' | 'boxplot';
       if (this.isComboChart) {
         chartMode = 'combo';
       } else if (isMapChart) {
         chartMode = 'map';
+      } else if (this.chartType === 'boxplot') {
+        chartMode = 'boxplot';
       } else if (this.isSimpleChart) {
         chartMode = 'simple';
       } else {
@@ -220,10 +231,11 @@ export class BasicTestComponent implements OnInit {
     }, this.dataDelay);
   }
 
-  private configureChart(mode: 'simple' | 'complex' | 'map' | 'combo'): void {
+  private configureChart(mode: 'simple' | 'complex' | 'map' | 'combo' | 'boxplot'): void {
     const isSimple = mode === 'simple';
     const isMap = mode === 'map';
     const isCombo = mode === 'combo';
+    const isBoxplot = mode === 'boxplot';
 
     if (isMap) {
       this.chartConfig = mapChartData.config;
@@ -231,6 +243,8 @@ export class BasicTestComponent implements OnInit {
       this.loadGeoJsonData();
     } else if (isCombo) {
       this.configureComboChart();
+    } else if (isBoxplot) {
+      this.configureBoxplotChart();
     } else {
       this.chartConfig = {
         ...this.baseConfig,
@@ -318,6 +332,26 @@ export class BasicTestComponent implements OnInit {
     ];
   }
 
+  private configureBoxplotChart(): void {
+    this.chartConfig = {
+      ...this.baseConfig,
+      title: 'Analyse de Distribution - Boxplot',
+      subtitle: 'Distribution des valeurs par quartile',
+      xtitle: 'Période',
+      ytitle: 'Valeur',
+      series: [{
+        name: 'Distribution',
+        data: {
+          x: field('category'),
+          y: field('low')
+        }
+      }],
+      showToolbar: true,
+    };
+
+    this.chartData = [...this.chartData$.boxplot];
+  }
+
   private async loadGeoJsonData(): Promise<void> {
     try {
       console.log('Chargement des données GeoJSON...');
@@ -371,8 +405,9 @@ export class BasicTestComponent implements OnInit {
 
   changeChartType(): void {
     const isMapChart = this.chartTypes.map.includes(this.chartType);
+    const isBoxplotChart = this.chartType === 'boxplot';
     this.isSimpleChart =
-      !isMapChart && this.chartTypes.simple.includes(this.chartType);
+      !isMapChart && !isBoxplotChart && this.chartTypes.simple.includes(this.chartType);
     this.loadChartData();
   }
 
