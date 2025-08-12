@@ -28,7 +28,8 @@
     "watch-lib2": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
     "dev1": "concurrently \"npm run watch-core\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib1\" \"wait-on dist/oneteme/jquery-highcharts && npm run start\"",
     "dev2": "concurrently \"npm run watch-core\" \"wait-on dist/oneteme/jquery-core && npm run watch-lib2\" \"wait-on dist/oneteme/jquery-apexcharts && npm run start\"",
-    "test": "ng test"
+    "test": "ng test",
+    "test:highcharts": "ng test \"@oneteme/jquery-highcharts\" --browsers=ChromeHeadless --watch=false"
   },
   "dependencies": {
     "@angular/animations": "^16.1.0",

@@ -1,19 +1,13 @@
-/**
- * Nettoyeur spécialisé pour les graphiques polaires (radar, radarArea, polar, radialBar)
- */
 export function cleanPolarConfigs(options: any): void {
-  // Nettoyage des configurations chart
   if (options.chart) {
     delete options.chart.polar;
     delete options.chart.inverted;
   }
 
-  // Nettoyage pane
   if (options.pane) {
     delete options.pane;
   }
 
-  // Nettoyage complet des axes
   if (options.xAxis) {
     if (Array.isArray(options.xAxis)) {
       options.xAxis.forEach(axis => cleanAxisConfig(axis));
@@ -30,7 +24,6 @@ export function cleanPolarConfigs(options: any): void {
     }
   }
 
-  // Nettoyage des plotOptions polaires
   if (options.plotOptions) {
     delete options.plotOptions.column;
     delete options.plotOptions.line;
@@ -45,7 +38,6 @@ export function cleanPolarConfigs(options: any): void {
     }
   }
 
-  // Nettoyage legend
   if (options.legend) {
     delete options.legend.enabled;
   }
@@ -59,8 +51,4 @@ function cleanAxisConfig(axis: any): void {
   delete axis.gridLineWidth;
   delete axis.gridLineInterpolation;
   delete axis.reversedStacks;
-  delete axis.labels;
-  delete axis.categories;
-  delete axis.min;
-  delete axis.max;
 }

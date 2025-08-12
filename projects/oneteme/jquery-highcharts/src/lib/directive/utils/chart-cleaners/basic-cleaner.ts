@@ -1,6 +1,3 @@
-/**
- * Nettoyeur spécialisé pour les graphiques de base (line, bar, column, area, etc.)
- */
 export function cleanBasicConfigs(options: any): void {
   cleanChartConfig(options);
   cleanAxisConfigs(options);
