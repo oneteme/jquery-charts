@@ -46,7 +46,6 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     heatmap: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     treemap: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     boxplot: { possibleType: ChartComponent.BOXPLOT_CHART_TYPES, canPivot: false },
-    // map: { possibleType: ['map'], canPivot: false },
   };
 
   _type: ChartType;

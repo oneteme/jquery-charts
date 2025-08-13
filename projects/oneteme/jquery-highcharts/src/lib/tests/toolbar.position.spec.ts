@@ -74,7 +74,8 @@ describe('Toolbar positionnement', () => {
     setupToolbar({ chart, config: { showToolbar: true } as any, customEvent: emitter as any, ngZone, canPivot: true });
 
     expect(chart.update).toHaveBeenCalled();
-    const args = (chart.update as any).calls.mostRecent().args[0];
+    const calls = chart.update as jasmine.Spy;
+    const args = calls.calls.mostRecent().args[0];
     expect(args?.chart?.spacingTop).toBe(45);
   });
 });

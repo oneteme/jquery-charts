@@ -32,9 +32,9 @@ describe('LoadingManager - basiques', () => {
 
     lm.showNoData('Rien');
     expect(lm.noDataVisible).toBeTrue();
-    const nd = host.querySelector('.highcharts-no-data-overlay') as HTMLElement;
+    const nd = host.querySelector('.highcharts-no-data-overlay');
     expect(nd).toBeTruthy();
-    expect(nd.textContent || '').toContain('Rien');
+    expect(nd?.textContent || '').toContain('Rien');
 
     lm.hideNoData();
     expect(lm.noDataVisible).toBeFalse();
@@ -46,14 +46,14 @@ describe('LoadingManager - basiques', () => {
     const lm = new LoadingManager(makeRef(host), { showSpinner: true, showText: true });
 
     lm.show('Chargement');
-    const before = host.querySelector('.loading-text') as HTMLElement;
+    const before = host.querySelector('.loading-text');
     expect(before).toBeTruthy();
-    expect(before.textContent || '').toContain('Chargement');
+    expect(before?.textContent || '').toContain('Chargement');
 
     lm.updateConfig({ text: 'Nouveau texte' });
-    const after = host.querySelector('.loading-text') as HTMLElement;
+    const after = host.querySelector('.loading-text');
     expect(after).toBeTruthy();
-    expect(after.textContent || '').toContain('Nouveau texte');
+    expect(after?.textContent || '').toContain('Nouveau texte');
   });
 
   it('destroy() nettoie tout', () => {

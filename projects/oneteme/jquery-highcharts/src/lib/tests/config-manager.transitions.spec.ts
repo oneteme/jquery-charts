@@ -24,10 +24,10 @@ describe('ConfigurationManager - pipeline de transitions (cleanAllSpecialConfigs
     const b = base({ plotOptions: { treemap: { layoutAlgorithm: 'squarified' }, series: { marker: { enabled: true } } }, colorAxis: { min: 0 } });
     const out = ConfigurationManager.applyUserConfigWithTransformation(b, { options: {} } as any, 'column' as any, false);
 
-    expect((out.plotOptions as any)?.treemap).toBeUndefined();
-    expect((out as any).colorAxis).toBeUndefined();
+    expect(out.plotOptions?.treemap).toBeUndefined();
+    expect(out.colorAxis).toBeUndefined();
     // la pipeline du ConfigurationManager préserve la config utilisateur (marker)
-    expect(((out.plotOptions as any)?.series as any)?.marker?.enabled).toBeTrue();
+    expect(out.plotOptions?.series?.marker?.enabled).toBeTrue();
   });
 
   it('boxplot -> column: supprime headerFormat/pointFormat/shared', () => {

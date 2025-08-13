@@ -61,7 +61,7 @@ function createToolbarButton(
   button.addEventListener('mouseenter', () => {
     button.style.backgroundColor = 'rgba(60, 60, 60, 0.1)';
   });
-  
+
   button.addEventListener('mouseleave', () => {
     button.style.backgroundColor = 'transparent';
   });
@@ -94,7 +94,7 @@ export function setupToolbar(options: ToolbarOptions): void {
 
     const hasTitle = chart.options.title?.text && chart.options.title.text !== '';
     const hasSubtitle = chart.options.subtitle?.text && chart.options.subtitle.text !== '';
-    
+
     if (!hasTitle && !hasSubtitle) {
       chart.update({
         chart: {
@@ -118,7 +118,6 @@ export function setupToolbar(options: ToolbarOptions): void {
     toolbar.style.visibility = 'hidden';
     toolbar.style.gap = '4px';
 
-    // toolbar.appendChild(createToolbarButton(ICONS.percent, 'Afficher les valeurs en pourcentages', 'togglePercent', ngZone, customEvent));
     toolbar.appendChild(createToolbarButton(ICONS.previous, 'Graphique précédent', 'previous', ngZone, customEvent));
     toolbar.appendChild(createToolbarButton(ICONS.next, 'Graphique suivant', 'next', ngZone, customEvent));
 

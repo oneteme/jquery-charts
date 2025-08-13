@@ -28,12 +28,14 @@ function makeFakeChart(overrides: any = {}) {
   const origRemove = container.removeEventListener.bind(container);
 
   (container as any).addEventListener = (type: string, listener: any, options?: any) => {
-    (added[type] ||= []).push(listener);
-    return origAdd(type as any, listener as any, options as any);
+    added[type] ||= [];
+    added[type].push(listener);
+    return origAdd(type as any, listener, options);
   };
   (container as any).removeEventListener = (type: string, listener: any, options?: any) => {
-    (removed[type] ||= []).push(listener);
-    return origRemove(type as any, listener as any, options as any);
+    removed[type] ||= [];
+    removed[type].push(listener);
+    return origRemove(type as any, listener, options);
   };
 
   return {
@@ -59,7 +61,7 @@ describe('chart-toolbar: removeToolbar', () => {
     expect(chart.__added['mousemove']?.length || 0).toBeGreaterThan(0);
     expect(chart.__added['mouseleave']?.length || 0).toBeGreaterThan(0);
 
-    removeToolbar(chart as any);
+    removeToolbar(chart);
 
     // Toolbar retirée
     const after = chart.container.querySelector('.highcharts-custom-toolbar');

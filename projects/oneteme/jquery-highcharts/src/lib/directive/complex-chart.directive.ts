@@ -171,10 +171,4 @@ export class ComplexChartDirective<
       });
     }
   }
-
-  // groupTreemapData supprimé: la logique de regroupement est désormais dans le TreemapHandler
-
-  // Nettoyage spécial déplacé dans les cleaners treemap/heatmap (suppression des catégories centralisée)
-
-  // Nettoyages spécifiques scatter/bubble délégués directement au ChartCleaner aux points d'appel
 }

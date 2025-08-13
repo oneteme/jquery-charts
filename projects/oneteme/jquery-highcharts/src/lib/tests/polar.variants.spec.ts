@@ -10,22 +10,22 @@ describe('Variantes polaires: persistance et nettoyage', () => {
     let opts = baseOptions();
 
     opts = ConfigurationManager.applyUserConfigWithTransformation(opts, { options: { plotOptions: { series: { marker: { enabled: true } } } } } as any, 'polar', false);
-    expect((opts.chart as any).polar).toBeTrue();
+    expect(opts.chart?.polar).toBeTrue();
 
     opts = ConfigurationManager.applyUserConfigWithTransformation(opts, { options: { } } as any, 'radar', false);
-    expect((opts.chart as any).polar).toBeTrue();
+    expect(opts.chart?.polar).toBeTrue();
 
     opts = ConfigurationManager.applyUserConfigWithTransformation(opts, { options: { } } as any, 'radarArea', false);
-    expect((opts.chart as any).polar).toBeTrue();
+    expect(opts.chart?.polar).toBeTrue();
 
     opts = ConfigurationManager.applyUserConfigWithTransformation(opts, { options: { } } as any, 'radialBar', false);
-    expect((opts.chart as any).polar).toBeTrue();
+    expect(opts.chart?.polar).toBeTrue();
 
     // Les propriétés utilisateur doivent être remergeables ensuite
     const userApply = { options: { plotOptions: { series: { marker: { enabled: false }, fillOpacity: 0.5 } } } } as any;
     const after = ConfigurationManager.applyUserConfigWithTransformation(opts, userApply, 'radar', false);
-  expect(after.plotOptions?.series?.marker?.enabled).toBeFalse();
-  expect(((after.plotOptions as any)?.series as any)?.fillOpacity).toBe(0.5);
+    expect(after.plotOptions?.series?.marker?.enabled).toBeFalse();
+    expect((after.plotOptions?.series as any)?.fillOpacity).toBe(0.5);
   });
 
   it('cleanPolarConfigs: ne doit pas supprimer catégories/labels/min/max des axes', () => {

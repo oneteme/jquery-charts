@@ -61,7 +61,8 @@ describe('Toolbar', () => {
     const ngZone = makeNgZoneStub();
 
     const chartOptions: any = { chart: { events: {} } };
-    configureChartEvents(chartOptions, { chart: chart as any, config, customEvent: emitter as any, ngZone, canPivot: false });
+    const chartContext = { chart, config, customEvent: emitter, ngZone, canPivot: false };
+    configureChartEvents(chartOptions, chartContext);
 
     // Appel manuel de l'event render avec this=chart
     expect(typeof chartOptions.chart.events.render).toBe('function');
@@ -92,7 +93,8 @@ describe('Toolbar', () => {
 
     setupToolbar({ chart, config, customEvent: emitter as any, ngZone, canPivot: true });
     const toolbar = chart.container.querySelector('.highcharts-custom-toolbar') as HTMLDivElement;
-    const [btnPrev, btnNext, btnPivot] = Array.from(toolbar.querySelectorAll('button.custom-icon')) as HTMLButtonElement[];
+    const buttons = Array.from(toolbar.querySelectorAll('button.custom-icon'));
+    const [btnPrev, btnNext, btnPivot] = buttons as [HTMLButtonElement, HTMLButtonElement, HTMLButtonElement];
     btnPrev.click();
     btnNext.click();
     btnPivot.click();
