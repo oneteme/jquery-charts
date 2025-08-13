@@ -1,4 +1,4 @@
-export declare type ChartType = 'pie' | "donut" | 'funnel' | "pyramid" | 'polar' | 'radar' |'radarArea' | 'radial' |'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | string;
+export declare type ChartType = 'pie' | "donut" | 'funnel' | "pyramid" | 'polar' | 'radar' |'radarArea' | 'radial' |'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
     return (o, idx)=>{ //this[single]=true

@@ -45,7 +45,6 @@ export function isHeatmapData(data: any[]): boolean {
 }
 
 export const PLOTOPTIONS_MAPPING = {
-  // meme chose pour pie et donut donc a voir si on ne peux pas en garder qu'un
   pie: {
     'series.dataLabels': 'pie.dataLabels',
     'series.allowPointSelect': 'pie.allowPointSelect',
@@ -60,6 +59,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.size': 'pie.size',
     'series.innerSize': 'pie.innerSize',
     'series.depth': 'pie.depth',
+  'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
   },
   donut: {
     'series.dataLabels': 'pie.dataLabels',
@@ -75,6 +75,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.size': 'pie.size',
     'series.innerSize': 'pie.innerSize',
     'series.depth': 'pie.depth',
+  'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
   },
   funnel: {
     'series.dataLabels': 'funnel.dataLabels',
@@ -86,6 +87,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.neckWidth': 'funnel.neckWidth',
     'series.neckHeight': 'funnel.neckHeight',
     'series.reversed': 'funnel.reversed',
+  'series.borderRadius': 'funnel.borderRadius',
   },
   pyramid: {
     'series.dataLabels': 'pyramid.dataLabels',
@@ -95,6 +97,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.height': 'pyramid.height',
     'series.width': 'pyramid.width',
     'series.reversed': 'pyramid.reversed',
+  'series.borderRadius': 'pyramid.borderRadius',
   },
   polar: {
     'series.pointPlacement': 'series.pointPlacement',
@@ -142,6 +145,8 @@ export const PLOTOPTIONS_MAPPING = {
     'series.nullColor': 'heatmap.nullColor',
     'series.colsize': 'heatmap.colsize',
     'series.rowsize': 'heatmap.rowsize',
+  'series.pointPadding': 'heatmap.pointPadding',
+  'series.pointRange': 'heatmap.pointRange',
   },
   treemap: {
     'series.dataLabels': 'treemap.dataLabels',
@@ -153,17 +158,33 @@ export const PLOTOPTIONS_MAPPING = {
     'series.levels': 'treemap.levels',
     'series.levelIsConstant': 'treemap.levelIsConstant',
     'series.drillUpButton': 'treemap.drillUpButton',
+    'series.allowTraversingTree': 'treemap.allowTraversingTree',
+    'series.colorByPoint': 'treemap.colorByPoint',
   },
-  // pour le moment le type map n'est pas actif donc on laisse en commenté
-  // map: {
-  //   'series.dataLabels': 'map.dataLabels',
-  //   'series.borderWidth': 'map.borderWidth',
-  //   'series.borderColor': 'map.borderColor',
-  //   'series.nullColor': 'map.nullColor',
-  //   'series.joinBy': 'map.joinBy',
-  //   'series.allAreas': 'map.allAreas',
-  //   'series.mapData': 'map.mapData',
-  // },
+  scatter: {
+    'series.marker': 'scatter.marker',
+    'series.stickyTracking': 'scatter.stickyTracking',
+    'series.findNearestPointBy': 'scatter.findNearestPointBy',
+    'series.states': 'scatter.states',
+  },
+  bubble: {
+    'series.marker': 'bubble.marker',
+    'series.minSize': 'bubble.minSize',
+    'series.maxSize': 'bubble.maxSize',
+    'series.sizeBy': 'bubble.sizeBy',
+    'series.sizeByAbsoluteValue': 'bubble.sizeByAbsoluteValue',
+    'series.zThreshold': 'bubble.zThreshold',
+    'series.stickyTracking': 'bubble.stickyTracking',
+    'series.findNearestPointBy': 'bubble.findNearestPointBy',
+    'series.states': 'bubble.states',
+  },
+  boxplot: {
+    'series.boxWidth': 'boxplot.boxWidth',
+    'series.grouping': 'boxplot.grouping',
+    'series.dataLabels': 'boxplot.dataLabels',
+    'series.marker': 'boxplot.marker',
+    'series.states': 'boxplot.states',
+  }
 };
 
 export function unifyPlotOptionsForChart(options: any, chartType: ChartType, debug: boolean = false): void {

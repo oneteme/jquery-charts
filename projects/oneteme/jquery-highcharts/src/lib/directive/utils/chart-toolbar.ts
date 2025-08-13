@@ -41,6 +41,39 @@ function createToolbarButton(
   button.className = 'custom-icon';
   button.title = title;
 
+  button.style.background = 'transparent';
+  button.style.border = 'none';
+  button.style.cursor = 'pointer';
+  button.style.padding = '0';
+  button.style.margin = '0';
+  button.style.display = 'inline-flex';
+  button.style.alignItems = 'center';
+  button.style.justifyContent = 'center';
+  button.style.borderRadius = '2px';
+  button.style.transition = 'background-color 0.2s ease';
+  button.style.width = '24px';
+  button.style.height = '24px';
+  button.style.minWidth = '24px';
+  button.style.minHeight = '24px';
+  button.style.boxSizing = 'border-box';
+  button.style.flexShrink = '0';
+
+  button.addEventListener('mouseenter', () => {
+    button.style.backgroundColor = 'rgba(60, 60, 60, 0.1)';
+  });
+
+  button.addEventListener('mouseleave', () => {
+    button.style.backgroundColor = 'transparent';
+  });
+
+  const svg = button.querySelector('svg');
+  if (svg) {
+    svg.style.display = 'block';
+    svg.style.fill = 'currentColor';
+    svg.style.width = '24px';
+    svg.style.height = '24px';
+  }
+
   button.addEventListener('click', (event) => {
     event.stopPropagation();
     event.preventDefault();
@@ -59,21 +92,32 @@ export function setupToolbar(options: ToolbarOptions): void {
     removeToolbar(chart);
     const container = chart.container;
 
+    const hasTitle = chart.options.title?.text && chart.options.title.text !== '';
+    const hasSubtitle = chart.options.subtitle?.text && chart.options.subtitle.text !== '';
+
+    if (!hasTitle && !hasSubtitle) {
+      chart.update({
+        chart: {
+          ...chart.options.chart,
+          spacingTop: 45
+        }
+      }, false);
+    }
+
     const toolbar = document.createElement('div');
     toolbar.className = 'highcharts-custom-toolbar';
     toolbar.style.position = 'absolute';
 
-    const hasExportButton = chart.options.exporting?.enabled === true;
+    const hasExportButton = chart.options.exporting?.enabled === true && chart.options.exporting?.buttons?.contextButton?.enabled !== false;
 
-    toolbar.style.right = hasExportButton ? '2.9em' : '3px';
-    toolbar.style.top = hasExportButton ? '1.1em' : '0px';
-    toolbar.style.color = hasExportButton ? '#555555' : '#000';
+    toolbar.style.right = hasExportButton ? '2.5em' : '3px';
+    toolbar.style.top = hasExportButton ? '0.8em' : '10px';
+    toolbar.style.color = '#555555';
     toolbar.style.zIndex = '10';
     toolbar.style.display = 'flex';
-    toolbar.style.visibility = 'visible'; // Masqué par défaut
-    toolbar.style.gap = '11px';
+    toolbar.style.visibility = 'hidden';
+    toolbar.style.gap = '4px';
 
-    // toolbar.appendChild(createToolbarButton(ICONS.percent, 'Afficher les valeurs en pourcentages', 'togglePercent', ngZone, customEvent));
     toolbar.appendChild(createToolbarButton(ICONS.previous, 'Graphique précédent', 'previous', ngZone, customEvent));
     toolbar.appendChild(createToolbarButton(ICONS.next, 'Graphique suivant', 'next', ngZone, customEvent));
 

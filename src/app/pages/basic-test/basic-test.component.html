@@ -45,9 +45,9 @@
           [config]="chartConfig"
           [data]="chartData"
           [loadingConfig]="loadingConfig"
-          
-          [possibleType]="['pie', 'donut', 'line', 'polar', 'radar','funnel', 'treemap', 'pyramid', 'radarArea', 'radialBar', 'heatmap']"
+          [debug]="true"
         ></chart>
+          <!-- [possibleType]="['pie', 'donut', 'line', 'polar', 'radar','funnel', 'treemap', 'pyramid', 'radarArea', 'radialBar', 'heatmap']" -->
       </div>
     </div>
   </div>
@@ -172,10 +172,8 @@
               <option value="bubble">Bubble</option>
               <option value="heatmap">Heatmap</option>
               <option value="treemap">Treemap</option>
+              <option value="boxplot">BoxPlot</option>
             </optgroup>
-            <!-- <optgroup label="Graphique map">
-              <option value="map">Map</option>
-            </optgroup> -->
             </select>
           </div>
         </div>
