@@ -70,7 +70,6 @@ export class ConfigurationManager {
 
   configureSimpleGraphOptions(options, chartType as any, debug);
 
-      // Réappliquer les éléments préservés
       Object.assign(options, preserved);
     }
 
