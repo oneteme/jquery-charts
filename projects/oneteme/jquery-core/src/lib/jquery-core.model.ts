@@ -1,4 +1,4 @@
-export declare type ChartType = 'line' | 'area' | 'pie' | "donut" | "radialBar" | "polarArea" | 'bar' | 'treemap' | 'funnel' | 'pyramid' | string;
+export declare type ChartType = 'pie' | "donut" | 'funnel' | "pyramid" | 'polar' | 'radar' |'radarArea' | 'radial' |'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
     return (o, idx)=>{ //this[single]=true
@@ -249,7 +249,7 @@ export interface ChartView<X extends XaxisType, Y extends YaxisType> {
 
   config: ChartProvider<X, Y>;
   data: any[];
-  isLoading: boolean;
+  isLoading?: boolean;
   canPivot?: boolean;
   debug?: boolean;
 }

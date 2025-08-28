@@ -129,7 +129,7 @@ export class BarChartDirective<X extends XaxisType>
     const chartInstance = this.chartInstance();
     if (!chartInstance) return Promise.resolve();
 
-    const options = specificOptions || this._options;
+    const options = specificOptions ?? this._options;
 
     return this.ngZone.runOutsideAngular(() =>
       chartInstance.updateOptions(
@@ -151,8 +151,8 @@ export class BarChartDirective<X extends XaxisType>
   }
 
   private configureTypeSpecificOptions() {
-    if (!this._options.plotOptions) this._options.plotOptions = {};
-    if (!this._options.plotOptions.bar) this._options.plotOptions.bar = {};
+    this._options.plotOptions ??= {};
+    this._options.plotOptions.bar ??= {};
 
     if (this._options.plotOptions.bar.horizontal === undefined) {
       if (this.type === 'bar') {

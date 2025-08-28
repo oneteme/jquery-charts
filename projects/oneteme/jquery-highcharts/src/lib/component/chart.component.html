@@ -1,0 +1,27 @@
+<div style="height: 100%; width: 100%;">
+  <div
+    *ngIf="isSimpleChart"
+    simple-chart
+    [type]="type"
+    [config]="config"
+    [data]="data"
+    [loadingConfig]="loadingConfig"
+    [debug]="debug"
+    [canPivot]="canPivot"
+    (customEvent)="change($event)"
+    style="height: 100%; width: 100%;"
+  ></div>
+
+  <div
+    *ngIf="isComplexChart"
+    complex-chart
+    [type]="type"
+    [config]="config"
+    [data]="data"
+    [loadingConfig]="loadingConfig"
+    [debug]="debug"
+    [canPivot]="canPivot"
+    (customEvent)="change($event)"
+    style="height: 100%; width: 100%;"
+  ></div>
+</div>

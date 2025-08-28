@@ -1,0 +1,23 @@
+{
+  "name": "@oneteme/jquery-highcharts",
+  "version": "0.0.3",
+  "description": "jquery highcharts lib",
+  "homepage": "https://github.com/oneteme/jquery-charts",
+  "bugs": "https://github.com/oneteme/jquery-charts/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oneteme/jquery-charts.git"
+  },
+  "peerDependencies": {
+    "@angular/common": ">=16.1.0",
+    "@angular/core": ">=16.1.0",
+    "highcharts": "^11.4.3",
+    "@oneteme/jquery-core": "^0.0.18"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": [
+    "src/lib/directive/utils/highcharts-modules.ts"
+  ]
+}

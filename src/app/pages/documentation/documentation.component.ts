@@ -14,11 +14,11 @@ export class DocumentationComponent {
   };
   currentRouteSegment: string = '';
 
-  constructor(private router: Router) {
+  constructor(private readonly router: Router) {
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd))
       .subscribe((event: any) => {
-        const url = event.urlAfterRedirects || event.url;
+        const url = event.urlAfterRedirects ?? event.url;
         const segments = url.split('/');
         this.currentRouteSegment = segments[segments.length - 1];
         if (url.includes('/configuration/')) {

@@ -1,52 +1,451 @@
+// Variables optimisées
+$colors: (
+  primary: #007bff,
+  primary-light: #e7f5ff,
+  primary-border: #90c8f9,
+  gray-50: #f8f9fa,
+  gray-100: #e8e8e8,
+  gray-200: #dee2e6,
+  gray-300: #d8d8d8,
+  gray-500: #555,
+  gray-600: #333,
+  gray-700: #999,
+);
+
+$transitions: (
+  fast: all 0.2s ease,
+  medium: all 0.3s ease,
+);
+
+// Fonction helper pour les couleurs
+@function color($name) {
+  @return map-get($colors, $name);
+}
+
+// Mixins optimisés
+@mixin interactive-element($bg: color(gray-50), $border: color(gray-200)) {
+  background: $bg;
+  border: 1px solid $border;
+  border-radius: 6px;
+  transition: map-get($transitions, fast);
+  cursor: pointer;
+
+  &:hover {
+    background: color(primary-light);
+    border-color: color(primary-border);
+  }
+
+  &.active {
+    background: color(primary-light);
+    border-color: color(primary-border);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  }
+}
+
+@mixin icon($size: 16px) {
+  width: $size;
+  height: $size;
+  filter: invert(0.5);
+  transition: map-get($transitions, fast);
+}
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .basic-test-container {
-  padding: 20px;
+  padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
 
   h1 {
-    color: #333;
+    color: color(gray-600);
     margin-bottom: 20px;
   }
 
   .description {
-    background-color: #f5f5f5;
+    background: #f5f5f5;
     padding: 15px;
     border-radius: 5px;
     margin-bottom: 20px;
     line-height: 1.5;
+  }
 
-    span {
-      background-color: #eef1f2;
+  .control-panel {
+    position: sticky;
+    right: 20px;
+    bottom: 20px;
+    width: 220px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid color(gray-100);
+    z-index: 20;
+    transition: map-get($transitions, medium);
+    overflow: hidden;
+    margin-left: auto;
+    margin-bottom: 20px;
+    align-self: flex-end;
+    float: right;
+
+    .panel-header {
+      @include flex-center;
+      justify-content: space-between;
+      padding: 12px 15px;
+      background: color(gray-50);
+      border-bottom: 1px solid color(gray-100);
+
+      h3 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: color(gray-600);
+      }
+
+      .toggle-button {
+        @include flex-center;
+        width: 24px;
+        height: 24px;
+        background: color(gray-100);
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 18px;
+        color: color(gray-500);
+        transition: map-get($transitions, fast);
+
+        &:hover {
+          background: color(gray-300);
+        }
+      }
+    }
+
+    .panel-content {
+      width: 100%;
+      max-height: 400px;
+      padding: 12px;
+      transition: map-get($transitions, medium);
+
+      &.collapsed {
+        max-height: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+
+      .control-section {
+        margin-bottom: 15px;
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
     }
   }
 
-  .chart-container {
-    background: white;
-    border: 1px solid #e1e4e8;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    min-height: 400px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  // Groupement optimisé des contrôles
+  .control-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+
+    &.button-group {
+      justify-content: center;
+    }
+    &.chart-types {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+    }
+    &.mode-toggle {
+      justify-content: center;
+      margin: 10px 0;
+    }
+    &.full-width {
+      flex-direction: column;
+
+      label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+        color: color(gray-600);
+      }
+    }
+  }
+
+  // Sélecteur optimisé
+  .select-wrapper {
+    position: relative;
+    width: 100%;
+
+    .chart-type-select {
+      width: 100%;
+      padding: 8px 32px 8px 12px;
+      border: 1px solid color(gray-200);
+      border-radius: 6px;
+      background: white;
+      font-size: 14px;
+      color: color(gray-600);
+      cursor: pointer;
+      transition: map-get($transitions, fast);
+      appearance: none;
+
+      &:focus,
+      &:hover {
+        outline: none;
+        border-color: color(primary-border);
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(144, 200, 249, 0.2);
+      }
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      width: 16px;
+      height: 16px;
+      background: url("../../../assets/icons/chevron.svg") no-repeat center;
+      background-size: 16px;
+      transform: translateY(-50%) rotate(90deg);
+      transition: transform 0.2s ease;
+      pointer-events: none;
+    }
+
+    &:focus-within::after {
+      transform: translateY(-50%) rotate(270deg);
+    }
+  }
+
+  // Boutons optimisés avec classes communes
+  %base-btn {
+    @include interactive-element;
+    @include flex-center;
+  }
+
+  .visibility-btn {
+    @extend %base-btn;
+    gap: 8px;
+    padding: 8px 12px;
+    width: 100%;
+
+    .eye-icon {
+      @include icon;
+    }
+    &.active .eye-icon {
+      filter: invert(0.3);
+    }
+  }
+
+  .layout-btn {
+    @extend %base-btn;
+    flex: 1;
+    padding: 8px;
+
+    .layout-icon {
+      @include icon(20px);
+      &.horizontal {
+        transform: rotate(90deg);
+      }
+    }
+    &.active .layout-icon {
+      filter: invert(0.3);
+    }
+  }
+
+  .chart-btn {
+    @extend %base-btn;
+    aspect-ratio: 1;
+
+    .chart-icon {
+      font-size: 20px;
+      color: color(gray-500);
+      &.bar {
+        transform: rotate(90deg);
+      }
+    }
+    &.active .chart-icon {
+      color: color(primary);
+    }
+  }
+
+  .reload-btn {
+    @extend %base-btn;
+    width: 100%;
+    padding: 10px 0;
+    gap: 8px;
+
+    .reload-icon {
+      @include icon;
+    }
+    &:hover .reload-icon {
+      filter: invert(0.3);
+    }
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: map-get($transitions, fast);
+
+    &:hover {
+      color: color(primary);
+    }
+
+    .checkbox-input {
+      width: 16px;
+      height: 16px;
+      accent-color: color(primary);
+      cursor: pointer;
+      margin: 0;
+      vertical-align: middle;
+    }
+
+    .checkbox-text {
+      user-select: none;
+      margin-left: 8px;
+      line-height: 1;
+    }
+  }
+
+  // Mode toggle optimisé
+  .mode-btn {
+    @include flex-center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+
+    .mode-label {
+      font-size: 13px;
+      color: color(gray-700);
+      font-weight: 600;
+      transition: map-get($transitions, fast);
+      &.active {
+        color: color(gray-600);
+      }
+    }
+
+    .toggle-track {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      background: #e2e2e2;
+      border-radius: 10px;
+      transition: map-get($transitions, medium);
+
+      .toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+        background: white;
+        border-radius: 50%;
+        transition: map-get($transitions, medium);
+        &.right {
+          left: 18px;
+        }
+      }
+    }
+
+    &.active-simple .toggle-track {
+      background: #8cd9b3;
+    }
+    &.active-complex .toggle-track {
+      background: color(primary-border);
+    }
+  }
+
+  // Conteneur des graphiques
+  .charts-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin: 0;
+
+    &.horizontal-layout {
+      flex-direction: row;
+      flex-wrap: wrap;
+      .chart-wrapper {
+        flex: 1 1 calc(50% - 15px);
+        min-width: 400px;
+      }
+    }
+
+    .chart-wrapper {
+      margin-bottom: 30px;
+      transition: map-get($transitions, medium);
+
+      &.hidden {
+        display: none;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #eee;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .chart-box {
+        height: 440px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        padding: 20px;
+        background: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        position: relative;
+
+        .chart-placeholder {
+          position: absolute;
+          inset: 0;
+          @include flex-center;
+          color: #999;
+          font-style: italic;
+          text-align: center;
+          padding: 20px;
+          background: #fafafa;
+          border-radius: 5px;
+        }
+      }
+    }
+
+    .chart-instance,
+    .apex-chart,
+    .highcharts-chart {
+      width: 100%;
+      height: 100%;
+    }
   }
 
   .debug-info {
-    margin-top: 30px;
+    margin: 10px 0;
     padding: 15px;
-    background-color: #f8f9fa;
-    border-left: 4px solid #4AA3A2;
+    background: color(gray-50);
+    border-left: 4px solid #4aa3a2;
     border-radius: 4px;
 
     h3 {
       margin-top: 0;
-      color: #333;
+      color: color(gray-600);
     }
 
     code {
-      background-color: #eef1f2;
+      background: #eef1f2;
       padding: 2px 5px;
       border-radius: 3px;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier,
+        monospace;
     }
 
     p {

@@ -126,9 +126,7 @@ export class ChartsComponent implements OnInit {
     const exampleCopy = JSON.parse(JSON.stringify(example));
 
     let chartType = 'pie';
-    if (Object.values(PIE_CHART_DATA).includes(example)) {
-      chartType = 'pie';
-    } else if (Object.values(BAR_CHART_DATA).includes(example)) {
+    if (Object.values(BAR_CHART_DATA).includes(example)) {
       chartType = 'bar';
     } else if (Object.values(LINE_CHART_DATA).includes(example)) {
       chartType = 'line';
@@ -166,21 +164,59 @@ export class ChartsComponent implements OnInit {
 
     const preprocessedExample = processDataFunctions(exampleCopy);
 
-    const formatObject = (obj: any, indent = 0): string => {
-      if (obj === null) return 'null';
-      if (obj === undefined) return 'undefined';
+    const formatArray = (arr: any[], indent: number, formatObject: Function): string => {
+      if (arr.length === 0) return '[]';
 
       const padding = ' '.repeat(indent);
       const nestedPadding = ' '.repeat(indent + 2);
 
+      const formattedItems = arr
+        .map((item) => `${nestedPadding}${formatObject(item, indent + 2)}`)
+        .join(',\n');
+
+      return `[\n${formattedItems}\n${padding}]`;
+    };
+
+    const formatDataObject = (obj: any, entries: [string, any][], indent: number, formatObject: Function): string => {
+      const padding = ' '.repeat(indent);
+      const nestedPadding = ' '.repeat(indent + 2);
+
+      const dataMapping = `{\n${nestedPadding}x: (o) => o.field,\n${nestedPadding}y: (o) => o.count\n${padding}}`;
+      const otherEntries = entries.filter(([key]) => key !== 'data');
+
+      const otherProps = otherEntries
+        .map(([key, value]) => {
+          return `${nestedPadding}${key}: ${formatObject(
+            value,
+            indent + 2
+          )}`;
+        })
+        .join(',\n');
+
+      return `{\n${nestedPadding}data: ${dataMapping}${
+        otherEntries.length > 0 ? ',\n' + otherProps : ''
+      }\n${padding}}`;
+    };
+
+    const formatRegularObject = (entries: [string, any][], indent: number, formatObject: Function): string => {
+      const padding = ' '.repeat(indent);
+      const nestedPadding = ' '.repeat(indent + 2);
+
+      const formattedProps = entries
+        .map(([key, value]) => {
+          return `${nestedPadding}${key}: ${formatObject(value, indent + 2)}`;
+        })
+        .join(',\n');
+
+      return `{\n${formattedProps}\n${padding}}`;
+    };
+
+    const formatObject = (obj: any, indent = 0): string => {
+      if (obj === null) return 'null';
+      if (obj === undefined) return 'undefined';
+
       if (Array.isArray(obj)) {
-        if (obj.length === 0) return '[]';
-
-        const formattedItems = obj
-          .map((item) => `${nestedPadding}${formatObject(item, indent + 2)}`)
-          .join(',\n');
-
-        return `[\n${formattedItems}\n${padding}]`;
+        return formatArray(obj, indent, formatObject);
       }
 
       if (typeof obj === 'object') {
@@ -196,30 +232,10 @@ export class ChartsComponent implements OnInit {
           typeof obj.data === 'object' &&
           Object.keys(obj.data).length === 0
         ) {
-          const dataMapping = `{\n${nestedPadding}x: (o) => o.field,\n${nestedPadding}y: (o) => o.count\n${padding}}`;
-          const otherEntries = entries.filter(([key]) => key !== 'data');
-
-          const otherProps = otherEntries
-            .map(([key, value]) => {
-              return `${nestedPadding}${key}: ${formatObject(
-                value,
-                indent + 2
-              )}`;
-            })
-            .join(',\n');
-
-          return `{\n${nestedPadding}data: ${dataMapping}${
-            otherEntries.length > 0 ? ',\n' + otherProps : ''
-          }\n${padding}}`;
+          return formatDataObject(obj, entries, indent, formatObject);
         }
 
-        const formattedProps = entries
-          .map(([key, value]) => {
-            return `${nestedPadding}${key}: ${formatObject(value, indent + 2)}`;
-          })
-          .join(',\n');
-
-        return `{\n${formattedProps}\n${padding}}`;
+        return formatRegularObject(entries, indent, formatObject);
       }
 
       if (typeof obj === 'string') {
@@ -277,9 +293,9 @@ export class ChartsComponent implements OnInit {
         '<span class="boolean">$1</span>'
       )
       .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
-      .replace(/\{|\}/g, '<span class="punctuation">$&</span>')
-      .replace(/\(|\)/g, '<span class="punctuation">$&</span>')
-      .replace(/\[|\]/g, '<span class="punctuation">$&</span>')
+      .replace(/[{}]/g, '<span class="punctuation">$&</span>')
+      .replace(/[()]/g, '<span class="punctuation">$&</span>')
+      .replace(/[[\]]/g, '<span class="punctuation">$&</span>')
       .replace(/:/g, '<span class="punctuation">:</span>')
       .replace(/,/g, '<span class="punctuation">,</span>');
 
