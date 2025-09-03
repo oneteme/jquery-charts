@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, configureSeriesVisibility, setupScrollPrevention } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -52,7 +52,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
     this._options = updateCommonOptions(this._options, config);
 
     // Vérifier si sparkline est activé pour masquer l'axe Y
-    if (config.options?.chart?.sparkline?.enabled) {
+    if (config?.options?.chart?.sparkline?.enabled) {
       if (!this._options.yaxis) this._options.yaxis = {};
       this._options.yaxis.show = false;
       this._options.yaxis.showAlways = false;
@@ -81,12 +81,13 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
           chart
             .render()
             .then(
-              () =>
-                this.debug &&
-                console.log(
-                  new Date().getMilliseconds(),
-                  'Rendu du graphique terminé'
-                )
+              () => {
+                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+                this.debug && console.log(
+                    new Date().getMilliseconds(),
+                    'Rendu du graphique terminé'
+                  );
+              }
             )
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
@@ -104,11 +105,11 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
             error: (error) =>
               console.error('Erreur dans le flux Observable:', error),
           });
-        } catch (error) {
-          console.error("Erreur lors de l'initialisation du graphique:", error);
-        }
-      });
-    }
+      } catch (error) {
+        console.error("Erreur lors de l'initialisation du graphique:", error);
+      }
+    });
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.debug) {
@@ -172,9 +173,9 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
         animate,
         updateSyncedCharts
       ).catch(error => {
-        console.error('Erreur lors de la mise à jour des options:', error);
-        return Promise.resolve();
-      })
+          console.error('Erreur lors de la mise à jour des options:', error);
+          return Promise.resolve();
+        })
     );
   }
 
@@ -184,7 +185,12 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
       { ...this._chartConfig, continue: true },
       null
     );
-    this._options.series = commonChart.series;
+
+    this._options.series = commonChart.series.map((s: any) => ({
+      ...s,
+      visible: undefined,
+    }));
+    configureSeriesVisibility(this._options, commonChart.series);
 
     let newType = getType(commonChart);
     if (this._options.xaxis.type != newType) {

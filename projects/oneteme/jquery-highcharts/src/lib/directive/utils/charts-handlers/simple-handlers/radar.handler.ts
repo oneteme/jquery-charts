@@ -21,11 +21,11 @@ export class RadarHandler<X extends XaxisType = XaxisType> implements SimpleChar
     const shouldUseMultiSeries = (chartType === 'radar' || chartType === 'radarArea') && (hasMultipleSeries || hasNameFunction);
 
     debug && console.log('RadarHandler analysis:', {
-      chartType,
-      shouldUseMultiSeries,
-      commonChartSeries: commonChart.series,
-      seriesCount: commonChart.series?.length
-    });
+        chartType,
+        shouldUseMultiSeries,
+        commonChartSeries: commonChart.series,
+        seriesCount: commonChart.series?.length
+      });
 
     const series = shouldUseMultiSeries
       ? this.createMultiRadarSeries(commonChart, chartConfig, chartType)
@@ -36,7 +36,7 @@ export class RadarHandler<X extends XaxisType = XaxisType> implements SimpleChar
 
   private createMultiRadarSeries(commonChart: any, chartConfig: any, chartType: string): any[] {
     return commonChart.series.map(
-      (serie: { name: any; data: any[]; color: any }) => {
+      (serie: { name: any; data: any[]; color: any; visible?: boolean }) => {
         let seriesType = 'column';
         if (chartType === 'radar') {
           seriesType = 'line';
@@ -53,6 +53,7 @@ export class RadarHandler<X extends XaxisType = XaxisType> implements SimpleChar
           pointPlacement: 'on',
           color: serie.color,
           type: seriesType,
+          visible: serie.visible !== undefined ? serie.visible : true,
         };
       }
     );
@@ -76,11 +77,12 @@ export class RadarHandler<X extends XaxisType = XaxisType> implements SimpleChar
     const seriesColor = (Highcharts as any).getOptions().colors[0];
 
     return [{
-      name: chartConfig.title ?? 'Valeurs',
-      data: formattedData,
-      type: seriesType,
-      showInLegend: true,
-      color: seriesColor,
+        name: chartConfig.title ?? 'Valeurs',
+        data: formattedData,
+        type: seriesType,
+        showInLegend: true,
+        color: seriesColor,
+        visible: true,
     }];
   }
 }

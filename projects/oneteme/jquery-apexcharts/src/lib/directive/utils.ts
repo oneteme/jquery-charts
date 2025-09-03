@@ -114,6 +114,9 @@ export function initCommonChartOptions(
       },
       zoom: {
         enabled: false,
+        type: 'x',
+        autoScaleYaxis: true,
+        allowMouseWheelZoom: true,
       },
     },
     series: [],
@@ -201,6 +204,53 @@ export function updateChartOptions(
       return Promise.resolve();
     })
   );
+}
+
+export function configureSeriesVisibility(options: any, series: any[]): void {
+  const hiddenSeries = series
+    .filter((s: any) => s.visible === false)
+    .map((s: any) => s.name)
+    .filter(Boolean);
+
+  if (hiddenSeries.length === 0) return;
+
+  options.chart.events = options.chart.events || {};
+  const originalMounted = options.chart.events.mounted;
+
+  options.chart.events.mounted = (chartContext: any, config: any) => {
+    if (originalMounted) {
+      originalMounted.call(this, chartContext, config);
+    }
+
+    hiddenSeries.forEach(serieName => {
+      if (chartContext && typeof chartContext.hideSeries === 'function') {
+        chartContext.hideSeries(serieName);
+      }
+    });
+  };
+}
+
+export function setupScrollPrevention(
+  chartElement: HTMLElement,
+  chartInstance: () => ApexCharts | null
+): void {
+  if (!chartElement) return;
+
+  let isMouseOverChart = false;
+
+  chartElement.addEventListener('mouseenter', () => isMouseOverChart = true);
+  chartElement.addEventListener('mouseleave', () => isMouseOverChart = false);
+
+  const handleWheel = (e: WheelEvent) => {
+    const chart = chartInstance();
+    const chartConfig = (chart as any)?.w?.config?.chart?.zoom?.enabled;
+    if (isMouseOverChart && chartConfig) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  };
+  
+  chartElement.addEventListener('wheel', handleWheel, { passive: false });
 }
 
 /**
