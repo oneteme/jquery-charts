@@ -145,6 +145,31 @@ export const LINE_CHART_DATA: ChartDataCollection<LineChartData> = {
               speed: 350,
             },
           },
+          zoom: {
+            type: 'x',
+            enabled: true,
+            autoScaleYaxis: true
+          },
+          toolbar: {
+            show: true,
+            tools: {
+              download: true,
+              selection: true,
+              zoom: true,
+              zoomin: true,
+              zoomout: true,
+              pan: true,
+              reset: true,
+              customIcons: []
+            },
+            export: {
+              csv: {
+                columnDelimiter: ',',
+                headerCategory: 'category',
+                headerValue: 'value'
+              }
+            },
+          }
         },
         stroke: {
           width: 5,
