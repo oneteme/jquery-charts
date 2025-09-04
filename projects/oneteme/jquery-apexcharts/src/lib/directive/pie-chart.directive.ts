@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, buildSingleSerieChart, ChartProvider, ChartView } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
+import { ChartCustomEvent, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -57,18 +57,27 @@ export class PieChartDirective
         let chart = new ApexCharts(this.el.nativeElement, { ...this._options });
         this.chartInstance.set(chart);
         fromPromise(
-          chart.render()
-            .then(() => this.debug && console.log(new Date().getMilliseconds(), 'Rendu du graphique terminé'))
-            .catch(error => {
+          chart
+            .render()
+            .then(
+              () => {
+                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+                this.debug && console.log(
+                    new Date().getMilliseconds(),
+                    'Rendu du graphique terminé'
+                  );
+              }
+            )
+            .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
               this.chartInstance.set(null);
             })
         )
-        .pipe(observeOn(asapScheduler))
-        .subscribe({
+          .pipe(observeOn(asapScheduler))
+          .subscribe({
           next: () => this.debug && console.log(new Date().getMilliseconds(), 'Observable rendu terminé'),
           error: (error) => console.error('Erreur dans le flux Observable:', error)
-        });
+          });
       } catch (error) {
         console.error('Erreur lors de l\'initialisation du graphique:', error);
       }
@@ -142,9 +151,9 @@ export class PieChartDirective
         animate,
         updateSyncedCharts
       ).catch(error => {
-        console.error('Erreur lors de la mise à jour des options:', error);
-        return Promise.resolve();
-      })
+          console.error('Erreur lors de la mise à jour des options:', error);
+          return Promise.resolve();
+        })
     );
   }
 
@@ -158,17 +167,13 @@ export class PieChartDirective
 
     if (currentType === 'pie') {
       this._options.chart.type = 'pie';
-    }
-    else if (currentType === 'donut') {
+    } else if (currentType === 'donut') {
       this._options.chart.type = 'donut';
-    }
-    else if (currentType === 'radial') {
+    } else if (currentType === 'radial') {
       this._options.chart.type = 'radialBar';
-    }
-    else if (currentType === 'polar') {
+    } else if (currentType === 'polar') {
       this._options.chart.type = 'polarArea';
-    }
-    else if (currentType === 'radar') {
+    } else if (currentType === 'radar') {
       this._options.chart.type = 'radar';
     }
   }
@@ -182,7 +187,12 @@ export class PieChartDirective
         : buildSingleSerieChart(this.data, chartConfig, null);
 
     if (this.data.length != 1 && this._type == 'radar') {
-      this._options.series = commonChart.series;
+      this._options.series = commonChart.series
+        .filter((s: any) => s.visible !== false)
+        .map((s: any) => ({
+          ...s,
+          visible: undefined,
+        }));
     } else if (this._type == 'radar') {
       this._options.series = [
         {

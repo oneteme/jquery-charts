@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, configureSeriesVisibility } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -58,7 +58,13 @@ export class BarChartDirective<X extends XaxisType>
           chart
             .render()
             .then(
-              () => this.debug && console.log(new Date().getMilliseconds(), 'Rendu du graphique terminé')
+              () => {
+                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+                this.debug && console.log(
+                    new Date().getMilliseconds(),
+                    'Rendu du graphique terminé'
+                  );
+              }
             )
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
@@ -69,7 +75,10 @@ export class BarChartDirective<X extends XaxisType>
           .subscribe({
             next: () =>
               this.debug &&
-              console.log(new Date().getMilliseconds(), 'Observable rendu terminé'),
+              console.log(
+                new Date().getMilliseconds(),
+                'Observable rendu terminé'
+              ),
             error: (error) =>
               console.error('Erreur dans le flux Observable:', error),
           });
@@ -81,7 +90,11 @@ export class BarChartDirective<X extends XaxisType>
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.debug)
-      console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
+      console.log(
+        new Date().getMilliseconds(),
+        'Détection de changements',
+        changes
+      );
     if (changes['type']) this.updateType();
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
@@ -94,8 +107,16 @@ export class BarChartDirective<X extends XaxisType>
 
   private hydrate(changes: SimpleChanges): void {
     if (this.debug) console.log('Hydratation du graphique', { ...changes });
-    const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
+    const needsDataUpdate =
+      changes['data'] || changes['config'] || changes['type'];
+    const needsOptionsUpdate = Object.keys(changes).some(
+      (key) => !['debug'].includes(key)
+    );
+    
+    if (changes['type']) {
+      this.updateType();
+    }
+    
     if (needsDataUpdate && this.data && this._chartConfig) {
       this.updateData();
     }
@@ -104,18 +125,18 @@ export class BarChartDirective<X extends XaxisType>
         ? 'Chargement des données...'
         : 'Aucune donnée';
 
-      this.updateChartOptions({
-        noData: this._options.noData
-      }, false, false, false);
+      this.updateChartOptions({ noData: this._options.noData }, false, false, false);
     }
 
     if (this._options.shouldRedraw) {
-      if (this.debug) console.log('Recréation complète du graphique nécessaire', changes);
+      if (this.debug)
+        console.log('Recréation complète du graphique nécessaire', changes);
       this.ngOnDestroy();
       this.init();
       delete this._options.shouldRedraw;
     } else if (needsOptionsUpdate) {
-      if (this.debug) console.log('Mise à jour des options du graphique', changes);
+      if (this.debug)
+        console.log('Mise à jour des options du graphique', changes);
       this.updateChartOptions();
     }
   }
@@ -132,15 +153,12 @@ export class BarChartDirective<X extends XaxisType>
     const options = specificOptions ?? this._options;
 
     return this.ngZone.runOutsideAngular(() =>
-      chartInstance.updateOptions(
-        { ...options },
-        redrawPaths,
-        animate,
-        updateSyncedCharts
-      ).catch(error => {
-        console.error('Erreur lors de la mise à jour des options:', error);
-        return Promise.resolve();
-      })
+      chartInstance
+        .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
+        .catch((error) => {
+          console.error('Erreur lors de la mise à jour des options:', error);
+          return Promise.resolve();
+        })
     );
   }
 
@@ -154,12 +172,10 @@ export class BarChartDirective<X extends XaxisType>
     this._options.plotOptions ??= {};
     this._options.plotOptions.bar ??= {};
 
-    if (this._options.plotOptions.bar.horizontal === undefined) {
-      if (this.type === 'bar') {
-        this._options.plotOptions.bar.horizontal = true;
-      } else if (this.type === 'column') {
-        this._options.plotOptions.bar.horizontal = false;
-      }
+    if (this.type === 'bar') {
+      this._options.plotOptions.bar.horizontal = true;
+    } else if (this.type === 'column') {
+      this._options.plotOptions.bar.horizontal = false;
     }
 
     if (this.type === 'funnel' || this.type === 'pyramid') {
@@ -186,13 +202,15 @@ export class BarChartDirective<X extends XaxisType>
     });
 
     this._options.series = commonChart.series.length
-      ? commonChart.series.map((s) => ({
+      ? commonChart.series.map((s: any) => ({
           data: s.data,
           name: s.name,
           color: s.color,
           group: s.stack,
         }))
       : [{ data: [] }];
+
+    configureSeriesVisibility(this._options, commonChart.series);
 
     const newType = getType(commonChart);
     if (this._options.xaxis.type !== newType) {
