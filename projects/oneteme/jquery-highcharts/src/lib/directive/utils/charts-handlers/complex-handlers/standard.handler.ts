@@ -21,7 +21,10 @@ export class StandardHandler<X extends XaxisType = XaxisType>
 
     if (commonChart?.categories && commonChart?.series) {
       const validSeries = Array.isArray(commonChart.series)
-        ? commonChart.series
+        ? commonChart.series.map((serie: any) => ({
+            ...serie,
+            visible: serie.visible !== undefined ? serie.visible : true,
+          }))
         : [];
       const validCategories = Array.isArray(commonChart.categories)
         ? commonChart.categories

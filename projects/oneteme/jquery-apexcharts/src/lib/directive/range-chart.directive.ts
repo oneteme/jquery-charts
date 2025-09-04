@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -48,12 +48,7 @@ export class RangeChartDirective<X extends XaxisType>
   }
 
   constructor() {
-    this._options = initCommonChartOptions(
-      this.el,
-      this.customEvent,
-      this.ngZone,
-      'rangeArea'
-    );
+    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'rangeArea');
   }
 
   init() {
@@ -69,12 +64,13 @@ export class RangeChartDirective<X extends XaxisType>
           chart
             .render()
             .then(
-              () =>
-                this.debug &&
-                console.log(
-                  new Date().getMilliseconds(),
-                  'Rendu du graphique terminé'
-                )
+              () => {
+                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+                this.debug && console.log(
+                    new Date().getMilliseconds(),
+                    'Rendu du graphique terminé'
+                  );
+              }
             )
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
@@ -165,9 +161,9 @@ export class RangeChartDirective<X extends XaxisType>
         animate,
         updateSyncedCharts
       ).catch(error => {
-        console.error('Erreur lors de la mise à jour des options:', error);
-        return Promise.resolve();
-      })
+          console.error('Erreur lors de la mise à jour des options:', error);
+          return Promise.resolve();
+        })
     );
   }
 
@@ -202,7 +198,12 @@ export class RangeChartDirective<X extends XaxisType>
       null
     );
 
-    this._options.series = commonChart.series;
+    this._options.series = commonChart.series
+      .filter((s: any) => s.visible !== false)
+      .map((s: any) => ({
+        ...s,
+        visible: undefined,
+      }));
 
     let newType = getType(commonChart);
     if (this._options.xaxis.type != newType) {

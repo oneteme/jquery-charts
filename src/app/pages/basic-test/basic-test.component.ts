@@ -2,73 +2,48 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-// import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
-import { ChartComponent as HighchartsChartComponent } from '@oneteme/jquery-highcharts';
+
+// Import conditionnel - utilisez soit ApexCharts soit Highcharts à la fois, pas les deux
+import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
+// import { ChartComponent as HighchartsChartComponent } from '@oneteme/jquery-highcharts';
+
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
-import { mapChartData } from 'src/app/data/chart/map-chart.data';
 
 @Component({
   selector: 'app-basic-test',
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
   standalone: true,
-  imports: [
-    CommonModule,
-    RouterModule,
-    FormsModule,
-    // ApexChartComponent,
-    HighchartsChartComponent
+  imports: [CommonModule, RouterModule, FormsModule,
+    ApexChartComponent, // Décommentez pour tester jquery-Apexcharts (mais commentez HighchartsChartComponent)
+    // HighchartsChartComponent, // Décommentez pour tester jquery-Highcharts (mais commentez ApexChartComponent)
   ],
 })
 export class BasicTestComponent implements OnInit {
-  // Références aux composants de graphiques
-  // @ViewChild('apexChart') apexChart: ApexChartComponent<string, number>;
-  @ViewChild('highchart') highchart: HighchartsChartComponent<string, number>;
-
-  // Contrôle de l'affichage
-  showApexChart = false;
-  showHighcharts = true;
-  layoutMode: 'row' | 'column' = 'column';
-  isPanelExpanded = false;
+  // Référence au composant de graphique
+  // @ViewChild('chart') chart: HighchartsChartComponent<string, number>;
+  @ViewChild('chart') chart: ApexChartComponent<string, number>;
 
   // Configuration du graphique
-  chartType: ChartType = 'pie';
+  chartType: ChartType = 'line';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
   isComboChart = false;
+  isPanelVisible = false;
+
   dataDelay = 100;
 
-  // Personnalisation loading
-  loadingConfig = {
-    // Configuration du loading
-    // showText: false,
-    // text: 'Chargement en cours...',
-    // showSpinner: true,
-    // backgroundColor: '#ffffff',
-    // textColor: '#000000',
-    // spinnerColor: '#ff0000',
-
-    // Configuration "aucune donnée"
-    // showNoDataBackground: true,
-    // noDataMessage: 'Aucune donnée n\'a été trouvée...',
-    // noDataBackgroundColor: '#f2f2f2',
-    // noDataBorderColor: '#acacac',
-    // noDataTextColor: '#000000',
-    // showNoDataIcon: true,
-    // noDataIcon: '📈',
-  };
+  // Configuration de loading (simplifiée)
+  loadingConfig = {};
 
   // Types de graphiques regroupés par catégorie
-  readonly chartTypes = {
-    simple: ['pie', 'donut', 'polar', 'radar', 'radarArea', 'radialBar', 'funnel', 'pyramid'] as ChartType[],
-    complex: ['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap'] as ChartType[],
-    map: ['map'] as ChartType[] };
+  readonly chartTypes = { simple: ['pie','donut','polar','radar','radarArea','radialBar','funnel','pyramid'] as ChartType[], complex: ['bar','column','columnpyramid','line','area','spline','areaspline','columnrange','arearange','areasplinerange','scatter','bubble','heatmap','treemap'] as ChartType[] };
 
-  // Configuration de base commune pour tous les graphiques
+  // Config de base commune pour tous les graphs
   private readonly baseConfig = {
     options: {
-      // Tout ce qu'on veut en commun pour tous les graphiques
+      // Tout ce qu'on veut en commun
       legend: { enabled: true, position: 'bottom' },
       tooltip: { enabled: true },
       exporting: {
@@ -80,7 +55,25 @@ export class BasicTestComponent implements OnInit {
           },
         },
       },
-      plotOptions: { series: { dataLabels: { enabled: true }}}
+      plotOptions: { series: { dataLabels: { enabled: true } } },
+      chart: {
+        zoom: {
+          enabled: true,
+          type: 'x',
+          autoScaleYaxis: true,
+        },
+        toolbar: {
+          show: true,
+          tools: {
+            zoom: true,
+            zoomin: true,
+            zoomout: true,
+            pan: true,
+            reset: true,
+            download: true
+          },
+        },
+      },
     },
   };
 
@@ -163,27 +156,11 @@ export class BasicTestComponent implements OnInit {
     ],
     // Données pour les graphiques boxplot
     boxplot: [
-      // Format compatible avec field() de jquery-core
       { category: 'Q1 2024', low: 12, q1: 18, median: 23, q3: 28, high: 35 },
       { category: 'Q2 2024', low: 15, q1: 22, median: 27, q3: 32, high: 38 },
       { category: 'Q3 2024', low: 10, q1: 16, median: 25, q3: 30, high: 40 },
       { category: 'Q4 2024', low: 14, q1: 20, median: 29, q3: 34, high: 42 },
-      { category: 'Q1 2025', low: 16, q1: 24, median: 31, q3: 36, high: 45 }
-    ],
-    map: [],
-    combo: [
-      // Données pour les graphiques combinés scatter + line
-      { month: 'Jan', metric: 'Performance', value: 44 },
-      { month: 'Fév', metric: 'Performance', value: 55 },
-      { month: 'Mar', metric: 'Performance', value: 57 },
-      { month: 'Avr', metric: 'Performance', value: 56 },
-      { month: 'Mai', metric: 'Performance', value: 61 },
-      { month: 'Juin', metric: 'Performance', value: 58 },
-
-      // Points scatter pour anomalies
-      { month: 'Jan', metric: 'Anomalies', value: 35 },
-      { month: 'Mar', metric: 'Anomalies', value: 42 },
-      { month: 'Mai', metric: 'Anomalies', value: 38 },
+      { category: 'Q1 2025', low: 16, q1: 24, median: 31, q3: 36, high: 45 },
     ],
   };
 
@@ -193,33 +170,16 @@ export class BasicTestComponent implements OnInit {
   get complexChartTypes(): ChartType[] {
     return this.chartTypes.complex;
   }
-  get mapChartType(): ChartType[] {
-    return this.chartTypes.map;
-  }
 
   ngOnInit(): void {
     this.loadChartData();
   }
   loadChartData(): void {
     this.chartData = [];
-    const isMapChart = this.chartTypes.map.includes(this.chartType);
-    if (
-      !isMapChart &&
-      (window as any).Highcharts?.maps?.['custom/france-regions']
-    ) {
-      console.log(
-        'Nettoyage des données GeoJSON car on passe à un graphique non-map'
-      );
-      delete (window as any).Highcharts.maps['custom/france-regions'];
-    }
 
     setTimeout(() => {
-      let chartMode: 'simple' | 'complex' | 'map' | 'combo' | 'boxplot';
-      if (this.isComboChart) {
-        chartMode = 'combo';
-      } else if (isMapChart) {
-        chartMode = 'map';
-      } else if (this.chartType === 'boxplot') {
+      let chartMode: 'simple' | 'complex' | 'boxplot';
+      if (this.chartType === 'boxplot') {
         chartMode = 'boxplot';
       } else if (this.isSimpleChart) {
         chartMode = 'simple';
@@ -231,105 +191,70 @@ export class BasicTestComponent implements OnInit {
     }, this.dataDelay);
   }
 
-  private configureChart(mode: 'simple' | 'complex' | 'map' | 'combo' | 'boxplot'): void {
+  private configureChart(
+    mode: 'simple' | 'complex' | 'boxplot'
+  ): void {
     const isSimple = mode === 'simple';
-    const isMap = mode === 'map';
-    const isCombo = mode === 'combo';
     const isBoxplot = mode === 'boxplot';
 
-    if (isMap) {
-      this.chartConfig = mapChartData.config;
-      this.chartData = [...mapChartData.data];
-      this.loadGeoJsonData();
-    } else if (isCombo) {
-      this.configureComboChart();
-    } else if (isBoxplot) {
+    if (isBoxplot) {
       this.configureBoxplotChart();
     } else {
+      // Configuration spéciale pour tester la propriété 'visible'
       this.chartConfig = {
         ...this.baseConfig,
-        title: isSimple ? 'Répartition par catégorie' : 'Performance par mois',
-        subtitle: 'Données 2025',
+        title: isSimple ? 'Répartition' : 'Performance par équipe',
+        subtitle: 'Démonstration fonctionnelle',
         ...(isSimple
           ? {}
           : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
-        series: [
-          {
-            ...(isSimple ? {} : { name: field('team') }),
-            data: {
-              x: field(isSimple ? 'category' : 'month'),
-              y: field('value'),
-            },
-          },
-        ],
+        series: isSimple
+          ? [
+              {
+                data: {
+                  x: field('category'),
+                  y: field('value'),
+                },
+              },
+            ]
+          : [
+              {
+                name: field('team'),
+                data: {
+                  x: field('month'),
+                  y: field('value'),
+                },
+                color: field('color'),
+                visible: field('visible'),
+              },
+            ],
         showToolbar: true,
       };
 
-      this.chartData = [...this.chartData$[mode]];
+      // Charger les données filtrées par équipe pour les graphiques complexes
+      if (isSimple) {
+        this.chartData = [...this.chartData$[mode]];
+      } else {
+        // Pour les graphiques complexes, ajouter les propriétés color et visible aux données
+        const complexData = this.chartData$[mode].map((item) => ({
+          ...item,
+          color:
+            item.team === 'Équipe A'
+              ? '#4CAF50'
+              : item.team === 'Équipe B'
+              ? '#FF9800'
+              : item.team === 'Équipe C'
+              ? '#2196F3'
+              : '#999',
+          visible: item.team !== 'Équipe B', // équipe B masquée par défaut
+        }));
+
+        this.chartData = complexData;
+      }
 
       // Pour tester "Aucune donnée", commenter / décommenter
       // this.chartData = [];
     }
-  }
-
-  private configureComboChart(): void {
-    this.chartConfig = {
-      ...this.baseConfig,
-      title: 'Ventes & Objectifs Mensuels',
-      subtitle: 'Performance commerciale 2025 - Colonnes (Ventes) + Ligne (Objectifs) + Scatter (Bonus)',
-      xtitle: 'Mois',
-      ytitle: 'Montant (€)',
-      showToolbar: true,
-    };
-
-    this.chartData = [
-      {
-        type: 'column',
-        name: 'Ventes Réalisées',
-        data: [
-          { x: 'Jan', y: 85000 },
-          { x: 'Fév', y: 92000 },
-          { x: 'Mar', y: 78000 },
-          { x: 'Avr', y: 105000 },
-          { x: 'Mai', y: 110000 },
-          { x: 'Juin', y: 95000 },
-          { x: 'Juil', y: 125000 },
-          { x: 'Aoû', y: 88000 },
-          { x: 'Sep', y: 115000 },
-          { x: 'Oct', y: 132000 },
-          { x: 'Nov', y: 145000 },
-          { x: 'Déc', y: 158000 },
-        ],
-      },
-      {
-        type: 'line',
-        name: 'Objectif Mensuel',
-        data: [
-          { x: 'Jan', y: 100000 },
-          { x: 'Fév', y: 100000 },
-          { x: 'Mar', y: 100000 },
-          { x: 'Avr', y: 105000 },
-          { x: 'Mai', y: 105000 },
-          { x: 'Juin', y: 105000 },
-          { x: 'Juil', y: 110000 },
-          { x: 'Aoû', y: 110000 },
-          { x: 'Sep', y: 110000 },
-          { x: 'Oct', y: 115000 },
-          { x: 'Nov', y: 115000 },
-          { x: 'Déc', y: 120000 },
-        ],
-      },
-      {
-        type: 'scatter',
-        name: 'Bonus Exceptionnels',
-        data: [
-          { x: 'Avr', y: 125000 },
-          { x: 'Juil', y: 140000 },
-          { x: 'Oct', y: 150000 },
-          { x: 'Déc', y: 175000 },
-        ],
-      },
-    ];
   }
 
   private configureBoxplotChart(): void {
@@ -339,75 +264,25 @@ export class BasicTestComponent implements OnInit {
       subtitle: 'Distribution des valeurs par quartile',
       xtitle: 'Période',
       ytitle: 'Valeur',
-      series: [{
-        name: 'Distribution',
-        data: {
-          x: field('category'),
-          y: field('low')
-        }
-      }],
+      series: [
+        {
+          name: 'Distribution',
+          data: {
+            x: field('category'),
+            y: field('low'),
+          },
+        },
+      ],
       showToolbar: true,
     };
 
     this.chartData = [...this.chartData$.boxplot];
   }
 
-  private async loadGeoJsonData(): Promise<void> {
-    try {
-      console.log('Chargement des données GeoJSON...');
-      const response = await fetch(
-        'assets/france-geojson/regions-version-simplifiee.geojson'
-      );
-      if (!response.ok) {
-        throw new Error(`Erreur HTTP: ${response.status}`);
-      }
-
-      const geoJsonData = await response.json();
-      console.log('Données GeoJSON chargées:', geoJsonData);
-
-      if ((window as any).Highcharts) {
-        (window as any).Highcharts.maps = (window as any).Highcharts.maps ?? {};
-        (window as any).Highcharts.maps['custom/france-regions'] = geoJsonData;
-        console.log('Données GeoJSON injectées dans Highcharts.maps');
-
-        this.chartConfig = {
-          ...this.chartConfig,
-          options: {
-            ...this.chartConfig.options,
-            chart: {
-              ...this.chartConfig.options?.chart,
-              map: 'custom/france-regions',
-            },
-          },
-        };
-        console.log('Configuration de carte mise à jour:', this.chartConfig);
-      } else {
-        console.error('Highcharts non disponible sur window');
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des données GeoJSON:', error);
-    }
-  }
-
-  // Méthode pour revenir aux graphiques normaux
-  loadNormalChart(): void {
-    this.isComboChart = false;
-    this.loadChartData();
-  }
-
-  // Méthode pour charger les graphiques combinés
-  loadComboChart(): void {
-    this.isComboChart = true;
-    this.isSimpleChart = false;
-    this.chartType = 'line'; // Type de base mais les données prévalent
-    this.loadChartData();
-  }
-
   changeChartType(): void {
-    const isMapChart = this.chartTypes.map.includes(this.chartType);
     const isBoxplotChart = this.chartType === 'boxplot';
     this.isSimpleChart =
-      !isMapChart && !isBoxplotChart && this.chartTypes.simple.includes(this.chartType);
+      !isBoxplotChart && this.chartTypes.simple.includes(this.chartType);
     this.loadChartData();
   }
 
@@ -421,7 +296,12 @@ export class BasicTestComponent implements OnInit {
     this.loadChartData();
   }
 
+  getCurrentMode(): string {
+    if (this.chartType === 'boxplot') return 'boxplot';
+    return this.isSimpleChart ? 'simple' : 'complex';
+  }
+
   toggleControlPanel(): void {
-    this.isPanelExpanded = !this.isPanelExpanded;
+    this.isPanelVisible = !this.isPanelVisible;
   }
 }
