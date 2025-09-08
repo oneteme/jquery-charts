@@ -207,26 +207,55 @@ export function updateChartOptions(
 }
 
 export function configureSeriesVisibility(options: any, series: any[]): void {
-  const hiddenSeries = series
-    .filter((s: any) => s.visible === false)
-    .map((s: any) => s.name)
-    .filter(Boolean);
+  const hiddenSeriesNames: string[] = [];
 
-  if (hiddenSeries.length === 0) return;
+  series.forEach((s: any, index: number) => {
+    if (s.visible === false && s.name) {
+      hiddenSeriesNames.push(s.name);
+    }
+  });
+
+  if (hiddenSeriesNames.length === 0) return;
+
+  if (!options.legend) options.legend = {};
 
   options.chart.events = options.chart.events || {};
   const originalMounted = options.chart.events.mounted;
+  const originalBeforeMount = options.chart.events.beforeMount;
+  options.chart.events.beforeMount = (chartContext: any, config: any) => {
+    if (originalBeforeMount) {
+      originalBeforeMount.call(this, chartContext, config);
+    }
+    if (config.globals && config.globals.seriesNames) {
+      hiddenSeriesNames.forEach(serieName => {
+        const seriesIndex = config.globals.seriesNames.indexOf(serieName);
+        if (seriesIndex !== -1) {
+          if (!config.globals.collapsedSeries) {
+            config.globals.collapsedSeries = [];
+          }
+          config.globals.collapsedSeries.push(seriesIndex);
+        }
+      });
+    }
+  };
 
   options.chart.events.mounted = (chartContext: any, config: any) => {
     if (originalMounted) {
       originalMounted.call(this, chartContext, config);
     }
 
-    hiddenSeries.forEach(serieName => {
-      if (chartContext && typeof chartContext.hideSeries === 'function') {
-        chartContext.hideSeries(serieName);
-      }
-    });
+    // Masquer les séries après le montage du graphique
+    setTimeout(() => {
+      hiddenSeriesNames.forEach(serieName => {
+        if (chartContext && typeof chartContext.hideSeries === 'function') {
+          try {
+            chartContext.hideSeries(serieName);
+          } catch (error) {
+            console.warn(`Could not hide series: ${serieName}`, error);
+          }
+        }
+      });
+    }, 10);
   };
 }
 
@@ -249,7 +278,7 @@ export function setupScrollPrevention(
       e.stopPropagation();
     }
   };
-  
+
   chartElement.addEventListener('wheel', handleWheel, { passive: false });
 }
 
