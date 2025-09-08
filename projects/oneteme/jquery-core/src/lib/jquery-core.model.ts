@@ -46,8 +46,8 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
 }
 
 export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
-  objects: any[], 
-  provider: ChartProvider<X, Y>, 
+  objects: any[],
+  provider: ChartProvider<X, Y>,
   defaultValue?: Y
 ): CommonChart<X, Y | Coordinate2D> {
   let copy = provider;
@@ -73,9 +73,9 @@ export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
       })),
     };
   }
-  return { 
-    ...buildChart(objects, copy, defaultValue), 
-    pivot: provider.pivot 
+  return {
+    ...buildChart(objects, copy, defaultValue),
+    pivot: provider.pivot
   };
 }
 
@@ -91,9 +91,9 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         visible: m.visible,
       }))
     : provider.series;
-  
+
   const chart = newChart(provider);
-  
+
   if (!provider.continue) {
     chart.categories = distinct(
       objects,
@@ -103,7 +103,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
       chart.categories.sort(naturalComparator(provider.xorder));
     }
   }
-  
+
   const series = {};
   mappers.forEach((m) => {
     const np = resolveDataProvider(m.name);
@@ -111,7 +111,18 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
     const cp = resolveDataProvider(m.color);
     const tp = resolveDataProvider(m.type);
     const vp = resolveDataProvider(m.visible, true); // visible par défaut
-    
+
+    const isStaticName = typeof m.name === 'string';
+    const staticVisible = isStaticName && typeof m.visible === 'boolean' ? m.visible : undefined;
+
+    if (isStaticName && typeof m.name === 'string') {
+      const staticSeriesName = m.name;
+      if (series[staticSeriesName] && staticVisible !== undefined) {
+        series[staticSeriesName].visible = staticVisible;
+        return;
+      }
+    }
+
     objects.forEach((o, i) => {
       const name = np(o, i) || ''; // can't use undefined as a map key
       if (!series[name]) {
@@ -124,8 +135,8 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         const stack = sp(o, i);
         const color = cp(o, i);
         const type = tp(0, i);
-        const visible = vp(o, i);
-        
+        const visible = staticVisible !== undefined ? staticVisible : vp(o, i);
+
         if (name) {
           series[name].name = name;
         }
@@ -138,9 +149,11 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         if (type) {
           series[name].type = type;
         }
-        series[name].visible = visible;
+        if (visible !== undefined) {
+          series[name].visible = visible;
+        }
       }
-      
+
       if (provider.continue) {
         series[name].data.push({
           x: m.data.x(o, i),
@@ -161,15 +174,15 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
       }
     });
   });
-  
+
   chart.series = Object.values(series);
-  
+
   if (provider.continue && provider.xorder) {
     chart.series.forEach((s) =>
       s.data.sort(naturalFieldComparator(provider.xorder, field('x')))
     );
   }
-  
+
   return chart;
 }
 

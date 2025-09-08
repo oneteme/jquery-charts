@@ -226,7 +226,15 @@ export class BasicTestComponent implements OnInit {
                 },
                 color: field('color'),
                 visible: field('visible'),
+                // visible: false
               },
+              // série statique pour test
+              {
+                name: 'Équipe D',
+                data: { x: field('month'), y: field('value') },
+                color: '#ff0000',
+                visible: false
+              }
             ],
         showToolbar: true,
       };
@@ -245,11 +253,21 @@ export class BasicTestComponent implements OnInit {
               ? '#FF9800'
               : item.team === 'Équipe C'
               ? '#2196F3'
-              : '#999',
+              : '#a5a5a5',
           visible: item.team !== 'Équipe B', // équipe B masquée par défaut
         }));
 
-        this.chartData = complexData;
+        // Ajouter des données pour la série statique
+        const staticSeriesData = [
+          { month: 'Jan', team: 'Équipe D', value: 76 },
+          { month: 'Fév', team: 'Équipe D', value: 85 },
+          { month: 'Mar', team: 'Équipe D', value: 101 },
+          { month: 'Avr', team: 'Équipe D', value: 98 },
+          { month: 'Mai', team: 'Équipe D', value: 87 },
+          { month: 'Juin', team: 'Équipe D', value: 105 }
+        ];
+
+        this.chartData = [...complexData, ...staticSeriesData];
       }
 
       // Pour tester "Aucune donnée", commenter / décommenter
