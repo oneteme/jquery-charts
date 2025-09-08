@@ -69,8 +69,8 @@ export class BasicTestComponent implements OnInit {
             zoomin: true,
             zoomout: true,
             pan: true,
-            reset: true,
-            download: true
+            // reset: true,
+            // download: true
           },
         },
       },

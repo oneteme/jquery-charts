@@ -1,7 +1,7 @@
 {
   "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../../dist/oneteme/jquery-apexcharts",
-  "assets": ["src/assets"],
+  "assets": ["src/assets/**/*.scss", "src/assets/**/*.css"],
   "lib": {
     "entryFile": "src/public-api.ts"
   }

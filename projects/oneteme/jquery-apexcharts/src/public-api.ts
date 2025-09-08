@@ -8,4 +8,3 @@ export * from './lib/directive/treemap-chart.directive';
 export * from './lib/directive/test-chart.directive';
 export * from './lib/directive/range-chart.directive';
 export * from './lib/component/chart.component';
-
