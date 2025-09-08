@@ -39,7 +39,6 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
         },
         plotOptions: {
           bar: {
-            horizontal: false,
             distributed: true,
           },
         },
