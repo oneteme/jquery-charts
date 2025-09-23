@@ -59,15 +59,13 @@ export class PieChartDirective
         fromPromise(
           chart
             .render()
-            .then(
-              () => {
-                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+            .then(() => {
+              setupScrollPrevention(this.el.nativeElement, this.chartInstance);
                 this.debug && console.log(
-                    new Date().getMilliseconds(),
-                    'Rendu du graphique terminé'
-                  );
-              }
-            )
+                  new Date().getMilliseconds(),
+                  'Rendu du graphique terminé'
+                );
+            })
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
               this.chartInstance.set(null);
@@ -79,7 +77,7 @@ export class PieChartDirective
           error: (error) => console.error('Erreur dans le flux Observable:', error)
           });
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation du graphique:', error);
+        console.error("Erreur lors de l'initialisation du graphique:", error);
       }
     });
   }
@@ -105,8 +103,11 @@ export class PieChartDirective
   private hydrate(changes: SimpleChanges): void {
     if (this.debug) console.log('Hydratation du graphique', { ...changes });
 
-    const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
+    const needsDataUpdate =
+      changes['data'] || changes['config'] || changes['type'];
+    const needsOptionsUpdate = Object.keys(changes).some(
+      (key) => !['debug'].includes(key)
+    );
 
     if (needsDataUpdate && this.data && this._chartConfig) {
       this.updateData();
@@ -187,12 +188,7 @@ export class PieChartDirective
         : buildSingleSerieChart(this.data, chartConfig, null);
 
     if (this.data.length != 1 && this._type == 'radar') {
-      this._options.series = commonChart.series
-        .filter((s: any) => s.visible !== false)
-        .map((s: any) => ({
-          ...s,
-          visible: undefined,
-        }));
+      this._options.series = commonChart.series;
     } else if (this._type == 'radar') {
       this._options.series = [
         {

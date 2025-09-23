@@ -46,8 +46,8 @@ export function rangeFields<T>(minName: string, maxName: string): DataProvider<T
 }
 
 export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
-  objects: any[], 
-  provider: ChartProvider<X, Y>, 
+  objects: any[],
+  provider: ChartProvider<X, Y>,
   defaultValue?: Y
 ): CommonChart<X, Y | Coordinate2D> {
   let copy = provider;
@@ -68,14 +68,13 @@ export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
           y: s.data.y,
         },
         color: s.color,
-        visible: s.visible,
         // no unit
       })),
     };
   }
-  return { 
-    ...buildChart(objects, copy, defaultValue), 
-    pivot: provider.pivot 
+  return {
+    ...buildChart(objects, copy, defaultValue),
+    pivot: provider.pivot
   };
 }
 
@@ -88,12 +87,11 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
     ? provider.series.map((m) => ({
         name: resolveDataProvider(m.data.x),
         data: { x: resolveDataProvider(m.name, ''), y: m.data.y },
-        visible: m.visible,
       }))
     : provider.series;
-  
+
   const chart = newChart(provider);
-  
+
   if (!provider.continue) {
     chart.categories = distinct(
       objects,
@@ -103,15 +101,15 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
       chart.categories.sort(naturalComparator(provider.xorder));
     }
   }
-  
+
   const series = {};
   mappers.forEach((m) => {
     const np = resolveDataProvider(m.name);
     const sp = resolveDataProvider(m.stack);
     const cp = resolveDataProvider(m.color);
     const tp = resolveDataProvider(m.type);
-    const vp = resolveDataProvider(m.visible, true); // visible par défaut
-    
+    const vp = resolveDataProvider(m.visible);
+
     objects.forEach((o, i) => {
       const name = np(o, i) || ''; // can't use undefined as a map key
       if (!series[name]) {
@@ -123,9 +121,9 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         };
         const stack = sp(o, i);
         const color = cp(o, i);
-        const type = tp(0, i);
+        const type = tp(o, i);
         const visible = vp(o, i);
-        
+
         if (name) {
           series[name].name = name;
         }
@@ -138,9 +136,11 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         if (type) {
           series[name].type = type;
         }
-        series[name].visible = visible;
+        if (visible !== undefined) {
+          series[name].visible = visible;
+        }
       }
-      
+
       if (provider.continue) {
         series[name].data.push({
           x: m.data.x(o, i),
@@ -161,15 +161,14 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
       }
     });
   });
-  
+
   chart.series = Object.values(series);
-  
+
   if (provider.continue && provider.xorder) {
     chart.series.forEach((s) =>
       s.data.sort(naturalFieldComparator(provider.xorder, field('x')))
     );
   }
-  
   return chart;
 }
 
@@ -191,7 +190,7 @@ function resolveDataProvider<T>(
   provider?: T | DataProvider<T>,
   defaultValue?: T
 ): DataProvider<T> {
-  if (!provider) {
+  if (provider === undefined || provider === null) {
     return () => defaultValue;
   }
   if (typeof provider === 'function') {
@@ -241,8 +240,8 @@ export interface SerieProvider<X extends XaxisType, Y extends YaxisType> {
   stack?: string | DataProvider<string>; // first time at init
   color?: string | DataProvider<string>; // first time at init
   type?: string | DataProvider<string>; // first time at init
+  visible?: boolean | DataProvider<boolean>; // pour masquer/afficher une série
   unit?: string;
-  visible?: boolean | DataProvider<boolean>;
 }
 
 export declare type Coordinate2D = { x: XaxisType; y: YaxisType };
@@ -285,7 +284,7 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
   name?: string;
   stack?: string;
   color?: string;
-  visible?: boolean; // Contrôle la visibilité de la série
+  visible?: boolean;
   // type
 }
 

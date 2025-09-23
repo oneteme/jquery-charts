@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, configureSeriesVisibility, setupScrollPrevention } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -80,15 +80,13 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
         fromPromise(
           chart
             .render()
-            .then(
-              () => {
-                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+            .then(() => {
+              setupScrollPrevention(this.el.nativeElement, this.chartInstance);
                 this.debug && console.log(
-                    new Date().getMilliseconds(),
-                    'Rendu du graphique terminé'
-                  );
-              }
-            )
+                  new Date().getMilliseconds(),
+                  'Rendu du graphique terminé'
+                );
+            })
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
               this.chartInstance.set(null);
@@ -127,8 +125,11 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   private hydrate(changes: SimpleChanges): void {
     if (this.debug) console.log('Hydratation du graphique', { ...changes });
 
-    const needsDataUpdate = changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(key => !['debug'].includes(key));
+    const needsDataUpdate =
+      changes['data'] || changes['config'] || changes['type'];
+    const needsOptionsUpdate = Object.keys(changes).some(
+      (key) => !['debug'].includes(key)
+    );
 
     if (needsDataUpdate && this.data && this._chartConfig) {
       this.updateData();
@@ -167,12 +168,9 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
     const options = specificOptions || this._options;
 
     return this.ngZone.runOutsideAngular(() =>
-      chartInstance.updateOptions(
-        { ...options },
-        redrawPaths,
-        animate,
-        updateSyncedCharts
-      ).catch(error => {
+      chartInstance
+        .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
+        .catch((error) => {
           console.error('Erreur lors de la mise à jour des options:', error);
           return Promise.resolve();
         })
@@ -186,11 +184,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
       null
     );
 
-    this._options.series = commonChart.series.map((s: any) => ({
-      ...s,
-      visible: undefined,
-    }));
-    configureSeriesVisibility(this._options, commonChart.series);
+    this._options.series = transformSeriesVisibility(commonChart.series);
 
     let newType = getType(commonChart);
     if (this._options.xaxis.type != newType) {

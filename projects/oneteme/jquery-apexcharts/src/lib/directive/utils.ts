@@ -137,7 +137,7 @@ export function updateCommonOptions<X extends XaxisType, Y extends YaxisType>(
 ) {
   options ??= {};
 
-const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
+  const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
   const updatedOptions = mergeDeep(
     options,
     {
@@ -169,7 +169,8 @@ const existingBarHorizontal = options?.plotOptions?.bar?.horizontal;
     config?.options ?? {}
   );
 
-  const userSetHorizontal = config?.options?.plotOptions?.bar?.horizontal !== undefined;
+  const userSetHorizontal =
+    config?.options?.plotOptions?.bar?.horizontal !== undefined;
 
   if (existingBarHorizontal !== undefined && !userSetHorizontal) {
     updatedOptions.plotOptions ??= {};
@@ -194,40 +195,26 @@ export function updateChartOptions(
   if (!chartInstance) return Promise.resolve();
 
   return ngZone.runOutsideAngular(() =>
-    chartInstance.updateOptions(
-      { ...options },
-      redrawPaths,
-      animate,
-      updateSyncedCharts
-    ).catch(error => {
-      console.error('Erreur lors de la mise à jour des options:', error);
-      return Promise.resolve();
-    })
+    chartInstance
+      .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
+      .catch((error) => {
+        console.error('Erreur lors de la mise à jour des options:', error);
+        return Promise.resolve();
+      })
   );
 }
 
-export function configureSeriesVisibility(options: any, series: any[]): void {
-  const hiddenSeries = series
-    .filter((s: any) => s.visible === false)
-    .map((s: any) => s.name)
-    .filter(Boolean);
-
-  if (hiddenSeries.length === 0) return;
-
-  options.chart.events = options.chart.events || {};
-  const originalMounted = options.chart.events.mounted;
-
-  options.chart.events.mounted = (chartContext: any, config: any) => {
-    if (originalMounted) {
-      originalMounted.call(this, chartContext, config);
+export function transformSeriesVisibility(series: any[]): any[] {
+  return series.map((serie) => {
+    if (serie.visible !== undefined) {
+      const { visible, ...serieWithoutVisible } = serie;
+      return {
+        ...serieWithoutVisible,
+        hidden: visible === false,
+      };
     }
-
-    hiddenSeries.forEach(serieName => {
-      if (chartContext && typeof chartContext.hideSeries === 'function') {
-        chartContext.hideSeries(serieName);
-      }
-    });
-  };
+    return { ...serie, hidden: false };
+  });
 }
 
 export function setupScrollPrevention(
@@ -238,8 +225,8 @@ export function setupScrollPrevention(
 
   let isMouseOverChart = false;
 
-  chartElement.addEventListener('mouseenter', () => isMouseOverChart = true);
-  chartElement.addEventListener('mouseleave', () => isMouseOverChart = false);
+  chartElement.addEventListener('mouseenter', () => (isMouseOverChart = true));
+  chartElement.addEventListener('mouseleave', () => (isMouseOverChart = false));
 
   const handleWheel = (e: WheelEvent) => {
     const chart = chartInstance();
@@ -249,7 +236,7 @@ export function setupScrollPrevention(
       e.stopPropagation();
     }
   };
-  
+
   chartElement.addEventListener('wheel', handleWheel, { passive: false });
 }
 

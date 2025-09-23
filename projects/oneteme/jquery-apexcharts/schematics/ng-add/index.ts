@@ -32,16 +32,27 @@ function addStylesToAngularJson(tree: Tree, context: SchematicContext, options: 
     }
 
     const styles = (buildTarget.options?.['styles'] as string[]) || [];
-    const styleToAdd = 'node_modules/@oneteme/jquery-apexcharts/assets/styles/styles.scss';
+    const styleToAdd = 'node_modules/@oneteme/jquery-apexcharts/styles/styles.scss';
 
     if (!styles.includes(styleToAdd)) {
       styles.push(styleToAdd);
       buildTarget.options = { ...buildTarget.options, styles };
 
       context.logger.info('@oneteme/jquery-apexcharts styles have been added to your angular.json');
-      context.logger.info('You can now use the ApexCharts directives in your components!');
     } else {
       context.logger.info('@oneteme/jquery-apexcharts styles are already configured in your project.');
     }
+
+    const testTarget = project.targets.get('test');
+    if (testTarget) {
+      const testStyles = (testTarget.options?.['styles'] as string[]) || [];
+      if (!testStyles.includes(styleToAdd)) {
+        testStyles.push(styleToAdd);
+        testTarget.options = { ...testTarget.options, styles: testStyles };
+        context.logger.info('@oneteme/jquery-apexcharts styles have been added to your test configuration');
+      }
+    }
+
+    context.logger.info('You can now use the ApexCharts directives in your components!');
   });
 }
