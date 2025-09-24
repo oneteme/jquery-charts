@@ -1,27 +1,8 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  inject,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  signal,
-  SimpleChanges,
-} from '@angular/core';
+import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
 import { buildChart, ChartProvider, ChartView } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import {
-  ChartCustomEvent,
-  getType,
-  initCommonChartOptions,
-  updateCommonOptions,
-  destroyChart,
-  setupScrollPrevention,
-} from './utils';
+import { ChartCustomEvent,  getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
