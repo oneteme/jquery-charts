@@ -10,7 +10,7 @@ This plugin allows you to integrate the powerful ApexCharts library with jQuery-
 
 ### Automatic Setup (Recommended)
 
-Install and automatically configure the library with styles:
+Install and automatically configure the library with styles using Angular CLI:
 
 ```bash
 ng add @oneteme/jquery-apexcharts
@@ -22,18 +22,20 @@ This command will:
 
 ### Manual Installation
 
-If you prefer manual installation:
+If you prefer manual installation using npm:
 
 ```bash
 npm install @oneteme/jquery-apexcharts
 ```
+
+**Note:** With `npm install`, you must manually add the styles to your project.
 
 Then add the styles manually to your `angular.json`:
 
 ```json
 {
   "styles": [
-    "node_modules/@oneteme/jquery-apexcharts/assets/styles/styles.scss"
+    "node_modules/@oneteme/jquery-apexcharts/styles/styles.scss"
   ]
 }
 ```
@@ -41,7 +43,7 @@ Then add the styles manually to your `angular.json`:
 Or import it in your global `styles.scss`:
 
 ```scss
-@import '~@oneteme/jquery-apexcharts/assets/styles/styles.scss';
+@import '~@oneteme/jquery-apexcharts/styles/styles.scss';
 ```
 
 ## Additional Documentation

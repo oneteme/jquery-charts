@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, configureSeriesVisibility } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -57,15 +57,13 @@ export class BarChartDirective<X extends XaxisType>
         fromPromise(
           chart
             .render()
-            .then(
-              () => {
-                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+            .then(() => {
+              setupScrollPrevention(this.el.nativeElement, this.chartInstance);
                 this.debug && console.log(
-                    new Date().getMilliseconds(),
-                    'Rendu du graphique terminé'
-                  );
-              }
-            )
+                  new Date().getMilliseconds(),
+                  'Rendu du graphique terminé'
+                );
+            })
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
               this.chartInstance.set(null);
@@ -112,11 +110,11 @@ export class BarChartDirective<X extends XaxisType>
     const needsOptionsUpdate = Object.keys(changes).some(
       (key) => !['debug'].includes(key)
     );
-    
+
     if (changes['type']) {
       this.updateType();
     }
-    
+
     if (needsDataUpdate && this.data && this._chartConfig) {
       this.updateData();
     }
@@ -201,16 +199,17 @@ export class BarChartDirective<X extends XaxisType>
       pivot: !this.canPivot ? false : this._chartConfig.pivot,
     });
 
-    this._options.series = commonChart.series.length
-      ? commonChart.series.map((s: any) => ({
+    const seriesWithVisibility = transformSeriesVisibility(commonChart.series);
+
+    this._options.series = seriesWithVisibility.length
+      ? seriesWithVisibility.map((s: any) => ({
           data: s.data,
           name: s.name,
           color: s.color,
           group: s.stack,
+          hidden: s.hidden,
         }))
       : [{ data: [] }];
-
-    configureSeriesVisibility(this._options, commonChart.series);
 
     const newType = getType(commonChart);
     if (this._options.xaxis.type !== newType) {

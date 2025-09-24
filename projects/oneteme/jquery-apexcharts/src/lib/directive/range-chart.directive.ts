@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, XaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -198,12 +198,7 @@ export class RangeChartDirective<X extends XaxisType>
       null
     );
 
-    this._options.series = commonChart.series
-      .filter((s: any) => s.visible !== false)
-      .map((s: any) => ({
-        ...s,
-        visible: undefined,
-      }));
+    this._options.series = transformSeriesVisibility(commonChart.series);
 
     let newType = getType(commonChart);
     if (this._options.xaxis.type != newType) {
