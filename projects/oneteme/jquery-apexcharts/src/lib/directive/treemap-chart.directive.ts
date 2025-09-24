@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention } from './utils';
+import { ChartCustomEvent,  getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -44,7 +44,12 @@ export class TreemapChartDirective
   }
 
   constructor() {
-    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'treemap');
+    this._options = initCommonChartOptions(
+      this.el,
+      this.customEvent,
+      this.ngZone,
+      'treemap'
+    );
   }
 
   init() {
@@ -59,16 +64,14 @@ export class TreemapChartDirective
         fromPromise(
           chart
             .render()
-            .then(
-              () => {
-                setupScrollPrevention(this.el.nativeElement, this.chartInstance);
-                this.debug &&
-                  console.log(
-                    new Date().getMilliseconds(),
-                    'Rendu du graphique terminé'
-                  );
-              }
-            )
+            .then(() => {
+              setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+              this.debug &&
+                console.log(
+                  new Date().getMilliseconds(),
+                  'Rendu du graphique terminé'
+                );
+            })
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
               this.chartInstance.set(null);
@@ -131,7 +134,12 @@ export class TreemapChartDirective
         ? 'Chargement des données...'
         : 'Aucune donnée';
 
-      this.updateChartOptions({ noData: this._options.noData }, false, false, false);
+      this.updateChartOptions(
+        { noData: this._options.noData },
+        false,
+        false,
+        false
+      );
     }
 
     if (this._options.shouldRedraw) {
@@ -190,12 +198,7 @@ export class TreemapChartDirective
       null
     );
 
-    this._options.series = commonChart.series
-      .filter((s: any) => s.visible !== false)
-      .map((s: any) => ({
-        ...s,
-        visible: undefined
-      }));
+    this._options.series = commonChart.series;
 
     const newType = getType(commonChart);
     if (this._options.xaxis.type != newType) {

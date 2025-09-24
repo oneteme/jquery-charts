@@ -14,7 +14,10 @@ import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
   templateUrl: './basic-test.component.html',
   styleUrls: ['./basic-test.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule,
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
     ApexChartComponent, // Décommentez pour tester jquery-Apexcharts (mais commentez HighchartsChartComponent)
     // HighchartsChartComponent, // Décommentez pour tester jquery-Highcharts (mais commentez ApexChartComponent)
   ],
@@ -38,7 +41,67 @@ export class BasicTestComponent implements OnInit {
   loadingConfig = {};
 
   // Types de graphiques regroupés par catégorie
-  readonly chartTypes = { simple: ['pie','donut','polar','radar','radarArea','radialBar','funnel','pyramid'] as ChartType[], complex: ['bar','column','columnpyramid','line','area','spline','areaspline','columnrange','arearange','areasplinerange','scatter','bubble','heatmap','treemap'] as ChartType[] };
+  readonly chartTypes = {
+    simple: ['pie', 'donut', 'polar', 'radar', 'radarArea', 'radialBar', 'funnel', 'pyramid'] as ChartType[], complex: ['bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'columnrange', 'arearange', 'areasplinerange', 'scatter', 'bubble', 'heatmap', 'treemap'] as ChartType[],
+  };
+
+  readonly USAGE_INSTANCE_TRACE_BY_PERIOD_LINE: ChartProvider<string, number> =
+    {
+      stacked: false,
+      ytitle: '',
+      series: [
+        { data: { x: field('date'), y: field('traceCount') }, name: 'Traitements finalisés' },
+        { data: { x: field('date'), y: field('pending') }, name: 'Traitements en cours' },
+        { data: { x: field('date'), y: field('queueCapacity') }, name: 'Capacité maximale', type: 'area', visible: false },
+      ],
+      options: {
+        chart: {
+          zoom: { type: 'x', enabled: true, autoScaleYaxis: true },
+          toolbar: {
+            show: true,
+            tools: {
+              download: true,
+              selection: true,
+              zoom: true,
+              zoomin: true,
+              zoomout: true,
+              pan: true,
+              reset: true,
+              customIcons: [],
+            },
+            export: { csv: { columnDelimiter: ',', headerCategory: 'category', headerValue: 'value' } },
+            autoSelected: 'zoom',
+          },
+        },
+        xaxis: { labels: { datetimeUTC: false } },
+        yaxis: { labels: { formatter: (value: any) => { return value?.toString() } } },
+        fill: {
+          type: ['solid', 'solid', 'gradient'],
+          gradient: {
+            shade: 'light',
+            type: 'vertical',
+            inverseColors: false,
+            shadeIntensity: 0.4,
+            opacityFrom: 0.9,
+            opacityTo: 0.3,
+            stops: [0, 100],
+          },
+        },
+        stroke: { curve: 'smooth', dashArray: [0, 0, 5], width: [1, 1, 1] },
+        dataLabels: { enabled: false },
+        tooltip: { x: { format: 'dd MMM HH:mm:ss' } },
+      },
+    };
+
+  // Données de test simplifiées
+  private readonly testData = [
+    { date: 'Jan', traceCount: 44, queueCapacity: 304, pending: 35 },
+    { date: 'Fév', traceCount: 55, queueCapacity: 340, pending: 41 },
+    { date: 'Mar', traceCount: 57, queueCapacity: 404, pending: 36 },
+    { date: 'Avr', traceCount: 56, queueCapacity: 392, pending: 33 },
+    { date: 'Mai', traceCount: 61, queueCapacity: 348, pending: 42 },
+    { date: 'Juin', traceCount: 58, queueCapacity: 420, pending: 30 },
+  ];
 
   // Config de base commune pour tous les graphs
   private readonly baseConfig = {
@@ -178,22 +241,12 @@ export class BasicTestComponent implements OnInit {
     this.chartData = [];
 
     setTimeout(() => {
-      let chartMode: 'simple' | 'complex' | 'boxplot';
-      if (this.chartType === 'boxplot') {
-        chartMode = 'boxplot';
-      } else if (this.isSimpleChart) {
-        chartMode = 'simple';
-      } else {
-        chartMode = 'complex';
-      }
-
-      this.configureChart(chartMode);
+      this.chartConfig = this.USAGE_INSTANCE_TRACE_BY_PERIOD_LINE;
+      this.chartData = this.testData;
     }, this.dataDelay);
   }
 
-  private configureChart(
-    mode: 'simple' | 'complex' | 'boxplot'
-  ): void {
+  private configureChart(mode: 'simple' | 'complex' | 'boxplot'): void {
     const isSimple = mode === 'simple';
     const isBoxplot = mode === 'boxplot';
 
@@ -209,25 +262,8 @@ export class BasicTestComponent implements OnInit {
           ? {}
           : { xtitle: 'Mois', ytitle: 'Valeur', stacked: false }),
         series: isSimple
-          ? [
-              {
-                data: {
-                  x: field('category'),
-                  y: field('value'),
-                },
-              },
-            ]
-          : [
-              {
-                name: field('team'),
-                data: {
-                  x: field('month'),
-                  y: field('value'),
-                },
-                color: field('color'),
-                visible: field('visible'),
-              },
-            ],
+          ? [ { data: { x: field('category'), y: field('value') } } ]
+          : [ { name: field('team'), data: { x: field('month'), y: field('value') }, color: field('color') } ],
         showToolbar: true,
       };
 
@@ -245,11 +281,21 @@ export class BasicTestComponent implements OnInit {
               ? '#FF9800'
               : item.team === 'Équipe C'
               ? '#2196F3'
-              : '#999',
+              : '#a5a5a5',
           visible: item.team !== 'Équipe B', // équipe B masquée par défaut
         }));
 
-        this.chartData = complexData;
+        // Ajouter des données pour la série statique
+        const staticSeriesData = [
+          { month: 'Jan', team: 'Équipe D', value: 76 },
+          { month: 'Fév', team: 'Équipe D', value: 85 },
+          { month: 'Mar', team: 'Équipe D', value: 101 },
+          { month: 'Avr', team: 'Équipe D', value: 98 },
+          { month: 'Mai', team: 'Équipe D', value: 87 },
+          { month: 'Juin', team: 'Équipe D', value: 105 }
+        ];
+
+        this.chartData = [...complexData, ...staticSeriesData];
       }
 
       // Pour tester "Aucune donnée", commenter / décommenter
@@ -265,17 +311,10 @@ export class BasicTestComponent implements OnInit {
       xtitle: 'Période',
       ytitle: 'Valeur',
       series: [
-        {
-          name: 'Distribution',
-          data: {
-            x: field('category'),
-            y: field('low'),
-          },
-        },
+        { name: 'Distribution', data: { x: field('category'), y: field('low') } },
       ],
       showToolbar: true,
     };
-
     this.chartData = [...this.chartData$.boxplot];
   }
 
