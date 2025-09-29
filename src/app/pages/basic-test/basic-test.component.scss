@@ -15,6 +15,44 @@
     border-radius: 5px;
     margin-bottom: 20px;
     line-height: 1.5;
+
+    .library-toggle {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+
+      .library-btn {
+        background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
+        color: #555;
+        border: 1px solid transparent;
+        padding: 12px 24px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.4s ease;
+        box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15),
+          -6px -6px 12px rgba(255, 255, 255, 0.8);
+        position: relative;
+
+        &:hover {
+          transform: translateY(-1px);
+          border-color: #aa1124;
+          color: #aa1124;
+          box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15),
+            -6px -6px 12px rgba(255, 255, 255, 0.8);
+        }
+
+        &:active {
+          transform: translateY(0) scale(0.98);
+          box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+            inset -4px -4px 8px rgba(255, 255, 255, 0.8);
+          border-color: #aa1124;
+        }
+      }
+    }
   }
 
   .charts-container {
