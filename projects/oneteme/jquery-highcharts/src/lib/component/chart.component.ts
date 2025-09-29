@@ -1,33 +1,213 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';import { Component, EventEmitter, Input, Output } from '@angular/core';import { Component, EventEmitter, Input, Output } from '@angular/core';import { Component, EventEmitter, Input, Output } from '@angular/core';
+
 import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
-import { ComplexChartDirective } from '../directive/complex-chart.directive';
-import { SimpleChartDirective } from '../directive/simple-chart.directive';
-import { LoadingConfig } from '../directive/utils';
 
-@Component({
+import { ChartDirective } from '../directive/chart.directive';import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
+
+
+
+@Component({import { ChartDirective } from '../directive/chart.directive';import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
+
   standalone: true,
-  imports: [ CommonModule, ComplexChartDirective, SimpleChartDirective ],
+
+  imports: [ChartDirective],
+
   selector: 'chart',
-  templateUrl: './chart.component.html',
+
+  template: `<div chart-directive [type]="type" [config]="config" [data]="data" [possibleType]="possibleType" [debug]="debug" (customEvent)="onCustomEvent($event)" style="height: 100%; width: 100%;"></div>`@Component({import { ChartDirective } from '../directive/chart.directive';import { ChartDirective } from '../directive/chart.directive';
+
 })
-export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
-  private static readonly ALL_CHART_TYPES: ChartType[] = [
-    'pie', 'donut', 'funnel', 'pyramid', 'polar', 'radar', 'radarArea', 'radialBar', 'bar', 'column', 'columnpyramid', 'line', 'area', 'spline', 'areaspline', 'scatter', 'bubble', 'treemap', 'heatmap'
-  ];
 
-  private static readonly RANGE_CHART_TYPES: ChartType[] = ['columnrange', 'arearange', 'areasplinerange'];
+export class ChartComponent<X extends XaxisType, Y extends YaxisType> {  standalone: true,
 
-  private static readonly BOXPLOT_CHART_TYPES: ChartType[] = ['boxplot'];
+  @Input({ required: true }) type!: ChartType;
 
-  protected _charts: {
-    [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
-  } = {
-    pie: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
-    donut: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
-    polar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
-    radar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
-    radarArea: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
+  @Input({ required: true }) config!: ChartProvider<X, Y>;  imports: [ChartDirective],
+
+  @Input({ required: true }) data!: any[];
+
+  @Input() possibleType?: ChartType[];  selector: 'chart',
+
+  @Input() debug: boolean = false;
+
+  @Output() customEvent = new EventEmitter<string>();  template: `@Component({@Component({
+
+
+
+  onCustomEvent(event: string): void {    <div
+
+    if (event === 'previous' || event === 'next') {
+
+      this.switchChartType(event);      chart-directive  standalone: true,  standalone: true,
+
+    }
+
+    this.customEvent.emit(event);      [type]="type"
+
+  }
+
+      [config]="config"  imports: [ChartDirective],  imports: [ChartDirective],
+
+  private switchChartType(direction: 'previous' | 'next'): void {
+
+    const availableTypes = this.possibleType || this.getDefaultTypes();      [data]="data"
+
+    const currentIndex = availableTypes.indexOf(this.type);
+
+          [possibleType]="possibleType"  selector: 'chart',  selector: 'chart',
+
+    if (currentIndex === -1) return;
+
+          [debug]="debug"
+
+    let newIndex: number;
+
+    if (direction === 'next') {      (customEvent)="onCustomEvent($event)"  template: `  template: `
+
+      newIndex = currentIndex === availableTypes.length - 1 ? 0 : currentIndex + 1;
+
+    } else {      style="height: 100%; width: 100%;">
+
+      newIndex = currentIndex === 0 ? availableTypes.length - 1 : currentIndex - 1;
+
+    }    </div>    <div     <div
+
+
+
+    this.type = availableTypes[newIndex];  `
+
+  }
+
+})      chart-directive      chart-directive
+
+  private getDefaultTypes(): ChartType[] {
+
+    return ['pie', 'donut', 'bar', 'column', 'line', 'area', 'spline'];export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
+
+  }
+
+}  @Input({ required: true }) type!: ChartType;      [type]="type"      [type]="type"
+
+  @Input({ required: true }) config!: ChartProvider<X, Y>;
+
+  @Input({ required: true }) data!: any[];      [config]="config"      [config]="config"
+
+  @Input() possibleType?: ChartType[];
+
+  @Input() debug: boolean = false;      [data]="data"      [data]="data"
+
+  @Output() customEvent = new EventEmitter<string>();
+
+      [possibleType]="possibleType"      [possibleType]="possibleType"
+
+  onCustomEvent(event: string): void {
+
+    if (event === 'previous' || event === 'next') {      [debug]="debug"      [debug]="debug"
+
+      this.switchChartType(event);
+
+    }      (customEvent)="onCustomEvent($event)"      (customEvent)="onCustomEvent($event)"
+
+    this.customEvent.emit(event);
+
+  }      style="height: 100%; width: 100%;">      style="height: 100%; width: 100%;">
+
+
+
+  private switchChartType(direction: 'previous' | 'next'): void {    </div>    </div>
+
+    const availableTypes = this.possibleType || this.getDefaultTypes();
+
+    const currentIndex = availableTypes.indexOf(this.type);  `  `
+
+
+
+    if (currentIndex === -1) return;})})
+
+
+
+    let newIndex: number;export class ChartComponent<X extends XaxisType, Y extends YaxisType> {export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
+
+    if (direction === 'next') {
+
+      newIndex = currentIndex === availableTypes.length - 1 ? 0 : currentIndex + 1;  @Input({ required: true }) type!: ChartType;  @Input({ required: true }) type!: ChartType;
+
+    } else {
+
+      newIndex = currentIndex === 0 ? availableTypes.length - 1 : currentIndex - 1;  @Input({ required: true }) config!: ChartProvider<X, Y>;  @Input({ required: true }) config!: ChartProvider<X, Y>;
+
+    }
+
+      @Input({ required: true }) data!: any[];  @Input({ required: true }) data!: any[];
+
+    this.type = availableTypes[newIndex];
+
+  }  @Input() possibleType?: ChartType[];  @Input() possibleType?: ChartType[];
+
+
+
+  private getDefaultTypes(): ChartType[] {  @Input() debug: boolean = false;  @Input() debug: boolean = false;
+
+    return ['pie', 'donut', 'bar', 'column', 'line', 'area', 'spline'];
+
+  }  @Output() customEvent = new EventEmitter<string>();  @Output() customEvent = new EventEmitter<string>();
+
+}
+
+
+  onCustomEvent(event: string): void {  onCustomEvent(event: string): void {
+
+    if (event === 'previous' || event === 'next') {    if (event === 'previous' || event === 'next') {
+
+      this.switchChartType(event);      this.switchChartType(event);
+
+    }    }
+
+    this.customEvent.emit(event);    this.customEvent.emit(event);
+
+  }  }
+
+
+
+  private switchChartType(direction: 'previous' | 'next'): void {  private switchChartType(direction: 'previous' | 'next'): void {
+
+    const availableTypes = this.possibleType || this.getDefaultTypes();    const availableTypes = this.possibleType || this.getDefaultTypes();
+
+    const currentIndex = availableTypes.indexOf(this.type);    const currentIndex = availableTypes.indexOf(this.type);
+
+
+
+    if (currentIndex === -1) return;    if (currentIndex === -1) return;
+
+
+
+    let newIndex: number;    let newIndex: number;
+
+    if (direction === 'next') {    if (direction === 'next') {
+
+      newIndex = currentIndex === availableTypes.length - 1 ? 0 : currentIndex + 1;      newIndex = currentIndex === availableTypes.length - 1 ? 0 : currentIndex + 1;
+
+    } else {    } else {
+
+      newIndex = currentIndex === 0 ? availableTypes.length - 1 : currentIndex - 1;      newIndex = currentIndex === 0 ? availableTypes.length - 1 : currentIndex - 1;
+
+    }    }
+
+
+
+    this.type = availableTypes[newIndex];    this.type = availableTypes[newIndex];
+
+  }  }
+
+
+
+  private getDefaultTypes(): ChartType[] {  private getDefaultTypes(): ChartType[] {
+
+    return ['pie', 'donut', 'bar', 'column', 'line', 'area', 'spline'];    return ['pie', 'donut', 'bar', 'column', 'line', 'area', 'spline'];
+
+  }  }
+
+}}
     funnel: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     pyramid: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
     radialBar: { possibleType: ChartComponent.ALL_CHART_TYPES, canPivot: false },
