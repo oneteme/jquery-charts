@@ -1,13 +1,11 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
-// Import conditionnel - utilisez soit ApexCharts soit Highcharts à la fois, pas les deux
-import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
-// import { ChartComponent as HighchartsChartComponent } from '@oneteme/jquery-highcharts';
-
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
+import { ApexChartTestComponent } from './apexcharts-chart-test/apexcharts-chart-test.component';
+import { HighchartsTestComponent } from './highcharts-test/highcharts-test.component';
 
 @Component({
   selector: 'app-basic-test',
@@ -18,15 +16,11 @@ import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
     CommonModule,
     RouterModule,
     FormsModule,
-    ApexChartComponent, // Décommentez pour tester jquery-Apexcharts (mais commentez HighchartsChartComponent)
-    // HighchartsChartComponent, // Décommentez pour tester jquery-Highcharts (mais commentez ApexChartComponent)
+    ApexChartTestComponent,
+    HighchartsTestComponent,
   ],
 })
 export class BasicTestComponent implements OnInit {
-  // Référence au composant de graphique
-  // @ViewChild('chart') chart: HighchartsChartComponent<string, number>;
-  @ViewChild('chart') chart: ApexChartComponent<string, number>;
-
   // Configuration du graphique
   chartType: ChartType = 'line';
   chartConfig: ChartProvider<string, number>;
@@ -34,6 +28,9 @@ export class BasicTestComponent implements OnInit {
   isSimpleChart = false;
   isComboChart = false;
   isPanelVisible = false;
+
+  // Nouvelle propriété pour choisir la bibliothèque
+  chartLibrary: 'apexcharts' | 'highcharts' = 'apexcharts';
 
   dataDelay = 100;
 
@@ -241,8 +238,18 @@ export class BasicTestComponent implements OnInit {
     this.chartData = [];
 
     setTimeout(() => {
-      this.chartConfig = this.USAGE_INSTANCE_TRACE_BY_PERIOD_LINE;
-      this.chartData = this.testData;
+      // Détermine le mode de configuration en fonction du type de graphique
+      const mode = this.chartType === 'boxplot' ? 'boxplot' :
+                   this.chartTypes.simple.includes(this.chartType) ? 'simple' : 'complex';
+
+      this.isSimpleChart = mode === 'simple';
+      this.configureChart(mode);
+
+      // Charge aussi les données par défaut si aucune configuration n'est définie
+      if (!this.chartConfig) {
+        this.chartConfig = this.USAGE_INSTANCE_TRACE_BY_PERIOD_LINE;
+        this.chartData = this.testData;
+      }
     }, this.dataDelay);
   }
 
@@ -342,5 +349,13 @@ export class BasicTestComponent implements OnInit {
 
   toggleControlPanel(): void {
     this.isPanelVisible = !this.isPanelVisible;
+  }
+
+  toggleChartLibrary(): void {
+    this.chartLibrary = this.chartLibrary === 'apexcharts' ? 'highcharts' : 'apexcharts';
+  }
+
+  getCurrentLibraryName(): string {
+    return this.chartLibrary === 'apexcharts' ? 'ApexCharts' : 'Highcharts';
   }
 }
