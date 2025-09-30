@@ -1,6 +1,23 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
-import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart, buildSingleSerieChart } from '@oneteme/jquery-core';
-import { Highcharts } from './utils/highcharts-modules';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
+import {
+  ChartProvider,
+  ChartType,
+  XaxisType,
+  YaxisType,
+  buildChart,
+  buildSingleSerieChart,
+} from '@oneteme/jquery-core';
+import { Highcharts, sanitizeChartDimensions } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
@@ -42,13 +59,20 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   private createChart(): void {
     try {
-      const options = this.buildChartOptions();
+      const element = this.elementRef.nativeElement;
+      if (!element) {
+        this.debug && console.log('Element not available');
+        return;
+      }
 
-      this.ngZone.runOutsideAngular(() => {
-        this.chart = Highcharts.chart(this.elementRef.nativeElement, options);
-      });
+      const options = this.buildChartOptions();
+      
+      sanitizeChartDimensions(options, this.config, element, this.debug);
+
+      this.chart = Highcharts.chart(element, options);
 
       this.debug && console.log('Graphique créé:', this.type);
+
     } catch (error) {
       console.error('Erreur lors de la création du graphique:', error);
     }
@@ -60,8 +84,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     const baseOptions: Highcharts.Options = {
       chart: {
         type: this.getHighchartsType(),
-        height: this.config.height || '100%',
-        width: this.config.width || '100%',
+        height: this.config.height || undefined,
+        width: this.config.width || undefined,
       },
       title: {
         text: this.config.title || '',
@@ -76,13 +100,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         enabled: this.config.showToolbar !== false,
         buttons: {
           contextButton: {
-            menuItems: ['viewFullscreen', 'separator', 'downloadPNG', 'downloadJPEG', 'downloadPDF', 'downloadSVG'],
+            menuItems: ['downloadPNG', 'downloadJPEG', 'downloadSVG'],
           },
-          customButton:
-            this.config.showToolbar &&
-            this.possibleType &&
-            this.possibleType.length > 1
-              ? { text: '◀ ▶', onclick: () => { this.ngZone.run(() => { this.customEvent.emit('next') }) } } : undefined,
         },
       },
       series: chartData.series,
@@ -104,11 +123,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     }
 
     // Merge avec les options personnalisées
+    let finalOptions = baseOptions;
     if (this.config.options) {
-      return Highcharts.merge(baseOptions, this.config.options);
+      finalOptions = Highcharts.merge(baseOptions, this.config.options);
     }
 
-    return baseOptions;
+    return finalOptions;
   }
 
   private processData(): { series: any[]; xAxis?: any } {
