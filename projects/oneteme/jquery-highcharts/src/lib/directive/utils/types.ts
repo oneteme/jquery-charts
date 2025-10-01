@@ -32,7 +32,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.size': 'pie.size',
     'series.innerSize': 'pie.innerSize',
     'series.depth': 'pie.depth',
-  'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
+    'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
   },
   donut: {
     'series.dataLabels': 'pie.dataLabels',
@@ -48,7 +48,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.size': 'pie.size',
     'series.innerSize': 'pie.innerSize',
     'series.depth': 'pie.depth',
-  'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
+    'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
   },
   funnel: {
     'series.dataLabels': 'funnel.dataLabels',
@@ -60,7 +60,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.neckWidth': 'funnel.neckWidth',
     'series.neckHeight': 'funnel.neckHeight',
     'series.reversed': 'funnel.reversed',
-  'series.borderRadius': 'funnel.borderRadius',
+    'series.borderRadius': 'funnel.borderRadius',
   },
   pyramid: {
     'series.dataLabels': 'pyramid.dataLabels',
@@ -70,7 +70,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.height': 'pyramid.height',
     'series.width': 'pyramid.width',
     'series.reversed': 'pyramid.reversed',
-  'series.borderRadius': 'pyramid.borderRadius',
+    'series.borderRadius': 'pyramid.borderRadius',
   },
   polar: {
     'series.pointPlacement': 'series.pointPlacement',
@@ -118,8 +118,8 @@ export const PLOTOPTIONS_MAPPING = {
     'series.nullColor': 'heatmap.nullColor',
     'series.colsize': 'heatmap.colsize',
     'series.rowsize': 'heatmap.rowsize',
-  'series.pointPadding': 'heatmap.pointPadding',
-  'series.pointRange': 'heatmap.pointRange',
+    'series.pointPadding': 'heatmap.pointPadding',
+    'series.pointRange': 'heatmap.pointRange',
   },
   treemap: {
     'series.dataLabels': 'treemap.dataLabels',
@@ -157,27 +157,37 @@ export const PLOTOPTIONS_MAPPING = {
     'series.dataLabels': 'boxplot.dataLabels',
     'series.marker': 'boxplot.marker',
     'series.states': 'boxplot.states',
-  }
+  },
 };
 
-export function unifyPlotOptionsForChart(options: any, chartType: ChartType, debug: boolean = false): void {
+export function unifyPlotOptionsForChart(
+  options: any,
+  chartType: ChartType,
+  debug: boolean = false
+): void {
   if (!options.plotOptions?.series || !PLOTOPTIONS_MAPPING[chartType]) {
-    debug && console.log(`Pas de plotOptions.series à transformer pour ${chartType}`);
+    debug &&
+      console.log(`Pas de plotOptions.series à transformer pour ${chartType}`);
     return;
   }
 
-  debug && console.log(`Unification plotOptions.series pour type: ${chartType}`);
+  debug &&
+    console.log(`Unification plotOptions.series pour type: ${chartType}`);
 
   const mapping = PLOTOPTIONS_MAPPING[chartType];
   const seriesConfig = options.plotOptions.series;
 
-  Object.keys(seriesConfig).forEach(seriesProperty => {
+  Object.keys(seriesConfig).forEach((seriesProperty) => {
     const fullSeriesPath = `series.${seriesProperty}`;
     const targetPath = mapping[fullSeriesPath];
 
     if (targetPath) {
       const value = seriesConfig[seriesProperty];
-      debug && console.log(`Transformation: plotOptions.${fullSeriesPath} -> plotOptions.${targetPath}`, value);
+      debug &&
+        console.log(
+          `Transformation: plotOptions.${fullSeriesPath} -> plotOptions.${targetPath}`,
+          value
+        );
 
       const targetParts = targetPath.split('.');
       let current = options.plotOptions;
@@ -193,9 +203,16 @@ export function unifyPlotOptionsForChart(options: any, chartType: ChartType, deb
       const finalProperty = targetParts[targetParts.length - 1];
       current[finalProperty] = value;
 
-      debug && console.log(`Propriété transformée: plotOptions.${targetPath} =`, value);
+      debug &&
+        console.log(
+          `Propriété transformée: plotOptions.${targetPath} =`,
+          value
+        );
     } else {
-      debug && console.log(`Pas de mapping trouvé pour plotOptions.${fullSeriesPath} dans le type ${chartType}`);
+      debug &&
+        console.log(
+          `Pas de mapping trouvé pour plotOptions.${fullSeriesPath} dans le type ${chartType}`
+        );
     }
   });
 

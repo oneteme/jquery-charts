@@ -1,6 +1,6 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart, buildSingleSerieChart } from '@oneteme/jquery-core';
-import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, showLoading, hideLoading, configureLoadingOptions } from './utils';
+import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, configurePolarChart, isPolarChart, unifyPlotOptionsForChart } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
@@ -22,6 +22,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   @Input()
   set isLoading(isLoading: boolean) {
+    if (this._isLoading === isLoading) {
+      return;
+    }
+
     this._isLoading = isLoading;
     this.updateLoadingState();
   }
@@ -31,25 +35,25 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   constructor(private elementRef: ElementRef, private ngZone: NgZone) {}
 
   private updateLoadingState(): void {
-    if (!this.chart) return;
-
-    if (this._isLoading) {
-      showLoading(this.chart, 'Chargement des données...');
-    } else {
-      hideLoading(this.chart);
+    if (!this.chart) {
+      return;
     }
+    const hasData = Array.isArray(this.data) && this.data.length > 0;
+    updateChartLoadingState(this.chart, this._isLoading, hasData);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['config'] || changes['data'] || changes['type']) {
       this.updateChart();
     }
-    if (changes['isLoading']) {
+    if (changes['isLoading'] && !changes['isLoading'].firstChange) {
       this.updateLoadingState();
     }
   }
 
-  ngOnDestroy(): void { this.destroyChart() }
+  ngOnDestroy(): void {
+    this.destroyChart();
+  }
 
   private updateChart(): void {
     if (!this.config || !this.data) {
@@ -70,10 +74,14 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       }
 
       const options = this.buildChartOptions();
-
       sanitizeChartDimensions(options, this.config, element, this.debug);
 
       this.chart = Highcharts.chart(element, options);
+
+      // Masquer immédiatement le message "no-data" qui pourrait s'afficher automatiquement
+      if (typeof (this.chart as any).hideNoData === 'function') {
+        (this.chart as any).hideNoData();
+      }
 
       if (this.config.showToolbar && this.chart) {
         setupToolbar({
@@ -85,7 +93,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         });
       }
 
-      this.updateLoadingState();
+      // Appliquer l'état de loading initial
+      const hasData = this.data && this.data.length > 0;
+      updateChartLoadingState(this.chart, this._isLoading, hasData);
 
       this.debug && console.log('Graphique créé:', this.type);
 
@@ -102,6 +112,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         type: this.getHighchartsType(),
         height: this.config.height || undefined,
         width: this.config.width || undefined,
+        backgroundColor: 'transparent',
       },
       title: {
         text: this.config.title || '',
@@ -112,16 +123,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       credits: {
         enabled: false,
       },
-      lang: {
-        noData: 'Aucune donnée'
-      },
       exporting: {
-        enabled: this.config.showToolbar !== false,
-        buttons: {
-          contextButton: {
-            menuItems: ['downloadPNG', 'downloadJPEG', 'downloadSVG'],
-          },
-        },
+        enabled: false,
       },
       series: chartData.series,
       xAxis: chartData.xAxis,
@@ -132,25 +135,53 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       },
     };
 
+    // Configuration des graphiques polaires via utilitaire
+    if (isPolarChart(this.type)) {
+      configurePolarChart(baseOptions, this.type);
+    }
+
+    // Options spécifiques pour les graphiques donut
     if (this.type === 'donut') {
       baseOptions.plotOptions = {
         pie: {
           innerSize: '40%',
+          dataLabels: {
+            enabled: false
+          },
+          showInLegend: true
         },
       };
     }
 
+    // Options spécifiques pour les graphiques pie
+    if (this.type === 'pie') {
+      baseOptions.plotOptions = {
+        pie: {
+          dataLabels: {
+            enabled: false
+          },
+          showInLegend: true
+        },
+      };
+    }
+
+    // Merge avec les options personnalisées
     let finalOptions = baseOptions;
     if (this.config.options) {
       finalOptions = Highcharts.merge(baseOptions, this.config.options);
     }
 
+    // Unifier les plotOptions.series pour les graphiques simples
+    unifyPlotOptionsForChart(finalOptions, this.type, this.debug);
+
+    // Configurer les options de loading
     configureLoadingOptions(finalOptions);
 
     return finalOptions;
   }
 
   private processData(): { series: any[]; xAxis?: any } {
+
     if (this.isSimpleChart()) {
       return this.processSimpleChart();
     } else {
@@ -160,6 +191,28 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   private processSimpleChart(): { series: any[] } {
     const chartConfig = { ...this.config, continue: false };
+
+    // D'abord essayer de construire un graphique complexe pour détecter le multi-séries
+    const complexChart = buildChart(this.data, chartConfig, null);
+
+    // Si on a plusieurs séries, agréger les données (chaque série = une part du pie)
+    if (complexChart.series && complexChart.series.length > 1) {
+      const aggregatedData = transformDataForSimpleChart(
+        { series: complexChart.series, xAxis: { categories: complexChart.categories } },
+        this.config
+      );
+
+      return {
+        series: [
+          {
+            name: this.config.title || 'Total',
+            data: aggregatedData,
+          },
+        ],
+      };
+    }
+
+    // Sinon, utiliser le comportement par défaut (single serie)
     const commonChart = buildSingleSerieChart(this.data, chartConfig, null);
 
     return {
@@ -199,6 +252,11 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       columnrange: 'columnrange',
       arearange: 'arearange',
       areasplinerange: 'areasplinerange',
+      // Graphiques polaires
+      polar: 'column',      // Secteurs radiaux (comme des barres qui rayonnent)
+      radar: 'line',        // Ligne en toile d'araignée (grille polygonale)
+      radarArea: 'area',    // Radar avec remplissage
+      radialBar: 'column',  // Barres concentriques circulaires
     };
 
     return typeMapping[this.type] || this.type;

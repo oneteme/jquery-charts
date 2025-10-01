@@ -28,12 +28,12 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
-    pie: { possibleType: ['pie', 'donut'], canPivot: false },
+    pie: { possibleType: ['pie', 'spline'], canPivot: false },
     donut: { possibleType: ['pie', 'donut'], canPivot: false },
     line: { possibleType: ['line', 'pie', 'donut', 'bar', 'column'], canPivot: false },
     // line: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
     area: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
-    spline: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
+    spline: { possibleType: ['spline', 'pie'], canPivot: false },
     areaspline: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
     bar: { possibleType: ['bar', 'column'], canPivot: false },
     column: { possibleType: ['bar', 'column'], canPivot: false },
@@ -41,6 +41,11 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
     pyramid: { possibleType: ['funnel', 'pyramid'], canPivot: false },
     scatter: { possibleType: ['scatter', 'bubble'], canPivot: false },
     bubble: { possibleType: ['scatter', 'bubble'], canPivot: false },
+    // Graphiques polaires
+    polar: { possibleType: ['polar', 'radar', 'line'], canPivot: false },
+    radar: { possibleType: ['radar', 'polar', 'radarArea'], canPivot: false },
+    radarArea: { possibleType: ['radarArea', 'radar', 'area'], canPivot: false },
+    radialBar: { possibleType: ['radialBar', 'bar', 'column'], canPivot: false },
   };
 
   _type: ChartType;
