@@ -27,6 +27,7 @@ export class BasicTestComponent implements OnInit {
   chartData: any[] = [];
   isSimpleChart = false;
   isPanelVisible = false;
+  isLoadingData = false;
 
   chartLibrary: 'apexcharts' | 'highcharts' = 'highcharts';
   dataDelay = 100;
@@ -100,15 +101,23 @@ export class BasicTestComponent implements OnInit {
   }
 
   loadChartData(): void {
-    this.isSimpleChart = this.chartTypes.simple.includes(this.chartType);
+    this.isLoadingData = true;
+    this.chartData = []; // Vider les données pendant le chargement
 
-    if (this.isSimpleChart) {
-      this.chartConfig = this.simpleConfig;
-      this.chartData = [...this.simpleData];
-    } else {
-      this.chartConfig = this.complexConfig;
-      this.chartData = [...this.complexData];
-    }
+    // Simuler un délai de chargement
+    setTimeout(() => {
+      this.isSimpleChart = this.chartTypes.simple.includes(this.chartType);
+
+      if (this.isSimpleChart) {
+        this.chartConfig = this.simpleConfig;
+        this.chartData = [...this.simpleData];
+      } else {
+        this.chartConfig = this.complexConfig;
+        this.chartData = [...this.complexData];
+      }
+
+      this.isLoadingData = false;
+    }, this.dataDelay);
   }
 
   changeChartType(): void {

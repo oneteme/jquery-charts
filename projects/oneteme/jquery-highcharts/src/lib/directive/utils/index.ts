@@ -1,2 +1,5 @@
 export * from './highcharts-modules';
-export * from './chart-dimensions';
+export * from './dimensions';
+export * from './types';
+export * from './toolbar';
+export * from './loading';

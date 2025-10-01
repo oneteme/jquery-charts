@@ -15,7 +15,8 @@
         (click)="toggleChartLibrary()"
         title="Basculer entre ApexCharts et Highcharts"
       >
-        Utiliser {{ chartLibrary === 'apexcharts' ? 'Highcharts' : 'ApexCharts' }}
+        Utiliser
+        {{ chartLibrary === "apexcharts" ? "Highcharts" : "ApexCharts" }}
       </button>
     </div>
   </div>
@@ -34,6 +35,7 @@
         [chartType]="chartType"
         [chartConfig]="chartConfig"
         [chartData]="chartData"
+        [isLoadingChart]="isLoadingData"
       ></app-highcharts-test>
     </div>
   </div>
@@ -42,11 +44,16 @@
   <div class="debug-panel">
     <h3>Informations de Debug</h3>
     <div class="debug-info">
-      <p><strong>Bibliothèque utilisée :</strong> {{ getCurrentLibraryName() }}</p>
+      <p>
+        <strong>Bibliothèque utilisée :</strong> {{ getCurrentLibraryName() }}
+      </p>
       <p><strong>Type de graphique :</strong> {{ chartType }}</p>
       <p><strong>Mode :</strong> {{ getCurrentMode() }}</p>
       <p><strong>Nombre de données :</strong> {{ chartData?.length || 0 }}</p>
       <p><strong>Délai de chargement :</strong> {{ dataDelay }}ms</p>
+      <p>
+        <strong>État :</strong> {{ isLoadingData ? "Chargement..." : "Prêt" }}
+      </p>
       <!-- <p><strong>Graph combiné :</strong> {{ isComboChart ? 'Oui' : 'Non' }}</p> -->
     </div>
   </div>
@@ -106,6 +113,6 @@
     (click)="toggleControlPanel()"
     title="{{ isPanelVisible ? 'Masquer' : 'Afficher' }} le panneau de contrôle"
   >
-    {{ isPanelVisible ? '✕' : '≡' }}
+    {{ isPanelVisible ? "✕" : "≡" }}
   </button>
 </div>

@@ -6,6 +6,7 @@ import {
   YaxisType,
 } from '@oneteme/jquery-core';
 import { ChartDirective } from '../directive/chart.directive';
+import { ChartCustomEvent } from '../directive/utils';
 
 @Component({
   standalone: true,
@@ -13,23 +14,70 @@ import { ChartDirective } from '../directive/chart.directive';
   selector: 'chart',
   template: `<div
     chart-directive
-    [type]="type"
+    [type]="_type"
     [config]="config"
     [data]="data"
     [debug]="debug"
-    (customEvent)="onCustomEvent($event)"
+    [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
+    [isLoading]="isLoading"
+    (customEvent)="change($event)"
     style="width: 100%; height: 100%;"
   ></div>`,
 })
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
-  @Input({ required: true }) type!: ChartType;
+  protected _charts: {
+    [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
+  } = {
+    pie: { possibleType: ['pie', 'donut'], canPivot: false },
+    donut: { possibleType: ['pie', 'donut'], canPivot: false },
+    line: { possibleType: ['line', 'pie', 'donut', 'bar', 'column'], canPivot: false },
+    // line: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
+    area: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
+    spline: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
+    areaspline: { possibleType: ['line', 'area', 'spline', 'areaspline'], canPivot: false },
+    bar: { possibleType: ['bar', 'column'], canPivot: false },
+    column: { possibleType: ['bar', 'column'], canPivot: false },
+    funnel: { possibleType: ['funnel', 'pyramid'], canPivot: false },
+    pyramid: { possibleType: ['funnel', 'pyramid'], canPivot: false },
+    scatter: { possibleType: ['scatter', 'bubble'], canPivot: false },
+    bubble: { possibleType: ['scatter', 'bubble'], canPivot: false },
+  };
+
+  _type: ChartType;
+
+  @Input({ alias: 'type', required: true }) set value(type: ChartType) {
+    this._type = type;
+  }
   @Input({ required: true }) config!: ChartProvider<X, Y>;
   @Input({ required: true }) data!: any[];
-  @Input() debug: boolean = false;
+  @Input() debug: boolean = true;
+  @Input() isLoading: boolean = false;
+  @Input() enablePivot: boolean = false;
 
-  @Output() customEvent = new EventEmitter<string>();
+  @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 
-  onCustomEvent(event: string): void {
+  change(event: ChartCustomEvent) {
+    const charts = this._charts[this._type]?.possibleType;
+    if (!charts) return;
+
+    const indexOf = charts.indexOf(this._type);
+    if (indexOf !== -1) {
+      if (event === 'previous') {
+        this._type = indexOf === 0 ? charts[charts.length - 1] : charts[indexOf - 1];
+        return;
+      }
+      if (event === 'next') {
+        this._type = indexOf === charts.length - 1 ? charts[0] : charts[indexOf + 1];
+        return;
+      }
+    }
+    if (event === 'pivot') {
+      this.config = this.config.pivot
+        ? { ...this.config, pivot: false }
+        : { ...this.config, pivot: true };
+    }
+
+    // Émettre l'événement vers le parent
     this.customEvent.emit(event);
   }
 }

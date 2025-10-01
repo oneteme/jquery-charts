@@ -1,23 +1,6 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
-import {
-  ChartProvider,
-  ChartType,
-  XaxisType,
-  YaxisType,
-  buildChart,
-  buildSingleSerieChart,
-} from '@oneteme/jquery-core';
-import { Highcharts, sanitizeChartDimensions } from './utils';
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart, buildSingleSerieChart } from '@oneteme/jquery-core';
+import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, showLoading, hideLoading, configureLoadingOptions } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
@@ -31,21 +14,42 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   @Input({ required: true }) data!: any[];
   @Input() possibleType?: ChartType[];
   @Input() debug: boolean = false;
-  @Output() customEvent = new EventEmitter<string>();
+  @Input() canPivot: boolean = true;
+  @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 
   private chart: Highcharts.Chart | null = null;
+  private _isLoading: boolean = false;
+
+  @Input()
+  set isLoading(isLoading: boolean) {
+    this._isLoading = isLoading;
+    this.updateLoadingState();
+  }
+
+  get isLoading(): boolean { return this._isLoading }
 
   constructor(private elementRef: ElementRef, private ngZone: NgZone) {}
+
+  private updateLoadingState(): void {
+    if (!this.chart) return;
+
+    if (this._isLoading) {
+      showLoading(this.chart, 'Chargement des données...');
+    } else {
+      hideLoading(this.chart);
+    }
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['config'] || changes['data'] || changes['type']) {
       this.updateChart();
     }
+    if (changes['isLoading']) {
+      this.updateLoadingState();
+    }
   }
 
-  ngOnDestroy(): void {
-    this.destroyChart();
-  }
+  ngOnDestroy(): void { this.destroyChart() }
 
   private updateChart(): void {
     if (!this.config || !this.data) {
@@ -66,10 +70,22 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       }
 
       const options = this.buildChartOptions();
-      
+
       sanitizeChartDimensions(options, this.config, element, this.debug);
 
       this.chart = Highcharts.chart(element, options);
+
+      if (this.config.showToolbar && this.chart) {
+        setupToolbar({
+          chart: this.chart,
+          config: this.config,
+          customEvent: this.customEvent,
+          canPivot: this.canPivot,
+          debug: this.debug
+        });
+      }
+
+      this.updateLoadingState();
 
       this.debug && console.log('Graphique créé:', this.type);
 
@@ -96,6 +112,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       credits: {
         enabled: false,
       },
+      lang: {
+        noData: 'Aucune donnée'
+      },
       exporting: {
         enabled: this.config.showToolbar !== false,
         buttons: {
@@ -113,7 +132,6 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       },
     };
 
-    // Options spécifiques pour les graphiques donut
     if (this.type === 'donut') {
       baseOptions.plotOptions = {
         pie: {
@@ -122,11 +140,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       };
     }
 
-    // Merge avec les options personnalisées
     let finalOptions = baseOptions;
     if (this.config.options) {
       finalOptions = Highcharts.merge(baseOptions, this.config.options);
     }
+
+    configureLoadingOptions(finalOptions);
 
     return finalOptions;
   }

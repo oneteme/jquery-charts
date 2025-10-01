@@ -12,7 +12,7 @@
     "@angular/common": ">=16.1.0",
     "@angular/core": ">=16.1.0",
     "highcharts": "^11.4.3",
-    "@oneteme/jquery-core": "^0.0.18"
+    "@oneteme/jquery-core": "^0.0.22"
   },
   "dependencies": {
     "tslib": "^2.3.0"
