@@ -36,10 +36,10 @@ export function configurePolarChart(
     case 'radar':
       configureRadarType(options);
       break;
-    case 'radararea':
+    case 'radarArea':
       configureRadarAreaType(options);
       break;
-    case 'radialbar':
+    case 'radialBar':
       configureRadialBarType(options);
       break;
   }
@@ -126,5 +126,5 @@ function configureRadialBarType(options: Highcharts.Options): void {
  * Détermine si un type de graphique est polaire
  */
 export function isPolarChart(chartType: string): boolean {
-  return ['polar', 'radar', 'radararea', 'radialbar'].includes(chartType);
+  return ['polar', 'radar', 'radarArea', 'radialBar'].includes(chartType);
 }
