@@ -22,7 +22,7 @@ import { HighchartsTestComponent } from './highcharts-test/highcharts-test.compo
 })
 export class BasicTestComponent implements OnInit {
   // Configuration du graphique
-  chartType: ChartType = 'line';
+  chartType: ChartType = 'radialBar';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isSimpleChart = false;
