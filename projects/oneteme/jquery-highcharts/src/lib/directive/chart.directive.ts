@@ -1,18 +1,33 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
-import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart, buildSingleSerieChart } from '@oneteme/jquery-core';
-import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, configurePolarChart, isPolarChart, unifyPlotOptionsForChart, enforceCriticalPolarOptions } from './utils';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  SimpleChanges,
+} from '@angular/core';
+import {
+  ChartProvider,
+  ChartType,
+  XaxisType,
+  YaxisType,
+  buildChart,
+  buildSingleSerieChart,
+} from '@oneteme/jquery-core';
+import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
   standalone: true,
 })
-export class ChartDirective<X extends XaxisType, Y extends YaxisType>
-  implements OnChanges, OnDestroy
-{
+export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements OnChanges, OnDestroy {
   @Input({ required: true }) type!: ChartType;
   @Input({ required: true }) config!: ChartProvider<X, Y>;
   @Input({ required: true }) data!: any[];
-  @Input() possibleType?: ChartType[];
+  @Input() possibleTypes?: ChartType[];
   @Input() debug: boolean = false;
   @Input() canPivot: boolean = true;
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
@@ -22,47 +37,33 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   @Input()
   set isLoading(isLoading: boolean) {
-    if (this._isLoading === isLoading) {
-      return;
-    }
-
+    if (this._isLoading === isLoading) return;
     this._isLoading = isLoading;
     this.updateLoadingState();
   }
 
-  get isLoading(): boolean {
-    return this._isLoading;
-  }
+  get isLoading(): boolean { return this._isLoading }
 
   constructor(private elementRef: ElementRef, private ngZone: NgZone) {}
 
   private updateLoadingState(): void {
-    if (!this.chart) {
-      return;
-    }
+    if (!this.chart) return;
     const hasData = Array.isArray(this.data) && this.data.length > 0;
     updateChartLoadingState(this.chart, this._isLoading, hasData);
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['config'] || changes['data'] || changes['type']) {
-      this.updateChart();
-    }
-    if (changes['isLoading'] && !changes['isLoading'].firstChange) {
-      this.updateLoadingState();
-    }
+    if (changes['config'] || changes['data'] || changes['type']) { this.updateChart() }
+    if (changes['isLoading'] && !changes['isLoading'].firstChange) { this.updateLoadingState() }
   }
 
-  ngOnDestroy(): void {
-    this.destroyChart();
-  }
+  ngOnDestroy(): void { this.destroyChart() }
 
   private updateChart(): void {
     if (!this.config || !this.data) {
       this.debug && console.log('Configuration ou données manquantes');
       return;
     }
-
     this.destroyChart();
     this.createChart();
   }
@@ -114,31 +115,19 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         width: this.config.width || undefined,
         backgroundColor: 'transparent',
       },
-      title: {
-        text: this.config.title || '',
-      },
-      subtitle: {
-        text: this.config.subtitle || '',
-      },
-      credits: {
-        enabled: false,
-      },
-      exporting: {
-        enabled: false,
-      },
+      title: { text: this.config.title || '' },
+      subtitle: { text: this.config.subtitle || '' },
+      credits: { enabled: false },
+      exporting: { enabled: false },
       series: chartData.series,
       xAxis: chartData.xAxis,
-      yAxis: {
-        title: {
-          text: this.config.ytitle || '',
-        },
+      yAxis: chartData.yAxis || {
+        title: { text: this.config.ytitle || '' },
       },
     };
 
-    // polar grphs ? config spé
-    if (isPolarChart(this.type)) {
-      configurePolarChart(baseOptions, this.type);
-    }
+    // Appliquer toutes les configurations spé au type de graph (via registry)
+    applyChartConfigurations(baseOptions, this.type);
 
     // donut ? config spé
     if (this.type === 'donut') {
@@ -167,11 +156,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       finalOptions = Highcharts.merge(baseOptions, this.config.options);
     }
 
-    // Force les configurations critiques pour les graphiques polaires après le merge
-    // Cela empêche les options utilisateur d'écraser les paramètres essentiels
-    if (isPolarChart(this.type)) {
-      enforceCriticalPolarOptions(finalOptions, this.type);
-    }
+    // Force toutes les configurations critiques après le merge (via registry)
+    enforceCriticalOptions(finalOptions, this.type);
 
     // Unifier les plotOptions.series pour les graphiques simples
     unifyPlotOptionsForChart(finalOptions, this.type, this.debug);
@@ -182,7 +168,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     return finalOptions;
   }
 
-  private processData(): { series: any[]; xAxis?: any } {
+  private processData(): { series: any[]; xAxis?: any; yAxis?: any } {
     if (this.isSimpleChart()) {
       return this.processSimpleChart();
     } else {
@@ -193,10 +179,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   private processSimpleChart(): { series: any[] } {
     const chartConfig = { ...this.config, continue: false };
 
-    // D'abord essayer de construire un graphique complexe pour détecter le multi-séries
+    // D'abord essayer de construire un graph complexe pour détecter le multi-séries
     const complexChart = buildChart(this.data, chartConfig, null);
 
-    // Si plusieurs séries, agréger les données (chaque série = une part du graphique simple)
+    // Si plusieurs séries, agréger les données (chaque série = une part du graph simple)
     if (complexChart.series && complexChart.series.length > 1) {
       const aggregatedData = transformDataForSimpleChart(
         {
@@ -205,6 +191,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         },
         this.config
       );
+      this.debug &&
+        console.log('[Simple Chart - Multi] Données agrégées:', aggregatedData);
 
       return {
         series: [
@@ -216,31 +204,82 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       };
     }
 
-    // Sinon, utiliser le comportement par défaut (single serie)
-    const commonChart = buildSingleSerieChart(this.data, chartConfig, null);
+    const categories = complexChart.categories || [];
+    const serieData = complexChart.series[0]?.data || [];
+
+    const formattedData = serieData.map((value: any, index: number) => {
+      // Si la valeur est déjà un objet avec x et y
+      if (typeof value === 'object' && value !== null) {
+        return {
+          name: categories[value.x] || categories[index] || `Item ${index + 1}`,
+          y: value.y !== undefined ? value.y : value
+        };
+      }
+      // Sinon, c'est juste une valeur numérique
+      return {
+        name: categories[index] || `Item ${index + 1}`,
+        y: value
+      };
+    });
+    this.debug && console.log('[Simple Chart - Single] Données:', { categories, serieData, formattedData });
 
     return {
-      series: [
-        {
-          name: commonChart.title || 'Données',
-          data: commonChart.series[0]?.data || [],
-        },
-      ],
+      series: [{
+        name: complexChart.title || 'Données',
+        data: formattedData,
+      }],
     };
   }
 
-  private processComplexChart(): { series: any[]; xAxis: any } {
+  private processComplexChart(): { series: any[]; xAxis: any; yAxis?: any } {
     const chartConfig = { ...this.config, continue: false };
     const commonChart = buildChart(this.data, chartConfig, null);
+    const categories = commonChart.categories || [];
+
+    // Transformer les données selon le type de graphique (via registry intelligent)
+    let series = commonChart.series || [];
+    let yCategories: string[] | undefined;
+
+    // Si les données sont dans un format spécial non compatible avec le type cible, reconvertir
+    if (needsDataConversion(series, this.type)) {
+      // Le registry va automatiquement détecter le format source et le convertir
+      const previousType = detectPreviousChartType(series, this.type);
+      const result = transformChartData(
+        series,
+        previousType,
+        this.type,
+        categories
+      );
+      series = result.series;
+      yCategories = result.yCategories;
+    } else {
+      // Appliquer la transformation vers le type cible
+      const result = transformChartData(
+        series,
+        this.type,
+        this.type,
+        categories
+      );
+      series = result.series;
+      yCategories = result.yCategories;
+    }
 
     return {
-      series: commonChart.series || [],
+      series: series,
       xAxis: {
-        categories: commonChart.categories || [],
+        categories: categories,
         title: {
           text: this.config.xtitle || '',
         },
       },
+      yAxis: yCategories
+        ? {
+            categories: yCategories,
+            title: {
+              text: this.config.ytitle || '',
+            },
+          }
+        : undefined,
     };
   }
 
@@ -252,17 +291,11 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     const typeMapping: { [key: string]: string } = {
       donut: 'pie',
       columnpyramid: 'column',
-      areaspline: 'areaspline',
-      columnrange: 'columnrange',
-      arearange: 'arearange',
-      areasplinerange: 'areasplinerange',
-      // Graphiques polaires
-      polar: 'column', // Secteurs radiaux (comme des barres qui rayonnent)
-      radar: 'line', // Ligne en toile d'araignée (grille polygonale)
-      radarArea: 'area', // Radar avec remplissage
-      radialBar: 'column', // Barres concentriques circulaires
+      polar: 'column',
+      radar: 'line',
+      radarArea: 'area',
+      radialBar: 'column',
     };
-
     return typeMapping[this.type] || this.type;
   }
 

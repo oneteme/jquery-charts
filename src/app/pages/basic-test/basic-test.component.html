@@ -18,6 +18,16 @@
         Utiliser
         {{ chartLibrary === "apexcharts" ? "Highcharts" : "ApexCharts" }}
       </button>
+
+      <button
+        class="data-mode-btn"
+        (click)="toggleDataType()"
+        [title]="
+          'Mode actuel : ' + getCurrentMode() + '. Cliquer pour basculer.'
+        "
+      >
+        <span class="label">{{ useSimpleData ? "Simple" : "Complex" }}</span>
+      </button>
     </div>
   </div>
 
@@ -48,13 +58,12 @@
         <strong>Bibliothèque utilisée :</strong> {{ getCurrentLibraryName() }}
       </p>
       <p><strong>Type de graphique :</strong> {{ chartType }}</p>
-      <p><strong>Mode :</strong> {{ getCurrentMode() }}</p>
+      <p><strong>Type de données :</strong> {{ getCurrentMode() }}</p>
       <p><strong>Nombre de données :</strong> {{ chartData?.length || 0 }}</p>
       <p><strong>Délai de chargement :</strong> {{ dataDelay }}ms</p>
       <p>
         <strong>État :</strong> {{ isLoadingData ? "Chargement..." : "Prêt" }}
       </p>
-      <!-- <p><strong>Graph combiné :</strong> {{ isComboChart ? 'Oui' : 'Non' }}</p> -->
     </div>
   </div>
 
@@ -67,33 +76,29 @@
         [(ngModel)]="chartType"
         (change)="changeChartType()"
       >
-        <optgroup label="Graphiques simples">
-          <option value="pie">Pie</option>
-          <option value="donut">Donut</option>
-          <option value="funnel">Funnel</option>
-          <option value="pyramid">Pyramid</option>
-          <option value="polar">Polar</option>
-          <option value="radar">Radar</option>
-          <option value="radar">RadarArea</option>
-          <option value="radialBar">Radial Bar</option>
-        </optgroup>
-        <optgroup label="Graphiques complexes">
-          <option value="bar">Bar</option>
-          <option value="column">Column</option>
-          <option value="columnpyramid">Column Pyramid</option>
-          <option value="line">Line</option>
-          <option value="area">Area</option>
-          <option value="spline">Spline</option>
-          <option value="areaspline">Area Spline</option>
-          <option value="columnrange">Column Range</option>
-          <option value="arearange">Area Range</option>
-          <option value="areasplinerange">Area Spline Range</option>
-          <option value="scatter">Scatter</option>
-          <option value="bubble">Bubble</option>
-          <option value="heatmap">Heatmap</option>
-          <option value="treemap">Treemap</option>
-          <option value="boxplot">BoxPlot</option>
-        </optgroup>
+        <option value="pie">Pie</option>
+        <option value="donut">Donut</option>
+        <option value="funnel">Funnel</option>
+        <option value="pyramid">Pyramid</option>
+        <option value="polar">Polar</option>
+        <option value="radar">Radar</option>
+        <option value="radar">RadarArea</option>
+        <option value="radialBar">Radial Bar</option>
+        <option value="bar">Bar</option>
+        <option value="column">Column</option>
+        <option value="columnpyramid">Column Pyramid</option>
+        <option value="line">Line</option>
+        <option value="area">Area</option>
+        <option value="spline">Spline</option>
+        <option value="areaspline">Area Spline</option>
+        <option value="columnrange">Column Range</option>
+        <option value="arearange">Area Range</option>
+        <option value="areasplinerange">Area Spline Range</option>
+        <option value="scatter">Scatter</option>
+        <option value="bubble">Bubble</option>
+        <option value="heatmap">Heatmap</option>
+        <option value="treemap">Treemap</option>
+        <option value="boxplot">BoxPlot</option>
       </select>
     </div>
 

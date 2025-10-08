@@ -22,21 +22,15 @@ import { HighchartsTestComponent } from './highcharts-test/highcharts-test.compo
 })
 export class BasicTestComponent implements OnInit {
   // Configuration du graphique
-  chartType: ChartType = 'radialBar';
+  chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
-  isSimpleChart = false;
-  isPanelVisible = false;
   isLoadingData = false;
+  isPanelVisible = false;
+  useSimpleData = true;
 
   chartLibrary: 'apexcharts' | 'highcharts' = 'highcharts';
-  dataDelay = 100;
-
-  // Types de graphiques regroupés par catégorie
-  readonly chartTypes = {
-    simple: ['pie', 'donut', 'funnel'] as ChartType[],
-    complex: ['bar', 'column', 'line', 'area', 'spline'] as ChartType[],
-  };
+  dataDelay = 0;
 
   // Configuration unique pour les deux bibliothèques
   private readonly simpleConfig: ChartProvider<string, number> = {
@@ -58,11 +52,12 @@ export class BasicTestComponent implements OnInit {
     showToolbar: true,
   };
 
-  // Données simplifiées - seulement 3 équipes
   private readonly simpleData = [
     { team: 'Équipe A', value: 58 },
     { team: 'Équipe B', value: 85 },
     { team: 'Équipe C', value: 42 },
+    { team: 'Équipe D', value: 12 },
+    { team: 'Équipe E', value: 60 },
   ];
 
   private readonly complexData = [
@@ -88,34 +83,25 @@ export class BasicTestComponent implements OnInit {
     { month: 'Juin', team: 'Équipe C', value: 30 },
   ];
 
-  get simpleChartTypes(): ChartType[] {
-    return this.chartTypes.simple;
-  }
-
-  get complexChartTypes(): ChartType[] {
-    return this.chartTypes.complex;
-  }
-
-  ngOnInit(): void {
-    this.loadChartData();
-  }
+  ngOnInit(): void { this.loadChartData() }
 
   loadChartData(): void {
     this.isLoadingData = true;
-    this.chartData = []; // Vider les données pendant le chargement
+    this.chartData = [];
 
     // Simuler un délai de chargement
     setTimeout(() => {
-      this.isSimpleChart = this.chartTypes.simple.includes(this.chartType);
-
-      if (this.isSimpleChart) {
-        this.chartConfig = this.simpleConfig;
+      if (this.useSimpleData) {
+        this.chartConfig = { ...this.simpleConfig };
         this.chartData = [...this.simpleData];
+        console.log('Chargement des données SIMPLES:', this.chartData);
       } else {
-        this.chartConfig = this.complexConfig;
+        this.chartConfig = { ...this.complexConfig };
         this.chartData = [...this.complexData];
+        console.log('Chargement des données COMPLEXES:', this.chartData);
       }
 
+      console.log('Config utilisée:', this.chartConfig);
       this.isLoadingData = false;
     }, this.dataDelay);
   }
@@ -132,8 +118,14 @@ export class BasicTestComponent implements OnInit {
     this.isPanelVisible = !this.isPanelVisible;
   }
 
+  toggleDataType(): void {
+    this.useSimpleData = !this.useSimpleData;
+    console.log('Toggle Data Type - Mode:', this.useSimpleData ? 'SIMPLE' : 'COMPLEX');
+    this.loadChartData();
+  }
+
   getCurrentMode(): string {
-    return this.isSimpleChart ? 'simple' : 'complex';
+    return this.useSimpleData ? 'Simple (name/value)' : 'Complex (x/y multi-séries)';
   }
 
   toggleChartLibrary(): void {

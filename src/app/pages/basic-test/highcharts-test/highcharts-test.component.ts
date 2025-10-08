@@ -1,10 +1,4 @@
-import {
-  Component,
-  Input,
-  ViewChild,
-  OnChanges,
-  SimpleChanges,
-} from '@angular/core';
+import { Component, Input, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartComponent as HighchartsChartComponent } from '@oneteme/jquery-highcharts';
 import { ChartProvider, ChartType } from '@oneteme/jquery-core';
