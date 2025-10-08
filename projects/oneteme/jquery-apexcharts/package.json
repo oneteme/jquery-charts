@@ -8,10 +8,6 @@
     "type": "git",
     "url": "https://github.com/oneteme/jquery-charts.git"
   },
-  "schematics": "./schematics/collection.json",
-  "ng-add": {
-    "save": "dependencies"
-  },
   "peerDependencies": {
     "@angular/common": ">=16.1.0",
     "@angular/core": ">=16.1.0",

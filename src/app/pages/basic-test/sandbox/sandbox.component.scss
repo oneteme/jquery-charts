@@ -1,0 +1,282 @@
+.sandbox-container {
+  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+
+  h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 2rem;
+  }
+
+  .description {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    line-height: 1.5;
+
+    p {
+      margin: 0 0 10px 0;
+      color: #555;
+    }
+
+    .library-toggle {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #ddd;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+
+      .separator {
+        width: 1px;
+        height: 32px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          #ddd 20%,
+          #ddd 80%,
+          transparent
+        );
+        margin: 0 4px;
+      }
+
+      .back-btn {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+        }
+
+        &:active {
+          transform: translateY(0) scale(0.98);
+        }
+      }
+
+      .library-btn {
+        background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
+        color: #555;
+        border: 1px solid transparent;
+        padding: 12px 24px;
+        border-radius: 20px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.4s ease;
+        box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15),
+          -6px -6px 12px rgba(255, 255, 255, 0.8);
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15),
+            -6px -6px 12px rgba(255, 255, 255, 0.8);
+        }
+
+        &:active {
+          transform: translateY(0) scale(0.98);
+          box-shadow: inset 4px 4px 8px rgba(0, 0, 0, 0.2),
+            inset -4px -4px 8px rgba(255, 255, 255, 0.7);
+        }
+      }
+    }
+  }
+
+  .charts-container {
+    margin-bottom: 30px;
+
+    .chart-wrapper {
+      background: white;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      height: 50vh;
+      min-height: 350px;
+    }
+  }
+
+  .editors-section {
+    background: white;
+    border: 1px solid #e8e8e8;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #e8e8e8;
+      flex-wrap: wrap;
+      gap: 15px;
+
+      h3 {
+        margin: 0;
+        color: #333;
+        font-size: 1.3rem;
+      }
+
+      .editor-controls {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+
+        .ctrl-btn {
+          border: none;
+          padding: 10px 18px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 13px;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+          letter-spacing: 0.3px;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          }
+
+          &:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+          }
+        }
+
+        .ctrl-btn-primary {
+          background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+          color: white;
+
+          &:hover {
+            background: linear-gradient(135deg, #229954 0%, #1e8449 100%);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.4);
+          }
+        }
+
+        .ctrl-btn-info {
+          background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+          color: white;
+
+          &:hover {
+            background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
+          }
+        }
+
+        .ctrl-btn-danger {
+          background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+          color: white;
+
+          &:hover {
+            background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+            box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+          }
+        }
+      }
+    }
+
+    .editors-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+
+      @media (max-width: 968px) {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .editor-column {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      min-height: 0; // Important pour que flex fonctionne correctement
+    }
+
+    .editor-group {
+      display: flex;
+      flex-direction: column;
+      flex: 1; // Les groupes prennent l'espace disponible
+
+      &:has(textarea) {
+        flex: 1; // Les groupes avec textarea prennent tout l'espace disponible
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+        transition: border-color 0.3s ease;
+        flex-shrink: 0;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+        }
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 400px;
+        height: 100%;
+        padding: 12px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 13px;
+        line-height: 1.5;
+        resize: vertical;
+        background: #fafafa;
+        transition: border-color 0.3s ease, background-color 0.3s ease;
+
+        &:focus {
+          outline: none;
+          border-color: #3498db;
+          background: white;
+        }
+      }
+    }
+
+    .error-message {
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 6px;
+      border: 1px solid #fcc;
+      font-size: 13px;
+      font-weight: 500;
+    }
+  }
+}

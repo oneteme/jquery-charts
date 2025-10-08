@@ -19,14 +19,34 @@
         {{ chartLibrary === "apexcharts" ? "Highcharts" : "ApexCharts" }}
       </button>
 
+      <div class="separator"></div>
+
       <button
         class="data-mode-btn"
-        (click)="toggleDataType()"
-        [title]="
-          'Mode actuel : ' + getCurrentMode() + '. Cliquer pour basculer.'
-        "
+        [class.active]="useSimpleData"
+        (click)="setDataType(true)"
+        title="Utiliser des données simples"
       >
-        <span class="label">{{ useSimpleData ? "Simple" : "Complex" }}</span>
+        <span class="label">Simple</span>
+      </button>
+
+      <button
+        class="data-mode-btn"
+        [class.active]="!useSimpleData"
+        (click)="setDataType(false)"
+        title="Utiliser des données complexes"
+      >
+        <span class="label">Complex</span>
+      </button>
+
+      <div class="separator"></div>
+
+      <button
+        class="sandbox-btn"
+        routerLink="/basic-test/sandbox"
+        title="Tester avec vos propres données"
+      >
+        Tester avec un jeu de données perso
       </button>
     </div>
   </div>

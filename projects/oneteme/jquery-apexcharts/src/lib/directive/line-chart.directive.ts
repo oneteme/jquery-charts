@@ -1,8 +1,35 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
-import { buildChart, ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  inject,
+  Input,
+  NgZone,
+  OnChanges,
+  OnDestroy,
+  Output,
+  signal,
+  SimpleChanges,
+} from '@angular/core';
+import {
+  buildChart,
+  ChartProvider,
+  ChartView,
+  XaxisType,
+  YaxisType,
+} from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility } from './utils';
+import {
+  ChartCustomEvent,
+  getType,
+  initCommonChartOptions,
+  updateCommonOptions,
+  destroyChart,
+  setupScrollPrevention,
+  transformSeriesVisibility,
+  fixToolbarSvgIds,
+} from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -62,7 +89,12 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   constructor() {
-    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'line');
+    this._options = initCommonChartOptions(
+      this.el,
+      this.customEvent,
+      this.ngZone,
+      'line'
+    );
   }
 
   /**
@@ -82,7 +114,10 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
             .render()
             .then(() => {
               setupScrollPrevention(this.el.nativeElement, this.chartInstance);
-                this.debug && console.log(
+              // Corriger les IDs SVG dupliqués dans la toolbar
+              fixToolbarSvgIds(this.el.nativeElement);
+              this.debug &&
+                console.log(
                   new Date().getMilliseconds(),
                   'Rendu du graphique terminé'
                 );
@@ -111,7 +146,11 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
 
   ngOnChanges(changes: SimpleChanges): void {
     if (this.debug) {
-      console.log(new Date().getMilliseconds(), 'Détection de changements', changes);
+      console.log(
+        new Date().getMilliseconds(),
+        'Détection de changements',
+        changes
+      );
     }
     this.ngZone.runOutsideAngular(() => {
       asapScheduler.schedule(() => this.hydrate(changes));
@@ -140,18 +179,25 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
         ? 'Chargement des données...'
         : 'Aucune donnée';
 
-      this.updateChartOptions({
-        noData: this._options.noData
-      }, false, false, false);
+      this.updateChartOptions(
+        {
+          noData: this._options.noData,
+        },
+        false,
+        false,
+        false
+      );
     }
 
     if (this._options.shouldRedraw) {
-      if (this.debug) console.log('Recréation complète du graphique nécessaire', changes);
+      if (this.debug)
+        console.log('Recréation complète du graphique nécessaire', changes);
       this.ngOnDestroy();
       this.init();
       delete this._options.shouldRedraw;
     } else if (needsOptionsUpdate) {
-      if (this.debug) console.log('Mise à jour des options du graphique', changes);
+      if (this.debug)
+        console.log('Mise à jour des options du graphique', changes);
       this.updateChartOptions();
     }
   }

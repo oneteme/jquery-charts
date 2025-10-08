@@ -1,22 +1,5 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
-import {
-  ChartProvider,
-  ChartType,
-  XaxisType,
-  YaxisType,
-  buildChart,
-  buildSingleSerieChart,
-} from '@oneteme/jquery-core';
+import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart } from '@oneteme/jquery-core';
 import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType } from './utils';
 
 @Directive({
@@ -268,16 +251,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
       series: series,
       xAxis: {
         categories: categories,
-        title: {
-          text: this.config.xtitle || '',
-        },
+        title: { text: this.config.xtitle || '' },
       },
       yAxis: yCategories
         ? {
             categories: yCategories,
-            title: {
-              text: this.config.ytitle || '',
-            },
+            title: { text: this.config.ytitle || '' },
           }
         : undefined,
     };

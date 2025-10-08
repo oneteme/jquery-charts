@@ -83,7 +83,9 @@ export class BasicTestComponent implements OnInit {
     { month: 'Juin', team: 'Équipe C', value: 30 },
   ];
 
-  ngOnInit(): void { this.loadChartData() }
+  ngOnInit(): void {
+    this.loadChartData();
+  }
 
   loadChartData(): void {
     this.isLoadingData = true;
@@ -120,12 +122,28 @@ export class BasicTestComponent implements OnInit {
 
   toggleDataType(): void {
     this.useSimpleData = !this.useSimpleData;
-    console.log('Toggle Data Type - Mode:', this.useSimpleData ? 'SIMPLE' : 'COMPLEX');
+    console.log(
+      'Toggle Data Type - Mode:',
+      this.useSimpleData ? 'SIMPLE' : 'COMPLEX'
+    );
     this.loadChartData();
   }
 
+  setDataType(isSimple: boolean): void {
+    if (this.useSimpleData !== isSimple) {
+      this.useSimpleData = isSimple;
+      console.log(
+        'Set Data Type - Mode:',
+        this.useSimpleData ? 'SIMPLE' : 'COMPLEX'
+      );
+      this.loadChartData();
+    }
+  }
+
   getCurrentMode(): string {
-    return this.useSimpleData ? 'Simple (name/value)' : 'Complex (x/y multi-séries)';
+    return this.useSimpleData
+      ? 'Simple (name/value)'
+      : 'Complex (x/y multi-séries)';
   }
 
   toggleChartLibrary(): void {

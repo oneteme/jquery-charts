@@ -2,7 +2,6 @@
   padding: 1rem;
   max-width: 1200px;
   margin: 0 auto;
-  padding-bottom: 120px;
 
   h1 {
     color: #333;
@@ -24,6 +23,20 @@
       justify-content: center;
       align-items: center;
       gap: 12px;
+      flex-wrap: wrap;
+
+      .separator {
+        width: 1px;
+        height: 32px;
+        background: linear-gradient(
+          to bottom,
+          transparent,
+          #ddd 20%,
+          #ddd 80%,
+          transparent
+        );
+        margin: 0 4px;
+      }
 
       .library-btn {
         background: linear-gradient(145deg, #f0f0f0, #e6e6e6);
@@ -41,8 +54,6 @@
 
         &:hover {
           transform: translateY(-1px);
-          border-color: #aa1124;
-          color: #aa1124;
           box-shadow: 6px 6px 12px rgba(0, 0, 0, 0.15),
             -6px -6px 12px rgba(255, 255, 255, 0.8);
         }
@@ -78,10 +89,49 @@
 
         &:hover {
           background: rgba(255, 255, 255, 0.95);
-          border-color: #aa1124;
-          color: #aa1124;
+          border-color: #3498db;
+          color: #3498db;
           transform: translateY(-1px);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        &.active {
+          background: #3498db;
+          border-color: #3498db;
+          color: white;
+          box-shadow: 0 2px 6px rgba(52, 152, 219, 0.4);
+
+          &:hover {
+            background: #2980b9;
+            border-color: #2980b9;
+            color: white;
+          }
+        }
+
+        &:active {
+          transform: translateY(0) scale(0.98);
+        }
+      }
+
+      .sandbox-btn {
+        background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
         }
 
         &:active {

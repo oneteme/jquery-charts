@@ -21,7 +21,7 @@
     "ng": "ng",
     "start": "ng serve",
     "b1": "ng build @oneteme/jquery-highcharts",
-    "b2": "ng build @oneteme/jquery-apexhcharts",
+    "b2": "ng build @oneteme/jquery-apexcharts",
     "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build \"@oneteme/jquery-highcharts\" && ng build",
     "watch-core": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
     "watch-lib1": "ng build \"@oneteme/jquery-highcharts\" --watch --configuration development",
