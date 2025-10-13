@@ -1,7 +1,6 @@
 import { ChartProvider } from '@oneteme/jquery-core';
 import { Highcharts } from './highcharts-modules';
 
-// Adapte les dimensions du graphique en utilisant les dimensions de son conteneur si aucune dimension n'est explicitement configurée
 export function sanitizeChartDimensions(
   chartOptions: Highcharts.Options,
   config: ChartProvider<any, any>,

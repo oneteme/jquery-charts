@@ -1,6 +1,5 @@
 import { Highcharts } from '../highcharts-modules';
 
-// Configuration spé pour graph polaires
 export function configurePolarChart(
   options: Highcharts.Options,
   chartType: string
@@ -39,7 +38,6 @@ export function configurePolarChart(
   }
 }
 
-// Configuration pour le type "polar" (secteurs empilés)
 function configurePolarType(options: Highcharts.Options): void {
   (options.yAxis as any).gridLineInterpolation = 'circle';
 
@@ -60,12 +58,10 @@ function configurePolarType(options: Highcharts.Options): void {
   (options.plotOptions as any).series.pointPlacement = 'between';
 }
 
-// Configuration pour le type "radar" (toile d'araignée)
 function configureRadarType(options: Highcharts.Options): void {
   (options.yAxis as any).gridLineInterpolation = 'polygon';
 }
 
-// Configuration pour le type "radararea" (toile d'araignée avec remplissage)
 function configureRadarAreaType(options: Highcharts.Options): void {
   (options.yAxis as any).gridLineInterpolation = 'polygon';
 
@@ -75,7 +71,6 @@ function configureRadarAreaType(options: Highcharts.Options): void {
   options.plotOptions.area = { fillOpacity: 0.5 };
 }
 
-// Configuration pour le type "radialbar" (barres circulaires concentriques)
 function configureRadialBarType(options: Highcharts.Options): void {
   if (!options.chart) {
     options.chart = {};
@@ -126,22 +121,17 @@ export function isPolarChart(chartType: string): boolean {
   return ['polar', 'radar', 'radarArea', 'radialBar'].includes(chartType);
 }
 
-// Force les configs critiques après merge des options utilisateur
 export function enforceCriticalPolarOptions(
   options: Highcharts.Options,
   chartType: string
 ): void {
-  if (!isPolarChart(chartType)) {
-    return;
-  }
+  if (!isPolarChart(chartType)) return;
 
-  // Configurations critiques communes à tous les graphiques polaires
   if (!options.chart) {
     options.chart = {};
   }
   options.chart.polar = true;
 
-  // Configurations critiques spécifiques à chaque type
   switch (chartType) {
     case 'radialBar':
       enforceRadialBarCriticalOptions(options);
@@ -156,7 +146,6 @@ export function enforceCriticalPolarOptions(
   }
 }
 
-// Force les options critiques pour radialBar
 function enforceRadialBarCriticalOptions(options: Highcharts.Options): void {
   if (!options.chart) {
     options.chart = {};
@@ -176,7 +165,6 @@ function enforceRadialBarCriticalOptions(options: Highcharts.Options): void {
   (options.yAxis as any).gridLineWidth = 0;
 }
 
-// Force les options critiques pour radar et radarArea
 function enforceRadarCriticalOptions(options: Highcharts.Options): void {
   if (!options.yAxis) {
     options.yAxis = {};
@@ -184,7 +172,6 @@ function enforceRadarCriticalOptions(options: Highcharts.Options): void {
   (options.yAxis as any).gridLineInterpolation = 'polygon';
 }
 
-// Force les options critiques pour polar
 function enforcePolarTypeCriticalOptions(options: Highcharts.Options): void {
   if (!options.yAxis) {
     options.yAxis = {};

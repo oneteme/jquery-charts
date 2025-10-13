@@ -1,4 +1,6 @@
 import { Highcharts } from '../highcharts-modules';
+import { ORIGINAL_DATA_SYMBOL } from './memory-symbols';
+import { validateAndCleanData } from './data-validation';
 
 /** Détermine si un type de graphique est un range chart */
 export function isRangeChart(chartType: string): boolean {
@@ -95,7 +97,7 @@ function transformRangeToSimple(series: any[]): any[] {
     return {
       ...serie,
       data: simpleData,
-      _originalRangeData: serie.data, // Mémoire des données range
+      [ORIGINAL_DATA_SYMBOL]: serie.data,
     };
   });
 }
@@ -128,7 +130,7 @@ function singleSeriesByPairs(serie: any): any {
   return {
     ...serie,
     data: rangeData,
-    _originalSimpleData: serie.data, // Mémoire des données simples
+    [ORIGINAL_DATA_SYMBOL]: serie.data,
   };
 }
 
@@ -159,7 +161,7 @@ function singleSeriesByGroups(serie: any, groupSize: number = 3): any {
   return {
     ...serie,
     data: rangeData,
-    _originalSimpleData: serie.data, // Mémoire des données simples
+    [ORIGINAL_DATA_SYMBOL]: serie.data,
   };
 }
 
@@ -202,7 +204,7 @@ function multipleSeriesMinMax(series: any[]): any[] {
     {
       name: 'Plage (min-max)',
       data: rangeData,
-      _originalSeries: series, // Mémoire des séries originales
+      [ORIGINAL_DATA_SYMBOL]: series,
     },
   ];
 }
@@ -249,7 +251,45 @@ function groupByXValue(series: any[]): any[] {
     {
       name: 'Plage groupée',
       data: rangeData,
-      _originalSeries: series, // Mémoire des séries originales
+      [ORIGINAL_DATA_SYMBOL]: series,
+    },
+  ];
+}
+
+/**
+ * STRATÉGIE 5 : Compare exactement 2 séries (série 1 vs série 2)
+ * La première série représente les valeurs minimales, la seconde les maximales
+ */
+function compareTwoSeries(series: any[]): any[] {
+  if (!series || series.length !== 2) return series;
+
+  const serie1 = series[0];
+  const serie2 = series[1];
+
+  if (!serie1.data || !serie2.data) return series;
+
+  const maxLength = Math.max(serie1.data.length, serie2.data.length);
+  const rangeData: any[] = [];
+
+  for (let i = 0; i < maxLength; i++) {
+    const val1 = serie1.data[i] ? extractValue(serie1.data[i]) : null;
+    const val2 = serie2.data[i] ? extractValue(serie2.data[i]) : null;
+
+    if (val1 !== null && val2 !== null) {
+      const xValue = extractXValue(serie1.data[i] || serie2.data[i], i);
+      rangeData.push({
+        x: xValue,
+        low: Math.min(val1, val2),
+        high: Math.max(val1, val2),
+      });
+    }
+  }
+
+  return [
+    {
+      name: `${serie1.name || 'Min'} - ${serie2.name || 'Max'}`,
+      data: rangeData,
+      [ORIGINAL_DATA_SYMBOL]: series,
     },
   ];
 }
@@ -260,8 +300,13 @@ function groupByXValue(series: any[]): any[] {
 function autoTransform(series: any[]): any[] {
   if (!series || series.length === 0) return series;
 
-  // Cas 1 : Plusieurs séries → Min/Max entre séries
-  if (series.length > 1) {
+  // Cas 1 : Exactement 2 séries → Comparer les deux séries
+  if (series.length === 2) {
+    return compareTwoSeries(series);
+  }
+
+  // Cas 2 : Plusieurs séries (3+) → Min/Max entre séries
+  if (series.length > 2) {
     const allXValues: any[] = [];
     series.forEach((serie) => {
       if (serie.data) {
@@ -281,7 +326,7 @@ function autoTransform(series: any[]): any[] {
     }
   }
 
-  // Cas 2 : Une seule série
+  // Cas 3 : Une seule série
   if (series.length === 1) {
     const serie = series[0];
     const dataLength = serie.data?.length || 0;
@@ -310,6 +355,10 @@ export function transformDataForRangeChart(
 ): any[] {
   if (!series || series.length === 0) return series;
 
+  // Validation et nettoyage des données
+  series = validateAndCleanData(series);
+  if (series.length === 0) return series;
+
   // Si on veut du range
   if (targetIsRange) {
     // Vérifier si déjà au format range
@@ -317,12 +366,12 @@ export function transformDataForRangeChart(
     if (alreadyRange) return series;
 
     // Vérifier si on a des données originales en mémoire
-    if (series.length === 1 && series[0]._originalSimpleData) {
+    if (series.length === 1 && series[0][ORIGINAL_DATA_SYMBOL]) {
       // Retourner les données range depuis la mémoire
       return [
         {
           ...series[0],
-          data: series[0]._originalSimpleData,
+          data: series[0][ORIGINAL_DATA_SYMBOL],
         },
       ];
     }
@@ -334,9 +383,9 @@ export function transformDataForRangeChart(
   // Si on veut du simple (pour switch vers line, bar, etc.)
   if (!targetIsRange) {
     // Vérifier si on a des données originales en mémoire
-    if (series.length === 1 && series[0]._originalSeries) {
+    if (series.length === 1 && series[0][ORIGINAL_DATA_SYMBOL]) {
       // Retourner les séries originales depuis la mémoire
-      return series[0]._originalSeries;
+      return series[0][ORIGINAL_DATA_SYMBOL];
     }
 
     // Sinon, convertir range → simple

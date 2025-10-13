@@ -1,14 +1,15 @@
 import { Highcharts } from '../highcharts-modules';
+import {
+  ORIGINAL_DATA_SYMBOL,
+  ORIGINAL_METADATA_SYMBOL,
+  trackTransformation,
+} from './memory-symbols';
 
-/** Symbole pour stocker les métadonnées originales */
-const ORIGINAL_METADATA_SYMBOL = Symbol('originalHeatmapMetadata');
-
-/** Détermine si un type de graphique est heatmap */
 export function isHeatmapChart(chartType: string): boolean {
   return chartType === 'heatmap';
 }
 
-/** Vérifie si les données sont au format heatmap [x, y, value] */
+// Vérifie si les données sont au format heatmap [x, y, value]
 function hasHeatmapFormat(data: any[]): boolean {
   if (!data || data.length === 0) return false;
 
@@ -21,37 +22,6 @@ function hasHeatmapFormat(data: any[]): boolean {
         'y' in point &&
         'value' in point)
   );
-}
-
-/** Extrait les valeurs d'un point heatmap */
-function extractHeatmapPoint(
-  point: any,
-  xIndex: number,
-  yIndex: number
-): { x: number; y: number; value: number } | null {
-  if (point === null || point === undefined) return null;
-
-  if (Array.isArray(point) && point.length >= 3) {
-    return { x: point[0], y: point[1], value: point[2] };
-  }
-
-  if (
-    typeof point === 'object' &&
-    'x' in point &&
-    'y' in point &&
-    'value' in point
-  ) {
-    return { x: point.x, y: point.y, value: point.value };
-  }
-
-  // Données simples : utiliser les index
-  const value =
-    typeof point === 'number' ? point : point?.y ?? point?.value ?? null;
-  if (value !== null) {
-    return { x: xIndex, y: yIndex, value };
-  }
-
-  return null;
 }
 
 /**
@@ -87,14 +57,17 @@ function matrixToHeatmap(
     });
   });
 
+  const transformedSerie = {
+    name: 'Heatmap',
+    data: heatmapData,
+    [ORIGINAL_DATA_SYMBOL]: series,
+    [ORIGINAL_METADATA_SYMBOL]: { yCategories },
+  };
+
+  trackTransformation(transformedSerie, 'standard', 'heatmap', 'matrix');
+
   return {
-    series: [
-      {
-        name: 'Heatmap',
-        data: heatmapData,
-        [ORIGINAL_METADATA_SYMBOL]: { originalSeries: series, yCategories },
-      },
-    ],
+    series: [transformedSerie],
     yCategories,
   };
 }
@@ -109,8 +82,8 @@ function heatmapToSeries(series: any[]): any[] {
   const firstSerie = series[0];
 
   // Si mémoire disponible, restaurer les données originales
-  if (firstSerie.__originalSeries) {
-    return firstSerie.__originalSeries;
+  if (firstSerie[ORIGINAL_DATA_SYMBOL]) {
+    return firstSerie[ORIGINAL_DATA_SYMBOL];
   }
 
   // Sinon, convertir manuellement
@@ -146,13 +119,7 @@ function heatmapToSeries(series: any[]): any[] {
   return recreatedSeries;
 }
 
-/**
- * Transforme intelligemment les données pour/depuis heatmap
- * @param series - Les séries de données
- * @param targetIsHeatmap - true si on veut transformer vers heatmap, false pour l'inverse
- * @param categories - Catégories optionnelles pour l'axe X
- * @returns Objet contenant les séries transformées et optionnellement les catégories Y
- */
+// Transforme intelligemment les données pour/depuis heatmap
 export function transformDataForHeatmap(
   series: any[],
   targetIsHeatmap: boolean,
@@ -178,7 +145,7 @@ export function transformDataForHeatmap(
   return { series };
 }
 
-/** Configure les options par défaut pour heatmap */
+// Configure les options par défaut pour heatmap
 export function configureHeatmapChart(
   options: Highcharts.Options,
   chartType: string
@@ -216,7 +183,7 @@ export function configureHeatmapChart(
   }
 }
 
-/** Force les configurations critiques pour heatmap après le merge */
+// Force les configurations critiques pour heatmap après le merge
 export function enforceCriticalHeatmapOptions(
   options: Highcharts.Options,
   chartType: string

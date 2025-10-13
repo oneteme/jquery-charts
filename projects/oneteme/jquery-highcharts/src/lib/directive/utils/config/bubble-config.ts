@@ -1,7 +1,6 @@
 import { Highcharts } from '../highcharts-modules';
-
-/** Symbole pour stocker les données originales */
-const ORIGINAL_DATA_SYMBOL = Symbol('originalBubbleData');
+import { ORIGINAL_DATA_SYMBOL, trackTransformation } from './memory-symbols';
+import { validateAndCleanData } from './data-validation';
 
 /** Détermine si un type de graphique est bubble */
 export function isBubbleChart(chartType: string): boolean {
@@ -37,11 +36,67 @@ function extractValues(point: any): {
 /**
  * TRANSFORMATION : Données [x, y] → [x, y, z]
  * Stratégie : Calculer z basé sur la valeur y de manière proportionnelle et raisonnable
+ * @param series - Les séries de données
+ * @param mode - 'global' (défaut) ou 'per-series' pour calculer z indépendamment par série
  */
-function transformToBubble(series: any[]): any[] {
+function transformToBubble(
+  series: any[],
+  mode: 'global' | 'per-series' = 'global'
+): any[] {
   if (!series || series.length === 0) return series;
 
-  // Collecter toutes les valeurs Y pour calculer l'échelle
+  if (mode === 'per-series') {
+    // Calculer z indépendamment pour chaque série
+    return series.map((serie) => {
+      if (!serie.data) return serie;
+
+      const yValues = serie.data
+        .map((p: any) => extractValues(p).y)
+        .filter((y: number | null): y is number => y !== null);
+
+      if (yValues.length === 0) return serie;
+
+      const minY = Math.min(...yValues);
+      const maxY = Math.max(...yValues);
+      const range = maxY - minY || 1;
+
+      const originalData = [...serie.data];
+
+      const bubbleData = serie.data.map((point: any) => {
+        const { x, y, z } = extractValues(point);
+
+        if (z !== null && z !== undefined) return point;
+        if (y === null) return point;
+
+        const absY = Math.abs(y);
+        const normalized = (absY - minY) / range;
+        const logScaled = Math.log10(1 + normalized * 9);
+        const calculatedZ = Math.max(1, logScaled * 20);
+
+        if (Array.isArray(point)) {
+          return [x, y, calculatedZ];
+        }
+        return { ...point, z: calculatedZ, name: point.name || point.x };
+      });
+
+      const transformedSerie = {
+        ...serie,
+        data: bubbleData,
+        [ORIGINAL_DATA_SYMBOL]: originalData,
+      };
+
+      trackTransformation(
+        transformedSerie,
+        'standard',
+        'bubble',
+        'calculZ-per-series'
+      );
+
+      return transformedSerie;
+    });
+  }
+
+  // Mode global (comportement par défaut)
   const allYValues: number[] = [];
   series.forEach((serie) => {
     if (serie.data) {
@@ -74,23 +129,32 @@ function transformToBubble(series: any[]): any[] {
 
       if (y === null) return point;
 
-      // Calculer z de manière plus subtile
-      // Normaliser entre 0 et 1, puis appliquer une racine carrée pour adoucir les différences
-      const normalized = (Math.abs(y) - minY) / range;
-      const smoothed = Math.sqrt(normalized); // Racine carrée pour réduire l'écart visuel
-      const calculatedZ = Math.max(1, smoothed * 50); // Taille entre 1 et 50 (plus raisonnable)
+      const absY = Math.abs(y);
+      const normalized = (absY - minY) / range;
+      const logScaled = Math.log10(1 + normalized * 9);
+      const calculatedZ = Math.max(1, logScaled * 20);
 
       if (Array.isArray(point)) {
         return [x, y, calculatedZ];
       }
-      return { ...point, z: calculatedZ };
+      return { ...point, z: calculatedZ, name: point.name || point.x };
     });
 
-    return {
+    const transformedSerie = {
       ...serie,
       data: bubbleData,
       [ORIGINAL_DATA_SYMBOL]: originalData,
     };
+
+    // Enregistrer la transformation
+    trackTransformation(
+      transformedSerie,
+      'standard',
+      'bubble',
+      'calculZ-global'
+    );
+
+    return transformedSerie;
   });
 }
 
@@ -142,6 +206,10 @@ export function transformDataForBubble(
 ): any[] {
   if (!series || series.length === 0) return series;
 
+  // Validation et nettoyage des données
+  series = validateAndCleanData(series);
+  if (series.length === 0) return series;
+
   const alreadyBubble = series.some((serie) => hasBubbleFormat(serie.data));
 
   if (targetIsBubble) {
@@ -172,14 +240,21 @@ export function configureBubbleChart(
     options.plotOptions = {};
   }
 
-  // Configuration minimale - laisser Highcharts gérer le reste
   (options.plotOptions as any).bubble = {
     ...(options.plotOptions as any).bubble,
-    minSize: 5,
-    maxSize: 50,
+    minSize: 3,
+    maxSize: 20,
     dataLabels: {
       enabled: false,
     },
+  };
+
+  if (!options.tooltip) {
+    options.tooltip = {};
+  }
+
+  (options.tooltip as any).pointFormatter = function (this: any) {
+    return `Valeur: <b>${this.y}</b>`;
   };
 }
 
@@ -192,5 +267,30 @@ export function enforceCriticalBubbleOptions(
     return;
   }
 
-  // Pas de configuration critique forcée - laisser l'utilisateur personnaliser
+  // Forcer l'affichage des markers (essentiel pour bubble)
+  if (!options.plotOptions) {
+    options.plotOptions = {};
+  }
+  if (!(options.plotOptions as any).bubble) {
+    (options.plotOptions as any).bubble = {};
+  }
+  
+  // Configuration critique : les markers doivent être activés (TOUJOURS en dernier pour être prioritaire)
+  if (!(options.plotOptions as any).bubble.marker) {
+    (options.plotOptions as any).bubble.marker = {};
+  }
+  
+  // Forcer enabled APRÈS le merge pour être prioritaire
+  (options.plotOptions as any).bubble.marker.enabled = true;
+  
+  // Pas de lignes entre les points pour bubble
+  (options.plotOptions as any).bubble.lineWidth = 0;
+  
+  // S'assurer que les tailles min/max sont définies
+  if ((options.plotOptions as any).bubble.minSize === undefined) {
+    (options.plotOptions as any).bubble.minSize = 3;
+  }
+  if ((options.plotOptions as any).bubble.maxSize === undefined) {
+    (options.plotOptions as any).bubble.maxSize = 20;
+  }
 }

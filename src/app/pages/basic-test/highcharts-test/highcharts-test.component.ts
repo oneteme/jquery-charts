@@ -15,6 +15,7 @@ export class HighchartsTestComponent implements OnChanges {
   @Input() chartData: any[] = [];
   @Input() isLoadingChart: boolean = false;
   @Input() enablePivot: boolean = false;
+  @Input() possibleTypes?: ChartType[];
   @ViewChild('chart') chart: HighchartsChartComponent<string, number>;
 
   ngOnChanges(changes: SimpleChanges): void {}

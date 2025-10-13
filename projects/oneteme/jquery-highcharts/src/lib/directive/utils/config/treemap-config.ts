@@ -1,4 +1,5 @@
 import { Highcharts } from '../highcharts-modules';
+import { ORIGINAL_DATA_SYMBOL, trackTransformation } from './memory-symbols';
 
 /** Détermine si un type de graphique est treemap */
 export function isTreemapChart(chartType: string): boolean {
@@ -17,44 +18,96 @@ function hasTreemapFormat(data: any[]): boolean {
   );
 }
 
-/**
- * STRATÉGIE 1 : Structure plate - chaque série = un rectangle
- * Exemple: Serie1(total:100) + Serie2(total:200) → 2 rectangles
- */
-function flatTreemap(series: any[]): any[] {
+// STRATÉGIE 1 : Structure plate - chaque point de données = un rectangle
+// Pour une série simple (ex: Pie/Donut vers Treemap), chaque valeur devient une case
+function flatTreemap(series: any[], categories?: any[]): any[] {
   const treemapData: any[] = [];
 
-  series.forEach((serie, index) => {
-    if (!serie.data || serie.data.length === 0) return;
+  // Si une seule série avec plusieurs points de données
+  if (series.length === 1 && series[0].data && series[0].data.length > 0) {
+    const serie = series[0];
 
-    // Calculer la somme totale de la série
-    const total = serie.data.reduce((sum: number, value: any) => {
-      const numValue =
-        typeof value === 'number'
-          ? value
-          : typeof value === 'object' && value !== null
-          ? value.y ?? value.value
-          : 0;
-      return sum + Math.abs(numValue || 0);
-    }, 0);
+    serie.data.forEach((point: any, index: number) => {
+      // Extraire la valeur
+      let value: number;
+      let name: string;
+      let color: string | undefined;
 
-    if (total > 0) {
-      treemapData.push({
-        name: serie.name || `Catégorie ${index + 1}`,
-        value: total,
-        colorValue: total,
-      });
-    }
-  });
+      if (typeof point === 'number') {
+        value = point;
+        name =
+          categories && categories[index]
+            ? categories[index]
+            : `Item ${index + 1}`;
+      } else if (typeof point === 'object' && point !== null) {
+        value = point.y ?? point.value ?? 0;
+        name =
+          point.name ??
+          (categories && categories[index]
+            ? categories[index]
+            : `Item ${index + 1}`);
+        color = point.color;
+      } else {
+        return; // Ignorer les valeurs invalides
+      }
 
-  return [
-    {
-      type: 'treemap',
-      layoutAlgorithm: 'squarified',
-      data: treemapData,
-      __originalSeries: series, // Mémoire des données originales
-    },
-  ];
+      if (value > 0) {
+        const dataPoint: any = {
+          name: name,
+          value: Math.abs(value),
+          colorValue: Math.abs(value),
+        };
+
+        if (color) {
+          dataPoint.color = color;
+        }
+
+        treemapData.push(dataPoint);
+      }
+    });
+  } else {
+    // Plusieurs séries : chaque série = un rectangle avec sa somme totale
+    series.forEach((serie, index) => {
+      if (!serie.data || serie.data.length === 0) return;
+
+      // Calculer la somme totale de la série
+      const total = serie.data.reduce((sum: number, value: any) => {
+        const numValue =
+          typeof value === 'number'
+            ? value
+            : typeof value === 'object' && value !== null
+            ? value.y ?? value.value
+            : 0;
+        return sum + Math.abs(numValue || 0);
+      }, 0);
+
+      if (total > 0) {
+        const dataPoint: any = {
+          name: serie.name || `Catégorie ${index + 1}`,
+          value: total,
+          colorValue: total,
+        };
+
+        // Ajouter la couleur de la série si elle existe
+        if (serie.color) {
+          dataPoint.color = serie.color;
+        }
+
+        treemapData.push(dataPoint);
+      }
+    });
+  }
+
+  const transformedSerie = {
+    type: 'treemap',
+    layoutAlgorithm: 'squarified',
+    data: treemapData,
+    [ORIGINAL_DATA_SYMBOL]: series,
+  };
+
+  trackTransformation(transformedSerie, 'standard', 'treemap', 'flat');
+
+  return [transformedSerie];
 }
 
 /**
@@ -68,12 +121,13 @@ function hierarchicalTreemap(series: any[], categories?: any[]): any[] {
   series.forEach((serie, serieIndex) => {
     const parentId = `serie-${serieIndex}`;
     const serieName = serie.name || `Catégorie ${serieIndex + 1}`;
+    const serieColor = serie.color;
 
     // Ajouter le nœud parent
     treemapData.push({
       id: parentId,
       name: serieName,
-      color: serie.color,
+      color: serieColor,
     });
 
     // Ajouter les points enfants
@@ -97,20 +151,23 @@ function hierarchicalTreemap(series: any[], categories?: any[]): any[] {
             parent: parentId,
             name: pointName,
             value: Math.abs(numValue),
+            color: serieColor,
           });
         }
       });
     }
   });
 
-  return [
-    {
-      type: 'treemap',
-      layoutAlgorithm: 'squarified',
-      data: treemapData,
-      __originalSeries: series, // Mémoire des données originales
-    },
-  ];
+  const transformedSerie = {
+    type: 'treemap',
+    layoutAlgorithm: 'squarified',
+    data: treemapData,
+    [ORIGINAL_DATA_SYMBOL]: series,
+  };
+
+  trackTransformation(transformedSerie, 'standard', 'treemap', 'hierarchical');
+
+  return [transformedSerie];
 }
 
 /**
@@ -123,8 +180,8 @@ function treemapToSeries(series: any[]): any[] {
   const firstSerie = series[0];
 
   // Si mémoire disponible, restaurer les données originales
-  if (firstSerie.__originalSeries) {
-    return firstSerie.__originalSeries;
+  if (firstSerie[ORIGINAL_DATA_SYMBOL]) {
+    return firstSerie[ORIGINAL_DATA_SYMBOL];
   }
 
   // Sinon, convertir manuellement
@@ -164,21 +221,20 @@ function treemapToSeries(series: any[]): any[] {
 function autoTransformTreemap(series: any[], categories?: any[]): any[] {
   if (!series || series.length === 0) return series;
 
-  // Si une seule série OU pas de catégories → structure plate
-  if (series.length === 1 || !categories || categories.length === 0) {
-    return flatTreemap(series);
+  // Si une seule série -> structure plate (chaque point = une case)
+  if (series.length === 1) {
+    return flatTreemap(series, categories);
   }
 
-  // Si plusieurs séries avec catégories → structure hiérarchique
+  // Si plusieurs séries sans catégories -> structure plate (chaque série = une case)
+  if (!categories || categories.length === 0) {
+    return flatTreemap(series, categories);
+  }
+
+  // Si plusieurs séries avec catégories -> structure hiérarchique
   return hierarchicalTreemap(series, categories);
 }
 
-/**
- * Transforme intelligemment les données pour/depuis treemap
- * @param series - Les séries de données
- * @param targetIsTreemap - true si on veut transformer vers treemap, false pour l'inverse
- * @param categories - Catégories optionnelles pour l'axe X
- */
 export function transformDataForTreemap(
   series: any[],
   targetIsTreemap: boolean,
@@ -217,38 +273,52 @@ export function configureTreemapChart(
     options.plotOptions = {};
   }
 
+  if (!(options.plotOptions as any).treemap) {
+    (options.plotOptions as any).treemap = {};
+  }
+
+  // Configuration pour afficher clairement la hiérarchie
   (options.plotOptions as any).treemap = {
     ...(options.plotOptions as any).treemap,
     layoutAlgorithm: 'squarified',
-    alternateStartingDirection: true,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    dataLabels: {
-      enabled: true,
-      align: 'center',
-      verticalAlign: 'middle',
-      style: {
-        fontSize: '12px',
-        fontWeight: 'bold',
-        textOutline: '1px contrast',
-      },
-    },
+    allowTraversingTree: true,
+    animationLimit: 1000,
+    levelIsConstant: false,
+
     levels: [
       {
         level: 1,
+        borderWidth: 3,
+        borderColor: '#ffffff',
         dataLabels: {
           enabled: true,
+          align: 'center',
+          verticalAlign: 'middle',
+          style: {
+            fontSize: '13px',
+            fontWeight: 'normal',
+            color: '#ffffff',
+          },
         },
-        borderWidth: 3,
-        borderColor: '#999999',
       },
     ],
   };
 
-  // Tooltip standard
+  // Tooltip amélioré
   if (!options.tooltip) {
     options.tooltip = {};
   }
+
+  options.tooltip.pointFormatter = function (this: any) {
+    // Si c'est un parent (série)
+    if (!this.parent) {
+      return `${this.name}`;
+    }
+    // Si c'est un enfant (mois)
+    const parentData = this.series.data.find((d: any) => d.id === this.parent);
+    const parentName = parentData?.name || '';
+    return `${parentName} - ${this.name}<br/>Valeur: ${this.value}`;
+  };
 }
 
 /** Force les configurations critiques pour treemap après le merge */

@@ -1,26 +1,18 @@
 import { Highcharts } from '../highcharts-modules';
 import { ChartType } from '@oneteme/jquery-core';
 
-// Import des configurations
 import * as PolarConfig from './polar-config';
 import * as RangeConfig from './range-config';
 import * as ScatterConfig from './scatter-config';
 import * as BubbleConfig from './bubble-config';
 import * as HeatmapConfig from './heatmap-config';
 import * as TreemapConfig from './treemap-config';
+import * as SimpleChartConfig from './simple-chart-config';
 
-/** Interface pour un configurateur de type de graphique */
 export interface ChartTypeConfigurator {
-  /** Vérifie si ce configurateur gère le type de graphique */
   isChartType: (type: ChartType) => boolean;
-
-  /** Configure les options de base avant le merge */
   configure?: (options: Highcharts.Options, type: ChartType) => void;
-
-  /** Force les options critiques après le merge utilisateur */
   enforceCritical?: (options: Highcharts.Options, type: ChartType) => void;
-
-  /** Transforme les données (avec direction: true=vers format spécial, false=vers format simple) */
   transformData?: (
     series: any[],
     targetIsSpecialFormat: boolean,
@@ -28,7 +20,6 @@ export interface ChartTypeConfigurator {
   ) => any[] | { series: any[]; yCategories?: string[] };
 }
 
-/** Registry de tous les configurateurs de types de graphiques */
 const CHART_CONFIGURATORS: ChartTypeConfigurator[] = [
   {
     isChartType: PolarConfig.isPolarChart,
@@ -64,9 +55,14 @@ const CHART_CONFIGURATORS: ChartTypeConfigurator[] = [
     enforceCritical: TreemapConfig.enforceCriticalTreemapOptions,
     transformData: TreemapConfig.transformDataForTreemap,
   },
+  {
+    isChartType: SimpleChartConfig.isSimpleChart,
+    configure: SimpleChartConfig.configureSimpleChart,
+    enforceCritical: SimpleChartConfig.enforceCriticalSimpleOptions,
+    transformData: SimpleChartConfig.transformSimpleChartData,
+  },
 ];
 
-/** Applique toutes les configurations de base pour le type de graphique */
 export function applyChartConfigurations(
   options: Highcharts.Options,
   chartType: ChartType
@@ -78,7 +74,6 @@ export function applyChartConfigurations(
   });
 }
 
-/** Force toutes les options critiques après le merge utilisateur */
 export function enforceCriticalOptions(
   options: Highcharts.Options,
   chartType: ChartType
@@ -90,7 +85,6 @@ export function enforceCriticalOptions(
   });
 }
 
-/** Transforme les données selon le type de graphique */
 export function transformChartData(
   series: any[],
   currentType: ChartType,
@@ -100,7 +94,6 @@ export function transformChartData(
   let transformedSeries: any[] = series;
   let yCategories: string[] | undefined;
 
-  // 1. Si on change de type, d'abord revenir au format simple
   if (currentType !== targetType) {
     const currentConfigurator = CHART_CONFIGURATORS.find((c) =>
       c.isChartType(currentType)
@@ -120,7 +113,6 @@ export function transformChartData(
     }
   }
 
-  // 2. Appliquer la transformation vers le type cible
   const targetConfigurator = CHART_CONFIGURATORS.find((c) =>
     c.isChartType(targetType)
   );
@@ -141,12 +133,10 @@ export function transformChartData(
   return { series: transformedSeries, yCategories };
 }
 
-/** Détecte si les données sont dans un format spécial qui nécessite reconversion */
 export function needsDataConversion(
   series: any[],
   targetType: ChartType
 ): boolean {
-  // Détection range
   const hasRange = series.some(
     (s) =>
       s.data &&
@@ -157,7 +147,6 @@ export function needsDataConversion(
       )
   );
 
-  // Détection bubble
   const hasBubble = series.some(
     (s) =>
       s.data &&
@@ -168,7 +157,6 @@ export function needsDataConversion(
       )
   );
 
-  // Détection heatmap
   const hasHeatmap = series.some(
     (s) =>
       s.data &&
@@ -178,7 +166,6 @@ export function needsDataConversion(
       )
   );
 
-  // Détection treemap
   const hasTreemap = series.some(
     (s) =>
       s.data &&
@@ -187,7 +174,6 @@ export function needsDataConversion(
       )
   );
 
-  // Si les données sont dans un format spécial mais le type cible ne correspond pas, conversion nécessaire
   if (hasRange && !RangeConfig.isRangeChart(targetType)) return true;
   if (hasBubble && !BubbleConfig.isBubbleChart(targetType)) return true;
   if (hasHeatmap && !HeatmapConfig.isHeatmapChart(targetType)) return true;
@@ -196,12 +182,10 @@ export function needsDataConversion(
   return false;
 }
 
-/** Détecte le type de graphique précédent basé sur le format des données */
 export function detectPreviousChartType(
   series: any[],
   currentType: ChartType
 ): ChartType {
-  // Détection range
   const hasRange = series.some(
     (s) =>
       s.data &&
@@ -213,7 +197,6 @@ export function detectPreviousChartType(
   );
   if (hasRange) return 'columnrange';
 
-  // Détection bubble
   const hasBubble = series.some(
     (s) =>
       s.data &&
@@ -225,7 +208,6 @@ export function detectPreviousChartType(
   );
   if (hasBubble) return 'bubble';
 
-  // Détection heatmap
   const hasHeatmap = series.some(
     (s) =>
       s.data &&
@@ -236,7 +218,6 @@ export function detectPreviousChartType(
   );
   if (hasHeatmap) return 'heatmap';
 
-  // Détection treemap
   const hasTreemap = series.some(
     (s) =>
       s.data &&
@@ -246,6 +227,5 @@ export function detectPreviousChartType(
   );
   if (hasTreemap) return 'treemap';
 
-  // Par défaut, retourner le type actuel (pas de conversion)
   return currentType;
 }

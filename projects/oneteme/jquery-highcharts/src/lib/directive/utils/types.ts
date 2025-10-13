@@ -147,12 +147,14 @@ export const PLOTOPTIONS_MAPPING = {
     'series.colorByPoint': 'treemap.colorByPoint',
   },
   scatter: {
+    'series.dataLabels': 'scatter.dataLabels',
     'series.marker': 'scatter.marker',
     'series.stickyTracking': 'scatter.stickyTracking',
     'series.findNearestPointBy': 'scatter.findNearestPointBy',
     'series.states': 'scatter.states',
   },
   bubble: {
+    'series.dataLabels': 'bubble.dataLabels',
     'series.marker': 'bubble.marker',
     'series.minSize': 'bubble.minSize',
     'series.maxSize': 'bubble.maxSize',

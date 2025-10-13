@@ -1,6 +1,5 @@
 import { ChartProvider, XaxisType, YaxisType } from '@oneteme/jquery-core';
 
-/** Agrège les données multi-séries pour les graphiques simples (chaque série devient une part avec sa somme totale) */
 export function aggregateMultiSeriesData(
   series: any[],
   categories: string[] | undefined
@@ -40,7 +39,6 @@ export function aggregateMultiSeriesData(
   return aggregatedData;
 }
 
-/** Détermine si les données nécessitent une agrégation (plusieurs séries) */
 export function shouldAggregateData(
   series: any[],
   categories: string[] | undefined
@@ -48,7 +46,6 @@ export function shouldAggregateData(
   return !!(series && series.length > 1);
 }
 
-/** Transforme les données multi-séries pour les graphiques simples (pie, donut, funnel, pyramid) */
 export function transformDataForSimpleChart<
   X extends XaxisType,
   Y extends YaxisType

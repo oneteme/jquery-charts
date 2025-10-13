@@ -7,7 +7,6 @@ import Funnel from 'highcharts/modules/funnel';
 import Treemap from 'highcharts/modules/treemap';
 import Heatmap from 'highcharts/modules/heatmap';
 
-// Initialisation des modules essentiels
 more(Highcharts);
 NoDataToDisplay(Highcharts);
 Exporting(Highcharts);

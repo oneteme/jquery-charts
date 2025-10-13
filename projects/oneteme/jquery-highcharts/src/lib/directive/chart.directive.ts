@@ -1,12 +1,14 @@
 import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart } from '@oneteme/jquery-core';
-import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType } from './utils';
+import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType, validateChartData, showValidationError, hideValidationError } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
   standalone: true,
 })
-export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements OnChanges, OnDestroy {
+export class ChartDirective<X extends XaxisType, Y extends YaxisType>
+  implements OnChanges, OnDestroy
+{
   @Input({ required: true }) type!: ChartType;
   @Input({ required: true }) config!: ChartProvider<X, Y>;
   @Input({ required: true }) data!: any[];
@@ -17,6 +19,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
 
   private chart: Highcharts.Chart | null = null;
   private _isLoading: boolean = false;
+  private dataValidationError: { title: string; message: string } | null = null;
 
   @Input()
   set isLoading(isLoading: boolean) {
@@ -27,17 +30,26 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
 
   get isLoading(): boolean { return this._isLoading }
 
-  constructor(private elementRef: ElementRef, private ngZone: NgZone) {}
+  constructor(private elementRef: ElementRef) {}
 
   private updateLoadingState(): void {
     if (!this.chart) return;
     const hasData = Array.isArray(this.data) && this.data.length > 0;
-    updateChartLoadingState(this.chart, this._isLoading, hasData);
+    updateChartLoadingState(
+      this.chart,
+      this._isLoading,
+      hasData,
+      !!this.dataValidationError
+    );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['config'] || changes['data'] || changes['type']) { this.updateChart() }
-    if (changes['isLoading'] && !changes['isLoading'].firstChange) { this.updateLoadingState() }
+    if (changes['config'] || changes['data'] || changes['type']) {
+      this.updateChart();
+    }
+    if (changes['isLoading'] && !changes['isLoading'].firstChange) {
+      this.updateLoadingState();
+    }
   }
 
   ngOnDestroy(): void { this.destroyChart() }
@@ -64,9 +76,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
 
       this.chart = Highcharts.chart(element, options);
 
-      // Masquer immédiatement le message "no-data" qui pourrait s'afficher automatiquement
-      if (typeof (this.chart as any).hideNoData === 'function') {
-        (this.chart as any).hideNoData();
+      // Si nous avons une erreur de validation, afficher le message d'erreur
+      if (this.dataValidationError) {
+        showValidationError(this.chart, this.dataValidationError.message);
+      } else {
+        // Masquer le message d'erreur pour les graphiques valides
+        hideValidationError(this.chart);
       }
 
       if (this.config.showToolbar && this.chart) {
@@ -80,7 +95,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
       }
 
       const hasData = this.data && this.data.length > 0;
-      updateChartLoadingState(this.chart, this._isLoading, hasData);
+      updateChartLoadingState(
+        this.chart,
+        this._isLoading,
+        hasData,
+        !!this.dataValidationError
+      );
 
       this.debug && console.log('Graphique créé:', this.type);
     } catch (error) {
@@ -108,6 +128,20 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
         title: { text: this.config.ytitle || '' },
       },
     };
+
+    // Définir le message d'erreur uniquement s'il y a une erreur de validation
+    if (this.dataValidationError) {
+      baseOptions.lang = {
+        noData: this.dataValidationError.message,
+      };
+      baseOptions.noData = {
+        style: {
+          fontWeight: 'normal',
+          fontSize: '14px',
+          color: '#666',
+        },
+      };
+    }
 
     // Appliquer toutes les configurations spé au type de graph (via registry)
     applyChartConfigurations(baseOptions, this.type);
@@ -139,11 +173,11 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
       finalOptions = Highcharts.merge(baseOptions, this.config.options);
     }
 
-    // Force toutes les configurations critiques après le merge (via registry)
-    enforceCriticalOptions(finalOptions, this.type);
-
-    // Unifier les plotOptions.series pour les graphiques simples
+    // Unifier les plotOptions.series pour les graphiques simples (AVANT les options critiques)
     unifyPlotOptionsForChart(finalOptions, this.type, this.debug);
+
+    // Force toutes les configurations critiques après le merge et l'unification (via registry)
+    enforceCriticalOptions(finalOptions, this.type);
 
     // Configurer les options de loading
     configureLoadingOptions(finalOptions);
@@ -152,6 +186,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
   }
 
   private processData(): { series: any[]; xAxis?: any; yAxis?: any } {
+    // Réinitialiser l'erreur de validation au début du traitement
+    this.dataValidationError = null;
+
     if (this.isSimpleChart()) {
       return this.processSimpleChart();
     } else {
@@ -195,22 +232,29 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
       if (typeof value === 'object' && value !== null) {
         return {
           name: categories[value.x] || categories[index] || `Item ${index + 1}`,
-          y: value.y !== undefined ? value.y : value
+          y: value.y !== undefined ? value.y : value,
         };
       }
       // Sinon, c'est juste une valeur numérique
       return {
         name: categories[index] || `Item ${index + 1}`,
-        y: value
+        y: value,
       };
     });
-    this.debug && console.log('[Simple Chart - Single] Données:', { categories, serieData, formattedData });
+    this.debug &&
+      console.log('[Simple Chart - Single] Données:', {
+        categories,
+        serieData,
+        formattedData,
+      });
 
     return {
-      series: [{
-        name: complexChart.title || 'Données',
-        data: formattedData,
-      }],
+      series: [
+        {
+          name: complexChart.title || 'Données',
+          data: formattedData,
+        },
+      ],
     };
   }
 
@@ -223,7 +267,35 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>implements 
     let series = commonChart.series || [];
     let yCategories: string[] | undefined;
 
-    // Si les données sont dans un format spécial non compatible avec le type cible, reconvertir
+    // Valider que les données sont compatibles avec le type de graphique
+    const validation = validateChartData(series, this.type);
+
+    if (!validation.isValid) {
+      // Si c'est juste qu'il n'y a pas de données (pas une incompatibilité)
+      if (validation.isNoData) {
+        // Ne pas stocker d'erreur de validation, juste retourner des séries vides
+        // Le système de loading gérera l'affichage de "Aucune donnée"
+        this.dataValidationError = null;
+      } else {
+        // Erreur de compatibilité : stocker l'erreur pour l'afficher
+        this.dataValidationError = {
+          title: validation.errorTitle || 'Erreur',
+          message: validation.errorMessage || 'Données incompatibles',
+        };
+      }
+
+      // Retourner un état qui déclenchera l'affichage du message approprié
+      return {
+        series: [],
+        xAxis: {
+          categories: [],
+          title: { text: this.config.xtitle || '' },
+        },
+      };
+    }
+
+    // Réinitialiser l'erreur si les données sont valides
+    this.dataValidationError = null; // Si les données sont dans un format spécial non compatible avec le type cible, reconvertir
     if (needsDataConversion(series, this.type)) {
       // Le registry va automatiquement détecter le format source et le convertir
       const previousType = detectPreviousChartType(series, this.type);

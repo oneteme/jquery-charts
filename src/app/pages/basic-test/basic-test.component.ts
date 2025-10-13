@@ -32,6 +32,9 @@ export class BasicTestComponent implements OnInit {
   chartLibrary: 'apexcharts' | 'highcharts' = 'highcharts';
   dataDelay = 0;
 
+  // Types de graphiques possibles pour tester la compatibilité des transformations
+  possibleTypes: ChartType[] = [ 'pie', 'arearange' ];
+
   // Configuration unique pour les deux bibliothèques
   private readonly simpleConfig: ChartProvider<string, number> = {
     title: 'Répartition par équipe',
