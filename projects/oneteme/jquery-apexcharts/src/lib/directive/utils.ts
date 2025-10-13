@@ -240,26 +240,18 @@ export function setupScrollPrevention(
   chartElement.addEventListener('wheel', handleWheel, { passive: false });
 }
 
-/**
- * Corrige les IDs dupliqués dans les SVG de la toolbar pour éviter les conflits
- */
+// Corrige les IDs dupliqués dans les SVG de la toolbar pour éviter les conflits
 export function fixToolbarSvgIds(chartElement: HTMLElement): void {
   if (!chartElement) return;
 
   const toolbar = chartElement.querySelector('.apexcharts-toolbar');
   if (!toolbar) return;
 
-  // Générer un ID unique pour cette toolbar
   const uniqueId = `toolbar-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  // Trouver tous les SVG dans la toolbar
   const svgs = toolbar.querySelectorAll('svg');
-  
-  svgs.forEach((svg, svgIndex) => {
-    // Map pour stocker les anciens et nouveaux IDs
-    const idMap = new Map<string, string>();
 
-    // Première passe : collecter tous les IDs et créer les nouveaux
+  svgs.forEach((svg, svgIndex) => {
+    const idMap = new Map<string, string>();
     const elementsWithId = svg.querySelectorAll('[id]');
     elementsWithId.forEach((element) => {
       const oldId = element.getAttribute('id');
@@ -269,7 +261,6 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
       }
     });
 
-    // Deuxième passe : mettre à jour tous les IDs
     elementsWithId.forEach((element) => {
       const oldId = element.getAttribute('id');
       if (oldId) {
@@ -280,22 +271,15 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
       }
     });
 
-    // Troisième passe : mettre à jour toutes les références
-    // Parcourir TOUS les éléments du SVG
     const allElements = svg.querySelectorAll('*');
-    
     allElements.forEach((element) => {
-      // Mettre à jour href (sans namespace)
       const href = element.getAttribute('href');
       if (href && href.startsWith('#')) {
         const oldId = href.substring(1);
         const newId = idMap.get(oldId);
-        if (newId) {
-          element.setAttribute('href', `#${newId}`);
-        }
+        if (newId) { element.setAttribute('href', `#${newId}`) }
       }
 
-      // Mettre à jour xlink:href
       const xlinkHref = element.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
       if (xlinkHref && xlinkHref.startsWith('#')) {
         const oldId = xlinkHref.substring(1);
@@ -305,7 +289,6 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
         }
       }
 
-      // Mettre à jour clip-path
       const clipPath = element.getAttribute('clip-path');
       if (clipPath) {
         let updated = clipPath;
@@ -317,7 +300,6 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
         }
       }
 
-      // Mettre à jour fill
       const fill = element.getAttribute('fill');
       if (fill && fill.includes('url(#')) {
         let updated = fill;
@@ -329,7 +311,6 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
         }
       }
 
-      // Mettre à jour mask
       const mask = element.getAttribute('mask');
       if (mask && mask.includes('url(#')) {
         let updated = mask;

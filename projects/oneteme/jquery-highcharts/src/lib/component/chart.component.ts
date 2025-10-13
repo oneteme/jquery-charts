@@ -1,42 +1,17 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import {
-  ChartProvider,
-  ChartType,
-  XaxisType,
-  YaxisType,
-} from '@oneteme/jquery-core';
+import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ChartDirective } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils';
 
-const STANDARD_CHARTS: ChartType[] = [
-  'line',
-  'area',
-  'spline',
-  'areaspline',
-  'bar',
-  'column',
-  'scatter',
-];
+const STANDARD_CHARTS: ChartType[] = [ 'line', 'area', 'spline', 'areaspline', 'bar', 'column', 'scatter' ];
 const SIMPLE_CHARTS: ChartType[] = ['pie', 'donut', 'funnel', 'pyramid'];
 const POLAR_CHARTS: ChartType[] = ['polar', 'radar', 'radarArea', 'radialBar'];
-const RANGE_CHARTS: ChartType[] = [
-  'columnrange',
-  'arearange',
-  'areasplinerange',
-];
+const RANGE_CHARTS: ChartType[] = [ 'columnrange', 'arearange', 'areasplinerange' ];
 const BUBBLE_CHARTS: ChartType[] = ['bubble'];
 const HEATMAP_CHARTS: ChartType[] = ['heatmap'];
 const TREEMAP_CHARTS: ChartType[] = ['treemap'];
 
-const ALL_COMPATIBLE_CHARTS: ChartType[] = [
-  ...STANDARD_CHARTS,
-  ...SIMPLE_CHARTS,
-  ...POLAR_CHARTS,
-  ...RANGE_CHARTS,
-  ...BUBBLE_CHARTS,
-  ...HEATMAP_CHARTS,
-  ...TREEMAP_CHARTS,
-];
+const ALL_COMPATIBLE_CHARTS: ChartType[] = [ ...STANDARD_CHARTS, ...SIMPLE_CHARTS, ...POLAR_CHARTS, ...RANGE_CHARTS, ...BUBBLE_CHARTS, ...HEATMAP_CHARTS, ...TREEMAP_CHARTS ];
 
 @Component({
   standalone: true,

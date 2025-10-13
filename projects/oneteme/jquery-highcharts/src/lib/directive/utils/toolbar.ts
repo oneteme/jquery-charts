@@ -70,7 +70,6 @@ function createToolbarButton(
     svg.style.display = 'block';
     svg.style.fill = 'currentColor';
 
-    // Taille spéciale pour l'icône pivot (plus petite)
     if (eventName === 'pivot') {
       svg.style.width = '16px';
       svg.style.height = '16px';
@@ -98,6 +97,7 @@ export function setupToolbar(options: ToolbarOptions): void {
     removeToolbar(chart);
     const container = chart.container;
 
+    // à voir si on le remet. Pour fair eplus d'espace a la toolbar si pas de titre
     // const hasTitle = chart.options.title?.text && chart.options.title.text !== '';
     // const hasSubtitle = chart.options.subtitle?.text && chart.options.subtitle.text !== '';
 
