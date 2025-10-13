@@ -154,13 +154,16 @@ export function detectDataAnomalies(series: any[]): string[] {
   return warnings;
 }
 
-// Valide les données avec reporting détaillé
-export function validateDataWithReport(series: any[]): {
+// Interface pour le rapport de validation des données
+export interface DataValidationReport {
   isValid: boolean;
   cleanedData: any[];
   warnings: string[];
   removedPoints: number;
-} {
+}
+
+// Valide les données avec reporting détaillé
+export function validateDataWithReport(series: any[]): DataValidationReport {
   const warnings = detectDataAnomalies(series);
   const originalPointCount = series.reduce(
     (sum, s) => sum + (s.data?.length || 0),
