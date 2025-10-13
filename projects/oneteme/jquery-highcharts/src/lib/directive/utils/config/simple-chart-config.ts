@@ -1,9 +1,5 @@
 import { Highcharts } from '../highcharts-modules';
-import {
-  simpleToStandard,
-  standardToSimple,
-  isSimpleChartFormat,
-} from './simple-chart-transforms';
+import { simpleToStandard, standardToSimple, isSimpleChartFormat } from './simple-chart-transforms';
 
 export function isSimpleChart(chartType: string): boolean {
   return ['pie', 'donut', 'funnel', 'pyramid', 'semi-circle'].includes(

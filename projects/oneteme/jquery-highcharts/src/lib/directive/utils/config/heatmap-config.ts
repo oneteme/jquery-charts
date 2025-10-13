@@ -1,9 +1,5 @@
 import { Highcharts } from '../highcharts-modules';
-import {
-  ORIGINAL_DATA_SYMBOL,
-  ORIGINAL_METADATA_SYMBOL,
-  trackTransformation,
-} from './memory-symbols';
+import { ORIGINAL_DATA_SYMBOL, ORIGINAL_METADATA_SYMBOL, trackTransformation } from './memory-symbols';
 
 export function isHeatmapChart(chartType: string): boolean {
   return chartType === 'heatmap';

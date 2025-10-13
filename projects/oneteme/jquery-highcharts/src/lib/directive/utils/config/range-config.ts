@@ -2,12 +2,11 @@ import { Highcharts } from '../highcharts-modules';
 import { ORIGINAL_DATA_SYMBOL } from './memory-symbols';
 import { validateAndCleanData } from './data-validation';
 
-/** Détermine si un type de graphique est un range chart */
 export function isRangeChart(chartType: string): boolean {
   return ['columnrange', 'arearange', 'areasplinerange'].includes(chartType);
 }
 
-/** Vérifie si les données sont au format range [x, low, high] ou {x, low, high} */
+// Vérifie si format range [x, low, high] ou {x, low, high}
 function hasRangeFormat(data: any[]): boolean {
   if (!data || data.length === 0) return false;
 
@@ -20,22 +19,7 @@ function hasRangeFormat(data: any[]): boolean {
   );
 }
 
-/** Vérifie si les données sont au format simple [x, y] ou {x, y} */
-function hasSimpleFormat(data: any[]): boolean {
-  if (!data || data.length === 0) return false;
-
-  return data.some(
-    (point: any) =>
-      (Array.isArray(point) && point.length === 2) ||
-      (typeof point === 'object' &&
-        point !== null &&
-        'y' in point &&
-        !('low' in point) &&
-        !('high' in point))
-  );
-}
-
-/** Extrait la valeur numérique d'un point de données */
+// Extrait la valeur numérique d'un point de données
 function extractValue(point: any): number | null {
   if (point === null || point === undefined) return null;
   if (typeof point === 'number') return point;
@@ -44,14 +28,14 @@ function extractValue(point: any): number | null {
   return null;
 }
 
-/** Extrait la valeur X d'un point de données */
+// Extrait la valeur X d'un point de données
 function extractXValue(point: any, index: number): any {
   if (Array.isArray(point)) return point[0] ?? index;
   if (typeof point === 'object' && point !== null) return point.x ?? index;
   return index;
 }
 
-/** Extrait les valeurs low et high d'un point range */
+// Extrait les valeurs low et high d'un point range
 function extractRangeValues(point: any): { low: number; high: number } | null {
   if (Array.isArray(point) && point.length >= 3) {
     return { low: point[1], high: point[2] };

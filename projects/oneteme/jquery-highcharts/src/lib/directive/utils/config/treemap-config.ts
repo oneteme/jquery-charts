@@ -1,12 +1,11 @@
 import { Highcharts } from '../highcharts-modules';
 import { ORIGINAL_DATA_SYMBOL, trackTransformation } from './memory-symbols';
 
-/** Détermine si un type de graphique est treemap */
 export function isTreemapChart(chartType: string): boolean {
   return chartType === 'treemap';
 }
 
-/** Vérifie si les données sont au format treemap (avec parent/value/id) */
+// Vérifie si format treemap (avec parent/value/id)
 function hasTreemapFormat(data: any[]): boolean {
   if (!data || data.length === 0) return false;
 
@@ -260,7 +259,7 @@ export function transformDataForTreemap(
   return series;
 }
 
-/** Configure les options par défaut pour treemap */
+// Configure les options par défaut pour treemap
 export function configureTreemapChart(
   options: Highcharts.Options,
   chartType: string
@@ -268,23 +267,18 @@ export function configureTreemapChart(
   if (!isTreemapChart(chartType)) {
     return;
   }
-
   if (!options.plotOptions) {
     options.plotOptions = {};
   }
-
   if (!(options.plotOptions as any).treemap) {
     (options.plotOptions as any).treemap = {};
   }
-
-  // Configuration pour afficher clairement la hiérarchie
   (options.plotOptions as any).treemap = {
     ...(options.plotOptions as any).treemap,
     layoutAlgorithm: 'squarified',
     allowTraversingTree: true,
     animationLimit: 1000,
     levelIsConstant: false,
-
     levels: [
       {
         level: 1,
@@ -303,14 +297,11 @@ export function configureTreemapChart(
       },
     ],
   };
-
-  // Tooltip amélioré
   if (!options.tooltip) {
     options.tooltip = {};
   }
 
   options.tooltip.pointFormatter = function (this: any) {
-    // Si c'est un parent (série)
     if (!this.parent) {
       return `${this.name}`;
     }
@@ -321,7 +312,6 @@ export function configureTreemapChart(
   };
 }
 
-/** Force les configurations critiques pour treemap après le merge */
 export function enforceCriticalTreemapOptions(
   options: Highcharts.Options,
   chartType: string
@@ -330,7 +320,6 @@ export function enforceCriticalTreemapOptions(
     return;
   }
 
-  // S'assurer du layout algorithm
   if (!options.plotOptions) {
     options.plotOptions = {};
   }

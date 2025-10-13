@@ -1,10 +1,6 @@
-/**
- * Utilitaires de validation et nettoyage des données
- */
+// Utilitaires de validation et nettoyage des données
 
-/**
- * Vérifie si une valeur est valide (non null, non NaN, finie)
- */
+// Vérifie si une valeur est valide (non null, non NaN, finie)
 export function isValidValue(value: any): boolean {
   return (
     value !== null &&
@@ -15,9 +11,7 @@ export function isValidValue(value: any): boolean {
   );
 }
 
-/**
- * Extrait une valeur numérique d'un point et la valide
- */
+// Extrait une valeur numérique d'un point et la valide
 export function extractAndValidateValue(point: any): number | null {
   if (point === null || point === undefined) return null;
 
@@ -34,10 +28,8 @@ export function extractAndValidateValue(point: any): number | null {
   return value !== null && isValidValue(value) ? value : null;
 }
 
-/**
- * Valide et nettoie les données d'une série
- * Retire les points avec des valeurs invalides (null, NaN, Infinity)
- */
+// Valide et nettoie les données d'une série
+// Retire les points avec des valeurs invalides (null, NaN, Infinity)
 export function validateAndCleanSeriesData(serie: any): any {
   if (!serie || !serie.data) return serie;
 
@@ -85,9 +77,7 @@ export function validateAndCleanSeriesData(serie: any): any {
   };
 }
 
-/**
- * Valide et nettoie toutes les séries d'un dataset
- */
+// Valide et nettoie toutes les séries d'un dataset
 export function validateAndCleanData(series: any[]): any[] {
   if (!series || series.length === 0) return series;
 
@@ -96,9 +86,7 @@ export function validateAndCleanData(series: any[]): any[] {
     .filter((serie) => serie.data && serie.data.length > 0); // Retire les séries vides
 }
 
-/**
- * Détecte les anomalies dans les données et retourne des warnings
- */
+// Détecte les anomalies dans les données et retourne des warnings
 export function detectDataAnomalies(series: any[]): string[] {
   const warnings: string[] = [];
 
@@ -166,9 +154,7 @@ export function detectDataAnomalies(series: any[]): string[] {
   return warnings;
 }
 
-/**
- * Valide les données avec reporting détaillé
- */
+// Valide les données avec reporting détaillé
 export function validateDataWithReport(series: any[]): {
   isValid: boolean;
   cleanedData: any[];

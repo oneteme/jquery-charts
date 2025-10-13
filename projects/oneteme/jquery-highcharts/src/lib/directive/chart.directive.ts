@@ -14,7 +14,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   @Input({ required: true }) data!: any[];
   @Input() possibleTypes?: ChartType[];
   @Input() debug: boolean = false;
-  @Input() canPivot: boolean = true;
+  @Input() canPivot: boolean = false;
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 
   private chart: Highcharts.Chart | null = null;

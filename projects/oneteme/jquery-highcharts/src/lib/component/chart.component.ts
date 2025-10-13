@@ -96,14 +96,13 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   @Input({ required: true }) config!: ChartProvider<X, Y>;
   @Input({ required: true }) data!: any[];
   @Input() possibleTypes?: ChartType[];
-  @Input() debug: boolean = true;
+  @Input() debug: boolean = false;
   @Input() isLoading: boolean = false;
   @Input() enablePivot: boolean = false;
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 
   change(event: ChartCustomEvent) {
-    // Utiliser possibleTypes fourni par l'utilisateur, sinon fallback sur la config par défaut
     const charts = this.possibleTypes || this._charts[this._type]?.possibleType;
     if (!charts) return;
 
@@ -126,7 +125,6 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
         : { ...this.config, pivot: true };
     }
 
-    // Émettre l'événement vers le parent
     this.customEvent.emit(event);
   }
 }

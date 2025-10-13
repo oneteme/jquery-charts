@@ -2,12 +2,11 @@ import { Highcharts } from '../highcharts-modules';
 import { ORIGINAL_DATA_SYMBOL, trackTransformation } from './memory-symbols';
 import { validateAndCleanData } from './data-validation';
 
-/** Détermine si un type de graphique est bubble */
 export function isBubbleChart(chartType: string): boolean {
   return chartType === 'bubble';
 }
 
-/** Vérifie si les données sont au format bubble [x, y, z] */
+// format bubble [x, y, z]
 function hasBubbleFormat(data: any[]): boolean {
   if (!data || data.length === 0) return false;
 
@@ -18,7 +17,6 @@ function hasBubbleFormat(data: any[]): boolean {
   );
 }
 
-/** Extrait les valeurs d'un point de données */
 function extractValues(point: any): {
   x: any;
   y: number | null;
@@ -33,12 +31,6 @@ function extractValues(point: any): {
   return { x: null, y: null };
 }
 
-/**
- * TRANSFORMATION : Données [x, y] → [x, y, z]
- * Stratégie : Calculer z basé sur la valeur y de manière proportionnelle et raisonnable
- * @param series - Les séries de données
- * @param mode - 'global' (défaut) ou 'per-series' pour calculer z indépendamment par série
- */
 function transformToBubble(
   series: any[],
   mode: 'global' | 'per-series' = 'global'
@@ -195,11 +187,6 @@ function transformFromBubble(series: any[]): any[] {
   });
 }
 
-/**
- * Transforme intelligemment les données pour bubble (bidirectionnel)
- * @param series - Les séries de données
- * @param targetIsBubble - true = transformer vers bubble, false = transformer depuis bubble
- */
 export function transformDataForBubble(
   series: any[],
   targetIsBubble: boolean
@@ -227,7 +214,7 @@ export function transformDataForBubble(
   }
 }
 
-/** Configure les options par défaut pour les graphiques bubble */
+// Configure les options par défaut pour les graphiques bubble
 export function configureBubbleChart(
   options: Highcharts.Options,
   chartType: string
@@ -258,7 +245,7 @@ export function configureBubbleChart(
   };
 }
 
-/** Force les configurations critiques pour bubble après le merge */
+// Force les configurations critiques pour bubble après le merge
 export function enforceCriticalBubbleOptions(
   options: Highcharts.Options,
   chartType: string
@@ -266,27 +253,18 @@ export function enforceCriticalBubbleOptions(
   if (!isBubbleChart(chartType)) {
     return;
   }
-
-  // Forcer l'affichage des markers (essentiel pour bubble)
   if (!options.plotOptions) {
     options.plotOptions = {};
   }
   if (!(options.plotOptions as any).bubble) {
     (options.plotOptions as any).bubble = {};
   }
-  
-  // Configuration critique : les markers doivent être activés (TOUJOURS en dernier pour être prioritaire)
   if (!(options.plotOptions as any).bubble.marker) {
     (options.plotOptions as any).bubble.marker = {};
   }
-  
-  // Forcer enabled APRÈS le merge pour être prioritaire
   (options.plotOptions as any).bubble.marker.enabled = true;
-  
-  // Pas de lignes entre les points pour bubble
   (options.plotOptions as any).bubble.lineWidth = 0;
-  
-  // S'assurer que les tailles min/max sont définies
+
   if ((options.plotOptions as any).bubble.minSize === undefined) {
     (options.plotOptions as any).bubble.minSize = 3;
   }
