@@ -1,47 +1,20 @@
-import { ElementRef, EventEmitter, NgZone } from '@angular/core';
-import { ChartProvider, ChartType } from '@oneteme/jquery-core';
+import { ChartType, ChartProvider } from '@oneteme/jquery-core';
+import { EventEmitter } from '@angular/core';
 import { Highcharts } from './highcharts-modules';
 
-export type ChartCustomEvent = 'previous' | 'next' | 'pivot' | 'togglePercent';
-
-export interface ChartCreationOptions {
-  el: ElementRef;
-  options: Highcharts.Options;
-  config: ChartProvider<any, any>;
-  customEvent: EventEmitter<ChartCustomEvent>;
-  ngZone: NgZone;
-  canPivot?: boolean;
-  isLoading?: boolean;
-  debug?: boolean;
-}
+export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
 export interface ToolbarOptions {
   chart: Highcharts.Chart;
   config: ChartProvider<any, any>;
   customEvent: EventEmitter<ChartCustomEvent>;
-  ngZone: NgZone;
-  canPivot?: boolean;
-  debug?: boolean;
+  canPivot: boolean;
+  debug: boolean;
 }
 
-export function isTreemapData(data: any[]): boolean {
-  return data.every(
-    (item) =>
-      item &&
-      typeof item.value === 'number' &&
-      item.value > 0 &&
-      (item.name || item.category || item.month)
-  );
-}
-
-export function isHeatmapData(data: any[]): boolean {
-  return data.every(
-    (item) =>
-      item &&
-      typeof item.value === 'number' &&
-      (item.month || item.category || item.name) &&
-      (item.team || item.series)
-  );
+export interface LoadingOptions {
+  text?: string;
+  style?: Partial<CSSStyleDeclaration>;
 }
 
 export const PLOTOPTIONS_MAPPING = {
@@ -59,7 +32,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.size': 'pie.size',
     'series.innerSize': 'pie.innerSize',
     'series.depth': 'pie.depth',
-  'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
+    'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
   },
   donut: {
     'series.dataLabels': 'pie.dataLabels',
@@ -75,7 +48,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.size': 'pie.size',
     'series.innerSize': 'pie.innerSize',
     'series.depth': 'pie.depth',
-  'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
+    'series.ignoreHiddenPoint': 'pie.ignoreHiddenPoint',
   },
   funnel: {
     'series.dataLabels': 'funnel.dataLabels',
@@ -87,7 +60,7 @@ export const PLOTOPTIONS_MAPPING = {
     'series.neckWidth': 'funnel.neckWidth',
     'series.neckHeight': 'funnel.neckHeight',
     'series.reversed': 'funnel.reversed',
-  'series.borderRadius': 'funnel.borderRadius',
+    'series.borderRadius': 'funnel.borderRadius',
   },
   pyramid: {
     'series.dataLabels': 'pyramid.dataLabels',
@@ -97,46 +70,58 @@ export const PLOTOPTIONS_MAPPING = {
     'series.height': 'pyramid.height',
     'series.width': 'pyramid.width',
     'series.reversed': 'pyramid.reversed',
-  'series.borderRadius': 'pyramid.borderRadius',
+    'series.borderRadius': 'pyramid.borderRadius',
   },
-  polar: {
-    'series.pointPlacement': 'series.pointPlacement',
-    'series.pointStart': 'series.pointStart',
-    'series.connectEnds': 'series.connectEnds',
-    'series.dataLabels': 'series.dataLabels',
-    'column.borderWidth': 'column.borderWidth',
-    'column.pointPadding': 'column.pointPadding',
-    'column.stacking': 'column.stacking',
-    'column.groupPadding': 'column.groupPadding',
-    'column.borderRadius': 'column.borderRadius',
+  line: {
+    'series.marker': 'line.marker',
+    'series.lineWidth': 'line.lineWidth',
+    'series.linecap': 'line.linecap',
+    'series.dashStyle': 'line.dashStyle',
+    'series.step': 'line.step',
+    'series.dataLabels': 'line.dataLabels',
+    'series.connectNulls': 'line.connectNulls',
+    'series.showInLegend': 'line.showInLegend',
+    'series.stacking': 'line.stacking',
+    'series.states': 'line.states',
   },
-  radar: {
-    'series.pointPlacement': 'series.pointPlacement',
-    'series.pointStart': 'series.pointStart',
-    'series.connectEnds': 'series.connectEnds',
-    'series.marker': 'series.marker',
-    'series.dataLabels': 'series.dataLabels',
+  spline: {
+    'series.marker': 'spline.marker',
+    'series.lineWidth': 'spline.lineWidth',
+    'series.linecap': 'spline.linecap',
+    'series.dashStyle': 'spline.dashStyle',
+    'series.dataLabels': 'spline.dataLabels',
+    'series.connectNulls': 'spline.connectNulls',
+    'series.showInLegend': 'spline.showInLegend',
+    'series.stacking': 'spline.stacking',
+    'series.states': 'spline.states',
   },
-  radarArea: {
-    'series.pointPlacement': 'series.pointPlacement',
-    'series.pointStart': 'series.pointStart',
-    'series.connectEnds': 'series.connectEnds',
-    'series.marker': 'series.marker',
-    'series.fillOpacity': 'series.fillOpacity',
-    'series.dataLabels': 'series.dataLabels',
-    'area.fillOpacity': 'area.fillOpacity',
-    'area.marker': 'area.marker',
+  area: {
+    'series.marker': 'area.marker',
+    'series.lineWidth': 'area.lineWidth',
+    'series.linecap': 'area.linecap',
+    'series.dashStyle': 'area.dashStyle',
+    'series.fillColor': 'area.fillColor',
+    'series.fillOpacity': 'area.fillOpacity',
+    'series.threshold': 'area.threshold',
+    'series.dataLabels': 'area.dataLabels',
+    'series.connectNulls': 'area.connectNulls',
+    'series.showInLegend': 'area.showInLegend',
+    'series.stacking': 'area.stacking',
+    'series.states': 'area.states',
   },
-  radialBar: {
-    'series.pointPlacement': 'series.pointPlacement',
-    'series.pointStart': 'series.pointStart',
-    'series.connectEnds': 'series.connectEnds',
-    'series.dataLabels': 'series.dataLabels',
-    'column.stacking': 'column.stacking',
-    'column.borderWidth': 'column.borderWidth',
-    'column.pointPadding': 'column.pointPadding',
-    'column.groupPadding': 'column.groupPadding',
-    'column.borderRadius': 'column.borderRadius',
+  areaspline: {
+    'series.marker': 'areaspline.marker',
+    'series.lineWidth': 'areaspline.lineWidth',
+    'series.linecap': 'areaspline.linecap',
+    'series.dashStyle': 'areaspline.dashStyle',
+    'series.fillColor': 'areaspline.fillColor',
+    'series.fillOpacity': 'areaspline.fillOpacity',
+    'series.threshold': 'areaspline.threshold',
+    'series.dataLabels': 'areaspline.dataLabels',
+    'series.connectNulls': 'areaspline.connectNulls',
+    'series.showInLegend': 'areaspline.showInLegend',
+    'series.stacking': 'areaspline.stacking',
+    'series.states': 'areaspline.states',
   },
   heatmap: {
     'series.dataLabels': 'heatmap.dataLabels',
@@ -145,8 +130,8 @@ export const PLOTOPTIONS_MAPPING = {
     'series.nullColor': 'heatmap.nullColor',
     'series.colsize': 'heatmap.colsize',
     'series.rowsize': 'heatmap.rowsize',
-  'series.pointPadding': 'heatmap.pointPadding',
-  'series.pointRange': 'heatmap.pointRange',
+    'series.pointPadding': 'heatmap.pointPadding',
+    'series.pointRange': 'heatmap.pointRange',
   },
   treemap: {
     'series.dataLabels': 'treemap.dataLabels',
@@ -162,12 +147,14 @@ export const PLOTOPTIONS_MAPPING = {
     'series.colorByPoint': 'treemap.colorByPoint',
   },
   scatter: {
+    'series.dataLabels': 'scatter.dataLabels',
     'series.marker': 'scatter.marker',
     'series.stickyTracking': 'scatter.stickyTracking',
     'series.findNearestPointBy': 'scatter.findNearestPointBy',
     'series.states': 'scatter.states',
   },
   bubble: {
+    'series.dataLabels': 'bubble.dataLabels',
     'series.marker': 'bubble.marker',
     'series.minSize': 'bubble.minSize',
     'series.maxSize': 'bubble.maxSize',
@@ -184,27 +171,37 @@ export const PLOTOPTIONS_MAPPING = {
     'series.dataLabels': 'boxplot.dataLabels',
     'series.marker': 'boxplot.marker',
     'series.states': 'boxplot.states',
-  }
+  },
 };
 
-export function unifyPlotOptionsForChart(options: any, chartType: ChartType, debug: boolean = false): void {
+export function unifyPlotOptionsForChart(
+  options: any,
+  chartType: ChartType,
+  debug: boolean = false
+): void {
   if (!options.plotOptions?.series || !PLOTOPTIONS_MAPPING[chartType]) {
-    debug && console.log(`Pas de plotOptions.series à transformer pour ${chartType}`);
+    debug &&
+      console.log(`Pas de plotOptions.series à transformer pour ${chartType}`);
     return;
   }
 
-  debug && console.log(`Unification plotOptions.series pour type: ${chartType}`);
+  debug &&
+    console.log(`Unification plotOptions.series pour type: ${chartType}`);
 
   const mapping = PLOTOPTIONS_MAPPING[chartType];
   const seriesConfig = options.plotOptions.series;
 
-  Object.keys(seriesConfig).forEach(seriesProperty => {
+  Object.keys(seriesConfig).forEach((seriesProperty) => {
     const fullSeriesPath = `series.${seriesProperty}`;
     const targetPath = mapping[fullSeriesPath];
 
     if (targetPath) {
       const value = seriesConfig[seriesProperty];
-      debug && console.log(`Transformation: plotOptions.${fullSeriesPath} -> plotOptions.${targetPath}`, value);
+      debug &&
+        console.log(
+          `Transformation: plotOptions.${fullSeriesPath} -> plotOptions.${targetPath}`,
+          value
+        );
 
       const targetParts = targetPath.split('.');
       let current = options.plotOptions;
@@ -220,9 +217,16 @@ export function unifyPlotOptionsForChart(options: any, chartType: ChartType, deb
       const finalProperty = targetParts[targetParts.length - 1];
       current[finalProperty] = value;
 
-      debug && console.log(`Propriété transformée: plotOptions.${targetPath} =`, value);
+      debug &&
+        console.log(
+          `Propriété transformée: plotOptions.${targetPath} =`,
+          value
+        );
     } else {
-      debug && console.log(`Pas de mapping trouvé pour plotOptions.${fullSeriesPath} dans le type ${chartType}`);
+      debug &&
+        console.log(
+          `Pas de mapping trouvé pour plotOptions.${fullSeriesPath} dans le type ${chartType}`
+        );
     }
   });
 

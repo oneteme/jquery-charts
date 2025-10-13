@@ -1,7 +1,23 @@
 {
   "$schema": "../../../node_modules/ng-packagr/ng-package.schema.json",
   "dest": "../../../dist/oneteme/jquery-highcharts",
-  "assets": ["src/assets"],
+  "assets": [
+    {
+      "glob": "**/*.scss",
+      "input": "src/assets/styles",
+      "output": "./styles"
+    },
+    {
+      "glob": "**/*.css", 
+      "input": "src/assets/styles",
+      "output": "./styles"
+    },
+    {
+      "glob": "**/*.svg",
+      "input": "src/assets/icons",
+      "output": "./icons"
+    }
+  ],
   "lib": {
     "entryFile": "src/public-api.ts"
   }

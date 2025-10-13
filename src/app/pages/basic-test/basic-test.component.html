@@ -8,31 +8,66 @@
       certains effets de bord relevés. Vous pouvez utiliser le panneau de
       contrôle en bas pour sélectionner le graphique à afficher.
     </p>
+
+    <div class="library-toggle">
+      <button
+        class="library-btn"
+        (click)="toggleChartLibrary()"
+        title="Basculer entre ApexCharts et Highcharts"
+      >
+        Utiliser
+        {{ chartLibrary === "apexcharts" ? "Highcharts" : "ApexCharts" }}
+      </button>
+
+      <div class="separator"></div>
+
+      <button
+        class="data-mode-btn"
+        [class.active]="useSimpleData"
+        (click)="setDataType(true)"
+        title="Utiliser des données simples"
+      >
+        <span class="label">Simple</span>
+      </button>
+
+      <button
+        class="data-mode-btn"
+        [class.active]="!useSimpleData"
+        (click)="setDataType(false)"
+        title="Utiliser des données complexes"
+      >
+        <span class="label">Complex</span>
+      </button>
+
+      <div class="separator"></div>
+
+      <button
+        class="sandbox-btn"
+        routerLink="/basic-test/sandbox"
+        title="Tester avec vos propres données"
+      >
+        Tester avec un jeu de données perso
+      </button>
+    </div>
   </div>
 
   <div class="charts-container">
     <div class="chart-wrapper">
-      <div class="chart-box">
-        <chart
-          #chart
-          [type]="chartType"
-          [config]="chartConfig"
-          [data]="chartData"
-          [debug]="true"
-        ></chart>
-        <!-- [possibleType]="['pie', 'donut', 'line', 'polar', 'radar','funnel', 'treemap', 'pyramid', 'radarArea', 'radialBar', 'heatmap']" -->
-      </div>
+      <app-apexcharts-chart-test
+        *ngIf="chartLibrary === 'apexcharts'"
+        [chartType]="chartType"
+        [chartConfig]="chartConfig"
+        [chartData]="chartData"
+      ></app-apexcharts-chart-test>
 
-      <!-- <div class="chart-box">
-        <chart
-          #chart
-          [type]="chartType"
-          [config]="chartConfig"
-          [data]="chartData"
-          [debug]="true"
-        ></chart>
-        [possibleType]="['pie', 'donut', 'line', 'polar', 'radar','funnel', 'treemap', 'pyramid', 'radarArea', 'radialBar', 'heatmap']"
-      </div> -->
+      <app-highcharts-test
+        *ngIf="chartLibrary === 'highcharts'"
+        [chartType]="chartType"
+        [chartConfig]="chartConfig"
+        [chartData]="chartData"
+        [isLoadingChart]="isLoadingData"
+        [possibleTypes]="possibleTypes"
+      ></app-highcharts-test>
     </div>
   </div>
 
@@ -40,11 +75,16 @@
   <div class="debug-panel">
     <h3>Informations de Debug</h3>
     <div class="debug-info">
+      <p>
+        <strong>Bibliothèque utilisée :</strong> {{ getCurrentLibraryName() }}
+      </p>
       <p><strong>Type de graphique :</strong> {{ chartType }}</p>
-      <p><strong>Mode :</strong> {{ getCurrentMode() }}</p>
+      <p><strong>Type de données :</strong> {{ getCurrentMode() }}</p>
       <p><strong>Nombre de données :</strong> {{ chartData?.length || 0 }}</p>
       <p><strong>Délai de chargement :</strong> {{ dataDelay }}ms</p>
-      <!-- <p><strong>Graph combiné :</strong> {{ isComboChart ? 'Oui' : 'Non' }}</p> -->
+      <p>
+        <strong>État :</strong> {{ isLoadingData ? "Chargement..." : "Prêt" }}
+      </p>
     </div>
   </div>
 
@@ -57,33 +97,29 @@
         [(ngModel)]="chartType"
         (change)="changeChartType()"
       >
-        <optgroup label="Graphiques simples">
-          <option value="pie">Pie</option>
-          <option value="donut">Donut</option>
-          <option value="funnel">Funnel</option>
-          <option value="pyramid">Pyramid</option>
-          <option value="polar">Polar</option>
-          <option value="radar">Radar</option>
-          <option value="radar">RadarArea</option>
-          <option value="radialBar">Radial Bar</option>
-        </optgroup>
-        <optgroup label="Graphiques complexes">
-          <option value="bar">Bar</option>
-          <option value="column">Column</option>
-          <option value="columnpyramid">Column Pyramid</option>
-          <option value="line">Line</option>
-          <option value="area">Area</option>
-          <option value="spline">Spline</option>
-          <option value="areaspline">Area Spline</option>
-          <option value="columnrange">Column Range</option>
-          <option value="arearange">Area Range</option>
-          <option value="areasplinerange">Area Spline Range</option>
-          <option value="scatter">Scatter</option>
-          <option value="bubble">Bubble</option>
-          <option value="heatmap">Heatmap</option>
-          <option value="treemap">Treemap</option>
-          <option value="boxplot">BoxPlot</option>
-        </optgroup>
+        <option value="pie">Pie</option>
+        <option value="donut">Donut</option>
+        <option value="funnel">Funnel</option>
+        <option value="pyramid">Pyramid</option>
+        <option value="polar">Polar</option>
+        <option value="radar">Radar</option>
+        <option value="radar">RadarArea</option>
+        <option value="radialBar">Radial Bar</option>
+        <option value="bar">Bar</option>
+        <option value="column">Column</option>
+        <option value="columnpyramid">Column Pyramid</option>
+        <option value="line">Line</option>
+        <option value="area">Area</option>
+        <option value="spline">Spline</option>
+        <option value="areaspline">Area Spline</option>
+        <option value="columnrange">Column Range</option>
+        <option value="arearange">Area Range</option>
+        <option value="areasplinerange">Area Spline Range</option>
+        <option value="scatter">Scatter</option>
+        <option value="bubble">Bubble</option>
+        <option value="heatmap">Heatmap</option>
+        <option value="treemap">Treemap</option>
+        <option value="boxplot">BoxPlot</option>
       </select>
     </div>
 
@@ -103,6 +139,6 @@
     (click)="toggleControlPanel()"
     title="{{ isPanelVisible ? 'Masquer' : 'Afficher' }} le panneau de contrôle"
   >
-    {{ isPanelVisible ? '✕' : '≡' }}
+    {{ isPanelVisible ? "✕" : "≡" }}
   </button>
 </div>

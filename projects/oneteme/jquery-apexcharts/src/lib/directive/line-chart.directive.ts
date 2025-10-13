@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility, fixToolbarSvgIds } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -82,10 +82,9 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
             .render()
             .then(() => {
               setupScrollPrevention(this.el.nativeElement, this.chartInstance);
-                this.debug && console.log(
-                  new Date().getMilliseconds(),
-                  'Rendu du graphique terminé'
-                );
+              fixToolbarSvgIds(this.el.nativeElement);
+              this.debug &&
+                console.log(new Date().getMilliseconds(), 'Rendu du graphique terminé');
             })
             .catch((error) => {
               console.error('Erreur lors du rendu du graphique:', error);
@@ -96,10 +95,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
           .subscribe({
             next: () =>
               this.debug &&
-              console.log(
-                new Date().getMilliseconds(),
-                'Observable rendu terminé'
-              ),
+              console.log(new Date().getMilliseconds(), 'Observable rendu terminé'),
             error: (error) =>
               console.error('Erreur dans le flux Observable:', error),
           });

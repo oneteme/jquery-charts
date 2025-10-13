@@ -1,32 +1,32 @@
 .apexcharts-toolbar {
-    visibility: hidden;
+  visibility: hidden;
 }
 
 .apexcharts-toolbar {
-    &.apexcharts-toolbar-visible {
-        visibility: visible;
-    }
+  &.apexcharts-toolbar-visible {
+    visibility: visible;
+  }
 }
 
 .apexcharts-toolbar,
 .apexcharts-toolbar .apexcharts-menu {
-    gap: 8px !important;
-    padding: 6px 10px !important;
-    background: rgba(255,255,255,0.96) !important;
-    border: 1px solid rgba(16,24,32,0.06) !important;
-    border-radius: 6px !important;
-    box-shadow: 0 2px 8px rgba(15,23,42,0.08) !important;
-    backdrop-filter: blur(3px);
-    transition: opacity 0.15s ease-out !important;
+  gap: 8px !important;
+  padding: 6px 10px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid rgba(16, 24, 32, 0.06) !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08) !important;
+  backdrop-filter: blur(3px);
+  transition: opacity 0.15s ease-out !important;
 }
 
 .apexcharts-toolbar .apexcharts-toolbar-custom-icon {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: none !important;
-    box-shadow: none !important;
-    line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: none !important;
+  box-shadow: none !important;
+  line-height: 1 !important;
 }
 
 .apexcharts-toolbar .pivot-icon svg {
@@ -35,73 +35,70 @@
 }
 
 .apexcharts-toolbar .apexcharts-toolbar-custom-icon svg {
-    fill: #495057 !important;
-    pointer-events: none !important;
-    display: block !important;
-    margin: 0 !important;
+  fill: #495057 !important;
+  pointer-events: none !important;
+  display: block !important;
+  margin: 0 !important;
 }
 
 .apexcharts-toolbar .apexcharts-menu .apexcharts-menu-icon:hover,
 .apexcharts-toolbar .apexcharts-menu .apexcharts-menu-icon:active {
-    background: #ffffff !important;
-    box-shadow: none !important;
-    transform: none !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 .apexcharts-toolbar .apexcharts-menu .apexcharts-menu-icon:focus {
-    outline: 2px solid #0969da !important;
-    outline-offset: 2px !important;
+  outline: 2px solid #0969da !important;
+  outline-offset: 2px !important;
 }
 
 .apexcharts-toolbar {
-    position: absolute !important;
-    right: 8px !important;
-    left: auto !important;
-    max-width: calc(100% - 16px) !important;
-    box-sizing: border-box !important;
-    overflow: visible !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transform: translateY(-2px) !important;
-    transition: opacity 0.15s ease-out, visibility 0.15s ease-out, transform 0.15s ease-out !important;
+  position: absolute !important;
+  right: 8px !important;
+  left: auto !important;
+  max-width: calc(100% - 16px) !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(-2px) !important;
+  transition: opacity 0.15s ease-out, visibility 0.15s ease-out,
+    transform 0.15s ease-out !important;
 }
 
 .apexcharts-canvas:hover .apexcharts-toolbar,
 .apexcharts-inner:hover .apexcharts-toolbar,
 div[data-testid="chart"]:hover .apexcharts-toolbar {
-    opacity: 1 !important;
-    visibility: visible !important;
-    transform: translateY(0) !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
 }
 
 .apexcharts-toolbar .apexcharts-menu {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 8px !important;
-    flex-wrap: nowrap !important;
-    overflow: hidden !important;
-    width: 100%;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  overflow: hidden !important;
+  width: 100%;
 }
 
 .apexcharts-toolbar .apexcharts-menu .apexcharts-menu-icon {
-    flex: 0 0 auto !important;
-    margin: 0 !important;
+  flex: 0 0 auto !important;
+  margin: 0 !important;
 }
 
 .apexcharts-toolbar .apexcharts-menu .apexcharts-download-menu,
 .apexcharts-toolbar .apexcharts-menu .apexcharts-context,
 .apexcharts-toolbar .apexcharts-menu .apexcharts-menu-list {
-    max-width: calc(100% - 24px) !important;
-    box-sizing: border-box !important;
-    left: auto !important;
-    right: 0 !important;
-    overflow: auto !important;
-    white-space: nowrap !important;
-}
-
-.apexcharts-toolbar .apexcharts-menu-icon svg use {
-    display: none !important;
+  max-width: calc(100% - 24px) !important;
+  box-sizing: border-box !important;
+  left: auto !important;
+  right: 0 !important;
+  overflow: auto !important;
+  white-space: nowrap !important;
 }
 
 .apexcharts-toolbar .apexcharts-menu-icon.apexcharts-pan-icon svg path,
@@ -110,17 +107,14 @@ div[data-testid="chart"]:hover .apexcharts-toolbar {
 .apexcharts-toolbar .apexcharts-menu-icon.apexcharts-zoomout-icon svg path,
 .apexcharts-toolbar .apexcharts-menu-icon.apexcharts-reset-icon svg path,
 .apexcharts-toolbar .apexcharts-menu-icon.apexcharts-download-icon svg path {
-    fill: inherit !important;
-    display: block !important;
+  fill: inherit !important;
+  display: block !important;
 }
 
 .apexcharts-toolbar svg[id] {
-    display: block !important;
+  display: block !important;
 }
 
-.apexcharts-toolbar svg defs symbol,
-.apexcharts-toolbar svg defs clipPath {
-    display: none !important;
+.apexcharts-menu.apexcharts-menu-open {
+  width: max-content !important;
 }
-
-

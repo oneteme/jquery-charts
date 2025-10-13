@@ -1,0 +1,128 @@
+<div class="sandbox-container">
+  <h1>Sandbox - Testez vos données</h1>
+
+  <div class="description">
+    <p>
+      Utilisez cette page pour tester rapidement vos propres données et
+      configurations. Saisissez vos données au format JSON et visualisez
+      instantanément le résultat.
+    </p>
+
+    <div class="library-toggle">
+      <button
+        class="back-btn"
+        routerLink="/basic-test"
+        title="Retour à la page basic-test"
+      >
+        ← Retour à Basic Test
+      </button>
+
+      <div class="separator"></div>
+
+      <button
+        class="library-btn"
+        (click)="toggleChartLibrary()"
+        title="Basculer entre ApexCharts et Highcharts"
+      >
+        Utiliser
+        {{ chartLibrary === "apexcharts" ? "Highcharts" : "ApexCharts" }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Affichage du graphique -->
+  <div class="charts-container">
+    <div class="chart-wrapper">
+      <app-apexcharts-chart-test
+        *ngIf="chartLibrary === 'apexcharts'"
+        [chartType]="chartType"
+        [chartConfig]="chartConfig"
+        [chartData]="chartData"
+      ></app-apexcharts-chart-test>
+
+      <app-highcharts-test
+        *ngIf="chartLibrary === 'highcharts'"
+        [chartType]="chartType"
+        [chartConfig]="chartConfig"
+        [chartData]="chartData"
+        [isLoadingChart]="isLoadingData"
+      ></app-highcharts-test>
+    </div>
+  </div>
+
+  <!-- Éditeurs JSON -->
+  <div class="editors-section">
+    <div class="editor-header">
+      <h3>Configuration & Données</h3>
+      <div class="editor-controls">
+        <button class="ctrl-btn ctrl-btn-primary" (click)="applyChanges()">
+          Appliquer
+        </button>
+        <button class="ctrl-btn ctrl-btn-info" (click)="loadExample('simple')">
+          Exemple Simple
+        </button>
+        <button class="ctrl-btn ctrl-btn-info" (click)="loadExample('complex')">
+          Exemple Complex
+        </button>
+        <button class="ctrl-btn ctrl-btn-danger" (click)="resetToDefault()">
+          Réinitialiser
+        </button>
+      </div>
+    </div>
+
+    <div class="editors-grid">
+      <div class="editor-column">
+        <div class="editor-group">
+          <label for="chart-type-select">Type de graphique :</label>
+          <select
+            id="chart-type-select"
+            [(ngModel)]="chartType"
+            (change)="applyChanges()"
+          >
+            <option value="pie">Pie</option>
+            <option value="donut">Donut</option>
+            <option value="funnel">Funnel</option>
+            <option value="pyramid">Pyramid</option>
+            <option value="polar">Polar</option>
+            <option value="radar">Radar</option>
+            <option value="radialBar">Radial Bar</option>
+            <option value="bar">Bar</option>
+            <option value="column">Column</option>
+            <option value="line">Line</option>
+            <option value="area">Area</option>
+            <option value="spline">Spline</option>
+            <option value="areaspline">Area Spline</option>
+            <option value="scatter">Scatter</option>
+            <option value="bubble">Bubble</option>
+            <option value="heatmap">Heatmap</option>
+            <option value="treemap">Treemap</option>
+          </select>
+        </div>
+
+        <div class="editor-group">
+          <label for="config-input">Configuration (JSON) :</label>
+          <textarea
+            id="config-input"
+            [(ngModel)]="configInput"
+            placeholder="Entrez la configuration au format JSON..."
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="editor-column">
+        <div class="editor-group">
+          <label for="data-input">Données (JSON) :</label>
+          <textarea
+            id="data-input"
+            [(ngModel)]="dataInput"
+            placeholder="Entrez vos données au format JSON..."
+          ></textarea>
+        </div>
+
+        <div class="error-message" *ngIf="jsonError">
+          {{ jsonError }}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

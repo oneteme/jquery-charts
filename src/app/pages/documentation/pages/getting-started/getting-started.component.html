@@ -11,12 +11,8 @@
     <p>Concrètement, cela signifie que :</p>
     <ul>
       <li>
-        Vous n'avez pas besoin d'apprendre la syntaxe spécifique d'ApexCharts ou
-        Highcharts
-      </li>
-      <li>
-        La configuration des graphiques reste identique quel que soit la
-        bibliothèque sous-jacente
+        La configuration des graphiques est quasiment identique quel que soit la
+        bibliothèque utilisée
       </li>
       <li>
         Vous pouvez créer rapidement des graphiques interactifs et
@@ -29,26 +25,17 @@
     </ul>
   </div>
   <div class="step">
-    <h3>1. Création du projet Angular</h3>
-    <p>Si vous n'avez pas encore de projet Angular, créez-en un :</p>
-    <div class="code-block">
-      <pre><code><span class="red strong">ng new</span> my-chart-app
-<span class="red strong">cd</span> my-chart-app</code></pre>
-    </div>
-  </div>
-  <div class="step">
-    <h3>2. Installation des dépendances</h3>
+    <h3>1. Installation des dépendances</h3>
     <p>Installez les packages nécessaires :</p>
     <div class="code-block">
-      <pre><code><span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core &#64;oneteme/jquery-charts</span><br>
-<i>Si vous utilisez Apexcharts</i>
-<span class="red strong">npm</span> install <span class="blue strong">apexcharts</span><br>
-<i>Si vous utilisez Highcharts</i>
-<span class="red strong">npm</span> install <span class="blue strong">highcharts</span></code></pre>
+      <pre><code><i>Pour ApexCharts :</i>
+<span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core &#64;oneteme/jquery-apexcharts apexcharts</span><br>
+<i>Pour Highcharts :</i>
+<span class="red strong">npm</span> install <span class="blue strong">&#64;oneteme/jquery-core &#64;oneteme/jquery-highcharts highcharts</span></code></pre>
     </div>
   </div>
   <div class="step">
-    <h3>3. Configuration du module</h3>
+    <h3>2. Configuration du module</h3>
     <p>
       Il existe deux façons d'importer le ChartComponent selon votre
       architecture :
@@ -58,10 +45,7 @@
       <div class="code-block">
         <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;
 <br>&#64;NgModule({{ '{' }}
-<span class="red">imports</span>: <span class="blue">[</span>
-<span class="blue">BrowserModule,</span>
-<span class="blue">ChartComponent</span>
-<span class="blue">]</span>
+  <span class="red">imports</span>: <span class="blue">[ BrowserModule, ChartComponent ]</span>
 {{ '}' }})</code></pre>
       </div>
     </div>
@@ -70,15 +54,15 @@
       <div class="code-block">
         <pre><code><span class="red strong">import</span> <span class="blue strong">{{ '{' }} ChartComponent {{ '}' }}</span> <span class="red strong">from</span> <span class="blue strong">'&#64;oneteme/jquery-apexcharts'</span>;<br>
 &#64;Component({{ '{' }}
-<span class="red strong">standalone</span>: <span class="blue strong">true</span>,
-<span class="red">imports</span>: <span class="blue">[ChartComponent]</span>
-<i>// ... reste de la configuration du composant</i>
+  <span class="red strong">standalone</span>: <span class="blue strong">true</span>,
+  <span class="red">imports</span>: <span class="blue">[ChartComponent]</span>
+  <i>// ... reste de la configuration du composant</i>
 {{ '}' }})</code></pre>
       </div>
     </div>
   </div>
   <div class="step">
-    <h3>4. Utilisation dans un composant</h3>
+    <h3>3. Utilisation dans un composant</h3>
     <p>Exemple d'utilisation simple :</p>
     <div class="code-block">
       <pre><code><span class="red">&lt;chart</span>
@@ -86,7 +70,7 @@
   <span class="orange">[config]</span>=<span class="blue strong">"config"</span>
   <span class="orange">[data]</span>=<span class="blue strong">"data"</span><br>
   <i>// possibilité d'afficher un loading des datas. Par défaut, <strong>isLoading</strong> est à false.</i>
-  <span class="orange">[isLoading]</span>=<span class="blue strong">"true"</span>
+  <span class="orange">[isLoading]</span>=<span class="blue strong">"isLoading"</span>
 <span class="red">&gt;&lt;/chart&gt;</span></code></pre>
     </div>
   </div>

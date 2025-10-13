@@ -1,721 +1,878 @@
 # jQuery-Highcharts
 
-Une bibliothèque Angular intégrant Highcharts avec la syntaxe unifiée de jQuery-Charts.
+Une bibliothèque Angular qui implémente l'interface `@oneteme/jquery-core` en utilisant Highcharts comme moteur de rendu. Cette bibliothèque agit comme un **wrapper** pour Highcharts, permettant d'utiliser la syntaxe unifiée de jQuery-Charts tout en bénéficiant de la puissance et des fonctionnalités avancées de Highcharts.
 
 ## Table des matières
 
 - [Installation](#installation)
 - [Utilisation](#utilisation)
 - [Documentation](#documentation)
-- [Comparaison avec ApexCharts](#comparaison-avec-apexcharts)
-- [License](#license)
+- [Architecture](#architecture)
+- [Gestion des états](#gestion-des-états)
+- [Licence](#licence)
 
 ## Installation
 
 ```bash
-npm install @oneteme/jquery-core @oneteme/jquery-highcharts highcharts
+npm install @oneteme/jquery-core @oneteme/jquery-highcharts
 ```
 
-**Note importante**: Highcharts nécessite une licence commerciale pour une utilisation professionnelle. Assurez-vous d'acquérir la [licence appropriée](https://www.highcharts.com/license) avant toute utilisation commerciale.
+**Note importante** : Highcharts nécessite une licence commerciale pour une utilisation professionnelle. Assurez-vous d'acquérir la [licence appropriée](https://www.highcharts.com/license) avant toute utilisation commerciale.
 
 ## Utilisation
 
-### 1. Importation des modules
+### 1. Importation du composant
+
+Le composant `ChartComponent` est standalone et peut être importé directement :
 
 ```typescript
+import { Component } from "@angular/core";
 import { ChartComponent } from "@oneteme/jquery-highcharts";
-import { field } from "@oneteme/jquery-core";
+import { ChartProvider, field } from "@oneteme/jquery-core";
+
+@Component({
+  selector: "app-mon-graphique",
+  standalone: true,
+  imports: [ChartComponent],
+  template: ` <chart [type]="chartType" [config]="chartConfig" [data]="chartData" [isLoading]="isLoading"> </chart> `,
+})
+export class MonGraphiqueComponent {
+  chartType = "line";
+  isLoading = false;
+
+  chartConfig: ChartProvider<string, number> = {
+    title: "Ventes mensuelles",
+    series: [
+      {
+        data: {
+          x: field("mois"),
+          y: field("ventes"),
+        },
+        name: "Ventes 2024",
+      },
+    ],
+  };
+
+  chartData = [
+    { mois: "Janvier", ventes: 1200 },
+    { mois: "Février", ventes: 1900 },
+    { mois: "Mars", ventes: 1500 },
+  ];
+}
+```
+
+### 2. Utilisation avec module (optionnel)
+
+Si vous préférez utiliser des modules Angular traditionnels :
+
+```typescript
+import { NgModule } from "@angular/core";
+import { ChartComponent } from "@oneteme/jquery-highcharts";
 
 @NgModule({
-  imports: [
-    // ...
-    ChartComponent,
-  ],
+  imports: [ChartComponent],
   // ...
 })
 export class AppModule {}
 ```
 
-### 2. Création d'un graphique
+### 3. Exemple simple
 
 ```html
-<chart type="line" [config]="maConfig" [data]="mesDatas"></chart>
+<chart type="bar" [config]="config" [data]="data"> </chart>
 ```
 
 ```typescript
-import { ChartProvider, field } from "@oneteme/jquery-core";
+import { field } from "@oneteme/jquery-core";
 
-// Configuration du graphique
-maConfig: ChartProvider<string, number> = {
-  title: "Mon graphique de ligne",
-  series: [
-    {
-      data: {
-        x: field("categorie"),
-        y: field("valeur"),
+export class ExempleComponent {
+  config = {
+    title: "Répartition des ventes",
+    series: [
+      {
+        data: {
+          x: field("categorie"),
+          y: field("valeur"),
+        },
+        name: "Montant",
       },
-      name: "Série 1",
-    },
-  ],
-  // Options spécifiques à Highcharts
-  options: {
-    ...
-  },
-};
+    ],
+  };
 
-// Données du graphique
-mesData = [
-  { categorie: "A", valeur: 10 },
-  { categorie: "B", valeur: 20 },
-  { categorie: "C", valeur: 15 },
-];
+  data = [
+    { categorie: "Produit A", valeur: 10 },
+    { categorie: "Produit B", valeur: 20 },
+    { categorie: "Produit C", valeur: 15 },
+  ];
+}
 ```
 
 ## Documentation
 
 ### Types de graphiques supportés
 
-La bibliothèque jQuery-Highcharts prend en charge une large gamme de types de graphiques, organisés en plusieurs catégories :
+La bibliothèque jQuery-Highcharts prend en charge une large gamme de types de graphiques :
 
-#### Graphiques simples
-- **`pie`** : Graphiques circulaires (secteurs)
-- **`donut`** : Graphiques en anneau (donut charts)
-- **`funnel`** : Graphiques en entonnoir
-- **`pyramid`** : Graphiques pyramidaux
+#### Graphiques simples (single-series)
+
+Ces graphiques affichent les données sous forme d'une seule série agrégée :
+
+- **`pie`** : Graphique circulaire
+- **`donut`** : Graphique en anneau (pie avec `innerSize: '40%'`)
+- **`funnel`** : Graphique en entonnoir
+- **`pyramid`** : Graphique pyramidal
+
+#### Graphiques complexes (multi-series)
+
+Ces graphiques peuvent afficher plusieurs séries simultanément :
+
+- **`line`** : Graphique linéaire
+- **`area`** : Graphique de zone
+- **`spline`** : Graphique linéaire lissé
+- **`areaspline`** : Graphique de zone lissé
+- **`bar`** : Graphique à barres horizontales
+- **`column`** : Graphique à barres verticales
+- **`columnpyramid`** : Graphique à barres pyramidales
+- **`scatter`** : Graphique de dispersion
+- **`bubble`** : Graphique à bulles
+
+#### Graphiques de visualisation de données
+
+- **`heatmap`** : Carte de chaleur
+- **`treemap`** : Carte arborescente
 
 #### Graphiques polaires et radar
-- **`polar`** : Graphiques polaires (colonnes en coordonnées polaires)
-- **`radar`** : Graphiques radar (lignes en coordonnées polaires)
-- **`radarArea`** : Graphiques radar avec remplissage de zone
-- **`radialBar`** : Barres radiales (colonnes polaires inversées)
 
-#### Graphiques complexes
-- **`line`** : Graphiques linéaires
-- **`area`** : Graphiques de zone
-- **`spline`** : Graphiques linéaires lissés
-- **`areaspline`** : Graphiques de zone lissés
-- **`bar`** : Graphiques à barres horizontales
-- **`column`** : Graphiques à barres verticales
-- **`columnpyramid`** : Graphiques à barres pyramidales
-- **`scatter`** : Graphiques de dispersion
-- **`bubble`** : Graphiques à bulles
-- **`heatmap`** : Cartes de chaleur
-- **`treemap`** : Cartes arborescentes
+- **`polar`** : Colonnes en coordonnées polaires avec grille circulaire
+- **`radar`** : Lignes en coordonnées polaires avec grille polygonale
+- **`radarArea`** : Radar avec remplissage de zone
+- **`radialBar`** : Barres radiales concentriques
 
 #### Graphiques de plages (range)
-Ces types nécessitent des données spécifiques avec des valeurs de plage :
-- **`columnrange`** : Colonnes avec plages de valeurs
-- **`arearange`** : Zones avec plages de valeurs
-- **`areasplinerange`** : Zones lissées avec plages de valeurs
 
-### Système de configuration unifié
+Nécessitent des données avec `rangeFields(minField, maxField)` :
 
-La bibliothèque implémente un système de configuration unifié qui révolutionne l'utilisation des graphiques en permettant d'utiliser la syntaxe `plotOptions.series.*` pour tous les types de graphiques. 
+- **`columnrange`** : Colonnes avec plages
+- **`arearange`** : Zones avec plages
+- **`areasplinerange`** : Zones lissées avec plages
 
-**L'objectif principal** : Permettre à l'utilisateur de **switcher dynamiquement entre différents types de graphiques** sans avoir à refaire la configuration à chaque fois. Le système transforme automatiquement ces propriétés génériques vers les propriétés spécifiques à chaque type de graphique.
+### Inputs du composant
 
-#### Pourquoi ce système ?
+| Input         | Type                  | Requis | Description                                              |
+| ------------- | --------------------- | ------ | -------------------------------------------------------- |
+| `type`        | `ChartType`           | ✅     | Type de graphique à afficher                             |
+| `config`      | `ChartProvider<X, Y>` | ✅     | Configuration du graphique (jquery-core)                 |
+| `data`        | `any[]`               | ✅     | Données à afficher                                       |
+| `isLoading`   | `boolean`             | ❌     | État de chargement (défaut: `false`)                     |
+| `debug`       | `boolean`             | ❌     | Mode debug avec logs console (défaut: `false`)           |
+| `enablePivot` | `boolean`             | ❌     | Active le bouton pivot dans la toolbar (défaut: `false`) |
 
-Imaginez que vous voulez permettre à vos utilisateurs de visualiser les mêmes données sous forme de :
-- **Camembert** (`pie`) avec des labels
-- **Barres** (`bar`) avec les mêmes labels
-- **Radar** (`radar`) avec les mêmes paramètres
+### Configuration du graphique (ChartProvider)
 
-**Sans le système unifié** :
 ```typescript
-// Vous devriez gérer 3 configurations différentes
-const configPie = { plotOptions: { pie: { dataLabels: {...} } } };
-const configBar = { plotOptions: { bar: { dataLabels: {...} } } };
-const configRadar = { plotOptions: { series: { dataLabels: {...} } } };
+interface ChartProvider<X, Y> {
+  // Titres
+  title?: string; // Titre principal
+  subtitle?: string; // Sous-titre
+  xtitle?: string; // Titre de l'axe X
+  ytitle?: string; // Titre de l'axe Y
+
+  // Dimensions
+  width?: number; // Largeur en pixels
+  height?: number; // Hauteur en pixels
+
+  // Séries de données
+  series: SerieProvider<X, Y>[];
+
+  // Options de transformation
+  pivot?: boolean; // Transposer séries ↔ catégories
+  continue?: boolean; // Mode continu : [x,y] au lieu de catégories
+  stacked?: boolean; // Empiler les séries
+  xorder?: "asc" | "desc"; // Tri des catégories
+
+  // Interface
+  showToolbar?: boolean; // Afficher la toolbar de navigation
+
+  // Options Highcharts natives
+  options?: Highcharts.Options;
+}
 ```
 
-**Avec le système unifié** :
+### Définition d'une série
+
 ```typescript
-// Une seule configuration pour tous les types !
-const configUnique = { 
-  plotOptions: { 
-    series: { dataLabels: {...} }  // Fonctionne pour TOUS les types
-  } 
+interface SerieProvider<X, Y> {
+  data: {
+    x: DataProvider<X>; // Fonction d'extraction de X
+    y: DataProvider<Y>; // Fonction d'extraction de Y
+  };
+  name?: string | DataProvider<string>; // Nom de la série
+  stack?: string | DataProvider<string>; // Groupe d'empilement
+  color?: string | DataProvider<string>; // Couleur
+  type?: string | DataProvider<string>; // Type spécifique
+  visible?: boolean | DataProvider<boolean>; // Visibilité initiale
+}
+```
+
+### Fonctions utilitaires (jquery-core)
+
+```typescript
+import { field, values, mapField, joinFields, combineFields, rangeFields } from '@oneteme/jquery-core';
+
+// Extraire un champ d'un objet
+field<T>(fieldName: string): DataProvider<T>
+
+// Exemples :
+x: field("month")          // obj => obj.month
+y: field("sales")          // obj => obj.sales
+
+// Valeurs statiques
+values<T>(...values: T[]): DataProvider<T>
+
+// Exemple :
+name: values("Série A", "Série B")  // idx 0 => "Série A", idx 1 => "Série B"
+
+// Mapper via un dictionnaire
+mapField<T>(fieldName: string, map: Map<any, T>): DataProvider<T>
+
+// Exemple :
+const colorMap = new Map([
+  ["urgent", "#e74c3c"],
+  ["normal", "#3498db"]
+]);
+color: mapField("priority", colorMap)
+
+// Joindre plusieurs champs
+joinFields(separator: string, ...fieldNames: string[]): DataProvider<string>
+
+// Exemple :
+name: joinFields(" - ", "firstName", "lastName")  // "John - Doe"
+
+// Combiner avec fonction personnalisée
+combineFields<T>(combiner: (args: any[]) => T, fieldNames: string[]): DataProvider<T>
+
+// Exemple :
+y: combineFields(
+  ([a, b]) => a + b,
+  ["value1", "value2"]
+)
+
+// Plages de valeurs (pour graphiques range)
+rangeFields<T>(minFieldName: string, maxFieldName: string): DataProvider<T[]>
+
+// Exemple :
+y: rangeFields("tempMin", "tempMax")  // [15, 25]
+```
+
+### Exemples d'utilisation
+
+#### Graphique simple avec agrégation
+
+Pour les graphiques de type `pie`, `donut`, `funnel`, `pyramid`, les données multi-séries sont automatiquement agrégées :
+
+```typescript
+// Si vous avez plusieurs séries, chaque série devient une part du pie
+config = {
+  title: "Répartition par équipe",
+  series: [
+    { data: { x: field("month"), y: field("salesTeamA") }, name: "Équipe A" },
+    { data: { x: field("month"), y: field("salesTeamB") }, name: "Équipe B" },
+  ],
+};
+
+data = [
+  { month: "Jan", salesTeamA: 100, salesTeamB: 150 },
+  { month: "Fev", salesTeamA: 120, salesTeamB: 180 },
+];
+
+// Résultat :
+// - Part "Équipe A" : 220 (somme de 100 + 120)
+// - Part "Équipe B" : 330 (somme de 150 + 180)
+```
+
+#### Graphique multi-séries
+
+```typescript
+config = {
+  title: "Évolution des ventes",
+  series: [
+    { data: { x: field("month"), y: field("sales2023") }, name: "2023", color: "#3498db" },
+    { data: { x: field("month"), y: field("sales2024") }, name: "2024", color: "#e74c3c" },
+  ],
+};
+
+data = [
+  { month: "Jan", sales2023: 1000, sales2024: 1200 },
+  { month: "Fev", sales2023: 1100, sales2024: 1400 },
+  { month: "Mar", sales2023: 1050, sales2024: 1350 },
+];
+```
+
+#### Graphique empilé
+
+```typescript
+config = {
+  title: "Ventes par catégorie",
+  stacked: true,
+  series: [
+    { data: { x: field("month"), y: field("electronics") }, name: "Électronique" },
+    { data: { x: field("month"), y: field("clothing") }, name: "Vêtements" },
+    { data: { x: field("month"), y: field("food") }, name: "Alimentation" },
+  ],
 };
 ```
 
-#### Comment ça fonctionne
+#### Graphique avec pivot
+
+Le pivot transpose les données : les séries deviennent des catégories et vice-versa.
 
 ```typescript
-// SYNTAXE UNIFIÉE - Fonctionne pour tous les types
-const config = {
-  title: "Mon graphique",
+// Sans pivot : chaque région = une série, chaque mois = une catégorie
+config = {
+  title: "Ventes par région",
+  pivot: false,
+  series: [{ data: { x: field("month"), y: field("value") }, name: field("region") }],
+};
+
+data = [
+  { region: "Nord", month: "Jan", value: 100 },
+  { region: "Sud", month: "Jan", value: 150 },
+  { region: "Nord", month: "Fev", value: 120 },
+  { region: "Sud", month: "Fev", value: 180 },
+];
+// Séries : "Nord" et "Sud"
+// Catégories : ["Jan", "Fev"]
+
+// Avec pivot : chaque mois = une série, chaque région = une catégorie
+config = {
+  title: "Ventes par région",
+  pivot: true, // ← Activation du pivot
+  series: [{ data: { x: field("month"), y: field("value") }, name: field("region") }],
+};
+// Séries : "Jan" et "Fev"
+// Catégories : ["Nord", "Sud"]
+```
+
+#### Graphique polaire
+
+```typescript
+config = {
+  title: "Performance radar",
+  series: [
+    {
+      data: { x: field("skill"), y: field("score") },
+      name: "Développeur",
+    },
+  ],
+};
+
+data = [
+  { skill: "JavaScript", score: 85 },
+  { skill: "TypeScript", score: 90 },
+  { skill: "Angular", score: 80 },
+  { skill: "CSS", score: 75 },
+];
+```
+
+```html
+<chart type="radar" [config]="config" [data]="data"></chart>
+```
+
+#### Graphique de plages
+
+```typescript
+import { rangeFields } from "@oneteme/jquery-core";
+
+config = {
+  title: "Températures mensuelles",
+  series: [
+    {
+      data: {
+        x: field("month"),
+        y: rangeFields("tempMin", "tempMax"), // ← Plage [min, max]
+      },
+      name: "Température",
+    },
+  ],
+};
+
+data = [
+  { month: "Jan", tempMin: 5, tempMax: 15 },
+  { month: "Fev", tempMin: 7, tempMax: 18 },
+  { month: "Mar", tempMin: 10, tempMax: 22 },
+];
+```
+
+```html
+<chart type="columnrange" [config]="config" [data]="data"></chart>
+```
+
+### Mode continue
+
+Par défaut, les graphiques utilisent des catégories discrètes. Le mode `continue` permet d'afficher des coordonnées `[x, y]` continues :
+
+```typescript
+// Mode catégories (défaut)
+config = {
+  continue: false, // ou omis
+  series: [{ data: { x: field("category"), y: field("value") } }],
+};
+// Résultat : categories = ["A", "B", "C"], data = [10, 20, 15]
+
+// Mode continue
+config = {
+  continue: true,
+  series: [{ data: { x: field("timestamp"), y: field("value") } }],
+};
+// Résultat : data = [[1609459200000, 10], [1609545600000, 20], ...]
+```
+
+### Toolbar de navigation
+
+Activez la toolbar pour permettre la navigation entre types de graphiques :
+
+```typescript
+config = {
+  title: "Graphique interactif",
+  showToolbar: true,  // ← Active la toolbar
+  series: [...]
+};
+```
+
+La toolbar apparaît au survol et propose :
+
+- **Bouton précédent** : Affiche le type de graphique précédent
+- **Bouton suivant** : Affiche le type de graphique suivant
+- **Bouton pivot** : Active/désactive le mode pivot (si `enablePivot: true`)
+
+Groupes de navigation par défaut :
+
+- Graphiques simples : `pie`, `spline`
+- Graphiques linéaires : `line`, `pie`, `donut`, `bar`, `column`
+- Graphiques de zone : `line`, `area`, `spline`, `areaspline`
+- Graphiques à barres : `bar`, `column`
+- Graphiques d'entonnoir : `funnel`, `pyramid`
+- Graphiques de dispersion : `scatter`, `bubble`
+- Graphiques polaires : `polar`, `radar`, `line`
+- Graphiques radar : `radar`, `polar`, `radarArea`
+- Graphiques radar avec zone : `radarArea`, `radar`, `area`
+- Graphiques radiaux : `radialBar`, `bar`, `column`
+
+### Options Highcharts personnalisées
+
+Vous pouvez passer n'importe quelle option Highcharts native via `config.options` :
+
+```typescript
+config = {
+  title: "Graphique personnalisé",
   series: [...],
   options: {
+    chart: {
+      backgroundColor: '#f5f5f5',
+      borderWidth: 1,
+      borderColor: '#ddd'
+    },
     plotOptions: {
       series: {
-        dataLabels: { enabled: true },  // Sera transformé automatiquement
-        borderWidth: 2,                 // Sera transformé automatiquement
-        borderColor: '#333333'          // Sera transformé automatiquement
+        animation: false,
+        dataLabels: {
+          enabled: true,
+          format: '{point.y:.1f}'
+        }
       }
+    },
+    legend: {
+      enabled: false
+    },
+    tooltip: {
+      shared: true,
+      crosshairs: true
     }
   }
 };
 ```
 
-#### Transformations automatiques par type
+### Système de transformation plotOptions
 
-**Pour les graphiques `pie` et `donut` :**
-```typescript
-// Votre configuration
-plotOptions: {
-  series: {
-    dataLabels: { enabled: true },
-    allowPointSelect: true,
-    cursor: 'pointer',
-    borderWidth: 2,
-    innerSize: '40%'
-  }
-}
+La bibliothèque unifie la syntaxe `plotOptions.series.*` pour tous les types de graphiques. Les propriétés sont automatiquement transformées vers les propriétés spécifiques de chaque type.
 
-// Sera transformé en
-plotOptions: {
-  pie: {
-    dataLabels: { enabled: true },
-    allowPointSelect: true, 
-    cursor: 'pointer',
-    borderWidth: 2,
-    innerSize: '40%'
-  }
-}
-```
-
-**Pour les graphiques `funnel` et `pyramid` :**
-```typescript
-// Votre configuration
-plotOptions: {
-  series: {
-    dataLabels: { enabled: true },
-    borderWidth: 1,
-    center: ['50%', '50%'],
-    height: '80%'
-  }
-}
-
-// Sera transformé en
-plotOptions: {
-  funnel: { // ou pyramid
-    dataLabels: { enabled: true },
-    borderWidth: 1,
-    center: ['50%', '50%'],
-    height: '80%'
-  }
-}
-```
-
-**Pour les graphiques polaires (`polar`, `radar`, `radarArea`, `radialBar`) :**
-```typescript
-// Votre configuration
-plotOptions: {
-  series: {
-    dataLabels: { enabled: true },
-    pointPlacement: 'on',
-    connectEnds: true,
-    marker: { enabled: true }
-  }
-}
-
-// Sera transformé en préservant la structure polaire
-plotOptions: {
-  series: {
-    dataLabels: { enabled: true },
-    pointPlacement: 'on',
-    connectEnds: true,
-    marker: { enabled: true }
-  },
-  // + configurations spécifiques aux axes polaires
-}
-```
-
-#### Propriétés supportées par type
-
-| Type | Propriétés `plotOptions.series.*` supportées |
-|------|---------------------------------------------|
-| **pie/donut** | `dataLabels`, `allowPointSelect`, `cursor`, `showInLegend`, `borderWidth`, `borderColor`, `slicedOffset`, `startAngle`, `endAngle`, `center`, `size`, `innerSize`, `depth` |
-| **funnel/pyramid** | `dataLabels`, `borderWidth`, `borderColor`, `center`, `height`, `width`, `neckWidth`, `neckHeight`, `reversed` |
-| **polar** | `pointPlacement`, `pointStart`, `connectEnds`, `dataLabels` + propriétés `column.*` |
-| **radar/radarArea** | `pointPlacement`, `pointStart`, `connectEnds`, `marker`, `dataLabels`, `fillOpacity` |
-| **radialBar** | `pointPlacement`, `pointStart`, `connectEnds`, `dataLabels` + propriétés `column.*` |
-| **line/area/spline/areaspline** | `dataLabels`, `marker`, `lineWidth`, `fillOpacity`, `dashStyle` |
-| **bar/column/columnpyramid** | `dataLabels`, `borderWidth`, `borderColor`, `pointPadding`, `groupPadding`, `stacking` |
-| **scatter/bubble** | `dataLabels`, `marker`, `sizeBy`, `minSize`, `maxSize` |
-| **heatmap** | `dataLabels`, `borderWidth`, `borderColor`, `nullColor`, `colsize`, `rowsize` |
-| **treemap** | `dataLabels`, `borderWidth`, `borderColor`, `layoutAlgorithm`, `layoutStartingDirection`, `alternateStartingDirection`, `levels` |
-| **range (columnrange/arearange/areasplinerange)** | `dataLabels`, `borderWidth`, `borderColor`, `fillOpacity`, `lineWidth` |
-
-### Ordre de priorité des configurations
-
-Le système applique les configurations dans un ordre précis pour garantir que les préférences utilisateur soient toujours respectées :
-
-1. **Nettoyage intelligent** : Suppression des propriétés conflictuelles selon le type de graphique
-2. **Configuration framework** : Application des configurations par défaut de jQuery-Charts
-3. **Configuration de base du type** : Application des paramètres spécifiques au type de graphique
-4. **Transformation utilisateur** : Application du système de transformation unifié
-5. **Fusion finale** : Combinaison respectant la priorité utilisateur
-
-#### Exemple de priorité
+#### Exemple de transformation
 
 ```typescript
-// Configuration de base (pie)
-plotOptions: {
-  pie: {
-    innerSize: 0,           // Configuration par défaut
-    dataLabels: { enabled: false }
-  }
-}
-
 // Configuration utilisateur
 options: {
   plotOptions: {
     series: {
-      dataLabels: { enabled: true }  // Priorité utilisateur
+      dataLabels: { enabled: true },
+      borderWidth: 2
     }
   }
 }
 
-// Résultat final : La préférence utilisateur est préservée
+// Pour type="pie", sera transformé en :
 plotOptions: {
   pie: {
-    innerSize: 0,
-    dataLabels: { enabled: true }   // Priorité utilisateur respectée
+    dataLabels: { enabled: true },
+    borderWidth: 2
+  }
+}
+
+// Pour type="line", sera transformé en :
+plotOptions: {
+  line: {
+    dataLabels: { enabled: true }
+    // borderWidth n'est pas supporté par line, donc ignoré
   }
 }
 ```
 
-### Toolbar interactive et transitions entre types
+Voir le fichier `types.ts` pour le mapping complet des propriétés supportées par type.
 
-La bibliothèque inclut une **toolbar personnalisée** qui permet aux utilisateurs finaux de naviguer entre différents types de graphiques de manière fluide, sans perte de configuration.
+## Architecture
 
-#### Activation de la toolbar
+### Vue d'ensemble
+
+jQuery-Highcharts est organisé en plusieurs modules spécialisés pour une meilleure maintenabilité :
+
+```
+jquery-highcharts/
+├── src/
+│   ├── public-api.ts                    # API publique
+│   ├── lib/
+│   │   ├── component/
+│   │   │   └── chart.component.ts       # Composant wrapper Angular
+│   │   ├── directive/
+│   │   │   ├── chart.directive.ts       # Directive principale
+│   │   │   └── utils/
+│   │   │       ├── index.ts
+│   │   │       ├── highcharts-modules.ts    # Initialisation Highcharts
+│   │   │       ├── data-aggregation.ts      # Agrégation pour pie/donut
+│   │   │       ├── dimensions.ts            # Gestion width/height
+│   │   │       ├── loading.ts               # États de chargement
+│   │   │       ├── polar-config.ts          # Configuration polaire
+│   │   │       ├── toolbar.ts               # Toolbar de navigation
+│   │   │       └── types.ts                 # Types et mappings
+│   │   └── assets/
+│   │       └── icons/                       # Icônes SVG de la toolbar
+```
+
+### Flux de transformation des données
+
+```
+Données brutes (data: any[])
+        ↓
+buildChart() ou buildSingleSerieChart() (jquery-core)
+        ↓
+CommonChart<X, Y> (modèle abstrait)
+        ↓
+processData() (chart.directive.ts)
+        ↓
+- processSimpleChart() → transformDataForSimpleChart() → Agrégation
+- processComplexChart() → Conversion multi-séries
+        ↓
+Options Highcharts (Highcharts.Options)
+        ↓
+- configurePolarChart() (si polar)
+- unifyPlotOptionsForChart() (transformation plotOptions)
+- configureLoadingOptions() (configuration loading)
+        ↓
+Highcharts.chart() → Rendu visuel
+```
+
+### Modules utilitaires
+
+#### `highcharts-modules.ts`
+
+Initialise tous les modules Highcharts nécessaires :
+
+- `highcharts-more` : Types supplémentaires (bubble, polar, etc.)
+- `no-data-to-display` : Affichage "aucune donnée"
+- `exporting` : Export des graphiques
+- `export-data` : Export des données
+- `funnel` : Graphiques en entonnoir
+- `treemap` : Cartes arborescentes
+- `heatmap` : Cartes de chaleur
+
+#### `data-aggregation.ts`
+
+Gère l'agrégation des données multi-séries pour les graphiques simples (pie, donut, funnel, pyramid).
+
+**Fonctions principales** :
+
+- `aggregateMultiSeriesForPie()` : Agrège plusieurs séries en calculant la somme totale de chaque série
+- `shouldAggregateForPie()` : Détermine si l'agrégation est nécessaire
+- `transformDataForSimpleChart()` : Point d'entrée pour la transformation
+
+**Exemple** :
 
 ```typescript
-maConfig = {
-  title: "Ventes par région",
-  series: [{ 
-    data: { x: field("region"), y: field("ventes") },
-    name: "Ventes" 
-  }],
-  showToolbar: true,  // Active la toolbar
-  // Configuration unifiée qui fonctionne pour tous les types
-  options: {
-    plotOptions: {
-      series: {
-        dataLabels: { enabled: true },
-        borderWidth: 2
-      }
-    }
-  }
+// Entrée : 2 séries avec 3 catégories chacune
+series: [
+  { name: "Équipe A", data: [100, 120, 110] },
+  { name: "Équipe B", data: [150, 180, 160] },
+][
+  // Sortie : 2 parts agrégées
+  ({ name: "Équipe A", y: 330 }, // 100 + 120 + 110
+  { name: "Équipe B", y: 490 }) // 150 + 180 + 160
+];
+```
+
+#### `dimensions.ts`
+
+Gère les dimensions du graphique en utilisant celles du conteneur parent si non spécifiées.
+
+**Fonction** :
+
+- `sanitizeChartDimensions()` : Calcule automatiquement width/height depuis le conteneur
+
+#### `loading.ts`
+
+Gère les trois états d'affichage du graphique :
+
+1. **Chargement** : Affiche un indicateur de chargement
+2. **Aucune donnée** : Affiche un message "Aucune donnée"
+3. **Données disponibles** : Affiche le graphique avec la toolbar
+
+**Fonctions principales** :
+
+- `updateChartLoadingState()` : Orchestre les transitions entre états
+- `showLoading()` / `hideLoading()` : Gestion du loading
+- `showNoDataMessage()` : Affichage du message "no data"
+- `showChartToolbar()` / `hideChartToolbar()` : Gestion de la toolbar
+- `configureLoadingOptions()` : Configuration par défaut
+
+**Machine à états** :
+
+```
+isLoading=true, hasData=false  → Loading affiché, toolbar masquée
+isLoading=false, hasData=false → "Aucune donnée" affiché, toolbar masquée
+isLoading=false, hasData=true  → Graphique affiché, toolbar visible
+```
+
+#### `polar-config.ts`
+
+Configure les graphiques en coordonnées polaires.
+
+**Fonctions** :
+
+- `configurePolarChart()` : Point d'entrée principal
+- `configurePolarType()` : Secteurs empilés avec grille circulaire
+- `configureRadarType()` : Toile d'araignée avec grille polygonale
+- `configureRadarAreaType()` : Radar avec remplissage
+- `configureRadialBarType()` : Barres concentriques
+- `isPolarChart()` : Détecte si un type est polaire
+
+**Configuration automatique** :
+
+- Active `chart.polar = true`
+- Configure les axes X/Y pour le mode polaire
+- Applique `gridLineInterpolation` (circle ou polygon)
+- Gère le `pane` et les options de colonnes
+
+#### `toolbar.ts`
+
+Crée et gère la toolbar de navigation entre types de graphiques.
+
+**Fonctions** :
+
+- `setupToolbar()` : Crée la toolbar avec boutons
+- `createToolbarButton()` : Crée un bouton avec icône SVG
+- `removeToolbar()` : Nettoie la toolbar
+- Gestionnaires `handleMouseMove()` / `handleMouseLeave()` : Visibilité au survol
+
+**Comportement** :
+
+- Toolbar en position absolue en haut à droite
+- Apparaît au survol du graphique
+- Émet des événements `previous`, `next`, `pivot`
+
+#### `types.ts`
+
+Définit les types TypeScript et le système de mapping des plotOptions.
+
+**Exports principaux** :
+
+- `ChartCustomEvent` : Type des événements de la toolbar
+- `ToolbarOptions` : Options de configuration de la toolbar
+- `PLOTOPTIONS_MAPPING` : Mapping complet `series.*` → `type.*`
+- `unifyPlotOptionsForChart()` : Transforme les plotOptions
+
+**Mapping** :
+
+```typescript
+PLOTOPTIONS_MAPPING = {
+  pie: {
+    "series.dataLabels": "pie.dataLabels",
+    "series.borderWidth": "pie.borderWidth",
+    // ...
+  },
+  line: {
+    "series.marker": "line.marker",
+    "series.lineWidth": "line.lineWidth",
+    // ...
+  },
+  // ... autres types
 };
 ```
 
-#### Fonctionnalités de la toolbar
+### ChartDirective
 
-La toolbar apparaît au survol du graphique et propose 2 actions simples :
+La directive principale qui :
 
-| Bouton | Action | Description |
-|--------|--------|-------------|
-| **Précédent** | `previous` | Passe au type de graphique précédent dans la liste |
-| **Suivant** | `next` | Passe au type de graphique suivant dans la liste |
+1. Reçoit les inputs : `type`, `config`, `data`, `isLoading`
+2. Appelle `buildChart()` ou `buildSingleSerieChart()` (jquery-core)
+3. Transforme le `CommonChart` en options Highcharts
+4. Applique les configurations spécifiques (polar, plotOptions, loading)
+5. Crée l'instance Highcharts
+6. Gère le cycle de vie (destroy, update)
 
-#### Types de graphiques liés
+### ChartComponent
 
-**Par défaut**, la toolbar navigue automatiquement entre tous les types excepté les types 'range' qui ne sont compatibles qu'entre (car ils nécessitent des données adaptées). Voici toutefois un classement des graphiques les plus compatibles entre eux :
+Composant wrapper qui :
 
-**Graphiques simples** :
-- `pie` ↔ `donut` ↔ `funnel` ↔ `pyramid`
+- Encapsule la directive
+- Gère la navigation entre types via les événements
+- Définit les groupes de types compatibles
+- Gère le mode pivot
 
-**Graphiques polaires** :
-- `polar` ↔ `radar` ↔ `radarArea` ↔ `radialBar`
+## Gestion des états
 
-**Graphiques complexes** :
-- `line` ↔ `area` ↔ `spline` ↔ `areaspline` ↔ `bar` ↔ `column` ↔ `columnpyramid` ↔ `scatter` ↔ `bubble` ↔ `heatmap` ↔ `treemap`
+### Propriété `isLoading`
 
-**Graphiques de plages** :
-- `columnrange` ↔ `arearange` ↔ `areasplinerange`
-
-#### Personnalisation des types disponibles
-
-Vous pouvez limiter les types disponibles dans la toolbar avec l'attribut `[possibleType]` :
+Contrôlez l'affichage du loading via l'input `isLoading` :
 
 ```html
-<chart 
-  [type]="chartType"
-  [config]="chartConfig" 
-  [data]="chartData"
-  [possibleType]="['pie', 'donut', 'bar']">
-</chart>
+<chart type="line" [config]="config" [data]="data" [isLoading]="isLoading"> </chart>
 ```
 
 ```typescript
-export class MonComponent {
-  chartType: ChartType = 'pie';
-  chartConfig = {
-    title: "Ventes par région",
-    showToolbar: true,  // Active la toolbar
-    series: [{ 
-      data: { x: field("region"), y: field("ventes") },
-      name: "Ventes" 
-    }],
-    options: {
-      plotOptions: {
-        series: {
-          dataLabels: { enabled: true }
-        }
-      }
+export class MesVentesComponent implements OnInit {
+  isLoading = false;
+  data: any[] = [];
+
+  async ngOnInit() {
+    this.isLoading = true;
+
+    try {
+      this.data = await this.fetchSalesData();
+    } finally {
+      this.isLoading = false;
     }
-  };
+  }
 }
 ```
 
-**Important** : Le type initial doit être inclus dans `[possibleType]`, sinon :
-- Seul le type défini sera affiché
-- La toolbar ne fonctionnera pas
-- Un message d'erreur apparaîtra dans la console
+### États automatiques
 
-**Exemples valides** :
-```html
-<!-- Type initial 'pie' inclus dans possibleType -->
-<chart 
-  [type]="'pie'"
-  [possibleType]="['pie', 'donut', 'bar']"
-  [config]="config" 
-  [data]="data">
-</chart>
+Le graphique gère automatiquement 3 états :
 
-<!-- Navigation limitée aux graphiques polaires -->
-<chart 
-  [type]="'radar'"
-  [possibleType]="['radar', 'polar', 'radarArea']"
-  [config]="config" 
-  [data]="data">
-</chart>
+1. **Chargement initial** (`isLoading=true`, `data=[]`)
 
-<!-- Graphiques de plages uniquement -->
-<chart 
-  [type]="'columnrange'"
-  [possibleType]="['columnrange', 'arearange', 'areasplinerange']"
-  [config]="config" 
-  [data]="rangeData">
-</chart>
-```
+   - Affiche : Spinner + texte "Chargement des données..."
+   - Toolbar : Masquée
 
-**Exemple invalide** :
-```html
-<!-- Type initial 'pie' absent de possibleType -->
-<chart 
-  [type]="'pie'"
-  [possibleType]="['bar', 'line']"  
-  [config]="config" 
-  [data]="data">
-</chart>
-<!-- Erreur en console, toolbar désactivée -->
-```
+2. **Aucune donnée** (`isLoading=false`, `data=[]`)
 
-#### Transitions intelligentes
+   - Affiche : Message "Aucune donnée disponible"
+   - Toolbar : Masquée
 
-La bibliothèque gère automatiquement les transitions spécifiques :
+3. **Données chargées** (`isLoading=false`, `data=[...]`)
+   - Affiche : Graphique avec données
+   - Toolbar : Visible au survol (si `showToolbar=true`)
 
-**Transition pie ↔ donut** :
-```typescript
-// Passage automatique de pie vers donut
-// L'innerSize sera automatiquement mis à jour vers '50%'
-
-// Passage automatique de donut vers pie  
-// L'innerSize sera automatiquement remis à 0
-```
-
-**Transition radar ↔ polar** :
-```typescript
-// Les configurations d'axes polaires sont préservées
-// Les propriétés spécifiques sont automatiquement adaptées
-```
-
-#### Exemple complet avec toolbar
-
-```html
-<div class="chart-container">
-  <h3>{{ currentType | titlecase }} - {{ config.title }}</h3>
-  <chart 
-    [type]="currentType"
-    [config]="config"
-    [data]="salesData"
-    [possibleType]="allowedTypes">
-  </chart>
-  <p>Type actuel : {{ currentType }}</p>
-</div>
-```
+### Exemple complet avec gestion d'état
 
 ```typescript
 @Component({
-  template: `...` // Template ci-dessus
+  selector: "app-sales-chart",
+  standalone: true,
+  imports: [ChartComponent, CommonModule],
+  template: `
+    <div class="chart-wrapper">
+      <h2>Ventes par région</h2>
+
+      <chart type="column" [config]="chartConfig" [data]="salesData" [isLoading]="isLoadingSales"> </chart>
+
+      <button (click)="refreshData()" [disabled]="isLoadingSales">
+        {{ isLoadingSales ? "Chargement..." : "Actualiser" }}
+      </button>
+    </div>
+  `,
 })
-export class InteractiveChartComponent {
-  currentType: ChartType = 'pie';
-  allowedTypes: ChartType[] = ['pie', 'donut', 'bar', 'line', 'polar', 'radar'];
-  
-  config = {
-    title: "Ventes par trimestre",
-    showToolbar: true,  // Active la toolbar interactive
-    series: [{
-      data: { x: field("trimestre"), y: field("ventes") },
-      name: "Ventes 2024"
-    }],
-    options: {
-      plotOptions: {
-        series: {
-          // Configuration unique qui s'adapte à tous les types
-          dataLabels: {
-            enabled: true,
-            format: '{point.y:,.0f}€'
-          },
-          borderWidth: 1,
-          borderColor: '#ffffff'
-        }
-      }
-    }
+export class SalesChartComponent {
+  isLoadingSales = false;
+  salesData: any[] = [];
+
+  chartConfig = {
+    title: "Ventes 2024",
+    showToolbar: true,
+    series: [
+      {
+        data: {
+          x: field("region"),
+          y: field("amount"),
+        },
+        name: "Chiffre d'affaires",
+      },
+    ],
   };
-  
-  salesData = [
-    { trimestre: "Q1", ventes: 125000 },
-    { trimestre: "Q2", ventes: 180000 },
-    { trimestre: "Q3", ventes: 165000 },
-    { trimestre: "Q4", ventes: 220000 }
-  ];
+
+  constructor(private salesService: SalesService) {}
+
+  async ngOnInit() {
+    await this.loadData();
+  }
+
+  async refreshData() {
+    await this.loadData();
+  }
+
+  private async loadData() {
+    this.isLoadingSales = true;
+
+    try {
+      // Simulation d'un appel API
+      this.salesData = await this.salesService.getSales();
+    } catch (error) {
+      console.error("Erreur de chargement:", error);
+      this.salesData = []; // Affichera "Aucune donnée"
+    } finally {
+      this.isLoadingSales = false;
+    }
+  }
 }
 ```
 
-#### Personnalisation de la toolbar
+### Mode debug
 
-La toolbar s'adapte automatiquement :
-- **Position** : Se place intelligemment selon la présence du bouton d'export Highcharts
-- **Visibilité** : Apparaît au survol, disparaît quand la souris quitte le graphique
-- **Style** : S'harmonise avec le thème du graphique
-
-### Configuration du chargement et des états vides
-
-La bibliothèque permet de personnaliser l'affichage pendant le chargement des données et lorsqu'aucune donnée n'est disponible via la propriété `[loadingConfig]`.
-
-#### Utilisation de base
+Activez le mode debug pour voir les logs de transformation :
 
 ```html
-<chart 
-  type="line" 
-  [config]="maConfig" 
-  [data]="mesDonnees"
-  [loadingConfig]="maConfigLoading">
-</chart>
+<chart [type]="chartType" [config]="config" [data]="data" [debug]="true"> </chart>
 ```
 
-#### Configuration complète
+Les logs afficheront :
 
-```typescript
-maConfigLoading = {
-  
-  // ÉTATS DE CHARGEMENT //
-  
-  // Texte affiché pendant le chargement (défaut: 'Chargement des données...')
-  text: 'Patientez...',
-  
-  // Afficher le texte de chargement (défaut: true)
-  showText: true,
-  
-  // Afficher le spinner de chargement (défaut: false)
-  showSpinner: true,
-  
-  // Couleurs personnalisées pour le chargement
-  backgroundColor: '#ffffff',    // Fond de l'écran de chargement
-  textColor: '#666666',          // Couleur du texte
-  spinnerColor: '#0066cc',       // Couleur du spinner
-  
-  // ÉTATS "AUCUNE DONNÉE" //
-  
-  // Message affiché quand aucune donnée n'est disponible (défaut: 'Aucune donnée disponible')
-  noDataMessage: 'Aucune donnée trouvée',
-  
-  // Afficher un arrière-plan avec bordure pour l'état vide (défaut: false)
-  showNoDataBackground: true,
-  
-  // Couleurs personnalisées pour l'état "aucune donnée"
-  noDataBackgroundColor: '#f8f9fa',  // Couleur de fond
-  noDataBorderColor: '#ddd',          // Couleur de la bordure
-  noDataTextColor: '#666666',         // Couleur du texte
-  
-  // Afficher une icône (défaut: false)
-  showNoDataIcon: true,
-  
-  // Personnaliser l'icône affichée (défaut: 'Chart')
-  noDataIcon: 'Data'
-};
-```
+- Détection du type de graphique (simple vs complexe)
+- Transformations des plotOptions
+- Ajustements de dimensions
+- Création et destruction du graphique
 
-#### Exemples d'utilisation courante
+## Licence
 
-**Configuration minimaliste :**
-```typescript
-loadingConfig = {
-  noDataMessage: 'Pas de données à afficher'
-};
-```
+Ce package est fourni sous **licence Apache 2.0**.
 
-**Avec arrière-plan personnalisé :**
-```typescript
-loadingConfig = {
-  showNoDataBackground: true,
-  noDataBorderColor: '#e74c3c',
-  noDataBackgroundColor: '#fff5f5'
-};
-```
+**Important** : Highcharts nécessite une licence commerciale pour une utilisation professionnelle. Consultez la [page de licence Highcharts](https://www.highcharts.com/license) pour plus d'informations.
 
-**Avec icône personnalisée :**
-```typescript
-loadingConfig = {
-  showNoDataIcon: true,
-  noDataIcon: '🔍',
-  noDataMessage: 'Aucune donnée trouvée'
-};
-```
+### Documentation Highcharts
 
-**Style sombre :**
-```typescript
-loadingConfig = {
-  backgroundColor: '#2c3e50',
-  textColor: '#ffffff',
-  noDataBackgroundColor: '#34495e',
-  noDataTextColor: '#ffffff',
-  spinnerColor: '#3498db'
-};
-```
+Pour aller plus loin avec les options Highcharts :
 
-#### Propriétés complètes
+- [Documentation officielle Highcharts](https://www.highcharts.com/docs/index)
+- [API Reference Highcharts](https://api.highcharts.com/highcharts/)
+- [Exemples Highcharts](https://www.highcharts.com/demo)
 
-| Propriété | Type | Défaut | Description |
-|-----------|------|--------|-------------|
-| `text` | `string` | `'Chargement des données...'` | Texte affiché pendant le chargement |
-| `showText` | `boolean` | `true` | Afficher ou masquer le texte de chargement |
-| `showSpinner` | `boolean` | `false` | Afficher ou masquer le spinner |
-| `backgroundColor` | `string` | `'#ffffff'` | Couleur de fond de l'écran de chargement |
-| `textColor` | `string` | `'#666666'` | Couleur du texte de chargement |
-| `spinnerColor` | `string` | `'#0066cc'` | Couleur du spinner |
-| `noDataMessage` | `string` | `'Aucune donnée disponible'` | Message affiché quand aucune donnée |
-| `showNoDataBackground` | `boolean` | `false` | Afficher un arrière-plan pour l'état vide |
-| `noDataBackgroundColor` | `string` | `'#f8f9fa'` | Couleur de fond de l'état vide |
-| `noDataBorderColor` | `string` | `'#ddd'` | Couleur de bordure de l'état vide |
-| `noDataTextColor` | `string` | `'#666666'` | Couleur du texte de l'état vide |
-| `showNoDataIcon` | `boolean` | `false` | Afficher une icône dans l'état vide |
-| `noDataIcon` | `string` | `'📊'` | Icône à afficher (emoji ou texte) |
+---
 
-### Options spécifiques à Highcharts
-
-Vous pouvez passer des options spécifiques à Highcharts via la propriété `options`:
-
-```typescript
-maConfig = {
-  // Configuration jQuery-Charts standard
-  title: 'Mon graphique',
-  series: [...],
-
-  // Options spécifiques Highcharts
-  options: {
-    chart: {
-      // Options du graphique Highcharts
-    },
-    plotOptions: {
-      // Options de tracé Highcharts
-    },
-    // ... autres options Highcharts
-  }
-};
-```
-
-## Compatibilité et migration
-
-### Migration vers le système unifié
-
-Si vous utilisiez auparavant des configurations spécifiques à chaque type de graphique, vous pouvez maintenant simplifier votre code :
-
-#### Avant (ancien système)
-```typescript
-// Configuration répétitive pour chaque type
-const configPie = {
-  options: {
-    plotOptions: {
-      pie: {
-        dataLabels: { enabled: true },
-        borderWidth: 2
-      }
-    }
-  }
-};
-
-const configBar = {
-  options: {
-    plotOptions: {
-      bar: {
-        dataLabels: { enabled: true },
-        borderWidth: 2
-      }
-    }
-  }
-};
-```
-
-#### Après (système unifié)
-```typescript
-// Configuration unique réutilisable
-const configUnifiee = {
-  options: {
-    plotOptions: {
-      series: {
-        dataLabels: { enabled: true },
-        borderWidth: 2
-      }
-    }
-  }
-};
-```
-
-### Rétrocompatibilité
-
-Le système unifié est **100% rétrocompatible**. Vos configurations existantes continueront de fonctionner :
-
-```typescript
-// Continue de fonctionner
-const ancienneConfig = {
-  options: {
-    plotOptions: {
-      pie: {
-        dataLabels: { enabled: true }
-      }
-    }
-  }
-};
-
-// Nouvelle syntaxe recommandée
-const nouvelleConfig = {
-  options: {
-    plotOptions: {
-      series: {
-        dataLabels: { enabled: true }  // Sera transformé vers pie.dataLabels
-      }
-    }
-  }
-};
-```
-
-### Avantages de la migration
-
-1. **Code plus maintenable** : Une seule configuration pour tous les types
-2. **Réutilisabilité** : Mêmes configurations utilisables sur différents types
-3. **Simplicité** : Moins de duplication de code
-4. **Flexibilité** : Changement de type sans modification de configuration
-
-## License
-
-Ce package est fourni sous licence Apache 2.0, mais veuillez noter que **Highcharts** nécessite une licence commerciale pour une utilisation professionnelle.
-
-La documentation complète de Highcharts est disponible sur [leur site officiel](https://www.highcharts.com/docs/index).
+**Développé par** : [@oneteme](https://github.com/oneteme)  
+**Repository** : [jquery-charts](https://github.com/oneteme/jquery-charts)

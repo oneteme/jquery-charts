@@ -42,14 +42,14 @@
           left: 0;
           width: 0;
           height: 1px;
-          background-image: linear-gradient(to right, #D72638 2%, #1C1C1E 100%);
+          background-image: linear-gradient(to right, #d72638 2%, #1c1c1e 100%);
           transition: width 0.3s ease;
         }
       }
 
       &:hover {
         h1 {
-          background: linear-gradient(to right, #D72638 2%, #1C1C1E 100%);
+          background: linear-gradient(to right, #d72638 2%, #1c1c1e 100%);
           background-clip: text;
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
@@ -66,27 +66,84 @@
       align-items: center;
       gap: 1rem;
 
-      .download-btn {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1.2rem;
-        background: transparent;
-        color: #2c3e50;
-        border: 1px solid #2c3e50;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
+      .install-dropdown {
+        position: relative;
 
-        .version {
-          font-size: 0.8rem;
-          opacity: 0.6;
-          font-weight: normal;
+        .download-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.6rem 1.2rem;
+          background: transparent;
+          color: #2c3e50;
+          border: 1px solid #2c3e50;
+          border-radius: 6px;
+          font-size: 0.9rem;
+          transition: all 0.2s ease;
+          white-space: nowrap;
+
+          .version {
+            font-size: 0.8rem;
+            opacity: 0.6;
+            font-weight: normal;
+          }
+
+          .arrow {
+            font-size: 0.7rem;
+            margin-left: 0.3rem;
+            transition: transform 0.2s ease;
+
+            &.open {
+              transform: rotate(180deg);
+            }
+          }
+
+          &:hover {
+            background: #2c3e50;
+            color: white;
+          }
         }
 
-        &:hover {
-          background: #2c3e50;
-          color: white;
+        .dropdown-menu {
+          position: absolute;
+          top: calc(100% + 8px);
+          right: 0;
+          background: white;
+          border: 1px solid #e0e0e0;
+          border-radius: 6px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+          overflow: hidden;
+          z-index: 10001;
+          min-width: fit-content;
+          width: auto;
+
+          .dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.6rem 1rem;
+            background: white;
+            border: none;
+            color: #2c3e50;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+            white-space: nowrap;
+
+            .library-name {
+              font-weight: 500;
+            }
+
+            &:hover {
+              background: #f8f9fa;
+              color: #d72638;
+            }
+
+            &:not(:last-child) {
+              border-bottom: 1px solid #f0f0f0;
+            }
+          }
         }
       }
 
@@ -125,7 +182,8 @@
 
         &:hover {
           transform: scale(1.2);
-        }        img {
+        }
+        img {
           height: 24px;
           width: 24px;
           opacity: 0.7;
@@ -141,14 +199,23 @@
 }
 
 .header::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
   height: 1px;
   z-index: 10000;
-  background-image: linear-gradient(to right, #00B4FF 0%, #D72638 16.66%, #1C1C1E 33.33%, #FFC857 50%, #7F00FF 66.66%, #DADADA 83.33%, #00B4FF 100%);
+  background-image: linear-gradient(
+    to right,
+    #00b4ff 0%,
+    #d72638 16.66%,
+    #1c1c1e 33.33%,
+    #ffc857 50%,
+    #7f00ff 66.66%,
+    #dadada 83.33%,
+    #00b4ff 100%
+  );
 }
 
 @media (max-width: 768px) {

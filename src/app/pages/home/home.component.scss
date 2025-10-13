@@ -23,39 +23,66 @@
 
   .library-selector {
     margin: 2rem 0;
-    padding: 1rem;
+    text-align: center;
 
     label {
       display: block;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #1e293b;
       margin-bottom: 1rem;
-      color: #666;
     }
 
-    .toggle-container {
+    .badges-container {
       display: flex;
-      justify-content: center;
       gap: 1rem;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap;
+    }
 
-      button {
-        padding: 0.5rem 1.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background: white;
-        cursor: pointer;
-        transition: all 0.3s ease;
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: default;
+      transition: all 0.3s ease;
+    }
 
-        &.active {
-          background: #3498db;
-          color: white;
-          border-color: #3498db;
-        }
+    .badge-primary {
+      background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
 
-        &.disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          background: #f5f5f5;
-        }
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
       }
+    }
+
+    .badge-secondary {
+      background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(155, 89, 182, 0.3);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
+      }
+    }
+
+    .library-note {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #64748b;
+      line-height: 1.6;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
     }
   }
 
@@ -123,11 +150,6 @@
 
   .welcome-content {
     grid-template-columns: 1fr;
-  }
-
-  .library-selector .toggle-container {
-    flex-direction: column;
-    gap: 0.5rem;
   }
 
   .chart-grid {

@@ -9,18 +9,15 @@
   </div>
 
   <div class="library-selector">
-    <label>Bibliothèque de graphiques :</label>
-    <div class="toggle-container">
-      <button
-        [class.active]="selectedLibrary === 'apexcharts'"
-        (click)="selectLibrary('apexcharts')"
-      >
-        ApexCharts
-      </button>
-      <button [class.disabled]="true" title="Bientôt disponible">
-        HighCharts
-      </button>
+    <label>Bibliothèques de graphiques supportées :</label>
+    <div class="badges-container">
+      <span class="badge badge-primary">ApexCharts</span>
+      <span class="badge badge-secondary">HighCharts</span>
     </div>
+    <p class="library-note">
+      La documentation et les exemples sont actuellement basés sur ApexCharts,
+      mais l'utilisation reste identique avec HighCharts.
+    </p>
   </div>
 
   <div class="welcome-content">
