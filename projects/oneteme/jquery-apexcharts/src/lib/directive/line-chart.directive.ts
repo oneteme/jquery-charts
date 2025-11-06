@@ -2,7 +2,7 @@ import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, 
 import { buildChart, ChartProvider, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import ApexCharts from 'apexcharts';
 import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility, fixToolbarSvgIds } from './utils';
+import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility, fixToolbarSvgIds, setupToolbarObserver } from './utils';
 import { fromPromise } from 'rxjs/internal/observable/innerFrom';
 
 @Directive({
@@ -15,6 +15,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   private readonly el: ElementRef = inject(ElementRef);
   private readonly ngZone = inject(NgZone);
   private readonly chartInstance = signal<ApexCharts | null>(null);
+  private toolbarObserver: MutationObserver | null = null;
   private _chartConfig: ChartProvider<X, Y>;
   private _options: any;
 
@@ -83,6 +84,7 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
             .then(() => {
               setupScrollPrevention(this.el.nativeElement, this.chartInstance);
               fixToolbarSvgIds(this.el.nativeElement);
+              this.toolbarObserver = setupToolbarObserver(this.el.nativeElement);
               this.debug &&
                 console.log(new Date().getMilliseconds(), 'Rendu du graphique terminé');
             })
@@ -115,6 +117,10 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   ngOnDestroy() {
+    if (this.toolbarObserver) {
+      this.toolbarObserver.disconnect();
+      this.toolbarObserver = null;
+    }
     destroyChart(this.chartInstance);
   }
 
@@ -166,6 +172,9 @@ export class LineChartDirective<X extends XaxisType, Y extends YaxisType>
     return this.ngZone.runOutsideAngular(() =>
       chartInstance
         .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
+        .then(() => {
+          fixToolbarSvgIds(this.el.nativeElement);
+        })
         .catch((error) => {
           console.error('Erreur lors de la mise à jour des options:', error);
           return Promise.resolve();

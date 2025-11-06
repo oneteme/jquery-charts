@@ -190,13 +190,17 @@ export function updateChartOptions(
   options: any,
   redrawPaths: boolean = true,
   animate: boolean = true,
-  updateSyncedCharts: boolean = false
+  updateSyncedCharts: boolean = false,
+  chartElement?: HTMLElement
 ): Promise<void> {
   if (!chartInstance) return Promise.resolve();
 
   return ngZone.runOutsideAngular(() =>
     chartInstance
       .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
+      .then(() => {
+        if (chartElement) fixToolbarSvgIds(chartElement);
+      })
       .catch((error) => {
         console.error('Erreur lors de la mise à jour des options:', error);
         return Promise.resolve();
@@ -323,6 +327,34 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
       }
     });
   });
+}
+
+/**
+ * Configure un observateur pour surveiller les changements de la toolbar et corriger les IDs
+ */
+export function setupToolbarObserver(chartElement: HTMLElement): MutationObserver | null {
+  if (!chartElement) return null;
+
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type === 'childList' || mutation.type === 'attributes') {
+        const toolbar = chartElement.querySelector('.apexcharts-toolbar');
+        if (toolbar) {
+          fixToolbarSvgIds(chartElement);
+          break;
+        }
+      }
+    }
+  });
+
+  // Observer le conteneur du graphique pour détecter les modifications de la toolbar
+  observer.observe(chartElement, {
+    childList: true,
+    subtree: true,
+    attributes: false
+  });
+
+  return observer;
 }
 
 /**
