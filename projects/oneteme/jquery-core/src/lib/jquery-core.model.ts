@@ -1,4 +1,4 @@
-export declare type ChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | string;
+export declare type ChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'map' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
   return (o, idx) => {
@@ -217,7 +217,6 @@ function isUndefined(o: any): boolean {
   return o === undefined;
 }
 
-
 export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   title?: string;
   subtitle?: string;
@@ -232,6 +231,9 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   series?: SerieProvider<X, Y>[];
   options?: any;
   showToolbar?: boolean;
+  mapEndpoint?: string; // Endpoint pour GeoJSON
+  mapParam?: string; // Param URL à lire pour la subdiv
+  mapDefaultValue?: string; // Subdiv défaut si param absent
 }
 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> {

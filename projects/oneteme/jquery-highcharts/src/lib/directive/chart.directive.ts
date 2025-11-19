@@ -1,6 +1,6 @@
-import { Directive, ElementRef, EventEmitter, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart } from '@oneteme/jquery-core';
-import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType, validateChartData, showValidationError, hideValidationError } from './utils';
+import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType, validateChartData, showValidationError, hideValidationError, buildMapUrl, loadGeoJSON } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
@@ -20,6 +20,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   private chart: Highcharts.Chart | null = null;
   private _isLoading: boolean = false;
   private dataValidationError: { title: string; message: string } | null = null;
+  private loadedMapData: any = null; // cache pour le geojson chargé
 
   @Input()
   set isLoading(isLoading: boolean) {
@@ -59,8 +60,35 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       this.debug && console.log('Configuration ou données manquantes');
       return;
     }
+
     this.destroyChart();
-    this.createChart();
+
+    // Si c'est une map avec mapEndpoint, charger le GeoJSON de manière asynchrone
+    if (this.type === 'map' && this.config.mapEndpoint) {
+      this.createMapChartAsync();
+    } else {
+      this.createChart();
+    }
+  }
+
+  private async createMapChartAsync(): Promise<void> {
+    try {
+      const mapUrl = buildMapUrl(this.config.mapEndpoint!, this.config.mapParam, this.config.mapDefaultValue);
+
+      this.debug && console.log('Chargement de la carte depuis:', mapUrl);
+      this.loadedMapData = await loadGeoJSON(mapUrl);
+      this.debug && console.log('GeoJSON chargé avec succès');
+
+      // créer le chart avec les données chargées
+      this.createChart();
+    } catch (error) {
+      console.error('Erreur lors du chargement de la carte:', error);
+      this.dataValidationError = {
+        title: 'Erreur de chargement',
+        message: 'Impossible de charger la carte géographique',
+      };
+      this.createChart(); // créer le chart meme si error pour l'afficher
+    }
   }
 
   private createChart(): void {
@@ -74,7 +102,11 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       const options = this.buildChartOptions();
       sanitizeChartDimensions(options, this.config, element, this.debug);
 
-      this.chart = Highcharts.chart(element, options);
+      if (this.type === 'map') {
+        this.chart = Highcharts.mapChart(element, options);
+      } else {
+        this.chart = Highcharts.chart(element, options);
+      }
 
       // Si nous avons une erreur de validation, afficher le message d'erreur
       if (this.dataValidationError) {
@@ -109,7 +141,37 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   private buildChartOptions(): Highcharts.Options {
-    const chartData = this.processData();
+    // Pour les maps, ne pas utiliser processData() qui transforme les données en tableaux
+    // Les maps ont besoin des données au format objet {code, value}
+    let chartData: { series: any[]; xAxis?: any; yAxis?: any };
+
+    if (this.type === 'map') {
+      // Pour les maps, construire les séries en préservant le format objet
+      const userSeriesOptions = this.config.options?.series || [];
+
+      chartData = {
+        series: this.config.series?.map((serieConfig, index) => {
+          const userOptions = userSeriesOptions[index] || {};
+          return {
+            name: userOptions.name || serieConfig.name || 'Données',
+            data: this.data,
+            joinBy: userOptions.joinBy || ['code', 'code'],
+            type: 'map',
+            ...userOptions,
+          };
+        }) || [
+          {
+            name: userSeriesOptions[0]?.name || 'Données',
+            data: this.data,
+            joinBy: userSeriesOptions[0]?.joinBy || ['code', 'code'],
+            type: 'map',
+            ...userSeriesOptions[0],
+          },
+        ],
+      };
+    } else {
+      chartData = this.processData();
+    }
 
     const baseOptions: Highcharts.Options = {
       chart: {
@@ -170,7 +232,21 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     // Merge avec les options perso
     let finalOptions = baseOptions;
     if (this.config.options) {
-      finalOptions = Highcharts.merge(baseOptions, this.config.options);
+      if (this.type === 'map') {
+        const { series: _, ...optionsWithoutSeries } = this.config.options;
+        finalOptions = Highcharts.merge(baseOptions, optionsWithoutSeries);
+        finalOptions.series = baseOptions.series;
+      } else {
+        finalOptions = Highcharts.merge(baseOptions, this.config.options);
+      }
+    }
+
+    if (this.type === 'map' && this.loadedMapData) {
+      if (!finalOptions.chart) {
+        finalOptions.chart = {};
+      }
+      (finalOptions.chart as any).map = this.loadedMapData;
+      this.debug && console.log('GeoJSON injecté dans les options du chart');
     }
 
     // Unifier les plotOptions.series pour les graphiques simples (AVANT les options critiques)

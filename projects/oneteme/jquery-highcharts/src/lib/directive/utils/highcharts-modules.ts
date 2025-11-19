@@ -6,6 +6,7 @@ import ExportDataModule from 'highcharts/modules/export-data';
 import Funnel from 'highcharts/modules/funnel';
 import Treemap from 'highcharts/modules/treemap';
 import Heatmap from 'highcharts/modules/heatmap';
+import MapModule from 'highcharts/modules/map';
 
 more(Highcharts);
 NoDataToDisplay(Highcharts);
@@ -14,5 +15,6 @@ ExportDataModule(Highcharts);
 Funnel(Highcharts);
 Treemap(Highcharts);
 Heatmap(Highcharts);
+MapModule(Highcharts);
 
 export { Highcharts };

@@ -8,6 +8,7 @@ import * as BubbleConfig from './bubble-config';
 import * as HeatmapConfig from './heatmap-config';
 import * as TreemapConfig from './treemap-config';
 import * as SimpleChartConfig from './simple-chart-config';
+import * as MapConfig from './map-config';
 
 export interface ChartTypeConfigurator {
   isChartType: (type: ChartType) => boolean;
@@ -54,6 +55,12 @@ const CHART_CONFIGURATORS: ChartTypeConfigurator[] = [
     configure: TreemapConfig.configureTreemapChart,
     enforceCritical: TreemapConfig.enforceCriticalTreemapOptions,
     transformData: TreemapConfig.transformDataForTreemap,
+  },
+  {
+    isChartType: MapConfig.isMapChart,
+    configure: MapConfig.configureMapChart,
+    enforceCritical: MapConfig.enforceCriticalMapOptions,
+    transformData: MapConfig.transformDataForMap,
   },
   {
     isChartType: SimpleChartConfig.isSimpleChart,
@@ -174,10 +181,21 @@ export function needsDataConversion(
       )
   );
 
+  const hasMap = series.some(
+    (s) =>
+      s.data &&
+      s.data.some(
+        (p: any) =>
+          (Array.isArray(p) && p.length >= 2 && typeof p[0] === 'string') ||
+          (p && typeof p === 'object' && ('hc-key' in p || 'code' in p))
+      )
+  );
+
   if (hasRange && !RangeConfig.isRangeChart(targetType)) return true;
   if (hasBubble && !BubbleConfig.isBubbleChart(targetType)) return true;
   if (hasHeatmap && !HeatmapConfig.isHeatmapChart(targetType)) return true;
   if (hasTreemap && !TreemapConfig.isTreemapChart(targetType)) return true;
+  if (hasMap && !MapConfig.isMapChart(targetType)) return true;
 
   return false;
 }
@@ -226,6 +244,17 @@ export function detectPreviousChartType(
       )
   );
   if (hasTreemap) return 'treemap';
+
+  const hasMap = series.some(
+    (s) =>
+      s.data &&
+      s.data.some(
+        (p: any) =>
+          (Array.isArray(p) && p.length >= 2 && typeof p[0] === 'string') ||
+          (p && typeof p === 'object' && ('hc-key' in p || 'code' in p))
+      )
+  );
+  if (hasMap) return 'map';
 
   return currentType;
 }
