@@ -21,7 +21,7 @@ export function sanitizeChartDimensions(
 
   if (typeof config.height === 'number' && !isNaN(config.height)) {
     chartOptions.chart.height = config.height;
-  } else if (!chartOptions.chart.height) {
+  } else if (!chartOptions.chart.height || chartOptions.chart.height === '100%') {
     const containerHeight = element.offsetHeight || element.clientHeight;
     if (containerHeight > 0) {
       chartOptions.chart.height = containerHeight;

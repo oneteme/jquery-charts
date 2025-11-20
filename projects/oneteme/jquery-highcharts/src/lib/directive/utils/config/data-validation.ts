@@ -58,7 +58,22 @@ export function validateAndCleanSeriesData(serie: any): any {
         return isValidValue(point.y);
       }
       if ('value' in point) {
-        // Heatmap ou autre
+        // Heatmap, map ou autre
+        // Pour les maps, on vérifie juste que value existe (peut être 0)
+        const hasMapKey =
+          'code' in point ||
+          'hc-key' in point ||
+          'key' in point ||
+          'name' in point;
+        if (hasMapKey) {
+          // Map format: value peut être 0, donc on accepte 0
+          return (
+            point.value !== null &&
+            point.value !== undefined &&
+            typeof point.value === 'number' &&
+            !isNaN(point.value)
+          );
+        }
         return isValidValue(point.value);
       }
       if ('z' in point && 'y' in point) {

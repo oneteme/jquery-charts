@@ -34,7 +34,7 @@ export class BasicTestComponent implements OnInit {
   dataDelay = 0;
 
   // Types de graphiques possibles pour tester la compatibilité des transformations
-  possibleTypes: ChartType[] = ['bar', 'line', 'map'];
+  possibleTypes: ChartType[] = ['bar', 'line', 'pie', 'map'];
 
   // Configuration unique pour les deux bibliothèques
   private readonly simpleConfig: ChartProvider<string, number> = {

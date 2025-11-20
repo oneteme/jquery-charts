@@ -234,6 +234,8 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   mapEndpoint?: string; // Endpoint pour GeoJSON
   mapParam?: string; // Param URL à lire pour la subdiv
   mapDefaultValue?: string; // Subdiv défaut si param absent
+  mapColor?: 'blue' | 'green' | 'purple' | 'orange' | 'grey' | string; // couleur pour les maps
+  mapJoinBy?: [string, string]; // JoinBy par défaut pour les maps (ex: ['code', 'code'])
 }
 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> {
