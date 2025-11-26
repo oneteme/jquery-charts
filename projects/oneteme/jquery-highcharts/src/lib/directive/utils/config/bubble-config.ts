@@ -6,7 +6,6 @@ export function isBubbleChart(chartType: string): boolean {
   return chartType === 'bubble';
 }
 
-// format bubble [x, y, z]
 function hasBubbleFormat(data: any[]): boolean {
   if (!data || data.length === 0) return false;
 
@@ -38,7 +37,6 @@ function transformToBubble(
   if (!series || series.length === 0) return series;
 
   if (mode === 'per-series') {
-    // Calculer z indépendamment pour chaque série
     return series.map((serie) => {
       if (!serie.data) return serie;
 
@@ -88,7 +86,6 @@ function transformToBubble(
     });
   }
 
-  // Mode global (comportement par défaut)
   const allYValues: number[] = [];
   series.forEach((serie) => {
     if (serie.data) {
@@ -108,13 +105,11 @@ function transformToBubble(
   return series.map((serie) => {
     if (!serie.data) return serie;
 
-    // Sauvegarder les données originales
     const originalData = [...serie.data];
 
     const bubbleData = serie.data.map((point: any) => {
       const { x, y, z } = extractValues(point);
 
-      // Si déjà format bubble, garder tel quel
       if (z !== null && z !== undefined) {
         return point;
       }
@@ -138,7 +133,6 @@ function transformToBubble(
       [ORIGINAL_DATA_SYMBOL]: originalData,
     };
 
-    // Enregistrer la transformation
     trackTransformation(
       transformedSerie,
       'standard',
@@ -150,15 +144,10 @@ function transformToBubble(
   });
 }
 
-/**
- * TRANSFORMATION INVERSE : Données [x, y, z] → [x, y]
- * Utilise les données originales si disponibles (mémoire)
- */
 function transformFromBubble(series: any[]): any[] {
   if (!series || series.length === 0) return series;
 
   return series.map((serie) => {
-    // Si on a des données originales sauvegardées, les réutiliser
     if (serie[ORIGINAL_DATA_SYMBOL]) {
       return {
         ...serie,
@@ -166,12 +155,11 @@ function transformFromBubble(series: any[]): any[] {
       };
     }
 
-    // Sinon, simplement retirer z
     if (!serie.data) return serie;
 
     const standardData = serie.data.map((point: any) => {
       if (Array.isArray(point) && point.length >= 3) {
-        return [point[0], point[1]]; // Garder seulement x, y
+        return [point[0], point[1]];
       }
       if (typeof point === 'object' && point !== null && 'z' in point) {
         const { z, ...rest } = point;
@@ -193,28 +181,24 @@ export function transformDataForBubble(
 ): any[] {
   if (!series || series.length === 0) return series;
 
-  // Validation et nettoyage des données
   series = validateAndCleanData(series);
   if (series.length === 0) return series;
 
   const alreadyBubble = series.some((serie) => hasBubbleFormat(serie.data));
 
   if (targetIsBubble) {
-    // Transformation vers bubble
     if (alreadyBubble) {
-      return series; // Déjà au bon format
+      return series;
     }
     return transformToBubble(series);
   } else {
-    // Transformation depuis bubble
     if (!alreadyBubble) {
-      return series; // Pas au format bubble, rien à faire
+      return series;
     }
     return transformFromBubble(series);
   }
 }
 
-// Configure les options par défaut pour les graphiques bubble
 export function configureBubbleChart(
   options: Highcharts.Options,
   chartType: string
@@ -245,7 +229,6 @@ export function configureBubbleChart(
   };
 }
 
-// Force les configurations critiques pour bubble après le merge
 export function enforceCriticalBubbleOptions(
   options: Highcharts.Options,
   chartType: string

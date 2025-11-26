@@ -11,6 +11,7 @@ export * from './config/scatter-config';
 export * from './config/bubble-config';
 export * from './config/heatmap-config';
 export * from './config/treemap-config';
+export * from './config/map-config';
 export * from './config/simple-chart-config';
 export * from './config/memory-symbols';
 export * from './config/data-validation';

@@ -8,16 +8,21 @@ import * as BubbleConfig from './bubble-config';
 import * as HeatmapConfig from './heatmap-config';
 import * as TreemapConfig from './treemap-config';
 import * as SimpleChartConfig from './simple-chart-config';
+import * as MapConfig from './map-config';
 
 export interface ChartTypeConfigurator {
   isChartType: (type: ChartType) => boolean;
-  configure?: (options: Highcharts.Options, type: ChartType) => void;
+  configure?: (
+    options: Highcharts.Options,
+    type: ChartType,
+    config?: any
+  ) => void;
   enforceCritical?: (options: Highcharts.Options, type: ChartType) => void;
   transformData?: (
     series: any[],
     targetIsSpecialFormat: boolean,
     categories?: any[]
-  ) => any[] | { series: any[]; yCategories?: string[] };
+  ) => any[] | { series: any[]; yCategories?: string[]; categories?: string[] };
 }
 
 const CHART_CONFIGURATORS: ChartTypeConfigurator[] = [
@@ -56,6 +61,12 @@ const CHART_CONFIGURATORS: ChartTypeConfigurator[] = [
     transformData: TreemapConfig.transformDataForTreemap,
   },
   {
+    isChartType: MapConfig.isMapChart,
+    configure: MapConfig.configureMapChart,
+    enforceCritical: MapConfig.enforceCriticalMapOptions,
+    transformData: MapConfig.transformDataForMap,
+  },
+  {
     isChartType: SimpleChartConfig.isSimpleChart,
     configure: SimpleChartConfig.configureSimpleChart,
     enforceCritical: SimpleChartConfig.enforceCriticalSimpleOptions,
@@ -65,11 +76,12 @@ const CHART_CONFIGURATORS: ChartTypeConfigurator[] = [
 
 export function applyChartConfigurations(
   options: Highcharts.Options,
-  chartType: ChartType
+  chartType: ChartType,
+  config?: any
 ): void {
   CHART_CONFIGURATORS.forEach((configurator) => {
     if (configurator.isChartType(chartType) && configurator.configure) {
-      configurator.configure(options, chartType);
+      configurator.configure(options, chartType, config);
     }
   });
 }
@@ -90,9 +102,10 @@ export function transformChartData(
   currentType: ChartType,
   targetType: ChartType,
   categories?: any[]
-): { series: any[]; yCategories?: string[] } {
+): { series: any[]; yCategories?: string[]; categories?: string[] } {
   let transformedSeries: any[] = series;
   let yCategories: string[] | undefined;
+  let extractedCategories: string[] | undefined;
 
   if (currentType !== targetType) {
     const currentConfigurator = CHART_CONFIGURATORS.find((c) =>
@@ -109,6 +122,7 @@ export function transformChartData(
       } else {
         transformedSeries = result.series;
         yCategories = result.yCategories;
+        extractedCategories = result.categories;
       }
     }
   }
@@ -120,17 +134,24 @@ export function transformChartData(
     const result = targetConfigurator.transformData(
       transformedSeries,
       true,
-      categories
+      extractedCategories || categories
     );
     if (Array.isArray(result)) {
       transformedSeries = result;
     } else {
       transformedSeries = result.series;
       yCategories = result.yCategories;
+      if (!extractedCategories && result.categories) {
+        extractedCategories = result.categories;
+      }
     }
   }
 
-  return { series: transformedSeries, yCategories };
+  return {
+    series: transformedSeries,
+    yCategories,
+    categories: extractedCategories,
+  };
 }
 
 export function needsDataConversion(
@@ -174,10 +195,21 @@ export function needsDataConversion(
       )
   );
 
+  const hasMap = series.some(
+    (s) =>
+      s.data &&
+      s.data.some(
+        (p: any) =>
+          (Array.isArray(p) && p.length >= 2 && typeof p[0] === 'string') ||
+          (p && typeof p === 'object' && ('hc-key' in p || 'code' in p))
+      )
+  );
+
   if (hasRange && !RangeConfig.isRangeChart(targetType)) return true;
   if (hasBubble && !BubbleConfig.isBubbleChart(targetType)) return true;
   if (hasHeatmap && !HeatmapConfig.isHeatmapChart(targetType)) return true;
   if (hasTreemap && !TreemapConfig.isTreemapChart(targetType)) return true;
+  if (hasMap && !MapConfig.isMapChart(targetType)) return true;
 
   return false;
 }
@@ -226,6 +258,17 @@ export function detectPreviousChartType(
       )
   );
   if (hasTreemap) return 'treemap';
+
+  const hasMap = series.some(
+    (s) =>
+      s.data &&
+      s.data.some(
+        (p: any) =>
+          (Array.isArray(p) && p.length >= 2 && typeof p[0] === 'string') ||
+          (p && typeof p === 'object' && ('hc-key' in p || 'code' in p))
+      )
+  );
+  if (hasMap) return 'map';
 
   return currentType;
 }

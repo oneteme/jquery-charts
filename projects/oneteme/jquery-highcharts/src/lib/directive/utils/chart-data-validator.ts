@@ -24,11 +24,58 @@ export function validateChartData(
     return validateRangeChartData(series, chartType);
   }
 
+  if (isMapChart(chartType)) {
+    return validateMapChartData(series, chartType);
+  }
+
   return { isValid: true };
 }
 
 function isRangeChart(chartType: ChartType): boolean {
   return ['columnrange', 'arearange', 'areasplinerange'].includes(chartType);
+}
+
+function isMapChart(chartType: ChartType): boolean {
+  return chartType === 'map';
+}
+
+function validateMapChartData(
+  series: any[],
+  chartType: ChartType
+): ValidationResult {
+  const hasMapFormat = series.some((s) => {
+    const data = s.data || [];
+    return data.some((point: any) => {
+      if (
+        Array.isArray(point) &&
+        point.length >= 2 &&
+        typeof point[0] === 'string'
+      ) {
+        return true;
+      }
+      if (typeof point === 'object' && point !== null) {
+        const hasKey =
+          'code' in point ||
+          'hc-key' in point ||
+          'key' in point ||
+          'name' in point;
+        const hasValue = 'value' in point || 'y' in point;
+        return hasKey && hasValue;
+      }
+      return false;
+    });
+  });
+
+  if (!hasMapFormat) {
+    return {
+      isValid: false,
+      errorTitle: 'Données incompatibles',
+      errorMessage:
+        'Les données doivent être au format map: [{code: "XX", value: 123}] ou [["code", value]]',
+    };
+  }
+
+  return { isValid: true };
 }
 
 function validateRangeChartData(

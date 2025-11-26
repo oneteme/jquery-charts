@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ChartProvider, ChartType, field } from '@oneteme/jquery-core';
 import { ApexChartTestComponent } from './apexcharts-chart-test/apexcharts-chart-test.component';
 import { HighchartsTestComponent } from './highcharts-test/highcharts-test.component';
+import { mapChartConfig, mapChartData } from './highcharts-test/map-test-data';
 
 @Component({
   selector: 'app-basic-test',
@@ -33,7 +34,7 @@ export class BasicTestComponent implements OnInit {
   dataDelay = 0;
 
   // Types de graphiques possibles pour tester la compatibilité des transformations
-  possibleTypes: ChartType[] = [ 'pie', 'arearange' ];
+  // possibleTypes: ChartType[] = ['bar', 'line', 'pie', 'map'];
 
   // Configuration unique pour les deux bibliothèques
   private readonly simpleConfig: ChartProvider<string, number> = {
@@ -96,7 +97,12 @@ export class BasicTestComponent implements OnInit {
 
     // Simuler un délai de chargement
     setTimeout(() => {
-      if (this.useSimpleData) {
+      // Configuration spéciale pour les maps
+      if (this.chartType === 'map') {
+        this.chartConfig = { ...mapChartConfig };
+        this.chartData = [...mapChartData];
+        console.log('Chargement des données MAP:', this.chartData);
+      } else if (this.useSimpleData) {
         this.chartConfig = { ...this.simpleConfig };
         this.chartData = [...this.simpleData];
         console.log('Chargement des données SIMPLES:', this.chartData);

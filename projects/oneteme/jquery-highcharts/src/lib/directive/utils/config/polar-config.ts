@@ -116,7 +116,6 @@ function configureRadialBarType(options: Highcharts.Options): void {
   }
 }
 
-// Détermine si un type de graphique est polaire
 export function isPolarChart(chartType: string): boolean {
   return ['polar', 'radar', 'radarArea', 'radialBar'].includes(chartType);
 }
