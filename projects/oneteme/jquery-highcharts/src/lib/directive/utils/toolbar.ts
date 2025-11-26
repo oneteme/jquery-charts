@@ -97,19 +97,6 @@ export function setupToolbar(options: ToolbarOptions): void {
     removeToolbar(chart);
     const container = chart.container;
 
-    // à voir si on le remet. Pour fair eplus d'espace a la toolbar si pas de titre
-    // const hasTitle = chart.options.title?.text && chart.options.title.text !== '';
-    // const hasSubtitle = chart.options.subtitle?.text && chart.options.subtitle.text !== '';
-
-    // if (!hasTitle && !hasSubtitle) {
-    //   chart.update({
-    //     chart: {
-    //       ...chart.options.chart,
-    //       spacingTop: 45
-    //     }
-    //   }, false);
-    // }
-
     const toolbar = document.createElement('div');
     toolbar.className = 'highcharts-custom-toolbar';
     toolbar.style.position = 'absolute';

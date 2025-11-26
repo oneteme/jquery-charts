@@ -103,24 +103,20 @@ export function transformChartData(
   targetType: ChartType,
   categories?: any[]
 ): { series: any[]; yCategories?: string[]; categories?: string[] } {
-  console.log('🔄 transformChartData appelé:', { currentType, targetType, seriesLength: series?.length, categories });
   let transformedSeries: any[] = series;
   let yCategories: string[] | undefined;
   let extractedCategories: string[] | undefined;
 
   if (currentType !== targetType) {
-    console.log('🔄 Transformation nécessaire de', currentType, 'vers', targetType);
     const currentConfigurator = CHART_CONFIGURATORS.find((c) =>
       c.isChartType(currentType)
     );
     if (currentConfigurator?.transformData) {
-      console.log('📤 Appel transformData du configurateur source:', currentType);
       const result = currentConfigurator.transformData(
         transformedSeries,
         false,
         categories
       );
-      console.log('📤 Résultat transformation source:', result);
       if (Array.isArray(result)) {
         transformedSeries = result;
       } else {
@@ -128,8 +124,6 @@ export function transformChartData(
         yCategories = result.yCategories;
         extractedCategories = result.categories;
       }
-    } else {
-      console.log('⚠️ Pas de transformData pour le type source:', currentType);
     }
   }
 
@@ -137,13 +131,11 @@ export function transformChartData(
     c.isChartType(targetType)
   );
   if (targetConfigurator?.transformData) {
-    console.log('📥 Appel transformData du configurateur cible:', targetType);
     const result = targetConfigurator.transformData(
       transformedSeries,
       true,
       extractedCategories || categories
     );
-    console.log('📥 Résultat transformation cible:', result);
     if (Array.isArray(result)) {
       transformedSeries = result;
     } else {
@@ -153,11 +145,8 @@ export function transformChartData(
         extractedCategories = result.categories;
       }
     }
-  } else {
-    console.log('⚠️ Pas de transformData pour le type cible:', targetType);
   }
 
-  console.log('✅ Résultat final transformChartData:', { series: transformedSeries, yCategories, categories: extractedCategories });
   return {
     series: transformedSeries,
     yCategories,
@@ -216,25 +205,11 @@ export function needsDataConversion(
       )
   );
 
-  console.log('🔍 needsDataConversion check:', { 
-    targetType, 
-    hasRange, 
-    hasBubble, 
-    hasHeatmap, 
-    hasTreemap, 
-    hasMap,
-    isMapTarget: MapConfig.isMapChart(targetType),
-    sampleData: series[0]?.data?.[0]
-  });
-
   if (hasRange && !RangeConfig.isRangeChart(targetType)) return true;
   if (hasBubble && !BubbleConfig.isBubbleChart(targetType)) return true;
   if (hasHeatmap && !HeatmapConfig.isHeatmapChart(targetType)) return true;
   if (hasTreemap && !TreemapConfig.isTreemapChart(targetType)) return true;
-  if (hasMap && !MapConfig.isMapChart(targetType)) {
-    console.log('✅ Conversion MAP nécessaire !');
-    return true;
-  }
+  if (hasMap && !MapConfig.isMapChart(targetType)) return true;
 
   return false;
 }

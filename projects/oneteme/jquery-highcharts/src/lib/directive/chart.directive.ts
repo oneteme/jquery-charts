@@ -1,53 +1,13 @@
-import {
-  Directive,
-  ElementRef,
-  EventEmitter,
-  Input,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
-import {
-  ChartProvider,
-  ChartType,
-  XaxisType,
-  YaxisType,
-  buildChart,
-} from '@oneteme/jquery-core';
-import {
-  Highcharts,
-  sanitizeChartDimensions,
-  ChartCustomEvent,
-  setupToolbar,
-  updateChartLoadingState,
-  configureLoadingOptions,
-  transformDataForSimpleChart,
-  unifyPlotOptionsForChart,
-  applyChartConfigurations,
-  enforceCriticalOptions,
-  transformChartData,
-  needsDataConversion,
-  detectPreviousChartType,
-  validateChartData,
-  showValidationError,
-  hideValidationError,
-  buildMapUrl,
-  loadGeoJSON,
-  extractCodeToNameMapping,
-  replaceCodesWithNames,
-  createMapTooltipFormatter,
-  createSimpleMapTooltipFormatter,
-  DEFAULT_MAP_JOINBY,
-  buildMapSeries,
-} from './utils';
+import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, AfterViewInit, Output, SimpleChanges, HostBinding } from '@angular/core';
+import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart } from '@oneteme/jquery-core';
+import {Highcharts,sanitizeChartDimensions,ChartCustomEvent,setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion,detectPreviousChartType,validateChartData,showValidationError, hideValidationError, buildMapUrl, loadGeoJSON, extractCodeToNameMapping, replaceCodesWithNames, createMapTooltipFormatter, createSimpleMapTooltipFormatter, DEFAULT_MAP_JOINBY, buildMapSeries } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
   standalone: true,
 })
 export class ChartDirective<X extends XaxisType, Y extends YaxisType>
-  implements OnChanges, OnDestroy
+  implements OnChanges, OnDestroy, AfterViewInit
 {
   @Input({ required: true }) type!: ChartType;
   @Input({ required: true }) config!: ChartProvider<X, Y>;
@@ -57,11 +17,17 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   @Input() canPivot: boolean = false;
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 
+  @HostBinding('style.width') width = '100%';
+  @HostBinding('style.height') height = '100%';
+  @HostBinding('style.display') display = 'block';
+  @HostBinding('style.overflow') overflow = 'hidden';
+
   private chart: Highcharts.Chart | null = null;
   private _isLoading: boolean = false;
   private dataValidationError: { title: string; message: string } | null = null;
-  private loadedMapData: any = null; // cache pour le geojson chargé
-  private mapCodeToName: Map<string, string> = new Map(); // mapping code région → nom
+  private loadedMapData: any = null;
+  private mapCodeToName: Map<string, string> = new Map();
+  private resizeObserver: ResizeObserver | null = null;
 
   @Input()
   set isLoading(isLoading: boolean) {
@@ -98,6 +64,24 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   ngOnDestroy(): void {
     this.destroyChart();
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      this.resizeObserver = null;
+    }
+  }
+
+  ngAfterViewInit(): void {
+    if (this.elementRef.nativeElement) {
+      this.resizeObserver = new ResizeObserver((entries) => {
+        if (this.chart && entries[0]) {
+          const { width, height } = entries[0].contentRect;
+          if (width > 0 && height > 0) {
+            this.chart.setSize(width, height, false);
+          }
+        }
+      });
+      this.resizeObserver.observe(this.elementRef.nativeElement);
+    }
   }
 
   private updateChart(): void {
@@ -108,11 +92,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
     this.destroyChart();
 
-    // Si c'est une map avec mapEndpoint, charger le GeoJSON de manière asynchrone
     if (this.type === 'map' && this.config.mapEndpoint) {
       this.createMapChartAsync();
     } else {
-      // Même pour les types non-map, il faut attendre si les données sont au format map
       this.createChart();
     }
   }
@@ -126,10 +108,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       );
 
       this.loadedMapData = await loadGeoJSON(mapUrl);
-      // Extraire le mapping code → nom depuis le GeoJSON
       this.mapCodeToName = extractCodeToNameMapping(this.loadedMapData);
 
-      // créer le chart avec les données chargées
       this.createChart();
     } catch (error) {
       console.error('Erreur lors du chargement de la carte:', error);
@@ -150,12 +130,20 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       }
 
       const options = await this.buildChartOptions();
-      sanitizeChartDimensions(options, this.config, element, this.debug);
+      sanitizeChartDimensions(options, this.config);
 
       if (this.type === 'map') {
         this.chart = (Highcharts as any).mapChart(element, options);
       } else {
         this.chart = Highcharts.chart(element, options);
+      }
+
+      // Force un premier redimensionnement si nécessaire
+      if (this.chart) {
+        const { width, height } = element.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          this.chart.setSize(width, height, false);
+        }
       }
 
       // Si nous avons une erreur de validation, afficher le message d'erreur
@@ -216,11 +204,15 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         console.log('🔍 Détection type précédent:', {
           previousType,
           mapCodeToNameSize: this.mapCodeToName.size,
-          hasMapEndpoint: !!this.config.mapEndpoint
+          hasMapEndpoint: !!this.config.mapEndpoint,
         });
-        
+
         // Si les données sont au format map et qu'on n'a pas encore chargé le GeoJSON, le charger maintenant
-        if (previousType === 'map' && this.mapCodeToName.size === 0 && this.config.mapEndpoint) {
+        if (
+          previousType === 'map' &&
+          this.mapCodeToName.size === 0 &&
+          this.config.mapEndpoint
+        ) {
           console.log('🌍 Chargement du GeoJSON pour mapping code→nom...');
           const mapUrl = buildMapUrl(
             this.config.mapEndpoint,
@@ -230,31 +222,29 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           try {
             this.loadedMapData = await loadGeoJSON(mapUrl);
             this.mapCodeToName = extractCodeToNameMapping(this.loadedMapData);
-            console.log(`✅ Mapping chargé: ${this.mapCodeToName.size} entrées`);
-          } catch (error) {
-            console.error('Erreur lors du chargement du mapping GeoJSON:', error);
-          }
+          } catch (error) { console.error('Erreur lors du chargement du mapping GeoJSON:', error) }
         }
-        
         const result = transformChartData(
           tempSeries,
           previousType,
           this.type,
           undefined
         );
-        
         // Remplacer les codes par les noms si on a le mapping
-        const finalCategories = result.categories && this.mapCodeToName.size > 0
-          ? replaceCodesWithNames(result.categories, this.mapCodeToName)
-          : result.categories;
-        
+        const finalCategories =
+          result.categories && this.mapCodeToName.size > 0
+            ? replaceCodesWithNames(result.categories, this.mapCodeToName)
+            : result.categories;
+
         // Pour les graphiques simples (pie, donut, funnel), créer directement les séries au bon format
         if (this.isSimpleChart() && finalCategories && result.series[0]?.data) {
-          const formattedData = result.series[0].data.map((value: any, index: number) => ({
-            name: finalCategories[index] || `Item ${index + 1}`,
-            y: typeof value === 'number' ? value : value.y || value
-          }));
-          
+          const formattedData = result.series[0].data.map(
+            (value: any, index: number) => ({
+              name: finalCategories[index] || `Item ${index + 1}`,
+              y: typeof value === 'number' ? value : value.y || value,
+            })
+          );
+
           chartData = {
             series: [
               {
@@ -263,7 +253,6 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
               },
             ],
           } as any;
-          
           // Ajouter le tooltip personnalisé pour les graphiques simples
           if (this.mapCodeToName.size > 0) {
             chartData.tooltip = createSimpleMapTooltipFormatter();
@@ -272,24 +261,25 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           // Pour les graphiques complexes (bar, line, etc.)
           chartData = {
             series: result.series,
-            xAxis: finalCategories ? { 
-              categories: finalCategories,
-              title: { text: this.config.xtitle || '' }
-            } : { title: { text: this.config.xtitle || '' } },
-            yAxis: result.yCategories ? { 
-              categories: result.yCategories,
-              title: { text: this.config.ytitle || '' }
-            } : { 
-              title: { text: this.config.ytitle || '' } 
-            },
+            xAxis: finalCategories
+              ? {
+                  categories: finalCategories,
+                  title: { text: this.config.xtitle || '' },
+                }
+              : { title: { text: this.config.xtitle || '' } },
+            yAxis: result.yCategories
+              ? {
+                  categories: result.yCategories,
+                  title: { text: this.config.ytitle || '' },
+                }
+              : {
+                  title: { text: this.config.ytitle || '' },
+                },
           } as any;
-          
+
           // Ajouter le tooltip personnalisé si mapping disponible
           if (this.mapCodeToName.size > 0) {
             chartData.tooltip = createMapTooltipFormatter();
-            this.debug && console.log('✅ Tooltip ajouté avec mapping:', this.mapCodeToName.size, 'entrées');
-          } else {
-            this.debug && console.log('⚠️ Pas de mapping disponible pour le tooltip');
           }
         }
       } else {
@@ -300,8 +290,6 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     const baseOptions: Highcharts.Options = {
       chart: {
         type: this.getHighchartsType(),
-        height: this.config.height || undefined,
-        width: this.config.width || undefined,
         backgroundColor: 'transparent',
       },
       title: { text: this.config.title || '' },
@@ -337,7 +325,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     }
 
     // Appliquer toutes les configurations spé au type de graph (via registry)
-    applyChartConfigurations(baseOptions, this.type);
+    applyChartConfigurations(baseOptions, this.type, this.config);
 
     // donut ? config spé
     if (this.type === 'donut') {
@@ -350,7 +338,6 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       };
     }
 
-    // Options spé pour graph pie
     if (this.type === 'pie') {
       baseOptions.plotOptions = {
         pie: {
@@ -360,13 +347,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       };
     }
 
-    // Merge avec les options perso
     let finalOptions = baseOptions;
     if (this.config.options) {
-      // Toujours exclure les séries du merge pour préserver les données transformées
       const { series: _, ...optionsWithoutSeries } = this.config.options;
       finalOptions = Highcharts.merge(baseOptions, optionsWithoutSeries);
-      // Toujours utiliser les séries de baseOptions (qui contiennent les données)
       finalOptions.series = baseOptions.series;
     }
 
@@ -378,20 +362,37 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       this.debug && console.log('GeoJSON injecté dans les options du chart');
     }
 
-    // Unifier les plotOptions.series pour les graphiques simples (AVANT les options critiques)
     unifyPlotOptionsForChart(finalOptions, this.type, this.debug);
 
-    // Force toutes les configurations critiques après le merge et l'unification (via registry)
     enforceCriticalOptions(finalOptions, this.type);
 
-    // Configurer les options de loading
     configureLoadingOptions(finalOptions);
+
+    const originalRender = finalOptions.chart?.events?.render;
+    const self = this;
+
+    if (!finalOptions.chart) finalOptions.chart = {};
+    if (!finalOptions.chart.events) finalOptions.chart.events = {};
+
+    finalOptions.chart.events.render = function (this: Highcharts.Chart) {
+      if (originalRender) {
+        originalRender.apply(this, arguments as any);
+      }
+
+      const hasData = Array.isArray(self.data) && self.data.length > 0;
+      if (self.isLoading && !hasData) {
+        const chart = this as any;
+        if (chart.customLabel) chart.customLabel.hide();
+        if (chart.customTotalLabel) chart.customTotalLabel.hide();
+        if (chart.seriesGroup) chart.seriesGroup.hide();
+        if (chart.subtitleGroup) chart.subtitleGroup.hide();
+      }
+    };
 
     return finalOptions;
   }
 
   private processData(): { series: any[]; xAxis?: any; yAxis?: any } {
-    // Réinitialiser l'erreur de validation au début du traitement
     this.dataValidationError = null;
 
     if (this.isSimpleChart()) {
@@ -402,10 +403,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   private processSimpleChart(): { series: any[] } {
-    // Vérifier si les données sont au format map et les convertir
     const tempSeries = [{ data: this.data }];
     let dataToUse = this.data;
-    
     if (needsDataConversion(tempSeries, this.type)) {
       const previousType = detectPreviousChartType(tempSeries, this.type);
       const result = transformChartData(
@@ -414,28 +413,31 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         this.type,
         undefined
       );
-      
-      // Extraire les données transformées
       if (result.series && result.series[0]?.data) {
-        // Pour les graphiques simples issus de map, créer des objets {name, y}
         if (result.categories && this.mapCodeToName.size > 0) {
-          const categories = replaceCodesWithNames(result.categories, this.mapCodeToName);
-          dataToUse = result.series[0].data.map((value: any, index: number) => ({
-            name: categories[index] || `Item ${index + 1}`,
-            y: typeof value === 'number' ? value : value.y || value
-          }));
-          this.debug && console.log('[Simple Chart - Map Transform] Données avec noms:', dataToUse.slice(0, 3));
+          const categories = replaceCodesWithNames(
+            result.categories,
+            this.mapCodeToName
+          );
+          dataToUse = result.series[0].data.map(
+            (value: any, index: number) => ({
+              name: categories[index] || `Item ${index + 1}`,
+              y: typeof value === 'number' ? value : value.y || value,
+            })
+          );
+          this.debug &&
+            console.log(
+              '[Simple Chart - Map Transform] Données avec noms:',
+              dataToUse.slice(0, 3)
+            );
         } else {
           dataToUse = result.series[0].data;
         }
       }
     }
-    
     const chartConfig = { ...this.config, continue: false };
 
-    // Pour les graphiques simples, ne pas passer par buildChart si on a déjà des données formatées
     if (dataToUse !== this.data && dataToUse[0]?.name && dataToUse[0]?.y) {
-      // Données déjà formatées depuis la transformation map
       return {
         series: [
           {
@@ -446,10 +448,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       };
     }
 
-    // D'abord essayer de construire un graph complexe pour détecter le multi-séries
     const complexChart = buildChart(dataToUse, chartConfig, null);
 
-    // Si plusieurs séries, agréger les données (chaque série = une part du graph simple)
     if (complexChart.series && complexChart.series.length > 1) {
       const aggregatedData = transformDataForSimpleChart(
         {
@@ -475,14 +475,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     const serieData = complexChart.series[0]?.data || [];
 
     const formattedData = serieData.map((value: any, index: number) => {
-      // Si la valeur est déjà un objet avec x et y
       if (typeof value === 'object' && value !== null) {
         return {
           name: categories[value.x] || categories[index] || `Item ${index + 1}`,
           y: value.y !== undefined ? value.y : value,
         };
       }
-      // Sinon, c'est juste une valeur numérique
       return {
         name: categories[index] || `Item ${index + 1}`,
         y: value,
@@ -510,28 +508,21 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     const commonChart = buildChart(this.data, chartConfig, null);
     let categories = commonChart.categories || [];
 
-    // Transformer les données selon le type de graphique (via registry intelligent)
     let series = commonChart.series || [];
     let yCategories: string[] | undefined;
 
-    // Valider que les données sont compatibles avec le type de graphique
     const validation = validateChartData(series, this.type);
 
     if (!validation.isValid) {
-      // Si c'est juste qu'il n'y a pas de données (pas une incompatibilité)
       if (validation.isNoData) {
-        // Ne pas stocker d'erreur de validation, juste retourner des séries vides
-        // Le système de loading gérera l'affichage de "Aucune donnée"
         this.dataValidationError = null;
       } else {
-        // Erreur de compatibilité : stocker l'erreur pour l'afficher
         this.dataValidationError = {
           title: validation.errorTitle || 'Erreur',
           message: validation.errorMessage || 'Données incompatibles',
         };
       }
 
-      // Retourner un état qui déclenchera l'affichage du message approprié
       return {
         series: [],
         xAxis: {
@@ -541,10 +532,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       };
     }
 
-    // Réinitialiser l'erreur si les données sont valides
     this.dataValidationError = null;
-    
-    // Si les données sont dans un format spécial non compatible avec le type cible, reconvertir
     if (needsDataConversion(series, this.type)) {
       const previousType = detectPreviousChartType(series, this.type);
       const result = transformChartData(
@@ -555,12 +543,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       );
       series = result.series;
       yCategories = result.yCategories;
-      // Utiliser les catégories extraites si disponibles
       if (result.categories && result.categories.length > 0) {
         categories = result.categories as any;
       }
     } else {
-      // Appliquer la transformation vers le type cible
       const result = transformChartData(
         series,
         this.type,
@@ -569,7 +555,6 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       );
       series = result.series;
       yCategories = result.yCategories;
-      // Utiliser les catégories extraites si disponibles
       if (result.categories && result.categories.length > 0) {
         categories = result.categories as any;
       }

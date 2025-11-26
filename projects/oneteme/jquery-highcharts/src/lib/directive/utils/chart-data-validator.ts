@@ -43,11 +43,9 @@ function validateMapChartData(
   series: any[],
   chartType: ChartType
 ): ValidationResult {
-  // Vérifier si les données sont au format map
   const hasMapFormat = series.some((s) => {
     const data = s.data || [];
     return data.some((point: any) => {
-      // Format tableau [code, value]
       if (
         Array.isArray(point) &&
         point.length >= 2 &&
@@ -55,7 +53,6 @@ function validateMapChartData(
       ) {
         return true;
       }
-      // Format objet avec code/hc-key/key et value/y
       if (typeof point === 'object' && point !== null) {
         const hasKey =
           'code' in point ||

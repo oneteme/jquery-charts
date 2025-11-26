@@ -28,8 +28,22 @@ const ALL_COMPATIBLE_CHARTS: ChartType[] = [ ...STANDARD_CHARTS, ...SIMPLE_CHART
     [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
     [isLoading]="isLoading"
     (customEvent)="change($event)"
-    style="width: 100%; height: 100%;"
   ></div>`,
+  styles: [
+    `
+      :host {
+        display: block;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+      }
+      :host ::ng-deep .highcharts-container,
+      :host ::ng-deep svg {
+        width: 100% !important;
+        height: 100% !important;
+      }
+    `,
+  ],
 })
 export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   protected _charts: {

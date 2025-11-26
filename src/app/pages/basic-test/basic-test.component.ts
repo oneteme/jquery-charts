@@ -23,7 +23,7 @@ import { mapChartConfig, mapChartData } from './highcharts-test/map-test-data';
 })
 export class BasicTestComponent implements OnInit {
   // Configuration du graphique
-  chartType: ChartType = 'map';
+  chartType: ChartType = 'pie';
   chartConfig: ChartProvider<string, number>;
   chartData: any[] = [];
   isLoadingData = false;
@@ -34,7 +34,7 @@ export class BasicTestComponent implements OnInit {
   dataDelay = 0;
 
   // Types de graphiques possibles pour tester la compatibilité des transformations
-  possibleTypes: ChartType[] = ['bar', 'line', 'pie', 'map'];
+  // possibleTypes: ChartType[] = ['bar', 'line', 'pie', 'map'];
 
   // Configuration unique pour les deux bibliothèques
   private readonly simpleConfig: ChartProvider<string, number> = {
