@@ -13,8 +13,19 @@ Une bibliothèque Angular qui implémente l'interface `@oneteme/jquery-core` en 
 
 ## Installation
 
+Installez la bibliothèque et ses dépendances :
+
 ```bash
-npm install @oneteme/jquery-core @oneteme/jquery-highcharts
+npm install @oneteme/jquery-core @oneteme/jquery-highcharts highcharts
+```
+
+**Versions requises** :
+
+- **Highcharts** : Version **11.4.3** minimum.
+- **Cartes** (Optionnel) : Si vous souhaitez héberger les cartes Highcharts localement (recommandé pour les applications hors ligne ou professionnelles), installez la collection de cartes :
+
+```bash
+npm install @highcharts/map-collection
 ```
 
 **Note importante** : Highcharts nécessite une licence commerciale pour une utilisation professionnelle. Assurez-vous d'acquérir la [licence appropriée](https://www.highcharts.com/license) avant toute utilisation commerciale.
@@ -159,13 +170,13 @@ Nécessitent des données avec `rangeFields(minField, maxField)` :
 ### Inputs du composant
 
 | Input         | Type                  | Requis | Description                                              |
-| ------------- | --------------------- | ------ | -------------------------------------------------------- |
-| `type`        | `ChartType`           | ✅     | Type de graphique à afficher                             |
-| `config`      | `ChartProvider<X, Y>` | ✅     | Configuration du graphique (jquery-core)                 |
-| `data`        | `any[]`               | ✅     | Données à afficher                                       |
-| `isLoading`   | `boolean`             | ❌     | État de chargement (défaut: `false`)                     |
-| `debug`       | `boolean`             | ❌     | Mode debug avec logs console (défaut: `false`)           |
-| `enablePivot` | `boolean`             | ❌     | Active le bouton pivot dans la toolbar (défaut: `false`) |
+| :------------ | :-------------------- | :----- | :------------------------------------------------------- |
+| `type`        | `ChartType`           | Oui    | Type de graphique à afficher                             |
+| `config`      | `ChartProvider<X, Y>` | Oui    | Configuration du graphique (jquery-core)                 |
+| `data`        | `any[]`               | Oui    | Données à afficher                                       |
+| `isLoading`   | `boolean`             | Non    | État de chargement (défaut: `false`)                     |
+| `debug`       | `boolean`             | Non    | Mode debug avec logs console (défaut: `false`)           |
+| `enablePivot` | `boolean`             | Non    | Active le bouton pivot dans la toolbar (défaut: `false`) |
 
 ### Configuration du graphique (ChartProvider)
 
@@ -530,210 +541,35 @@ Voir le fichier `types.ts` pour le mapping complet des propriétés supportées 
 
 ## Architecture
 
-### Vue d'ensemble
+Cette section détaille la structure du projet et le rôle de chaque fichier principal.
 
-jQuery-Highcharts est organisé en plusieurs modules spécialisés pour une meilleure maintenabilité :
+### Structure des fichiers
 
-```
-jquery-highcharts/
-├── src/
-│   ├── public-api.ts                    # API publique
-│   ├── lib/
-│   │   ├── component/
-│   │   │   └── chart.component.ts       # Composant wrapper Angular
-│   │   ├── directive/
-│   │   │   ├── chart.directive.ts       # Directive principale
-│   │   │   └── utils/
-│   │   │       ├── index.ts
-│   │   │       ├── highcharts-modules.ts    # Initialisation Highcharts
-│   │   │       ├── data-aggregation.ts      # Agrégation pour pie/donut
-│   │   │       ├── dimensions.ts            # Gestion width/height
-│   │   │       ├── loading.ts               # États de chargement
-│   │   │       ├── polar-config.ts          # Configuration polaire
-│   │   │       ├── toolbar.ts               # Toolbar de navigation
-│   │   │       └── types.ts                 # Types et mappings
-│   │   └── assets/
-│   │       └── icons/                       # Icônes SVG de la toolbar
-```
+- **src/public-api.ts** : Point d'entrée de la bibliothèque, exportant les modules, composants et services publics.
+- **src/lib/component/chart.component.ts** : Composant Angular `<chart>` agissant comme conteneur principal. Il gère l'interface utilisateur, la barre d'outils et le basculement entre les types de graphiques.
+- **src/lib/directive/chart.directive.ts** : Directive responsable de l'intégration avec Highcharts. Elle gère le cycle de vie du graphique, la transformation des données et l'application des configurations.
 
-### Flux de transformation des données
+### Utilitaires (src/lib/directive/utils/)
 
-```
-Données brutes (data: any[])
-        ↓
-buildChart() ou buildSingleSerieChart() (jquery-core)
-        ↓
-CommonChart<X, Y> (modèle abstrait)
-        ↓
-processData() (chart.directive.ts)
-        ↓
-- processSimpleChart() → transformDataForSimpleChart() → Agrégation
-- processComplexChart() → Conversion multi-séries
-        ↓
-Options Highcharts (Highcharts.Options)
-        ↓
-- configurePolarChart() (si polar)
-- unifyPlotOptionsForChart() (transformation plotOptions)
-- configureLoadingOptions() (configuration loading)
-        ↓
-Highcharts.chart() → Rendu visuel
-```
+- **highcharts-modules.ts** : Gestion de l'importation et de l'initialisation des modules Highcharts requis.
+- **data-aggregation.ts** : Logique d'agrégation des données pour les graphiques simples (secteurs, entonnoirs).
+- **dimensions.ts** : Gestion du redimensionnement et de l'adaptation aux dimensions du conteneur parent.
+- **loading.ts** : Gestion des états d'affichage (chargement, aucune donnée, erreur).
+- **toolbar.ts** : Création et gestion de la barre d'outils de navigation interactive.
+- **types.ts** : Définitions des types TypeScript et interfaces partagées.
+- **chart-data-validator.ts** : Validation de l'intégrité des données avant le rendu.
 
-### Modules utilitaires
+### Configurations (src/lib/directive/utils/config/)
 
-#### `highcharts-modules.ts`
-
-Initialise tous les modules Highcharts nécessaires :
-
-- `highcharts-more` : Types supplémentaires (bubble, polar, etc.)
-- `no-data-to-display` : Affichage "aucune donnée"
-- `exporting` : Export des graphiques
-- `export-data` : Export des données
-- `funnel` : Graphiques en entonnoir
-- `treemap` : Cartes arborescentes
-- `heatmap` : Cartes de chaleur
-
-#### `data-aggregation.ts`
-
-Gère l'agrégation des données multi-séries pour les graphiques simples (pie, donut, funnel, pyramid).
-
-**Fonctions principales** :
-
-- `aggregateMultiSeriesForPie()` : Agrège plusieurs séries en calculant la somme totale de chaque série
-- `shouldAggregateForPie()` : Détermine si l'agrégation est nécessaire
-- `transformDataForSimpleChart()` : Point d'entrée pour la transformation
-
-**Exemple** :
-
-```typescript
-// Entrée : 2 séries avec 3 catégories chacune
-series: [
-  { name: "Équipe A", data: [100, 120, 110] },
-  { name: "Équipe B", data: [150, 180, 160] },
-][
-  // Sortie : 2 parts agrégées
-  ({ name: "Équipe A", y: 330 }, // 100 + 120 + 110
-  { name: "Équipe B", y: 490 }) // 150 + 180 + 160
-];
-```
-
-#### `dimensions.ts`
-
-Gère les dimensions du graphique en utilisant celles du conteneur parent si non spécifiées.
-
-**Fonction** :
-
-- `sanitizeChartDimensions()` : Calcule automatiquement width/height depuis le conteneur
-
-#### `loading.ts`
-
-Gère les trois états d'affichage du graphique :
-
-1. **Chargement** : Affiche un indicateur de chargement
-2. **Aucune donnée** : Affiche un message "Aucune donnée"
-3. **Données disponibles** : Affiche le graphique avec la toolbar
-
-**Fonctions principales** :
-
-- `updateChartLoadingState()` : Orchestre les transitions entre états
-- `showLoading()` / `hideLoading()` : Gestion du loading
-- `showNoDataMessage()` : Affichage du message "no data"
-- `showChartToolbar()` / `hideChartToolbar()` : Gestion de la toolbar
-- `configureLoadingOptions()` : Configuration par défaut
-
-**Machine à états** :
-
-```
-isLoading=true, hasData=false  → Loading affiché, toolbar masquée
-isLoading=false, hasData=false → "Aucune donnée" affiché, toolbar masquée
-isLoading=false, hasData=true  → Graphique affiché, toolbar visible
-```
-
-#### `polar-config.ts`
-
-Configure les graphiques en coordonnées polaires.
-
-**Fonctions** :
-
-- `configurePolarChart()` : Point d'entrée principal
-- `configurePolarType()` : Secteurs empilés avec grille circulaire
-- `configureRadarType()` : Toile d'araignée avec grille polygonale
-- `configureRadarAreaType()` : Radar avec remplissage
-- `configureRadialBarType()` : Barres concentriques
-- `isPolarChart()` : Détecte si un type est polaire
-
-**Configuration automatique** :
-
-- Active `chart.polar = true`
-- Configure les axes X/Y pour le mode polaire
-- Applique `gridLineInterpolation` (circle ou polygon)
-- Gère le `pane` et les options de colonnes
-
-#### `toolbar.ts`
-
-Crée et gère la toolbar de navigation entre types de graphiques.
-
-**Fonctions** :
-
-- `setupToolbar()` : Crée la toolbar avec boutons
-- `createToolbarButton()` : Crée un bouton avec icône SVG
-- `removeToolbar()` : Nettoie la toolbar
-- Gestionnaires `handleMouseMove()` / `handleMouseLeave()` : Visibilité au survol
-
-**Comportement** :
-
-- Toolbar en position absolue en haut à droite
-- Apparaît au survol du graphique
-- Émet des événements `previous`, `next`, `pivot`
-
-#### `types.ts`
-
-Définit les types TypeScript et le système de mapping des plotOptions.
-
-**Exports principaux** :
-
-- `ChartCustomEvent` : Type des événements de la toolbar
-- `ToolbarOptions` : Options de configuration de la toolbar
-- `PLOTOPTIONS_MAPPING` : Mapping complet `series.*` → `type.*`
-- `unifyPlotOptionsForChart()` : Transforme les plotOptions
-
-**Mapping** :
-
-```typescript
-PLOTOPTIONS_MAPPING = {
-  pie: {
-    "series.dataLabels": "pie.dataLabels",
-    "series.borderWidth": "pie.borderWidth",
-    // ...
-  },
-  line: {
-    "series.marker": "line.marker",
-    "series.lineWidth": "line.lineWidth",
-    // ...
-  },
-  // ... autres types
-};
-```
-
-### ChartDirective
-
-La directive principale qui :
-
-1. Reçoit les inputs : `type`, `config`, `data`, `isLoading`
-2. Appelle `buildChart()` ou `buildSingleSerieChart()` (jquery-core)
-3. Transforme le `CommonChart` en options Highcharts
-4. Applique les configurations spécifiques (polar, plotOptions, loading)
-5. Crée l'instance Highcharts
-6. Gère le cycle de vie (destroy, update)
-
-### ChartComponent
-
-Composant wrapper qui :
-
-- Encapsule la directive
-- Gère la navigation entre types via les événements
-- Définit les groupes de types compatibles
-- Gère le mode pivot
+- **chart-config-registry.ts** : Registre centralisant les configurations spécifiques à chaque type de graphique.
+- **simple-chart-config.ts** : Configuration pour les graphiques simples (Pie, Donut, Funnel, Pyramid).
+- **polar-config.ts** : Configuration pour les graphiques polaires et radars.
+- **map-config.ts** : Configuration pour les cartes géographiques.
+- **heatmap-config.ts** : Configuration pour les cartes de chaleur.
+- **treemap-config.ts** : Configuration pour les cartes arborescentes.
+- **range-config.ts** : Configuration pour les graphiques de plages de valeurs.
+- **scatter-config.ts** : Configuration pour les graphiques de dispersion.
+- **bubble-config.ts** : Configuration pour les graphiques à bulles.
 
 ## Gestion des états
 
@@ -768,17 +604,14 @@ Le graphique gère automatiquement 3 états :
 
 1. **Chargement initial** (`isLoading=true`, `data=[]`)
 
-   - Affiche : Spinner + texte "Chargement des données..."
-   - Toolbar : Masquée
+   - Affiche : Texte "Chargement des données..."
 
 2. **Aucune donnée** (`isLoading=false`, `data=[]`)
 
-   - Affiche : Message "Aucune donnée disponible"
-   - Toolbar : Masquée
+   - Affiche : Message "Aucune donnée"
 
 3. **Données chargées** (`isLoading=false`, `data=[...]`)
    - Affiche : Graphique avec données
-   - Toolbar : Visible au survol (si `showToolbar=true`)
 
 ### Exemple complet avec gestion d'état
 

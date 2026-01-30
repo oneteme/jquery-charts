@@ -1,6 +1,3 @@
-// Utilitaires de validation et nettoyage des données
-
-// Vérifie si une valeur est valide (non null, non NaN, finie)
 export function isValidValue(value: any): boolean {
   return (
     value !== null &&
@@ -11,7 +8,6 @@ export function isValidValue(value: any): boolean {
   );
 }
 
-// Extrait une valeur numérique d'un point et la valide
 export function extractAndValidateValue(point: any): number | null {
   if (point === null || point === undefined) return null;
 
@@ -28,46 +24,47 @@ export function extractAndValidateValue(point: any): number | null {
   return value !== null && isValidValue(value) ? value : null;
 }
 
-// Valide et nettoie les données d'une série
-// Retire les points avec des valeurs invalides (null, NaN, Infinity)
 export function validateAndCleanSeriesData(serie: any): any {
   if (!serie || !serie.data) return serie;
 
   const cleanedData = serie.data.filter((point: any) => {
-    // Pour les points simples (nombres)
     if (typeof point === 'number') {
       return isValidValue(point);
     }
 
-    // Pour les tableaux [x, y] ou [x, y, z]
     if (Array.isArray(point)) {
-      // Au moins la valeur Y doit être valide
       const yValue = point[1];
       return yValue !== undefined && isValidValue(yValue);
     }
 
-    // Pour les objets {x, y}, {x, y, z}, {low, high}, etc.
     if (typeof point === 'object' && point !== null) {
-      // Vérifier selon le type d'objet
       if ('low' in point && 'high' in point) {
-        // Range chart
         return isValidValue(point.low) && isValidValue(point.high);
       }
       if ('y' in point) {
-        // Standard point
         return isValidValue(point.y);
       }
       if ('value' in point) {
-        // Heatmap ou autre
+        const hasMapKey =
+          'code' in point ||
+          'hc-key' in point ||
+          'key' in point ||
+          'name' in point;
+        if (hasMapKey) {
+          return (
+            point.value !== null &&
+            point.value !== undefined &&
+            typeof point.value === 'number' &&
+            !isNaN(point.value)
+          );
+        }
         return isValidValue(point.value);
       }
       if ('z' in point && 'y' in point) {
-        // Bubble
         return isValidValue(point.y) && isValidValue(point.z);
       }
     }
 
-    // Par défaut, garder le point
     return true;
   });
 
@@ -77,16 +74,14 @@ export function validateAndCleanSeriesData(serie: any): any {
   };
 }
 
-// Valide et nettoie toutes les séries d'un dataset
 export function validateAndCleanData(series: any[]): any[] {
   if (!series || series.length === 0) return series;
 
   return series
     .map((serie) => validateAndCleanSeriesData(serie))
-    .filter((serie) => serie.data && serie.data.length > 0); // Retire les séries vides
+    .filter((serie) => serie.data && serie.data.length > 0);
 }
 
-// Détecte les anomalies dans les données et retourne des warnings
 export function detectDataAnomalies(series: any[]): string[] {
   const warnings: string[] = [];
 
@@ -103,7 +98,6 @@ export function detectDataAnomalies(series: any[]): string[] {
       return;
     }
 
-    // Compter les valeurs invalides
     let invalidCount = 0;
     let nullCount = 0;
     let nanCount = 0;
@@ -114,7 +108,6 @@ export function detectDataAnomalies(series: any[]): string[] {
       if (value === null) {
         invalidCount++;
 
-        // Déterminer le type d'erreur
         if (point === null || point === undefined) {
           nullCount++;
         } else if (typeof point === 'number' && isNaN(point)) {
@@ -138,7 +131,6 @@ export function detectDataAnomalies(series: any[]): string[] {
       );
     }
 
-    // Vérifier la cohérence des longueurs de séries
     if (index > 0 && series[0].data) {
       const firstLength = series[0].data.length;
       const currentLength = serie.data.length;
@@ -154,7 +146,6 @@ export function detectDataAnomalies(series: any[]): string[] {
   return warnings;
 }
 
-// Interface pour le rapport de validation des données
 export interface DataValidationReport {
   isValid: boolean;
   cleanedData: any[];
@@ -162,7 +153,6 @@ export interface DataValidationReport {
   removedPoints: number;
 }
 
-// Valide les données avec reporting détaillé
 export function validateDataWithReport(series: any[]): DataValidationReport {
   const warnings = detectDataAnomalies(series);
   const originalPointCount = series.reduce(

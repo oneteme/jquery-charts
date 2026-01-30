@@ -1,4 +1,5 @@
-import * as Highcharts from 'highcharts';
+// Importer Highmaps (qui inclut Highcharts + le module map)
+import * as Highcharts from 'highcharts/highmaps';
 import more from 'highcharts/highcharts-more';
 import NoDataToDisplay from 'highcharts/modules/no-data-to-display';
 import Exporting from 'highcharts/modules/exporting';
