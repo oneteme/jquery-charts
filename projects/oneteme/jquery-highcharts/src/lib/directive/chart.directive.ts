@@ -1,6 +1,6 @@
 import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, AfterViewInit, Output, SimpleChanges, HostBinding } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart } from '@oneteme/jquery-core';
-import {Highcharts,sanitizeChartDimensions,ChartCustomEvent,setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion,detectPreviousChartType,validateChartData,showValidationError, hideValidationError, buildMapUrl, loadGeoJSON, extractCodeToNameMapping, replaceCodesWithNames, createMapTooltipFormatter, createSimpleMapTooltipFormatter, DEFAULT_MAP_JOINBY, buildMapSeries } from './utils';
+import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType, validateChartData, showValidationError, hideValidationError, buildMapUrl, loadGeoJSON, extractCodeToNameMapping, replaceCodesWithNames, createMapTooltipFormatter, createSimpleMapTooltipFormatter, DEFAULT_MAP_JOINBY, buildMapSeries, applyAxisOffsets, applyDonutCenterLogic, applyRadialBarLogic } from './utils';
 
 @Directive({
   selector: '[chart-directive]',
@@ -354,6 +354,14 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       finalOptions.series = baseOptions.series;
     }
 
+    if ((this.type === 'donut' || this.type === 'pie') && this.config.options?.donutCenter) {
+      applyDonutCenterLogic(finalOptions, this.config.options.donutCenter);
+    }
+
+    if (this.type === 'radialBar' && this.config.options?.radialBar) {
+      applyRadialBarLogic(finalOptions, this.config.options.radialBar);
+    }
+
     if (this.type === 'map' && this.loadedMapData) {
       if (!finalOptions.chart) {
         finalOptions.chart = {};
@@ -365,6 +373,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     unifyPlotOptionsForChart(finalOptions, this.type, this.debug);
 
     enforceCriticalOptions(finalOptions, this.type);
+
+    applyAxisOffsets(finalOptions);
 
     configureLoadingOptions(finalOptions);
 
