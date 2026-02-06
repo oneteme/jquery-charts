@@ -90,7 +90,23 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       return;
     }
 
+    const hasData = Array.isArray(this.data) && this.data.length > 0;
+    if (this.type === 'map' && this._isLoading && !hasData) {
+      this.debug && console.log('[chart] map isLoading sans données');
+      if (this.chart) {
+        updateChartLoadingState(this.chart, true, false, false);
+        return;
+      }
+      this.createLoadingChart();
+      return;
+    }
+
     this.destroyChart();
+
+    if (this.type === 'map' && !this.config.mapEndpoint) {
+      this.loadedMapData = null;
+      this.mapCodeToName = new Map();
+    }
 
     if (this.type === 'map' && this.config.mapEndpoint) {
       this.createMapChartAsync();
@@ -118,6 +134,40 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         message: 'Impossible de charger la carte géographique',
       };
       this.createChart(); // créer le chart meme si error pour l'afficher
+    }
+  }
+
+  private createLoadingChart(): void {
+    try {
+      const element = this.elementRef.nativeElement;
+      if (!element) return;
+
+      const options: Highcharts.Options = {
+        chart: {
+          backgroundColor: 'transparent',
+        },
+        title: { text: '' },
+        credits: { enabled: false },
+        exporting: { enabled: false },
+        series: [],
+      };
+
+      configureLoadingOptions(options);
+
+      this.chart = Highcharts.chart(element, options);
+
+      if (this.chart) {
+        const { width, height } = element.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          this.chart.setSize(width, height, false);
+        }
+      }
+
+      updateChartLoadingState(this.chart, true, false, false);
+
+      this.debug && console.log('[chart] Loading chart créé pour map');
+    } catch (error) {
+      console.error('Erreur lors de la création du loading chart:', error);
     }
   }
 
@@ -362,7 +412,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       applyRadialBarLogic(finalOptions, this.config.options.radialBar);
     }
 
+<<<<<<< HEAD
     if (this.type === 'map' && this.loadedMapData) {
+=======
+    const hasCustomMap = !!(this.config.options as any)?.chart?.map;
+    if (this.type === 'map' && this.loadedMapData && !hasCustomMap) {
+>>>>>>> fix-map-charts
       if (!finalOptions.chart) {
         finalOptions.chart = {};
       }
