@@ -2,7 +2,8 @@ import { Highcharts } from '../highcharts-modules';
 
 export function configurePolarChart(
   options: Highcharts.Options,
-  chartType: string
+  chartType: string,
+  config?: any,
 ): void {
   if (!options.chart) {
     options.chart = {};
@@ -33,7 +34,7 @@ export function configurePolarChart(
       configureRadarAreaType(options);
       break;
     case 'radialBar':
-      configureRadialBarType(options);
+      configureRadialBarType(options, config);
       break;
   }
 }
@@ -71,7 +72,10 @@ function configureRadarAreaType(options: Highcharts.Options): void {
   options.plotOptions.area = { fillOpacity: 0.5 };
 }
 
-function configureRadialBarType(options: Highcharts.Options): void {
+function configureRadialBarType(
+  options: Highcharts.Options,
+  config?: any,
+): void {
   if (!options.chart) {
     options.chart = {};
   }
@@ -113,6 +117,21 @@ function configureRadialBarType(options: Highcharts.Options): void {
 
   if (!(options.plotOptions as any).series) {
     (options.plotOptions as any).series = {};
+  }
+
+  const xAxis = options.xAxis as any;
+  const series = options.series as any[];
+  let categoryCount = 0;
+
+  if (xAxis.categories && xAxis.categories.length > 0) {
+    categoryCount = xAxis.categories.length;
+  } else if (series && series.length > 0 && series[0].data) {
+    categoryCount = series[0].data.length;
+  }
+
+  if (categoryCount > 0) {
+    if (xAxis.min === undefined) xAxis.min = -0.5;
+    if (xAxis.max === undefined) xAxis.max = categoryCount - 0.5;
   }
 }
 
