@@ -97,7 +97,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         updateChartLoadingState(this.chart, true, false, false);
         return;
       }
-      this.createMapChartAsync();
+      const hasCustomMap = !!(this.config.options as any)?.chart?.map;
+      if (this.config.mapEndpoint) {
+        this.createMapChartAsync();
+      } else if (hasCustomMap) {
+        this.createChart();
+      }
       return;
     }
 
@@ -317,7 +322,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     if (this.type === 'donut') {
       baseOptions.plotOptions = {
         pie: {
-          innerSize: '40%',
+          innerSize: '70%',
           dataLabels: { enabled: false },
           showInLegend: true,
         },

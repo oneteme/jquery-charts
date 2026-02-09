@@ -5,6 +5,8 @@
   border-top: 1px solid rgba(0, 0, 0, 0.05);
   font-size: 0.85rem;
   color: #666;
+  margin-left: 280px;
+  width: calc(100% - 280px);
 
   .footer-container {
     display: flex;
@@ -90,6 +92,8 @@
 
 @media (max-width: 768px) {
   .app-footer {
+    margin-left: 0;
+    width: 100%;
     .footer-container {
       flex-direction: column;
       gap: 0.5rem;

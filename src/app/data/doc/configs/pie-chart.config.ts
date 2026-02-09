@@ -25,38 +25,28 @@ const pieConfig = {
     }
   ],
   options: {
-    // Configuration des étiquettes de données
-    dataLabels: {
-      enabled: true,
-      formatter: function(val, opts) {
-        return opts.w.globals.labels[opts.seriesIndex] + ': ' + val.toFixed(1) + '%';
-      }
-    },
-    // Calcul automatique en pourcentage
+    colors: ['#008FFB', '#00E396', '#FEB019', '#FF4560', '#775DD0'],
+    // Configuration des étiquettes et interactions
     plotOptions: {
       pie: {
-        expandOnClick: true,       // Agrandir la section en cliquant
-        donut: {
-          size: '0%',              // 0% pour pie, >0% pour donut
-          labels: {
-            show: false            // Afficher des informations au centre (donut)
-          }
-        }
+        allowPointSelect: true,
+        cursor: 'pointer',
+        dataLabels: {
+          enabled: true,
+          format: '{point.name}: {point.percentage:.1f}%'
+        },
+        showInLegend: true
       }
     },
-    // Configuration des labels
-    labels: {
-      show: true
+    // Configuration de l'infobulle
+    tooltip: {
+      pointFormat: '<b>{point.y:,.0f} €</b>'
     },
     // Configuration de la légende
     legend: {
-      position: 'bottom',
-      formatter: function(val, opts) {
-        // Ajouter le montant à la légende
-        const value = opts.w.globals.series[opts.seriesIndex];
-        return val + ': ' + value.toLocaleString() + ' €';
-      }
-    ]
+      align: 'center',
+      verticalAlign: 'bottom'
+    }
   }
 };`,
   },

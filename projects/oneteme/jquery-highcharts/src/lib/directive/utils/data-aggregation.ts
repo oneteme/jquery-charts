@@ -21,6 +21,9 @@ export function aggregateMultiSeriesData(
     }
 
     const sum = serie.data.reduce((total: number, dataPoint: any) => {
+      if (dataPoint === null || dataPoint === undefined) {
+        return total;
+      }
       const value =
         typeof dataPoint === 'object'
           ? dataPoint.y !== undefined

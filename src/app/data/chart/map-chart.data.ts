@@ -1,9 +1,9 @@
-import { MapChartData } from '../../core/models/chart.model';
+import { ChartDataCollection, MapChartData } from '../../core/models/chart.model';
 import { ChartProvider, field } from '@oneteme/jquery-core';
 
 export const mapChartConfig: ChartProvider<string, number> = {
-  title: 'Population par région française',
-  subtitle: 'Données démographiques 2025',
+  title: 'Répartition des clients actifs',
+  subtitle: 'France métropolitaine - 2025',
   series: [
     {
       data: {
@@ -12,10 +12,11 @@ export const mapChartConfig: ChartProvider<string, number> = {
       },
     },
   ],
+  height: 420,
+  mapEndpoint: 'assets/france-geojson',
+  mapDefaultValue: 'fr-region',
+  mapJoinBy: ['code', 'code'],
   options: {
-    chart: {
-      map: 'custom/france-regions'
-    },
     mapNavigation: {
       enabled: true,
       buttonOptions: {
@@ -29,31 +30,35 @@ export const mapChartConfig: ChartProvider<string, number> = {
     },
     legend: {
       title: {
-        text: 'Population'
+        text: 'Clients actifs'
       }
     },
     tooltip: {
-      pointFormat: '{point.name}: <b>{point.value:,.0f}</b> habitants'
+      pointFormat: '{point.name}: <b>{point.value:,.0f}</b> clients'
     }
   },
   showToolbar: true,
 };
 
-export const mapChartData: MapChartData = {
-  config: mapChartConfig,
-  data: [
-    { name: 'Île-de-France', code: '11', value: 12000000 },
-    { name: 'Provence-Alpes-Côte d\'Azur', code: '93', value: 5100000 },
-    { name: 'Auvergne-Rhône-Alpes', code: '84', value: 8100000 },
-    { name: 'Occitanie', code: '76', value: 5900000 },
-    { name: 'Nouvelle-Aquitaine', code: '75', value: 6000000 },
-    { name: 'Hauts-de-France', code: '32', value: 5900000 },
-    { name: 'Grand Est', code: '44', value: 5500000 },
-    { name: 'Pays de la Loire', code: '52', value: 3800000 },
-    { name: 'Bretagne', code: '53', value: 3300000 },
-    { name: 'Normandie', code: '28', value: 3300000 },
-    { name: 'Bourgogne-Franche-Comté', code: '27', value: 2800000 },
-    { name: 'Centre-Val de Loire', code: '24', value: 2600000 },
-    { name: 'Corse', code: '94', value: 340000 }
-  ],
+export const MAP_CHART_DATA: ChartDataCollection<MapChartData> = {
+  mapExample: {
+    config: mapChartConfig,
+    data: [
+    { name: 'Île-de-France', code: '11', value: 420000 },
+    { name: 'Provence-Alpes-Côte d\'Azur', code: '93', value: 165000 },
+    { name: 'Auvergne-Rhône-Alpes', code: '84', value: 210000 },
+    { name: 'Occitanie', code: '76', value: 152000 },
+    { name: 'Nouvelle-Aquitaine', code: '75', value: 148000 },
+    { name: 'Hauts-de-France', code: '32', value: 141000 },
+    { name: 'Grand Est', code: '44', value: 133000 },
+    { name: 'Pays de la Loire', code: '52', value: 98000 },
+    { name: 'Bretagne', code: '53', value: 87000 },
+    { name: 'Normandie', code: '28', value: 82000 },
+    { name: 'Bourgogne-Franche-Comté', code: '27', value: 69000 },
+    { name: 'Centre-Val de Loire', code: '24', value: 64000 },
+    { name: 'Corse', code: '94', value: 12000 }
+    ],
+  },
 };
+
+export const mapChartData: MapChartData = MAP_CHART_DATA.mapExample;

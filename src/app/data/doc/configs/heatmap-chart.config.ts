@@ -20,47 +20,28 @@ const heatmapConfig = {
     }
   ],
   options: {
-    chart: {
-      type: 'heatmap',
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: function(val) {
-        return val ? val.toFixed(1) + ' kWh' : '';
-      }
-    },
-    colors: ["#008FFB"],
     plotOptions: {
       heatmap: {
-        // Configuration personnalisée de l'échelle de couleurs
-        colorScale: {
-          ranges: [
-            {
-              from: 0,
-              to: 10,
-              color: '#D3F2FD',
-              name: 'Faible'
-            },
-            {
-              from: 10.1,
-              to: 20,
-              color: '#64B5F6',
-              name: 'Moyen'
-            },
-            {
-              from: 20.1,
-              to: 50,
-              color: '#0D47A1',
-              name: 'Élevé'
-            }
-          ]
+        borderWidth: 1,
+        dataLabels: {
+          enabled: true,
+          format: '{point.value:.1f} kWh'
         }
       }
     },
+    colorAxis: {
+      stops: [
+        [0, '#D3F2FD'],
+        [0.5, '#64B5F6'],
+        [1, '#0D47A1']
+      ]
+    },
     // Personnalisation des axes
-    xaxis: {
+    xAxis: {
       labels: {
-        formatter: (val) => \`\${val}h\`
+        formatter: function () {
+          return this.value + 'h';
+        }
       }
     }
   }
