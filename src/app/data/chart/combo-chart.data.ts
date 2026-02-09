@@ -9,6 +9,8 @@ export const COMBO_CHART_DATA: ChartDataCollection<ComboChartData> = {
       { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
     ],
     config: {
+      title: 'Volume global & erreurs par API',
+      subtitle: 'Colonnes + courbes de tendance',
       series: [
         {
           data: {
@@ -43,20 +45,24 @@ export const COMBO_CHART_DATA: ChartDataCollection<ComboChartData> = {
       ],
       height: 250,
       options: {
-        dataLabels: {
-          enabled: true,
-          enabledOnSeries: [1, 2, 3],
+        plotOptions: {
+          series: {
+            dataLabels: {
+              enabled: true,
+              format: '{point.y}',
+            },
+          },
         },
-        yaxis: [
+        yAxis: [
           {
             title: {
-              text: 'Website Blog',
+              text: 'Volume global',
             },
           },
           {
             opposite: true,
             title: {
-              text: 'Social Media',
+              text: 'Erreurs',
             },
           },
         ],

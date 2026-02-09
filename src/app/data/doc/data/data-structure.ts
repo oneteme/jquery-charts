@@ -80,10 +80,20 @@ const multiSeriesData = [
       }
     ],
     
-    // Options spécifiques à ApexCharts
+    // Options spécifiques à Highcharts
     options: {
       colors: ['#CA3C66', '#DB6A8F', '#E8AABE', '#A7E0E0', '#4AA3A2'],
-      // ... autres options de personnalisation
+      plotOptions: {
+        pie: {
+          dataLabels: {
+            enabled: true,
+            format: '{point.name}: {point.percentage:.1f}%'
+          }
+        }
+      },
+      tooltip: {
+        pointFormat: '<b>{point.y:,.0f} requêtes</b>'
+      }
     }
   }
 };`,

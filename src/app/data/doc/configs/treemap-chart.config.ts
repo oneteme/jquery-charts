@@ -22,46 +22,16 @@ const treemapConfig = {
     colors: ['#3B93A5', '#F7B844', '#ADD8C7', '#EC3C65', '#CDD7B6'],
     plotOptions: {
       treemap: {
-        distributed: false,     // Distribution uniforme des couleurs
-        enableShades: true,     // Activer les nuances par groupe
-        useFillColorAsStroke: false, // Bordure différente du remplissage
-        // Paramètres visuels
-        colorScale: {
-          ranges: [
-            {
-              from: 0,
-              to: 100,
-              color: '#CD363A'
-            },
-            {
-              from: 100,
-              to: 500,
-              color: '#52B12C'
-            }
-          ]
+        layoutAlgorithm: 'squarified',
+        allowTraversingTree: true,
+        dataLabels: {
+          enabled: true,
+          format: '{point.name}<br>{point.value}'
         }
       }
     },
-    // Configuration des étiquettes de données
-    dataLabels: {
-      enabled: true,
-      style: {
-        fontSize: '12px',
-      },
-      formatter: function(text, op) {
-        return [text, op.value];
-      },
-      offsetY: -4
-    },
-    // Animation
-    animations: {
-      enabled: true,
-      easing: 'easeinout',
-      speed: 800,
-      animateGradually: {
-        enabled: true,
-        delay: 150
-      }
+    tooltip: {
+      pointFormat: '<b>{point.value}</b>'
     }
   }
 };`,

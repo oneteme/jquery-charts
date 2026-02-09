@@ -59,18 +59,22 @@ export class DocumentationService {
   ];
 
   configGlobalNotes2: string[] = [
-    "Si une propriété n'est pas documentée ici ou dans les configurations spécifiques, elle utilise certainement la valeur par défaut de la bibliothèque ApexCharts",
+    "Si une propriété n'est pas documentée ici ou dans les configurations spécifiques, elle utilise certainement la valeur par défaut de la bibliothèque Highcharts",
     "La syntaxe jQuery Charts est une couche d'abstraction qui simplifie la configuration tout en maintenant l'accès aux options natives",
-    'Pour des cas très spécifiques, vous pouvez toujours accéder aux options avancées via l\'objet "options"',
-    'Consultez la <a href="https://apexcharts.com/docs/installation/#" target="_blank" class="doc-link">documentation d\'ApexCharts</a> pour des fonctionnalités plus avancées',
+    'Pour des cas très spécifiques, vous pouvez toujours accéder aux options avancées via l\'objet "options" (API Highcharts)',
+    'jQuery-Highcharts apporte des facilités supplémentaires : barre d\'outils personnalisée (showToolbar), gestion du loading/no-data, donutCenter et radialBar, ainsi que l\'aide aux cartes (mapEndpoint, mapJoinBy, mapParam, mapDefaultValue, mapColor)',
+    'Consultez la <a href="https://www.highcharts.com/docs/index" target="_blank" class="doc-link">documentation Highcharts</a> pour des fonctionnalités plus avancées',
   ];
 
   chartCompatibilityNotes: string[] = [
-    '• Pie Charts : pie ↔ donut (même données, avec/sans trou central), polar ↔ radar (visualisation différente)',
-    '• Bar Charts : bar ↔ column (orientation), compatible stacked et pivot',
-    '• Line Charts : line ↔ area (avec/sans remplissage), compatible continue',
-    '• Treemap Charts : treemap ↔ heatmap, supporte le groupement',
-    '• Range Charts : rangeArea ↔ rangeBar ↔ rangeColumn, nécessite min/max',
-    '• Funnel Charts : funnel ↔ pyramid, configuration spécifique pour le goulot',
+    '• Pie Charts : pie ↔ donut (même données, avec/sans trou central)',
+    '• Polar Charts : polar ↔ radar ↔ radialBar (visualisations différentes)',
+    '• Bar Charts : bar ↔ column (orientation), compatible pivot',
+    '• Line Charts : line ↔ area ↔ spline ↔ areaspline (variantes de courbe)',
+    '• Scatter/Bubble : scatter ↔ bubble (nécessite une dimension z pour bubble)',
+    '• Treemap/Heatmap : treemap ↔ heatmap (données converties automatiquement)',
+    '• Range Charts : columnrange ↔ arearange ↔ areasplinerange (nécessite low/high)',
+    '• Funnel Charts : funnel ↔ pyramid (configuration spécifique pour le goulot)',
+    '• Map Charts : map (nécessite un GeoJSON via mapEndpoint ou chart.map)',
   ];
 }

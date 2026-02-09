@@ -47,106 +47,33 @@ export const HEATMAP_CHART_DATA: ChartDataCollection<HeatmapChartData> = {
       showToolbar: true,
       options: {
         plotOptions: {
-          heatmap: {
-            enableShades: true,
-            shadeIntensity: 0.5,
-            colorScale: {
-              ranges: [
-                {
-                  from: 0,
-                  to: 15,
-                  name: 'Faible',
-                  color: '#137C8B'
-                },
-                {
-                  from: 16,
-                  to: 30,
-                  name: 'Modéré',
-                  color: '#709CA7'
-                },
-                {
-                  from: 31,
-                  to: 50,
-                  name: 'Élevé',
-                  color: '#344D59'
-                }
-              ]
-            },
-            radius: 2
-          }
-        },
-        dataLabels: {
-          enabled: true,
-          style: {
-            fontSize: '11px',
-            fontFamily: 'Helvetica, Arial, sans-serif',
-            fontWeight: 'bold',
-            colors: ['#fff']
-          }
-        },
-        xaxis: {
-          labels: {
-            rotate: 0,
-            style: {
-              fontSize: '10px'
-            }
-          },
-          title: {
-            text: 'Heure de la journée',
-            style: {
-              fontSize: '12px',
-              fontWeight: 'bold'
+          series: {
+            borderWidth: 1,
+            dataLabels: {
+              enabled: true,
+              format: '{point.value}'
             }
           }
         },
-        yaxis: {
-          title: {
-            text: 'Jour de la semaine',
-            style: {
-              fontSize: '12px',
-              fontWeight: 'normal'
-            }
-          }
+        colorAxis: {
+          stops: [
+            [0, '#137C8B'],
+            [0.5, '#709CA7'],
+            [1, '#344D59']
+          ]
         },
-        stroke: {
-          width: 1,
-          colors: ['#fff']
+        xAxis: {
+          title: { text: 'Heure de la journée' }
+        },
+        yAxis: {
+          title: { text: 'Jour de la semaine' }
         },
         tooltip: {
-          custom: function({ series, seriesIndex, dataPointIndex, w }) {
-            const jour = w.globals.seriesNames[seriesIndex];
-            const heure = w.globals.labels[dataPointIndex];
-            const valeur = series[seriesIndex][dataPointIndex];
-
-            return `
-              <div style="padding: 5px">
-                <div style="font-weight: bold; margin-bottom: 5px">
-                  ${jour} à ${heure}
-                </div>
-                <p>Trafic: ${valeur} utilisateurs</p>
-              </div>
-            `;
-          }
-        },
-        title: {
-          style: {
-            fontSize: '14px',
-            fontWeight: 'bold'
-          }
-        },
-        subtitle: {
-          style: {
-            fontSize: '12px',
-            fontWeight: 'normal'
-          }
+          pointFormat: '<b>{point.value} utilisateurs</b>'
         },
         legend: {
-          offsetX: 25,
-          position: 'bottom',
-          horizontalAlign: 'center',
-          markers: {
-            radius: 2
-          }
+          align: 'center',
+          verticalAlign: 'bottom'
         }
       }
     }

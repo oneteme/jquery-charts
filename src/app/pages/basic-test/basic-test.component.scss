@@ -148,12 +148,13 @@
       background: white;
       border: 1px solid #e8e8e8;
       border-radius: 10px;
-      padding: 20px;
+      padding: 1rem;
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
       height: 50vh;
       min-height: 350px;
 
       .chart-box {
+        display: block;
         height: 100%;
         width: 100%;
       }

@@ -28,21 +28,22 @@
     grid-template-columns: repeat(auto-fit, minmax(400px, 3fr));
     gap: 2rem;
     height: 100%;
+    align-items: start;
 
     .chart-wrapper {
       position: relative;
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      overflow: visible;
-      padding-bottom: 0.9rem;
-      height: 100%;
+      overflow: hidden;
+      padding: 1rem;
+      height: 360px;
+      min-height: 360px;
 
       .chart-component {
         display: block;
-        padding: 1rem;
-        min-height: 300px;
         height: 100%;
+        min-height: 100%;
       }
 
       .code-toggle {

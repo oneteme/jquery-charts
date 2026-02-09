@@ -20,11 +20,7 @@
                 pieExample2,
                 pieExample3,
                 pieExample4,
-                pieExample5,
-                pieExample6,
-                pieExample7,
-                pieExample8,
-                pieExample9
+                pieExample5
               ];
               let i = index
             "
@@ -49,6 +45,33 @@
             </button>
             <div class="code-block" [class.open]="isCodeOpen(i)">
               <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Donut Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="donut"
+              [config]="donutExample.config"
+              [data]="donutExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(donutExample)"></code></pre>
             </div>
           </div>
         </ng-container>
@@ -139,6 +162,90 @@
           </div>
         </ng-container>
 
+        <ng-container *ngSwitchCase="'Spline Chart'">
+          <div
+            class="chart-wrapper"
+            *ngFor="let example of [splineExample, splineExample2]; let i = index"
+          >
+            <chart
+              class="chart-component"
+              type="spline"
+              [config]="example.config"
+              [data]="example.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(i, $event)"
+              (keyup.enter)="toggleCode(i, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(i)">
+              <pre><code [innerHTML]="getHighlightedCode(example)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Scatter Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="scatter"
+              [config]="scatterExample.config"
+              [data]="scatterExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(scatterExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Bubble Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="bubble"
+              [config]="bubbleExample.config"
+              [data]="bubbleExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(bubbleExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
         <ng-container *ngSwitchCase="'Treemap Chart'">
           <div
             class="chart-wrapper"
@@ -203,7 +310,7 @@
           <div class="chart-wrapper">
             <chart
               class="chart-component"
-              type="rangeArea"
+              type="arearange"
               [config]="rangeExample.config"
               [data]="rangeExample.data"
             />
@@ -249,6 +356,141 @@
             </button>
             <div class="code-block" [class.open]="isCodeOpen(0)">
               <pre><code [innerHTML]="getHighlightedCode(funnelExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Polar Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="polar"
+              [config]="polarExample.config"
+              [data]="polarExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(polarExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Radar Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="radar"
+              [config]="radarExample.config"
+              [data]="radarExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(radarExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Radial Bar Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="radialBar"
+              [config]="radialBarExample.config"
+              [data]="radialBarExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(radialBarExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Combo Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="line"
+              [config]="comboExample.config"
+              [data]="comboExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(comboExample)"></code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'Map Chart'">
+          <div class="chart-wrapper">
+            <chart
+              class="chart-component"
+              type="map"
+              [config]="mapExample.config"
+              [data]="mapExample.data"
+            />
+            <button
+              class="code-toggle"
+              (click)="toggleCode(0, $event)"
+              (keyup.enter)="toggleCode(0, $event)"
+              aria-label="Toggle code visibility"
+            >
+              <img
+                src="assets/icons/code.svg"
+                class="code-icon"
+                alt="toggle code"
+              />
+              <span class="tooltip">Voir le code</span>
+            </button>
+            <div class="code-block" [class.open]="isCodeOpen(0)">
+              <pre><code [innerHTML]="getHighlightedCode(mapExample)"></code></pre>
             </div>
           </div>
         </ng-container>

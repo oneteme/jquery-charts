@@ -1,6 +1,8 @@
 export const globalChartConfig = {
   basic: {
-    code: `{
+    code: `import { field } from '@oneteme/jquery-core';
+
+{
   config: {
     // Configuration des séries de données
     series: [{
@@ -15,52 +17,73 @@ export const globalChartConfig = {
 
     // Dimensions
     height: number,             // Hauteur du graphique (obligatoire)
-    width: number,             // Largeur du graphique (optionnel)
+    width: number,              // Largeur du graphique (optionnel)
 
     // Titres et labels
-    title: string,             // Titre principal
-    subtitle: string,          // Sous-titre
-    xtitle: string,           // Titre de l'axe X
-    ytitle: string,           // Titre de l'axe Y
+    title: string,              // Titre principal
+    subtitle: string,           // Sous-titre
+    xtitle: string,             // Titre de l'axe X
+    ytitle: string,             // Titre de l'axe Y
 
     // Options de données
-    pivot: boolean,           // Pivoter les données
-    continue: boolean,        // Mode continu (pas de catégories fixes)
-    xorder: 'asc' | 'desc',  // Tri des valeurs sur l'axe X
-    stacked: boolean,        // Activer l'empilement (pour bar/column)
+    pivot: boolean,             // Pivoter les données
+    continue: boolean,          // Mode continu (pas de catégories fixes)
+    xorder: 'asc' | 'desc',     // Tri des valeurs sur l'axe X
+    stacked: boolean,           // Empilement (bar/column)
 
     // Interface utilisateur
-    showToolbar: boolean,    // Afficher la barre d'outils avec les boutons de navigation
+    showToolbar: boolean,       // Barre d'outils custom (prev/next/pivot)
 
-    // Configuration générale
+    // Cartographie (Highcharts Maps)
+    mapEndpoint: string,        // URL GeoJSON ou endpoint
+    mapParam: string,           // Paramètre d'URL pour la subdivision
+    mapDefaultValue: string,    // Valeur par défaut si param absent
+    mapJoinBy: [string, string],// JoinBy pour le mapping des données
+    mapColor: string,           // Palette/couleur principale
+
+    // Configuration Highcharts
     options: {
       chart: {
-        toolbar: {
-          show: boolean      // Afficher la barre d'outils ApexCharts
-        }
+        backgroundColor: string,
+        spacing: [number, number, number, number]
       },
-      dataLabels: {
-        enabled: boolean,    // Afficher les valeurs sur le graphique
-        formatter: (val) => string  // Formater les valeurs affichées
-      },
+      colors: string[],
       legend: {
-        show: boolean,      // Afficher la légende
-        position: 'top' | 'right' | 'bottom' | 'left'  // Position de la légende
+        enabled: boolean,
+        align: 'left' | 'center' | 'right',
+        verticalAlign: 'top' | 'middle' | 'bottom'
       },
       tooltip: {
-        enabled: boolean,   // Activer les tooltips
-        shared: boolean,    // Tooltip pour toutes les séries
-        followCursor: boolean  // Suivre le curseur
+        shared: boolean,
+        valueSuffix: string
       },
-      grid: {
-        show: boolean,     // Afficher la grille
-        borderColor: string,  // Couleur des bordures
-        padding: {
-          top: number,
-          right: number,
-          bottom: number,
-          left: number
+      xAxis: {
+        title: { text: string },
+        labels: { rotation: number }
+      },
+      yAxis: {
+        title: { text: string },
+        min: number
+      },
+      plotOptions: {
+        series: {
+          dataLabels: {
+            enabled: boolean,
+            format: string
+          }
+        },
+        column: {
+          stacking: 'normal' | 'percent'
         }
+      },
+      // Extensions jquery-highcharts
+      donutCenter: {
+        enabled: boolean,
+        title: string
+      },
+      radialBar: {
+        track: { enabled: boolean, color: string },
+        centerValue: { enabled: boolean, fontSize: string, fontWeight: string }
       }
     }
   }

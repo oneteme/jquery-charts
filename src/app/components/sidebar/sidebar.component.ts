@@ -64,7 +64,10 @@ export class SidebarComponent implements OnInit {
   onSelect(type: string) {
     this.selectedType = type;
     this.chartTypesService.setSelectedType(type);
-    const urlType = type.toLowerCase().split(' ')[0];
+    const urlType = type
+      .toLowerCase()
+      .replace(' chart', '')
+      .replace(/\s+/g, '-');
     this.router.navigate(['/charts', urlType]);
     if (this.isMenuOpen) {
       this.toggleMenu();

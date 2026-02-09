@@ -22,26 +22,28 @@ const rangeConfig = {
     }
   ],
   options: {
-    // Configuration pour le remplissage de la zone entre min et max
-    fill: {
-      opacity: 0.4,
-      type: 'solid'
-    },
-    // Marqueurs aux points max/min
-    markers: {
-      size: 4,
-      strokeWidth: 2,
-      hover: {
-        size: 7
+    plotOptions: {
+      columnrange: {
+        dataLabels: {
+          enabled: true,
+          format: '{point.low}°C - {point.high}°C'
+        }
+      },
+      arearange: {
+        dataLabels: {
+          enabled: false
+        }
       }
     },
     // Options des axes
-    xaxis: {
+    xAxis: {
       type: 'category'
     },
-    yaxis: {
-      decimalsInFloat: 1,
+    yAxis: {
       tickAmount: 5
+    },
+    tooltip: {
+      pointFormat: '<b>{point.low}°C - {point.high}°C</b>'
     }
   }
 };

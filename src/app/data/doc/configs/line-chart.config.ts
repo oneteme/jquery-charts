@@ -38,68 +38,35 @@ const lineConfig = {
   ],
   options: {
     chart: {
-      dropShadow: {
-        enabled: true,
-        color: '#000',
-        top: 18,
-        left: 7,
-        blur: 10,
-        opacity: 0.2
+      zoomType: 'x'
+    },
+    // Configuration des séries
+    plotOptions: {
+      series: {
+        marker: { enabled: true, radius: 4 },
+        lineWidth: 2
       }
-    },
-    // Configuration des marqueurs (points)
-    markers: {
-      size: 5,
-      colors: undefined,
-      strokeWidth: 2,
-      hover: {
-        size: 7
-      }
-    },
-    // Configuration des lignes
-    stroke: {
-      curve: 'smooth',     // Type de courbe: 'smooth', 'straight', 'stepline'
-      width: [3, 2],       // Largeur des lignes pour chaque série
-      dashArray: [0, 5]    // Ligne pointillée pour la 2ème série
-    },
-    // Remplissage pour les graphiques de type 'area'
-    fill: {
-      type: 'gradient',
-      gradient: {
-        shade: 'light',
-        type: "vertical",
-        shadeIntensity: 0.1,
-        inverseColors: false,
-        opacityFrom: 0.7,
-        opacityTo: 0.2,
-      }
-    },
-    // Configuration des étiquettes de données
-    dataLabels: {
-      enabled: false
     },
     // Configuration des axes
-    xaxis: {
-      type: 'datetime',    // Type d'axe X pour les données temporelles
+    xAxis: {
+      type: 'datetime',
       labels: {
-        format: 'MMM yyyy'  // Format d'affichage des dates
+        format: '{value:%b %Y}'
       }
     },
-    yaxis: {
-      min: 0,              // Valeur minimale de l'axe Y
-      max: 100,            // Valeur maximale de l'axe Y
-      tickAmount: 5        // Nombre approximatif de graduations
+    yAxis: {
+      min: 0,
+      max: 100,
+      tickAmount: 5
     },
     // Configuration des infobulles
     tooltip: {
-      x: {
-        format: 'dd MMM yyyy'  // Format de la date dans l'infobulle
-      }
+      xDateFormat: '%d %b %Y'
     },
     // Configuration de la légende
     legend: {
-      position: 'top',
-      horizontalAlign: 'right'
+      align: 'right',
+      verticalAlign: 'top'
     }
   },
 };
