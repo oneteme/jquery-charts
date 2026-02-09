@@ -169,6 +169,52 @@ function showChartContent(chart: Highcharts.Chart): void {
   }
 }
 
+function hideChartContent(chart: Highcharts.Chart): void {
+  try {
+    if ((chart as any).seriesGroup) {
+      (chart as any).seriesGroup.hide();
+    }
+    chart.series?.forEach((s: any) => {
+      s.group?.hide?.();
+      s.dataLabelsGroup?.hide?.();
+      s.markerGroup?.hide?.();
+    });
+    if (chart.container) {
+      const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
+      dataLabels.forEach((el: Element) => {
+        (el as HTMLElement).style.visibility = 'hidden';
+      });
+      const mapGroup = chart.container.querySelector('.highcharts-map-series');
+      if (mapGroup) {
+        (mapGroup as HTMLElement).style.visibility = 'hidden';
+      }
+    }
+  } catch {}
+}
+
+function showChartContent(chart: Highcharts.Chart): void {
+  try {
+    if ((chart as any).seriesGroup) {
+      (chart as any).seriesGroup.show();
+    }
+    chart.series?.forEach((s: any) => {
+      s.group?.show?.();
+      s.dataLabelsGroup?.show?.();
+      s.markerGroup?.show?.();
+    });
+    if (chart.container) {
+      const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
+      dataLabels.forEach((el: Element) => {
+        (el as HTMLElement).style.visibility = '';
+      });
+      const mapGroup = chart.container.querySelector('.highcharts-map-series');
+      if (mapGroup) {
+        (mapGroup as HTMLElement).style.visibility = '';
+      }
+    }
+  } catch {}
+}
+
 export function configureLoadingOptions(
   chartOptions: Highcharts.Options
 ): void {
