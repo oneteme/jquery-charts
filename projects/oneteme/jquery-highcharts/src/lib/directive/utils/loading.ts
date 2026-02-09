@@ -100,17 +100,67 @@ export function updateChartLoadingState(
   if (isLoading && !hasData) {
     hideChartToolbar(chart);
     showLoading(chart, 'Chargement des données...');
+    hideChartContent(chart);
   } else if (hasValidationError) {
     hideLoading(chart);
     showChartToolbar(chart);
+    showChartContent(chart);
   } else if (!isLoading && !hasData) {
     hideLoading(chart);
     hideChartToolbar(chart);
     showNoDataMessage(chart);
+    hideChartContent(chart);
   } else {
     hideLoading(chart);
     showChartToolbar(chart);
+    showChartContent(chart);
   }
+}
+
+function hideChartContent(chart: Highcharts.Chart): void {
+  try {
+    if ((chart as any).seriesGroup) {
+      (chart as any).seriesGroup.hide();
+    }
+    chart.series?.forEach((s: any) => {
+      s.group?.hide?.();
+      s.dataLabelsGroup?.hide?.();
+      s.markerGroup?.hide?.();
+    });
+    if (chart.container) {
+      const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
+      dataLabels.forEach((el: Element) => {
+        (el as HTMLElement).style.visibility = 'hidden';
+      });
+      const mapGroup = chart.container.querySelector('.highcharts-map-series');
+      if (mapGroup) {
+        (mapGroup as HTMLElement).style.visibility = 'hidden';
+      }
+    }
+  } catch {}
+}
+
+function showChartContent(chart: Highcharts.Chart): void {
+  try {
+    if ((chart as any).seriesGroup) {
+      (chart as any).seriesGroup.show();
+    }
+    chart.series?.forEach((s: any) => {
+      s.group?.show?.();
+      s.dataLabelsGroup?.show?.();
+      s.markerGroup?.show?.();
+    });
+    if (chart.container) {
+      const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
+      dataLabels.forEach((el: Element) => {
+        (el as HTMLElement).style.visibility = '';
+      });
+      const mapGroup = chart.container.querySelector('.highcharts-map-series');
+      if (mapGroup) {
+        (mapGroup as HTMLElement).style.visibility = '';
+      }
+    }
+  } catch {}
 }
 
 export function configureLoadingOptions(

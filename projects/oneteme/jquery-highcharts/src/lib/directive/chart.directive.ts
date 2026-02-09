@@ -90,7 +90,23 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       return;
     }
 
+    const hasData = Array.isArray(this.data) && this.data.length > 0;
+    if (this.type === 'map' && this._isLoading && !hasData) {
+      this.debug && console.log('[chart] map isLoading sans données');
+      if (this.chart) {
+        updateChartLoadingState(this.chart, true, false, false);
+        return;
+      }
+      this.createMapChartAsync();
+      return;
+    }
+
     this.destroyChart();
+
+    if (this.type === 'map' && !this.config.mapEndpoint) {
+      this.loadedMapData = null;
+      this.mapCodeToName = new Map();
+    }
 
     if (this.type === 'map' && this.config.mapEndpoint) {
       this.createMapChartAsync();
@@ -146,11 +162,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         }
       }
 
-      // Si nous avons une erreur de validation, afficher le message d'erreur
       if (this.dataValidationError) {
         showValidationError(this.chart, this.dataValidationError.message);
       } else {
-        // Masquer le message d'erreur pour les graphiques valides
         hideValidationError(this.chart);
       }
 
@@ -179,7 +193,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   private async buildChartOptions(): Promise<Highcharts.Options> {
-    // Pour les maps, ne pas utiliser processData() qui transforme les données en tableaux
+    // Pour les maps, pas utiliser processData() car transforme les données en tableaux
     // Les maps ont besoin des données au format objet {code, value}
     let chartData: { series: any[]; xAxis?: any; yAxis?: any; tooltip?: any };
 
@@ -197,23 +211,14 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         ),
       };
     } else {
-      // Vérifier si les données brutes sont au format map et les convertir AVANT processData()
       const tempSeries = [{ data: this.data }];
       if (needsDataConversion(tempSeries, this.type)) {
         const previousType = detectPreviousChartType(tempSeries, this.type);
-        console.log('🔍 Détection type précédent:', {
-          previousType,
-          mapCodeToNameSize: this.mapCodeToName.size,
-          hasMapEndpoint: !!this.config.mapEndpoint,
-        });
-
-        // Si les données sont au format map et qu'on n'a pas encore chargé le GeoJSON, le charger maintenant
         if (
           previousType === 'map' &&
           this.mapCodeToName.size === 0 &&
           this.config.mapEndpoint
         ) {
-          console.log('🌍 Chargement du GeoJSON pour mapping code→nom...');
           const mapUrl = buildMapUrl(
             this.config.mapEndpoint,
             this.config.mapParam,
@@ -224,19 +229,12 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
             this.mapCodeToName = extractCodeToNameMapping(this.loadedMapData);
           } catch (error) { console.error('Erreur lors du chargement du mapping GeoJSON:', error) }
         }
-        const result = transformChartData(
-          tempSeries,
-          previousType,
-          this.type,
-          undefined
-        );
-        // Remplacer les codes par les noms si on a le mapping
+        const result = transformChartData(tempSeries, previousType, this.type, undefined);
         const finalCategories =
           result.categories && this.mapCodeToName.size > 0
             ? replaceCodesWithNames(result.categories, this.mapCodeToName)
             : result.categories;
 
-        // Pour les graphiques simples (pie, donut, funnel), créer directement les séries au bon format
         if (this.isSimpleChart() && finalCategories && result.series[0]?.data) {
           const formattedData = result.series[0].data.map(
             (value: any, index: number) => ({
@@ -253,28 +251,18 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
               },
             ],
           } as any;
-          // Ajouter le tooltip personnalisé pour les graphiques simples
           if (this.mapCodeToName.size > 0) {
             chartData.tooltip = createSimpleMapTooltipFormatter();
           }
         } else {
-          // Pour les graphiques complexes (bar, line, etc.)
           chartData = {
             series: result.series,
             xAxis: finalCategories
-              ? {
-                  categories: finalCategories,
-                  title: { text: this.config.xtitle || '' },
-                }
+              ? { categories: finalCategories, title: { text: this.config.xtitle || '' } }
               : { title: { text: this.config.xtitle || '' } },
             yAxis: result.yCategories
-              ? {
-                  categories: result.yCategories,
-                  title: { text: this.config.ytitle || '' },
-                }
-              : {
-                  title: { text: this.config.ytitle || '' },
-                },
+              ? { categories: result.yCategories, title: { text: this.config.ytitle || '' } }
+              : { title: { text: this.config.ytitle || '' } },
           } as any;
 
           // Ajouter le tooltip personnalisé si mapping disponible
@@ -282,9 +270,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
             chartData.tooltip = createMapTooltipFormatter();
           }
         }
-      } else {
-        chartData = this.processData();
-      }
+      } else { chartData = this.processData() }
     }
 
     const baseOptions: Highcharts.Options = {
@@ -362,7 +348,8 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       applyRadialBarLogic(finalOptions, this.config.options.radialBar);
     }
 
-    if (this.type === 'map' && this.loadedMapData) {
+    const hasCustomMap = !!(this.config.options as any)?.chart?.map;
+    if (this.type === 'map' && this.loadedMapData && !hasCustomMap) {
       if (!finalOptions.chart) {
         finalOptions.chart = {};
       }
