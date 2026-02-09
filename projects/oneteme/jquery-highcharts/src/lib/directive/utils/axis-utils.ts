@@ -6,7 +6,6 @@ export function applyAxisOffsets(options: Highcharts.Options): void {
   const yAxes = Array.isArray(options.yAxis) ? options.yAxis : [options.yAxis];
 
   yAxes.forEach((yAxis: any, index: number) => {
-    if (yAxis.maxOffset === undefined) return;
     if (yAxis.max !== undefined) return;
 
     const dataMax = calculateMaxFromSeriesOptions(options.series, index);
@@ -17,6 +16,8 @@ export function applyAxisOffsets(options: Highcharts.Options): void {
         return;
       }
     }
+
+    if (yAxis.maxOffset === undefined) return;
 
     if (dataMax !== null) {
       const offset = typeof yAxis.maxOffset === 'number' ? yAxis.maxOffset : 0;
@@ -101,7 +102,7 @@ function applySmallMaxPrecision(yAxis: any, dataMax: number): boolean {
 
   if (range > 0 && tickCount > 1) {
     const rawStep = range / (tickCount - 1);
-    const step = Math.max(1, Math.ceil(rawStep));
+    const step = getNiceStep(rawStep);
     const finalMax = min + step * (tickCount - 1);
 
     yAxis.max = finalMax;
@@ -112,16 +113,31 @@ function applySmallMaxPrecision(yAxis: any, dataMax: number): boolean {
       yAxis.minTickInterval = yAxis.smallMaxMinTickInterval;
     }
 
-    if (!yAxis.labels) {
-      yAxis.labels = {};
-    }
-    if (!yAxis.labels.formatter && !yAxis.labels.format) {
-      yAxis.labels.format = '{value:.0f}';
-    }
     return true;
   }
 
   return false;
+}
+
+function getNiceStep(rawStep: number): number {
+  if (!isFinite(rawStep) || rawStep <= 0) return 1;
+
+  const exponent = Math.floor(Math.log10(rawStep));
+  const magnitude = Math.pow(10, exponent);
+  const fraction = rawStep / magnitude;
+
+  let niceFraction: number;
+  if (fraction <= 1) {
+    niceFraction = 1;
+  } else if (fraction <= 2) {
+    niceFraction = 2;
+  } else if (fraction <= 5) {
+    niceFraction = 5;
+  } else {
+    niceFraction = 10;
+  }
+
+  return niceFraction * magnitude;
 }
 
 function calculateMaxFromSeriesOptions(

@@ -97,7 +97,11 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         updateChartLoadingState(this.chart, true, false, false);
         return;
       }
-      this.createMapChartAsync();
+      if (this.config.mapEndpoint) {
+        this.createMapChartAsync();
+      } else {
+        this.createChart();
+      }
       return;
     }
 

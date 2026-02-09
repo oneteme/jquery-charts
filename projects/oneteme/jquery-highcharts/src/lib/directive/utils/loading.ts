@@ -130,6 +130,8 @@ function hideChartContent(chart: Highcharts.Chart): void {
     if (chart.container) {
       const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
       dataLabels.forEach((el: Element) => {
+        if ((el as HTMLElement).classList.contains('highcharts-no-data')) return;
+        if ((el as HTMLElement).classList.contains('highcharts-no-data-label')) return;
         (el as HTMLElement).style.visibility = 'hidden';
       });
       const mapGroup = chart.container.querySelector('.highcharts-map-series');
@@ -137,7 +139,9 @@ function hideChartContent(chart: Highcharts.Chart): void {
         (mapGroup as HTMLElement).style.visibility = 'hidden';
       }
     }
-  } catch {}
+  } catch (error) {
+    console.error('[chart] hideChartContent error', error);
+  }
 }
 
 function showChartContent(chart: Highcharts.Chart): void {
@@ -160,7 +164,9 @@ function showChartContent(chart: Highcharts.Chart): void {
         (mapGroup as HTMLElement).style.visibility = '';
       }
     }
-  } catch {}
+  } catch (error) {
+    console.error('[chart] showChartContent error', error);
+  }
 }
 
 export function configureLoadingOptions(
