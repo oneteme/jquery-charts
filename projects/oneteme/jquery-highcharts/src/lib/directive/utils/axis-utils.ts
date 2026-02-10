@@ -11,6 +11,25 @@ export function applyAxisOffsets(options: Highcharts.Options): void {
     const dataMax = calculateMaxFromSeriesOptions(options.series, index);
 
     if (dataMax !== null) {
+      const defaultThreshold =
+        typeof yAxis.maxRounding === 'number' && yAxis.maxRounding >= 50
+          ? 100
+          : null;
+      if (yAxis.smallMaxThreshold === undefined && defaultThreshold !== null) {
+        yAxis.smallMaxThreshold = defaultThreshold;
+      }
+      if (yAxis.smallMaxTickCount === undefined && defaultThreshold !== null) {
+        yAxis.smallMaxTickCount = 4;
+      }
+      if (
+        yAxis.smallMaxMinTickInterval === undefined &&
+        defaultThreshold !== null
+      ) {
+        yAxis.smallMaxMinTickInterval = 1;
+      }
+    }
+
+    if (dataMax !== null) {
       const handled = applySmallMaxPrecision(yAxis, dataMax);
       if (handled) {
         return;
@@ -102,15 +121,31 @@ function applySmallMaxPrecision(yAxis: any, dataMax: number): boolean {
 
   if (range > 0 && tickCount > 1) {
     const rawStep = range / (tickCount - 1);
-    const step = getNiceStep(rawStep);
-    const finalMax = min + step * (tickCount - 1);
+    const minInterval =
+      typeof yAxis.smallMaxMinTickInterval === 'number'
+        ? yAxis.smallMaxMinTickInterval
+        : 1;
+    const alignedStep = Math.max(rawStep, minInterval);
+    const step = Math.ceil(alignedStep / minInterval) * minInterval;
+    let finalMax = min + step * (tickCount - 1);
+
+    if (finalMax <= dataMax) {
+      finalMax += step;
+    }
 
     yAxis.max = finalMax;
     yAxis.endOnTick = true;
     yAxis.tickAmount = tickCount;
     yAxis.tickInterval = step;
-    if (typeof yAxis.smallMaxMinTickInterval === 'number') {
-      yAxis.minTickInterval = yAxis.smallMaxMinTickInterval;
+    yAxis.minTickInterval = minInterval;
+
+    if (!yAxis.labels) {
+      yAxis.labels = {};
+    }
+    if (!yAxis.labels.formatter && !yAxis.labels.format) {
+      if (Number.isInteger(minInterval)) {
+        yAxis.labels.format = '{value:.0f}';
+      }
     }
 
     return true;
