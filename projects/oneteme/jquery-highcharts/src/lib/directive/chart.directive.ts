@@ -1,6 +1,51 @@
-import { Directive, ElementRef, EventEmitter, Input, OnChanges, OnDestroy, AfterViewInit, Output, SimpleChanges, HostBinding } from '@angular/core';
-import { ChartProvider, ChartType, XaxisType, YaxisType, buildChart } from '@oneteme/jquery-core';
-import { Highcharts, sanitizeChartDimensions, ChartCustomEvent, setupToolbar, updateChartLoadingState, configureLoadingOptions, transformDataForSimpleChart, unifyPlotOptionsForChart, applyChartConfigurations, enforceCriticalOptions, transformChartData, needsDataConversion, detectPreviousChartType, validateChartData, showValidationError, hideValidationError, buildMapUrl, loadGeoJSON, extractCodeToNameMapping, replaceCodesWithNames, createMapTooltipFormatter, createSimpleMapTooltipFormatter, DEFAULT_MAP_JOINBY, buildMapSeries, applyAxisOffsets, applyDonutCenterLogic, applyRadialBarLogic } from './utils';
+import {
+  Directive,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnChanges,
+  OnDestroy,
+  AfterViewInit,
+  Output,
+  SimpleChanges,
+  HostBinding,
+} from '@angular/core';
+import {
+  ChartProvider,
+  ChartType,
+  XaxisType,
+  YaxisType,
+  buildChart,
+} from '@oneteme/jquery-core';
+import {
+  Highcharts,
+  sanitizeChartDimensions,
+  ChartCustomEvent,
+  setupToolbar,
+  updateChartLoadingState,
+  configureLoadingOptions,
+  transformDataForSimpleChart,
+  unifyPlotOptionsForChart,
+  applyChartConfigurations,
+  enforceCriticalOptions,
+  transformChartData,
+  needsDataConversion,
+  detectPreviousChartType,
+  validateChartData,
+  showValidationError,
+  hideValidationError,
+  buildMapUrl,
+  loadGeoJSON,
+  extractCodeToNameMapping,
+  replaceCodesWithNames,
+  createMapTooltipFormatter,
+  createSimpleMapTooltipFormatter,
+  DEFAULT_MAP_JOINBY,
+  buildMapSeries,
+  applyAxisOffsets,
+  applyDonutCenterLogic,
+  applyRadialBarLogic,
+} from './utils';
 
 @Directive({
   selector: '[chart-directive]',
@@ -49,7 +94,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       this.chart,
       this._isLoading,
       hasData,
-      !!this.dataValidationError
+      !!this.dataValidationError,
     );
   }
 
@@ -97,12 +142,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         updateChartLoadingState(this.chart, true, false, false);
         return;
       }
-      const hasCustomMap = !!(this.config.options as any)?.chart?.map;
-      if (this.config.mapEndpoint) {
-        this.createMapChartAsync();
-      } else if (hasCustomMap) {
-        this.createChart();
-      }
+      this.createLoadingChart();
       return;
     }
 
@@ -125,7 +165,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       const mapUrl = buildMapUrl(
         this.config.mapEndpoint!,
         this.config.mapParam,
-        this.config.mapDefaultValue
+        this.config.mapDefaultValue,
       );
 
       this.loadedMapData = await loadGeoJSON(mapUrl);
@@ -139,6 +179,40 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         message: 'Impossible de charger la carte géographique',
       };
       this.createChart(); // créer le chart meme si error pour l'afficher
+    }
+  }
+
+  private createLoadingChart(): void {
+    try {
+      const element = this.elementRef.nativeElement;
+      if (!element) return;
+
+      const options: Highcharts.Options = {
+        chart: {
+          backgroundColor: 'transparent',
+        },
+        title: { text: '' },
+        credits: { enabled: false },
+        exporting: { enabled: false },
+        series: [],
+      };
+
+      configureLoadingOptions(options);
+
+      this.chart = Highcharts.chart(element, options);
+
+      if (this.chart) {
+        const { width, height } = element.getBoundingClientRect();
+        if (width > 0 && height > 0) {
+          this.chart.setSize(width, height, false);
+        }
+      }
+
+      updateChartLoadingState(this.chart, true, false, false);
+
+      this.debug && console.log('[chart] Loading chart créé pour map');
+    } catch (error) {
+      console.error('Erreur lors de la création du loading chart:', error);
     }
   }
 
@@ -188,7 +262,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         this.chart,
         this._isLoading,
         hasData,
-        !!this.dataValidationError
+        !!this.dataValidationError,
       );
 
       this.debug && console.log('Graphique créé:', this.type);
@@ -212,7 +286,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           this.data,
           this.config.series,
           userSeriesOptions,
-          defaultJoinBy
+          defaultJoinBy,
         ),
       };
     } else {
@@ -227,14 +301,24 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           const mapUrl = buildMapUrl(
             this.config.mapEndpoint,
             this.config.mapParam,
-            this.config.mapDefaultValue
+            this.config.mapDefaultValue,
           );
           try {
             this.loadedMapData = await loadGeoJSON(mapUrl);
             this.mapCodeToName = extractCodeToNameMapping(this.loadedMapData);
-          } catch (error) { console.error('Erreur lors du chargement du mapping GeoJSON:', error) }
+          } catch (error) {
+            console.error(
+              'Erreur lors du chargement du mapping GeoJSON:',
+              error,
+            );
+          }
         }
-        const result = transformChartData(tempSeries, previousType, this.type, undefined);
+        const result = transformChartData(
+          tempSeries,
+          previousType,
+          this.type,
+          undefined,
+        );
         const finalCategories =
           result.categories && this.mapCodeToName.size > 0
             ? replaceCodesWithNames(result.categories, this.mapCodeToName)
@@ -245,7 +329,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
             (value: any, index: number) => ({
               name: finalCategories[index] || `Item ${index + 1}`,
               y: typeof value === 'number' ? value : value.y || value,
-            })
+            }),
           );
 
           chartData = {
@@ -263,10 +347,16 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           chartData = {
             series: result.series,
             xAxis: finalCategories
-              ? { categories: finalCategories, title: { text: this.config.xtitle || '' } }
+              ? {
+                  categories: finalCategories,
+                  title: { text: this.config.xtitle || '' },
+                }
               : { title: { text: this.config.xtitle || '' } },
             yAxis: result.yCategories
-              ? { categories: result.yCategories, title: { text: this.config.ytitle || '' } }
+              ? {
+                  categories: result.yCategories,
+                  title: { text: this.config.ytitle || '' },
+                }
               : { title: { text: this.config.ytitle || '' } },
           } as any;
 
@@ -275,7 +365,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
             chartData.tooltip = createMapTooltipFormatter();
           }
         }
-      } else { chartData = this.processData() }
+      } else {
+        chartData = this.processData();
+      }
     }
 
     const baseOptions: Highcharts.Options = {
@@ -345,7 +437,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       finalOptions.series = baseOptions.series;
     }
 
-    if ((this.type === 'donut' || this.type === 'pie') && this.config.options?.donutCenter) {
+    if (
+      (this.type === 'donut' || this.type === 'pie') &&
+      this.config.options?.donutCenter
+    ) {
       applyDonutCenterLogic(finalOptions, this.config.options.donutCenter);
     }
 
@@ -413,24 +508,24 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         tempSeries,
         previousType,
         this.type,
-        undefined
+        undefined,
       );
       if (result.series && result.series[0]?.data) {
         if (result.categories && this.mapCodeToName.size > 0) {
           const categories = replaceCodesWithNames(
             result.categories,
-            this.mapCodeToName
+            this.mapCodeToName,
           );
           dataToUse = result.series[0].data.map(
             (value: any, index: number) => ({
               name: categories[index] || `Item ${index + 1}`,
               y: typeof value === 'number' ? value : value.y || value,
-            })
+            }),
           );
           this.debug &&
             console.log(
               '[Simple Chart - Map Transform] Données avec noms:',
-              dataToUse.slice(0, 3)
+              dataToUse.slice(0, 3),
             );
         } else {
           dataToUse = result.series[0].data;
@@ -458,7 +553,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           series: complexChart.series,
           xAxis: { categories: complexChart.categories },
         },
-        this.config
+        this.config,
       );
       this.debug &&
         console.log('[Simple Chart - Multi] Données agrégées:', aggregatedData);
@@ -541,7 +636,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         series,
         previousType,
         this.type,
-        categories
+        categories,
       );
       series = result.series;
       yCategories = result.yCategories;
@@ -553,7 +648,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         series,
         this.type,
         this.type,
-        categories
+        categories,
       );
       series = result.series;
       yCategories = result.yCategories;

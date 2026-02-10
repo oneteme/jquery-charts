@@ -10,7 +10,7 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       { palier: 'P1 Critique', COUNT: 42 },
       { palier: 'P2 Élevé', COUNT: 68 },
       { palier: 'P3 Moyen', COUNT: 96 },
-      { palier: 'P4 Faible', COUNT: 124 }
+      { palier: 'P4 Faible', COUNT: 124 },
     ],
     config: {
       title: 'Volumes de tickets par priorité',
