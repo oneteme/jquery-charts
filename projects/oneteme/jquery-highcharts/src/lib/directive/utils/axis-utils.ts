@@ -6,10 +6,18 @@ export function applyAxisOffsets(options: Highcharts.Options): void {
   const yAxes = Array.isArray(options.yAxis) ? options.yAxis : [options.yAxis];
 
   yAxes.forEach((yAxis: any, index: number) => {
-    if (yAxis.maxOffset === undefined) return;
     if (yAxis.max !== undefined) return;
 
     const dataMax = calculateMaxFromSeriesOptions(options.series, index);
+
+    if (dataMax !== null) {
+      const handled = applySmallMaxPrecision(yAxis, dataMax);
+      if (handled) {
+        return;
+      }
+    }
+
+    if (yAxis.maxOffset === undefined) return;
 
     if (dataMax !== null) {
       const offset = typeof yAxis.maxOffset === 'number' ? yAxis.maxOffset : 0;
@@ -75,6 +83,61 @@ export function applyAxisOffsets(options: Highcharts.Options): void {
       }
     }
   });
+}
+
+function applySmallMaxPrecision(yAxis: any, dataMax: number): boolean {
+  const threshold =
+    typeof yAxis.smallMaxThreshold === 'number' ? yAxis.smallMaxThreshold : null;
+
+  if (threshold === null || dataMax > threshold) return false;
+
+  const min = typeof yAxis.min === 'number' ? yAxis.min : 0;
+  const range = Math.max(dataMax - min, 0);
+  const tickCount =
+    typeof yAxis.smallMaxTickCount === 'number'
+      ? yAxis.smallMaxTickCount
+      : typeof yAxis.tickAmount === 'number'
+        ? yAxis.tickAmount
+        : 5;
+
+  if (range > 0 && tickCount > 1) {
+    const rawStep = range / (tickCount - 1);
+    const step = getNiceStep(rawStep);
+    const finalMax = min + step * (tickCount - 1);
+
+    yAxis.max = finalMax;
+    yAxis.endOnTick = true;
+    yAxis.tickAmount = tickCount;
+    yAxis.tickInterval = step;
+    if (typeof yAxis.smallMaxMinTickInterval === 'number') {
+      yAxis.minTickInterval = yAxis.smallMaxMinTickInterval;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+function getNiceStep(rawStep: number): number {
+  if (!isFinite(rawStep) || rawStep <= 0) return 1;
+
+  const exponent = Math.floor(Math.log10(rawStep));
+  const magnitude = Math.pow(10, exponent);
+  const fraction = rawStep / magnitude;
+
+  let niceFraction: number;
+  if (fraction <= 1) {
+    niceFraction = 1;
+  } else if (fraction <= 2) {
+    niceFraction = 2;
+  } else if (fraction <= 5) {
+    niceFraction = 5;
+  } else {
+    niceFraction = 10;
+  }
+
+  return niceFraction * magnitude;
 }
 
 function calculateMaxFromSeriesOptions(

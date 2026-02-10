@@ -1,56 +1,51 @@
-import { field, rangeFields } from '@oneteme/jquery-core';
+import { field } from '@oneteme/jquery-core';
 import { ChartDataCollection, RangeChartData } from '../../core/models/chart.model';
 
 export const RANGE_CHART_DATA: ChartDataCollection<RangeChartData> = {
   rangeExample: {
     data: [
-      { min: 10, max: 30, field: '2020' },
-      { min: 20, max: 25, field: '2021' },
-      { min: 15, max: 50, field: '2022' },
-      { min: 30, max: 50, field: '2023' },
-      { min: 25, max: 30, field: '2024' },
+      { min: 96.1, max: 99.2, field: 'Jan' },
+      { min: 96.8, max: 99.4, field: 'Fév' },
+      { min: 95.6, max: 99.0, field: 'Mar' },
+      { min: 97.2, max: 99.6, field: 'Avr' },
+      { min: 97.8, max: 99.7, field: 'Mai' },
+      { min: 96.9, max: 99.3, field: 'Juin' },
     ],
     config: {
-      title: 'Évolution des valeurs min/max',
-      series: [{
-        data: { x: field('field'), y: rangeFields('min', 'max') },
-        name: 'Plage de valeurs'
-      }],
+      title: 'Disponibilité des services (SLA)',
+      subtitle: 'Plage mensuelle min/max',
+      series: [
+        {
+          data: { x: field('field'), y: field('min') },
+          name: 'Min',
+        },
+        {
+          data: { x: field('field'), y: field('max') },
+          name: 'Max',
+        },
+      ],
       height: 250,
       showToolbar: true,
       options: {
         colors: ['#4AA3A2'],
-        stroke: {
-          curve: 'straight',
-          width: 1
-        },
-        fill: {
-          opacity: 0.4
-        },
-        markers: {
-          size: 3
-        },
-        tooltip: {
-          shared: true,
-          y: {
-            formatter: function(val) {
-              return val;
+        plotOptions: {
+          series: {
+            dataLabels: {
+              enabled: true,
+              format: '{point.low}% - {point.high}%'
             }
           }
         },
-        xaxis: {
-          axisBorder: {
-            show: true
-          }
+        tooltip: {
+          pointFormat: '<b>{point.low}% - {point.high}%</b>'
         },
-        yaxis: {
-          min: 0,
-          max: 60,
+        xAxis: {
+          title: { text: null }
+        },
+        yAxis: {
+          min: 95,
+          max: 100,
           tickAmount: 4
-        },
-        grid: {
-          borderColor: '#e0e0e0',
-          strokeDashArray: 2
         }
       }
     },

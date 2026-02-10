@@ -4,10 +4,18 @@ import {
   PIE_CHART_DATA,
   BAR_CHART_DATA,
   LINE_CHART_DATA,
+  SPLINE_CHART_DATA,
+  SCATTER_CHART_DATA,
+  BUBBLE_CHART_DATA,
   TREEMAP_CHART_DATA,
   HEATMAP_CHART_DATA,
   RANGE_CHART_DATA,
   FUNNEL_CHART_DATA,
+  COMBO_CHART_DATA,
+  MAP_CHART_DATA,
+  POLAR_CHART_DATA,
+  RADAR_CHART_DATA,
+  RADIAL_BAR_CHART_DATA,
 } from '../../data/chart/_index';
 import { ChartTypesService } from 'src/app/core/services/chart-types.service';
 
@@ -20,12 +28,21 @@ export class ChartsComponent implements OnInit {
   selectedChartType: string = 'Pie Chart';
   private readonly chartTypeMap: { [key: string]: string } = {
     pie: 'Pie Chart',
+    donut: 'Donut Chart',
     bar: 'Bar Chart',
     line: 'Line Chart',
+    spline: 'Spline Chart',
+    scatter: 'Scatter Chart',
+    bubble: 'Bubble Chart',
     treemap: 'Treemap Chart',
     heatmap: 'Heatmap Chart',
     range: 'Range Chart',
     funnel: 'Funnel Chart',
+    polar: 'Polar Chart',
+    radar: 'Radar Chart',
+    'radial-bar': 'Radial Bar Chart',
+    combo: 'Combo Chart',
+    map: 'Map Chart',
   };
 
   pieExample = PIE_CHART_DATA.pieExample;
@@ -33,10 +50,7 @@ export class ChartsComponent implements OnInit {
   pieExample3 = PIE_CHART_DATA.pieExample3;
   pieExample4 = PIE_CHART_DATA.pieExample4;
   pieExample5 = PIE_CHART_DATA.pieExample5;
-  pieExample6 = PIE_CHART_DATA.pieExample6;
-  pieExample7 = PIE_CHART_DATA.pieExample7;
-  pieExample8 = PIE_CHART_DATA.pieExample8;
-  pieExample9 = PIE_CHART_DATA.pieExample9;
+  donutExample = PIE_CHART_DATA.donutExample;
 
   barExample = BAR_CHART_DATA.barExample;
   barExample2 = BAR_CHART_DATA.barExample2;
@@ -59,12 +73,25 @@ export class ChartsComponent implements OnInit {
   lineExample8 = LINE_CHART_DATA.lineExample8;
   lineExample9 = LINE_CHART_DATA.lineExample9;
 
+  splineExample = SPLINE_CHART_DATA.splineExample;
+  splineExample2 = SPLINE_CHART_DATA.splineExample2;
+
+  scatterExample = SCATTER_CHART_DATA.scatterExample;
+  bubbleExample = BUBBLE_CHART_DATA.bubbleExample;
+
   treemapExample = TREEMAP_CHART_DATA.treemapExample;
   treemapExample2 = TREEMAP_CHART_DATA.treemapExample2;
   treemapExample3 = TREEMAP_CHART_DATA.treemapExample3;
   heatmapExample = HEATMAP_CHART_DATA.heatmapExample;
   rangeExample = RANGE_CHART_DATA.rangeExample;
   funnelExample = FUNNEL_CHART_DATA.funnelExample;
+
+  comboExample = COMBO_CHART_DATA.comboExample;
+  mapExample = MAP_CHART_DATA.mapExample;
+
+  polarExample = POLAR_CHART_DATA.polarExample;
+  radarExample = RADAR_CHART_DATA.radarExample;
+  radialBarExample = RADIAL_BAR_CHART_DATA.radialBarExample;
 
   constructor(
     public router: Router,
@@ -126,18 +153,36 @@ export class ChartsComponent implements OnInit {
     const exampleCopy = JSON.parse(JSON.stringify(example));
 
     let chartType = 'pie';
-    if (Object.values(BAR_CHART_DATA).includes(example)) {
+    if (example === PIE_CHART_DATA.donutExample) {
+      chartType = 'donut';
+    } else if (Object.values(BAR_CHART_DATA).includes(example)) {
       chartType = 'bar';
     } else if (Object.values(LINE_CHART_DATA).includes(example)) {
       chartType = 'line';
+    } else if (Object.values(SPLINE_CHART_DATA).includes(example)) {
+      chartType = 'spline';
+    } else if (Object.values(SCATTER_CHART_DATA).includes(example)) {
+      chartType = 'scatter';
+    } else if (Object.values(BUBBLE_CHART_DATA).includes(example)) {
+      chartType = 'bubble';
     } else if (Object.values(TREEMAP_CHART_DATA).includes(example)) {
       chartType = 'treemap';
     } else if (Object.values(HEATMAP_CHART_DATA).includes(example)) {
       chartType = 'heatmap';
     } else if (Object.values(RANGE_CHART_DATA).includes(example)) {
-      chartType = 'range';
+      chartType = 'arearange';
     } else if (Object.values(FUNNEL_CHART_DATA).includes(example)) {
       chartType = 'funnel';
+    } else if (Object.values(COMBO_CHART_DATA).includes(example)) {
+      chartType = 'line';
+    } else if (Object.values(MAP_CHART_DATA).includes(example)) {
+      chartType = 'map';
+    } else if (Object.values(POLAR_CHART_DATA).includes(example)) {
+      chartType = 'polar';
+    } else if (Object.values(RADAR_CHART_DATA).includes(example)) {
+      chartType = 'radar';
+    } else if (Object.values(RADIAL_BAR_CHART_DATA).includes(example)) {
+      chartType = 'radialBar';
     }
 
     const processDataFunctions = (obj: any) => {

@@ -6,8 +6,6 @@ const barConfig = {
   title: "Ventes trimestrielles par produit",
   xtitle: "Produits",
   ytitle: "Ventes (k€)",
-  // Type de graphique (bar = horizontal, column = vertical)
-  type: 'column',
   // Hauteur du graphique en pixels
   height: 250,
   // Afficher ou non la barre d'outils de jquery-charts
@@ -51,22 +49,30 @@ const barConfig = {
     }
   ],
   options: {
-    // Configuration des étiquettes de données
-    dataLabels: {
-      enabled: true,      // Afficher les valeurs sur les barres
-      formatter: (val) => \`\${val}k\` // Ajouter 'k' aux valeurs
-    },
-    // Configuration des barres
+    // Configuration des colonnes
     plotOptions: {
-      bar: {
-        horizontal: false,    // Barres verticales (column)
-        borderRadius: 4,      // Arrondi des barres
-        columnWidth: '70%'    // Largeur des colonnes
+      column: {
+        borderRadius: 4,
+        pointPadding: 0.1,
+        groupPadding: 0.1
+      },
+      series: {
+        dataLabels: {
+          enabled: true,
+          format: '{point.y}k'
+        }
       }
+    },
+    xAxis: {
+      title: { text: 'Produits' }
+    },
+    yAxis: {
+      title: { text: 'Ventes (k€)' }
     },
     // Configuration de la légende
     legend: {
-      position: 'bottom'
+      align: 'center',
+      verticalAlign: 'bottom'
     }
   }
 };

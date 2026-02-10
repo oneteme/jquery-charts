@@ -2,7 +2,7 @@ import { Highcharts } from './highcharts-modules';
 
 export function showLoading(
   chart: Highcharts.Chart,
-  text: string = 'Chargement des données...'
+  text: string = 'Chargement des données...',
 ): void {
   if (!chart) return;
 
@@ -28,7 +28,7 @@ export function showNoDataMessage(chart: Highcharts.Chart): void {
 
 export function showValidationError(
   chart: Highcharts.Chart,
-  errorMessage: string
+  errorMessage: string,
 ): void {
   if (!chart) return;
 
@@ -57,14 +57,14 @@ export function hideChartToolbar(chart: Highcharts.Chart): void {
   if (!chart?.container) return;
 
   const exportButton = chart.container.querySelector(
-    '.highcharts-exporting-group'
+    '.highcharts-exporting-group',
   );
   if (exportButton) {
     (exportButton as HTMLElement).style.display = 'none';
   }
 
   const customToolbar = chart.container.querySelector(
-    '.highcharts-custom-toolbar'
+    '.highcharts-custom-toolbar',
   );
   if (customToolbar) {
     (customToolbar as HTMLElement).style.display = 'none';
@@ -75,14 +75,14 @@ export function showChartToolbar(chart: Highcharts.Chart): void {
   if (!chart?.container) return;
 
   const exportButton = chart.container.querySelector(
-    '.highcharts-exporting-group'
+    '.highcharts-exporting-group',
   );
   if (exportButton) {
     (exportButton as HTMLElement).style.display = '';
   }
 
   const customToolbar = chart.container.querySelector(
-    '.highcharts-custom-toolbar'
+    '.highcharts-custom-toolbar',
   );
   if (customToolbar) {
     (customToolbar as HTMLElement).style.display = 'flex';
@@ -93,7 +93,7 @@ export function updateChartLoadingState(
   chart: Highcharts.Chart,
   isLoading: boolean,
   hasData: boolean,
-  hasValidationError: boolean = false
+  hasValidationError: boolean = false,
 ): void {
   if (!chart) return;
 
@@ -128,8 +128,14 @@ function hideChartContent(chart: Highcharts.Chart): void {
       s.markerGroup?.hide?.();
     });
     if (chart.container) {
-      const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
+      const dataLabels = chart.container.querySelectorAll(
+        '.highcharts-data-labels, .highcharts-label, .highcharts-data-label',
+      );
       dataLabels.forEach((el: Element) => {
+        if ((el as HTMLElement).classList.contains('highcharts-no-data'))
+          return;
+        if ((el as HTMLElement).classList.contains('highcharts-no-data-label'))
+          return;
         (el as HTMLElement).style.visibility = 'hidden';
       });
       const mapGroup = chart.container.querySelector('.highcharts-map-series');
@@ -137,7 +143,9 @@ function hideChartContent(chart: Highcharts.Chart): void {
         (mapGroup as HTMLElement).style.visibility = 'hidden';
       }
     }
-  } catch {}
+  } catch (error) {
+    console.error('[chart] hideChartContent error', error);
+  }
 }
 
 function showChartContent(chart: Highcharts.Chart): void {
@@ -151,7 +159,9 @@ function showChartContent(chart: Highcharts.Chart): void {
       s.markerGroup?.show?.();
     });
     if (chart.container) {
-      const dataLabels = chart.container.querySelectorAll('.highcharts-data-labels, .highcharts-label, .highcharts-data-label');
+      const dataLabels = chart.container.querySelectorAll(
+        '.highcharts-data-labels, .highcharts-label, .highcharts-data-label',
+      );
       dataLabels.forEach((el: Element) => {
         (el as HTMLElement).style.visibility = '';
       });
@@ -160,11 +170,13 @@ function showChartContent(chart: Highcharts.Chart): void {
         (mapGroup as HTMLElement).style.visibility = '';
       }
     }
-  } catch {}
+  } catch (error) {
+    console.error('[chart] showChartContent error', error);
+  }
 }
 
 export function configureLoadingOptions(
-  chartOptions: Highcharts.Options
+  chartOptions: Highcharts.Options,
 ): void {
   chartOptions.loading = {
     hideDuration: 100,

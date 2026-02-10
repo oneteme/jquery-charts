@@ -7,13 +7,14 @@ import {
 export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
   barExample: {
     data: [
-      { palier: 'Niveau 1', COUNT: 110 },
-      { palier: 'Niveau 2', COUNT: 160 },
-      { palier: 'Niveau 3', COUNT: 80 },
-      { palier: 'Niveau 4', COUNT: 145 }
+      { palier: 'P1 Critique', COUNT: 42 },
+      { palier: 'P2 Élevé', COUNT: 68 },
+      { palier: 'P3 Moyen', COUNT: 96 },
+      { palier: 'P4 Faible', COUNT: 124 },
     ],
     config: {
-      title: 'title test',
+      title: 'Volumes de tickets par priorité',
+      subtitle: 'Centre de support - 30 derniers jours',
       series: [
         {
           data: { x: field('palier'), y: field('COUNT') },
@@ -23,33 +24,24 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       height: 250,
       showToolbar: true,
       options: {
-        dataLabels: {
-          dropShadow: {
-            enabled: true,
-          },
-          enabled: true,
-        },
-        title: {
-          align: 'center',
-          style: {
-            color: '#333',
-            fontSize: '16px',
-            fontWeight: 700,
-          },
-        },
         plotOptions: {
-          bar: {
-            distributed: true,
+          series: {
+            colorByPoint: true,
+            borderRadius: 4,
+            dataLabels: {
+              enabled: true,
+            },
           },
         },
-        yaxis: { show: true },
-        xaxis: {
-          show: false,
-          labels: { show: false },
-          axisBorder: { show: false },
-          axisTicks: { show: false },
+        xAxis: {
+          labels: { enabled: false },
+          lineWidth: 0,
+          tickLength: 0,
         },
-        legend: { horizontalAlign: 'left', offsetX: 20 },
+        yAxis: {
+          title: { text: null },
+        },
+        legend: { enabled: false },
       },
     },
   },
@@ -61,8 +53,8 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       { count: 80, field: '5xx' },
     ],
     config: {
-      title: 'Distribution par code HTTP',
-      subtitle: 'Analyse des statuts de réponse',
+      title: 'Distribution des réponses HTTP',
+      subtitle: 'Applications critiques',
       series: [
         {
           data: { x: field('field'), y: field('count') },
@@ -73,46 +65,21 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       options: {
         colors: ['#CA3C66', '#DB6A8F', '#E8AABE', '#A7E0E0', '#4AA3A2'],
         plotOptions: {
-          bar: {
+          series: {
             borderRadius: 8,
-            columnWidth: '60%',
+            pointPadding: 0.1,
+            groupPadding: 0.1,
             dataLabels: {
-              position: 'top',
+              enabled: true,
+              format: '{point.y}',
             },
           },
-        },
-        dataLabels: {
-          enabled: true,
-          formatter: function (val) {
-            return val;
-          },
-          offsetY: -20,
-          style: {
-            fontSize: '12px',
-            colors: ['#333'],
-          },
-        },
-        stroke: {
-          show: true,
-          width: 2,
-          colors: ['transparent'],
         },
         legend: {
-          show: false,
-        },
-        grid: {
-          borderColor: '#e7e7e7',
-          row: {
-            colors: ['#f3f3f3', 'transparent'],
-            opacity: 0.5,
-          },
+          enabled: false,
         },
         tooltip: {
-          y: {
-            formatter: function (val) {
-              return val + ' requêtes';
-            },
-          },
+          pointFormat: '<b>{point.y} requêtes</b>',
         },
       },
     },
@@ -128,8 +95,8 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       { count: 50, field: 'Api 3', subField: '4xx' },
     ],
     config: {
-      title: 'Distribution par API et code',
-      subtitle: 'Analyse croisée API/statut',
+      title: 'Répartition par API et statut',
+      subtitle: 'Observabilité - Production',
       series: [
         {
           data: { x: joinFields('_', 'field', 'subField'), y: field('count') },
@@ -146,21 +113,14 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
           '#80586D',
         ],
         plotOptions: {
-          bar: {
-            horizontal: false,
-            columnWidth: '70%',
+          series: {
             borderRadius: 4,
+            pointPadding: 0.1,
+            groupPadding: 0.1,
+            dataLabels: { enabled: false },
           },
         },
-        dataLabels: {
-          enabled: false,
-        },
-        stroke: {
-          show: true,
-          width: 2,
-          colors: ['transparent'],
-        },
-        xaxis: {
+        xAxis: {
           labels: {
             rotate: -45,
             style: {
@@ -168,34 +128,16 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
             },
           },
         },
-        yaxis: {
+        yAxis: {
           title: {
             text: "Nombre d'appels",
           },
         },
-        fill: {
-          opacity: 0.9,
-          type: 'gradient',
-          gradient: {
-            shade: 'dark',
-            type: 'vertical',
-            shadeIntensity: 0.2,
-            gradientToColors: undefined,
-            inverseColors: true,
-            opacityFrom: 0.9,
-            opacityTo: 0.7,
-            stops: [0, 90, 100],
-          },
-        },
         legend: {
-          show: false,
+          enabled: false,
         },
         tooltip: {
-          y: {
-            formatter: function (val) {
-              return val + ' appels';
-            },
-          },
+          pointFormat: '<b>{point.y} appels</b>',
         },
       },
     },
@@ -214,6 +156,8 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       { count: 50, field: 'Api 3', subField: '5xx' },
     ],
     config: {
+      title: 'Volumes par API et classe de statut',
+      subtitle: 'Vue multi-séries',
       series: [
         {
           data: { x: field('field'), y: field('count') },
@@ -232,7 +176,7 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
     ],
     config: {
       title: 'Comparaison des APIs',
-      subtitle: 'Vue par type de code HTTP',
+      subtitle: 'Répartition 2xx / 4xx / 5xx',
       series: [
         {
           data: { x: field('field'), y: field('count_2xx') },
@@ -250,43 +194,25 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       height: 250,
       options: {
         colors: ['#CA3C66', '#DB6A8F', '#E8AABE'],
-        chart: {
-          stacked: true,
-        },
         plotOptions: {
-          bar: {
-            horizontal: true,
-            barHeight: '80%',
+          series: {
             borderRadius: 5,
+            stacking: 'normal',
+            dataLabels: { enabled: false },
           },
         },
-        stroke: {
-          width: 1,
-          colors: ['#fff'],
-        },
-        xaxis: {
-          categories: ['Api 1', 'Api 2', 'Api 3'],
-        },
-        yaxis: {
+        yAxis: {
           title: {
             text: 'APIs',
           },
         },
         legend: {
-          position: 'top',
-          horizontalAlign: 'right',
+          align: 'right',
+          verticalAlign: 'top',
         },
         tooltip: {
           shared: true,
-          intersect: false,
-          y: {
-            formatter: function (val) {
-              return val + ' requêtes';
-            },
-          },
-        },
-        fill: {
-          opacity: 1,
+          pointFormat: '<b>{point.y} requêtes</b>',
         },
       },
     },
@@ -300,6 +226,7 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
     ],
     config: {
       title: 'APIs triées (ordre croissant)',
+      subtitle: 'Top volumes 2xx/4xx/5xx',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
@@ -309,22 +236,12 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       xorder: 'asc',
       options: {
         colors: ['#4CAF50', '#FF9800', '#F44336'],
-        chart: {
-          dropShadow: {
-            enabled: true,
-            opacity: 0.4,
-          },
-        },
-        dataLabels: {
-          enabled: false,
-        },
         plotOptions: {
-          bar: {
-            borderRadius: 4,
-          },
+          series: { borderRadius: 4, dataLabels: { enabled: false } },
         },
         legend: {
-          position: 'top',
+          align: 'center',
+          verticalAlign: 'top',
         },
       },
     },
@@ -355,7 +272,7 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
     ],
     config: {
       title: 'Mode continu',
-      subtitle: 'Affichage en coordonnées',
+      subtitle: 'Données en coordonnées',
       series: [
         { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
         { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
@@ -366,27 +283,15 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       continue: true,
       options: {
         colors: ['#137C8B', '#709CA7', '#B8CBD0'],
-        markers: {
-          size: 5,
-          hover: {
-            size: 7,
+        plotOptions: {
+          series: {
+            dataLabels: {
+              enabled: true,
+              format: '{point.y}',
+            },
           },
         },
-        dataLabels: {
-          enabled: true,
-          offsetY: -10,
-          style: {
-            fontSize: '12px',
-            colors: ['#333'],
-          },
-        },
-        stroke: {
-          curve: 'smooth',
-          width: 2,
-        },
-        xaxis: {
-          type: 'category',
-        },
+        xAxis: { type: 'category' },
         tooltip: {
           shared: true,
           intersect: false,
@@ -409,6 +314,8 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       { day: '3', status: 500, count: 12, group: '5xx' },
     ],
     config: {
+      title: 'Empilement par statut HTTP',
+      subtitle: 'Comparaison par jour',
       series: [
         {
           data: { x: field('day'), y: field('count') },
@@ -418,6 +325,11 @@ export const BAR_CHART_DATA: ChartDataCollection<BarChartData> = {
       ],
       options: {
         colors: ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51'],
+        plotOptions: {
+          series: {
+            stacking: 'normal',
+          },
+        },
       },
       height: 250,
       stacked: true,

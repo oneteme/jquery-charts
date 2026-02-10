@@ -21,80 +21,21 @@ export const TREEMAP_CHART_DATA: ChartDataCollection<TreemapChartData> = {
       height: 250,
       options: {
         colors: ['#CA3C66', '#DB6A8F', '#E8AABE', '#A7E0E0', '#4AA3A2'],
-        chart: {
-          dropShadow: {
-            enabled: true,
-            top: 2,
-            left: 1,
-            blur: 5,
-            opacity: 0.1,
-          },
-        },
         legend: {
-          show: false,
-        },
-        dataLabels: {
-          enabled: true,
-          style: {
-            fontSize: '12px',
-            fontFamily: 'Helvetica, Arial, sans-serif',
-            fontWeight: 'bold',
-            colors: ['#fff'],
-          },
-          formatter: function (text, op) {
-            return `${text}: ${op.value}`;
-          },
-          dropShadow: {
-            enabled: true,
-            top: 1,
-            left: 1,
-            blur: 1,
-            opacity: 0.45,
-          },
+          enabled: false,
         },
         plotOptions: {
-          treemap: {
-            distributed: true,
-            enableShades: true,
-            shadeIntensity: 0.5,
-            reverseNegativeShade: true,
-            colorScale: {
-              ranges: [
-                {
-                  from: 0,
-                  to: 20,
-                  color: '#DB6A8F',
-                },
-                {
-                  from: 21,
-                  to: 40,
-                  color: '#CA3C66',
-                },
-                {
-                  from: 41,
-                  to: 60,
-                  color: '#A7E0E0',
-                },
-                {
-                  from: 61,
-                  to: 100,
-                  color: '#4AA3A2',
-                },
-              ],
+          series: {
+            layoutAlgorithm: 'squarified',
+            allowTraversingTree: true,
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}: {point.value}',
             },
           },
         },
         tooltip: {
-          enabled: true,
-          theme: 'light',
-          style: {
-            fontSize: '12px',
-          },
-          y: {
-            formatter: function (value) {
-              return value + ' éléments';
-            },
-          },
+          pointFormat: '<b>{point.value} éléments</b>',
         },
       },
     },
@@ -132,67 +73,21 @@ export const TREEMAP_CHART_DATA: ChartDataCollection<TreemapChartData> = {
           '#EA5863',
         ],
         legend: {
-          show: true,
-          position: 'bottom',
-          horizontalAlign: 'center',
-          fontSize: '12px',
-        },
-        dataLabels: {
-          enabled: true,
-          style: {
-            fontSize: '11px',
-            fontFamily: 'Helvetica, Arial, sans-serif',
-            fontWeight: 'bold',
-          },
-          formatter: function (text, op) {
-            return [text, op.value].join(': ');
-          },
+          align: 'center',
+          verticalAlign: 'bottom',
         },
         plotOptions: {
-          treemap: {
-            enableShades: true,
-            shadeIntensity: 0.6,
-            useFillColorAsStroke: true,
-            colorScale: {
-              inverse: false,
-              ranges: [
-                {
-                  from: 0,
-                  to: 25,
-                  color: '#F6B339',
-                },
-                {
-                  from: 26,
-                  to: 50,
-                  color: '#DA7B27',
-                },
-                {
-                  from: 51,
-                  to: 75,
-                  color: '#77021D',
-                },
-              ],
+          series: {
+            layoutAlgorithm: 'squarified',
+            allowTraversingTree: true,
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}: {point.value}',
             },
           },
         },
         tooltip: {
-          enabled: true,
-          x: {
-            show: true,
-            formatter: function (val) {
-              return val;
-            },
-          },
-          y: {
-            title: {
-              formatter: function () {
-                return 'Valeur:';
-              },
-            },
-            formatter: function (value) {
-              return value + ' unités';
-            },
-          },
+          pointFormat: '<b>{point.value} unités</b>',
         },
       },
     },
@@ -231,70 +126,22 @@ export const TREEMAP_CHART_DATA: ChartDataCollection<TreemapChartData> = {
           '#A7001E',
           '#E1A624',
         ],
-        chart: {
-          dropShadow: {
-            enabled: true,
-            top: 3,
-            left: 2,
-            blur: 4,
-            opacity: 0.2,
-          },
-        },
         legend: {
-          show: true,
-          position: 'top',
-          horizontalAlign: 'right',
-          fontSize: '12px',
-          itemMargin: {
-            horizontal: 8,
-            vertical: 5,
-          },
-          markers: {
-            width: 10,
-            height: 10,
-            strokeWidth: 0,
-            radius: 2,
-          },
-        },
-        dataLabels: {
-          enabled: true,
-          style: {
-            fontSize: '10px',
-            fontWeight: 'bold',
-            colors: ['#fff'],
-          },
-          background: {
-            enabled: true,
-            foreColor: '#333',
-            opacity: 0.7,
-            borderRadius: 2,
-            padding: 3,
-          },
-          formatter: function (text, op) {
-            return op.value;
-          },
+          align: 'right',
+          verticalAlign: 'top',
         },
         plotOptions: {
-          treemap: {
-            distributed: false,
-            enableShades: true,
-            shadeIntensity: 0.4,
-            reverseNegativeShade: false,
+          series: {
+            layoutAlgorithm: 'squarified',
+            allowTraversingTree: true,
+            dataLabels: {
+              enabled: true,
+              format: '{point.value}',
+            },
           },
         },
         tooltip: {
-          theme: 'dark',
-          shared: false,
-          intersect: true,
-          followCursor: true,
-          x: {
-            show: true,
-          },
-          y: {
-            formatter: function (value) {
-              return value + ' éléments';
-            },
-          },
+          pointFormat: '<b>{point.value} éléments</b>',
         },
       },
     },

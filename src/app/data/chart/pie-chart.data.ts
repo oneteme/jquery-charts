@@ -2,28 +2,90 @@ import { field, values, joinFields } from '@oneteme/jquery-core';
 import { ChartDataCollection, PieChartData } from '../../core/models/chart.model';
 
 export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
+  donutExample: {
+    data: [
+      { segment: 'Enterprise', value: 42 },
+      { segment: 'Mid-market', value: 28 },
+      { segment: 'SMB', value: 18 },
+      { segment: 'Public', value: 12 },
+    ],
+    config: {
+      title: 'Mix de revenus récurrents',
+      subtitle: 'Répartition par segment client',
+      height: 280,
+      showToolbar: true,
+      series: [
+        {
+          data: { x: field('segment'), y: field('value') },
+          name: 'MRR',
+        },
+      ],
+      options: {
+        colors: ['#1D4ED8', '#3B82F6', '#60A5FA', '#93C5FD'],
+        plotOptions: {
+          series: {
+            innerSize: '65%',
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}: {point.percentage:.1f}%'
+            },
+            showInLegend: true,
+          },
+        },
+        donutCenter: {
+          enabled: true,
+          title: 'MRR',
+          labelColor: '#475569',
+          valueColor: '#0F172A',
+          labelFontSize: '12px',
+          valueFontSize: '20px',
+        },
+        tooltip: {
+          pointFormat: '<b>{point.y}%</b> du MRR',
+        },
+        legend: { align: 'center', verticalAlign: 'bottom' },
+      },
+    },
+  },
   pieExample: {
     data: [{ count_2xx: 110, count_4xx: 160, count_5xx: 80 }],
     config: {
+      title: 'Qualité de service API',
+      subtitle: 'Répartition par classe de statut',
       showToolbar: true,
       height: 250,
       series: [
         {
           data: { x: values('2xx'), y: field('count_2xx') },
-          name: 'Mapper 1',
+          name: 'Succès',
           color: '#93441A',
         },
         {
           data: { x: values('4xx'), y: field('count_4xx') },
-          name: 'Mapper 2',
+          name: 'Erreurs client',
           color: '#B67332',
         },
         {
           data: { x: values('5xx'), y: field('count_5xx') },
-          name: 'Mapper 3',
+          name: 'Erreurs serveur',
           color: '#DAAB3A',
         },
       ],
+      options: {
+        plotOptions: {
+          series: {
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}: {point.y}'
+            },
+            showInLegend: true,
+          },
+        },
+        tooltip: {
+          pointFormat: '<b>{point.y}</b> requêtes',
+        },
+        legend: { align: 'right', verticalAlign: 'middle', layout: 'vertical' },
+      },
     },
   },
   pieExample2: {
@@ -37,6 +99,7 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
     config: {
       height: 250,
       title: 'Distribution des codes HTTP',
+      subtitle: 'Trafic global (prod)',
       series: [
         {
           data: { x: field('field'), y: field('count') },
@@ -44,97 +107,25 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
         },
       ],
       options: {
-        colors: ['#CA3C66', '#DB6A8F', '#E8AABE', '#A7E0E0', '#4AA3A2'],
-        chart: {
-          dropShadow: {
-            enabled: true,
-            top: 2,
-            left: 1,
-            blur: 5,
-            opacity: 0.1,
-          },
-        },
-        stroke: {
-          width: 2,
-          colors: ['#ffffff'],
-        },
-        dataLabels: {
-          enabled: true,
-          formatter: function (val, opts) {
-            const label = opts.w.globals.labels[opts.seriesIndex];
-            return `${label}: ${val.toFixed(0)}%`;
-          },
-          style: {
-            fontSize: '11px',
-            fontFamily: 'Helvetica, Arial, sans-serif',
-            fontWeight: 'bold',
-            colors: ['#ffffff'],
-          },
-          background: {
-            enabled: true,
-            foreColor: '#333333',
-            borderRadius: 2,
-            padding: 4,
-            opacity: 0.7,
-            borderWidth: 1,
-            borderColor: '#ffffff',
-          },
-          dropShadow: {
-            enabled: false,
-            top: 1,
-            left: 1,
-            blur: 1,
-            opacity: 0.4,
-          },
-        },
+        colors: ['#0EA5E9', '#F97316', '#EF4444', '#A855F7', '#22C55E'],
         plotOptions: {
-          pie: {
-            customScale: 0.9,
-            offsetX: 0,
-            offsetY: 0,
-            expandOnClick: true,
-            startAngle: 45,
-            endAngle: 405,
+          series: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            borderWidth: 2,
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}: {point.percentage:.1f}%'
+            },
+            showInLegend: true,
           },
         },
         legend: {
-          show: true,
-          position: 'bottom',
-          horizontalAlign: 'center',
-          fontSize: '12px',
-          labels: {
-            colors: undefined,
-          },
-          markers: {
-            width: 12,
-            height: 12,
-            strokeWidth: 5,
-            strokeColor: '#fff',
-            radius: 12,
-          },
-          itemMargin: {
-            horizontal: 10,
-            vertical: 5,
-          },
+          align: 'center',
+          verticalAlign: 'bottom',
         },
         tooltip: {
-          enabled: true,
-          theme: 'light',
-          style: {
-            fontSize: '12px',
-          },
-          y: {
-            title: {
-              formatter: function () {
-                return 'Nombre de requêtes:';
-              },
-            },
-            formatter: function (value: number) {
-            return (
-              value + ' requêtes (' + ((value / 410) * 100).toFixed(1) + '%)'
-            );
-            },
-          },
+          pointFormat: '<b>{point.y} requêtes</b> ({point.percentage:.1f}%)',
         },
       },
     },
@@ -152,7 +143,7 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
     config: {
       height: 250,
       title: 'Répartition des ventes par produit',
-      subtitle: 'Analyse trimestrielle',
+      subtitle: 'Segmentation régionale',
       series: [
         {
           data: {
@@ -163,36 +154,20 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
         },
       ],
       options: {
-        colors: [
-          '#77021D',
-          '#F6B339',
-          '#DA7B27',
-          '#D7572B',
-          '#C23028',
-          '#EA5863',
-        ],
-        legend: {
-          position: 'right',
-          fontSize: '11px',
-          offsetY: 40,
-          itemMargin: {
-            horizontal: 5,
-            vertical: 8,
+        colors: ['#0F766E', '#14B8A6', '#5EEAD4', '#0EA5E9', '#6366F1', '#A855F7'],
+        plotOptions: {
+          series: {
+            dataLabels: { enabled: false },
+            showInLegend: true,
           },
+        },
+        legend: {
+          align: 'right',
+          verticalAlign: 'middle',
+          layout: 'vertical',
         },
         tooltip: {
-          enabled: true,
-        },
-        dataLabels: {
-          enabled: false,
-        },
-        plotOptions: {
-          pie: {
-            customScale: 0.9,
-            offsetX: -25,
-            offsetY: 20,
-            expandOnClick: false,
-          },
+          pointFormat: '<b>{point.y} k€</b>',
         },
       },
     },
@@ -208,20 +183,26 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
       { count: 50, field: 'Api 3', subField: '4xx' },
     ],
     config: {
+      title: 'Répartition des appels par API',
+      subtitle: 'Vue par segment de statut',
       series: [
         {
           data: { x: joinFields('_', 'field', 'subField'), y: field('count') },
         },
       ],
       options: {
-        colors: [
-          '#137C8B',
-          '#709CA7',
-          '#B8CBD0',
-          '#7A90A4',
-          '#344D59',
-          '#80586D',
-        ],
+        colors: ['#2563EB', '#60A5FA', '#F97316', '#FDBA74', '#22C55E', '#86EFAC'],
+        plotOptions: {
+          series: {
+            showInLegend: true,
+            dataLabels: {
+              enabled: true,
+              format: '{point.name}: {point.percentage:.0f}%'
+            },
+          },
+        },
+        legend: { align: 'center', verticalAlign: 'bottom' },
+        tooltip: { pointFormat: '<b>{point.y}</b> appels' },
       },
     },
   },
@@ -239,190 +220,24 @@ export const PIE_CHART_DATA: ChartDataCollection<PieChartData> = {
       { count: 50, field: 'Api 3', subField: '5xx' },
     ],
     config: {
+      title: 'Volumes par API et statut',
+      subtitle: 'Agrégation multi-séries',
       series: [
         {
           data: { x: field('field'), y: field('count') },
           name: field('subField'),
         },
       ],
-    },
-  },
-
-  pieExample6: {
-    data: [
-      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
-      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
-      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
-    ],
-    config: {
-      title: 'Codes de réponse par API',
-      height: 250,
-      showToolbar: true,
-      series: [
-        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
-        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
-        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
-      ],
       options: {
-        colors: ['#B7CE66', '#8FB43A', '#4B5943', '#DCDFDA', '#C8D6A2'],
-        legend: {
-          show: false,
-        },
-        dataLabels: {
-          enabled: false,
-        },
-      },
-    },
-  },
-
-  pieExample7: {
-    data: [
-      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
-      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
-      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
-    ],
-    config: {
-      title: 'Répartition par API (tri ascendant)',
-      height: 250,
-      series: [
-        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
-        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
-        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
-      ],
-      xorder: 'asc',
-      options: {
-        colors: ['#52B788', '#FF9A3C', '#E76F51'],
-        stroke: {
-          width: 1,
-          colors: ['#000'],
-        },
+        colors: ['#4F46E5', '#F59E0B', '#EF4444'],
         plotOptions: {
-          pie: {
-            startAngle: 0,
-            endAngle: 360,
-            expandOnClick: true,
-            offsetX: 0,
-            offsetY: 0,
-            customScale: 1,
+          series: {
+            dataLabels: { enabled: false },
+            showInLegend: true,
           },
         },
-        dataLabels: {
-          enabled: true,
-          formatter: function (val) {
-            return val.toFixed(1) + '%';
-          },
-          style: {
-            fontSize: '12px',
-            colors: ['#000'],
-          },
-          dropShadow: {
-            enabled: false,
-          },
-        },
-        legend: {
-          position: 'left',
-          fontSize: '12px',
-          labels: {
-            colors: '#000',
-          },
-        },
-      },
-    },
-  },
-  pieExample8: {
-    data: [
-      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
-      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
-      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
-    ],
-    config: {
-      title: 'Répartition des statuts ARRONDIS à l\'unité',
-      height: 250,
-      series: [
-        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
-        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
-        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
-      ],
-      xorder: 'asc',
-      options: {
-        colors: ['#4A919E', '#FFB875', '#e76f51'],
-        stroke: {
-          width: 1,
-          colors: ['#000'],
-        },
-        plotOptions: {
-          pie: {
-            startAngle: 0,
-            endAngle: 360,
-            expandOnClick: true,
-            offsetX: 0,
-            offsetY: 0,
-            customScale: 1,
-          },
-        },
-        dataLabels: {
-          dropShadow: {
-            enabled: false,
-          },
-          enabled: true,
-          formatter: function (val) {
-            return Math.round(val) + '%';
-          },
-          style: {
-            fontSize: '12px',
-            colors: ['#000'],
-          },
-        },
-        legend: {
-          position: 'left',
-          fontSize: '12px',
-          labels: {
-            colors: '#000',
-          },
-        },
-      },
-    },
-  },
-  pieExample9: {
-    data: [
-      { count_2xx: 80, count_4xx: 50, count_5xx: 10, field: 'Api 1' },
-      { count_2xx: 20, count_4xx: 60, count_5xx: 20, field: 'Api 2' },
-      { count_2xx: 10, count_4xx: 50, count_5xx: 50, field: 'Api 3' },
-    ],
-    config: {
-      title: 'Répartition par API (tri descendant)',
-      height: 250,
-      series: [
-        { data: { x: field('field'), y: field('count_2xx') }, name: '2xx' },
-        { data: { x: field('field'), y: field('count_4xx') }, name: '4xx' },
-        { data: { x: field('field'), y: field('count_5xx') }, name: '5xx' },
-      ],
-      xorder: 'desc',
-      options: {
-        colors: ['#2A9D8F', '#F4A261', '#E76F51'],
-        stroke: {
-          colors: ['#fff'],
-        },
-        fill: {
-          opacity: 0.8,
-        },
-        plotOptions: {
-          polarArea: {
-            rings: {
-              strokeWidth: 0,
-            },
-            spokes: {
-              strokeWidth: 0,
-            },
-          },
-        },
-        dataLabels: {
-          enabled: false,
-        },
-        legend: {
-          show: true,
-          position: 'right',
-        },
+        legend: { align: 'right', verticalAlign: 'middle', layout: 'vertical' },
+        tooltip: { pointFormat: '<b>{point.y}</b> appels' },
       },
     },
   },
