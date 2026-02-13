@@ -1,12 +1,27 @@
 import { Highcharts } from './highcharts-modules';
 
+export interface DonutCenterValueContext {
+  chart: Highcharts.Chart;
+  series: any;
+  total: number;
+  selectedPoint?: any;
+  hoveredPoint?: any;
+}
+
 export interface DonutCenterOptions {
   enabled?: boolean;
   title?: string;
+  value?: string | number | ((context: DonutCenterValueContext) => string | number | null | undefined);
+  fixedContent?: boolean;
+  fixedLabel?: boolean;
+  fixedValue?: boolean;
   labelColor?: string;
   valueColor?: string;
   labelFontSize?: string;
   valueFontSize?: string;
+  labelYOffset?: number;
+  valueYOffset?: number;
+  centerYOffset?: number;
 }
 
 export function applyDonutCenterLogic(options: Highcharts.Options, donutConfig?: DonutCenterOptions): void {
@@ -18,6 +33,80 @@ export function applyDonutCenterLogic(options: Highcharts.Options, donutConfig?:
   const valueColor = donutConfig?.valueColor || '#333';
   const labelFontSize = donutConfig?.labelFontSize || '14px';
   const valueFontSize = donutConfig?.valueFontSize || '28px';
+  const labelYOffset = donutConfig?.labelYOffset ?? -17;
+  const valueYOffset = donutConfig?.valueYOffset ?? 13;
+  const centerYOffset = donutConfig?.centerYOffset ?? 0;
+  const fixedLabel = donutConfig?.fixedContent === true || donutConfig?.fixedLabel === true;
+  const fixedValue =
+    donutConfig?.fixedContent === true ||
+    donutConfig?.fixedValue === true ||
+    donutConfig?.value !== undefined;
+
+  const formatValue = (value: number | string | null | undefined): string => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number') return Highcharts.numberFormat(value, 0, ' ', ' ');
+    return String(value);
+  };
+
+  const getTotal = (series: any): number =>
+    (series?.points || [])
+      .filter((p: any) => p.visible)
+      .reduce((sum: number, point: any) => sum + point.y, 0);
+
+  const getSelectedPoint = (series: any): any =>
+    (series?.points || []).find((p: any) => p.sliced && p.visible);
+
+  const getConfiguredValue = (
+    chart: Highcharts.Chart,
+    series: any,
+    hoveredPoint?: any,
+  ): string | number | null | undefined => {
+    const configuredValue = donutConfig?.value;
+    if (configuredValue === undefined) return undefined;
+
+    if (typeof configuredValue === 'function') {
+      return configuredValue({
+        chart,
+        series,
+        total: getTotal(series),
+        selectedPoint: getSelectedPoint(series),
+        hoveredPoint,
+      });
+    }
+
+    return configuredValue;
+  };
+
+  const getCenterTexts = (
+    chart: Highcharts.Chart,
+    series: any,
+    hoveredPoint?: any,
+  ): { labelText: string; valueText: string } => {
+    const total = getTotal(series);
+    const selectedPoint = getSelectedPoint(series);
+
+    const dynamicLabel = hoveredPoint
+      ? hoveredPoint.name
+      : selectedPoint
+      ? selectedPoint.name
+      : defaultTitle;
+
+    const dynamicValue = hoveredPoint
+      ? hoveredPoint.y
+      : selectedPoint
+      ? selectedPoint.y
+      : total;
+
+    const configuredValue = getConfiguredValue(chart, series, hoveredPoint);
+
+    const labelText = fixedLabel ? defaultTitle : dynamicLabel;
+    const valueText =
+      configuredValue !== undefined
+        ? formatValue(configuredValue)
+        : formatValue(fixedValue ? total : dynamicValue);
+
+    return { labelText, valueText };
+  };
 
   const anyOptions = options as any;
   anyOptions.chart = anyOptions.chart || {};
@@ -42,16 +131,7 @@ export function applyDonutCenterLogic(options: Highcharts.Options, donutConfig?:
     const series = this.series[0] as any;
     if (!series || !series.points || !series.center) return;
 
-    const total = series.points
-      .filter((p: any) => p.visible)
-      .reduce((sum: number, point: any) => sum + point.y, 0);
-
-    const selectedPoint = series.points.find((p: any) => p.sliced && p.visible);
-
-    const labelText = selectedPoint ? selectedPoint.name : defaultTitle;
-    const valueText = selectedPoint
-      ? (Highcharts.numberFormat(selectedPoint.y, 0, ' ', ' '))
-      : (Highcharts.numberFormat(total, 0, ' ', ' '));
+    const { labelText, valueText } = getCenterTexts(this, series);
 
     const centerX = series.center[0] + this.plotLeft;
     const centerY = series.center[1] + this.plotTop;
@@ -68,21 +148,21 @@ export function applyDonutCenterLogic(options: Highcharts.Options, donutConfig?:
         if (chart[key]) {
           chart[key].attr({
             x: centerX,
-            y: centerY + yOffset,
+            y: centerY + yOffset + centerYOffset,
             text: text,
           });
           chart[key].toFront();
         } else {
           chart[key] = this.renderer
-            .text(text, centerX, centerY + yOffset)
+            .text(text, centerX, centerY + yOffset + centerYOffset)
             .css({ color, fontSize, fontWeight, textAlign: 'center' })
             .attr({ align: 'center', zIndex: 10 })
             .add();
         }
       };
 
-      drawLabel('customLabel', labelText, -17, labelFontSize, '400', labelColor);
-      drawLabel('customTotalLabel', valueText, 13, valueFontSize, '700', valueColor);
+      drawLabel('customLabel', labelText, labelYOffset, labelFontSize, '400', labelColor);
+      drawLabel('customTotalLabel', valueText, valueYOffset, valueFontSize, '700', valueColor);
   };
 
   anyOptions.chart.events.click = function(this: Highcharts.Chart, event: any) {
@@ -139,12 +219,13 @@ export function applyDonutCenterLogic(options: Highcharts.Options, donutConfig?:
   const pointMouseOver = function (this: any) {
     const point = this as any;
     const chart = point.series.chart as any;
+    const { labelText, valueText } = getCenterTexts(chart, point.series, point);
 
     if (chart.customLabel) {
-      chart.customLabel.attr({ text: point.name });
+      chart.customLabel.attr({ text: labelText });
     }
     if (chart.customTotalLabel) {
-      chart.customTotalLabel.attr({ text: Highcharts.numberFormat(point.y, 0, ' ', ' ') });
+      chart.customTotalLabel.attr({ text: valueText });
     }
 
     if (originalMouseOver) originalMouseOver.apply(this, arguments as any);
@@ -155,17 +236,7 @@ export function applyDonutCenterLogic(options: Highcharts.Options, donutConfig?:
     const point = this as any;
     const chart = point.series.chart as any;
     const series = point.series;
-
-    const total = series.points
-        .filter((p: any) => p.visible)
-        .reduce((sum: number, point: any) => sum + point.y, 0);
-    const selectedPoint = series.points.find(
-        (p: any) => p.sliced && p.visible,
-    );
-    const labelText = selectedPoint ? selectedPoint.name : defaultTitle;
-    const valueText = selectedPoint
-        ? (Highcharts.numberFormat(selectedPoint.y, 0, ' ', ' '))
-        : (Highcharts.numberFormat(total, 0, ' ', ' '));
+    const { labelText, valueText } = getCenterTexts(chart, series);
 
     if (chart.customLabel) {
         chart.customLabel.attr({ text: labelText });
