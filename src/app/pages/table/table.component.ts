@@ -1,7 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TableComponent, TableColumnProvider, TableProvider } from '@oneteme/jquery-table';
+import {
+  TableComponent,
+  TableColumnProvider,
+  TableProvider,
+  col,
+} from '@oneteme/jquery-table';
 
 interface RepoRow {
   issue: string;
@@ -13,55 +18,59 @@ interface RepoRow {
 }
 
 @Component({
-  selector: 'app-table',
+  selector: 'app-table-test',
   standalone: true,
   imports: [CommonModule, TableComponent, RouterLink],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
 })
-export class TableExempleComponent {
+export class TableTestComponent {
   isLoading = false;
   selectedRow: RepoRow | null = null;
   isCodeVisible = false;
 
   readonly tableTemplateCode = `<jquery-table
   [config]="tableConfig"
-  [data]="tableData"
   [isLoading]="isLoading"
   (rowSelected)="onRowSelected($event)"
 ></jquery-table>`;
 
   readonly tableConfigCode = `tableConfig: TableProvider<RepoRow> = {
   title: 'Ticket board',
-  search: { enabled: true },
-  view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
-  pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10, 20] },
-  labels: { empty: 'Aucun résultat', loading: 'Chargement...' },
+  showAddColumnButton: true,
+  addColumnLabel: 'Ajouter une colonne',
+  enableColumnDragDrop: true,
+  enablePagination: true,
+  pageSize: 5,
   columns: [
-    { key: 'issue',     header: 'Issue' },
-    { key: 'status',    header: 'Status' },
-    { key: 'owner',     header: 'Owner' },
-    { key: 'priority',  header: 'Priorité',             optional: true },
-    { key: 'team',      header: 'Équipe',               optional: true },
-    { key: 'updatedAt', header: 'Dernière mise à jour', optional: true },
+    col<RepoRow>('issue', 'Issue'),
+    col<RepoRow>('status', 'Status'),
+    col<RepoRow>('owner', 'Owner'),
   ],
-  slices: [
-    { title: 'Status', columnKey: 'status' },
+  optionalColumns: [
+    col<RepoRow>('priority', 'Priorité'),
+    col<RepoRow>('team', 'Équipe'),
+    col<RepoRow>('updatedAt', 'Dernière mise à jour'),
   ],
-  rowClass: (row) => {
-    if (row.status === 'Done')        return 'row-done';
-    if (row.status === 'In Progress') return 'row-in-progress';
-    return '';
+  categorySlice: {
+    title: 'Status',
+    allLabel: 'Tous',
+    categories: [
+      { key: 'backlog', label: 'Backlog', filter: (row) => row.status === 'Backlog' },
+      { key: 'in-progress', label: 'In Progress', filter: (row) => row.status === 'In Progress' },
+      { key: 'done', label: 'Done', filter: (row) => row.status === 'Done' },
+    ],
   },
+  data: this.tableData,
 };`;
 
   get tableDataCode(): string {
     return `const tableData: RepoRow[] = ${JSON.stringify(this.tableData, null, 2)};`;
   }
 
-  readonly tableData: RepoRow[] = [
+  private readonly tableData: RepoRow[] = [
     {
-      issue: 'Présentation IA',
+      issue: 'Faire la doc',
       status: 'In Progress',
       owner: 'Youssef Senior',
       priority: 'High',
@@ -69,7 +78,7 @@ export class TableExempleComponent {
       updatedAt: '2026-02-12 15:42',
     },
     {
-      issue: 'Pulse',
+      issue: 'Faire des tickets',
       status: 'Backlog',
       owner: 'Fufu',
       priority: 'Medium',
@@ -93,9 +102,9 @@ export class TableExempleComponent {
       updatedAt: '2026-02-13 08:27',
     },
     {
-      issue: 'Jquery-Table',
+      issue: 'Deploy Oraccle',
       status: 'Backlog',
-      owner: 'Youssef',
+      owner: 'Thomas',
       priority: 'Low',
       team: 'Backend',
       updatedAt: '2026-02-08 11:54',
@@ -103,33 +112,36 @@ export class TableExempleComponent {
   ];
 
   private readonly dynamicColumns: TableColumnProvider<RepoRow>[] = [
-    { key: 'priority', header: 'Priorité', optional: true },
-    { key: 'team', header: 'Équipe', optional: true },
-    { key: 'updatedAt', header: 'Dernière mise à jour', optional: true },
+    col<RepoRow>('priority', 'Priorité'),
+    col<RepoRow>('team', 'Équipe'),
+    col<RepoRow>('updatedAt', 'Dernière mise à jour'),
   ];
 
   tableConfig: TableProvider<RepoRow> = {
     title: 'Ticket board',
-    search: { enabled: true },
-    view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
-    pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10, 20] },
-    labels: { empty: 'Aucun résultat', loading: 'Chargement...' },
+    showAddColumnButton: true,
+    addColumnLabel: 'Ajouter une colonne',
+    enableColumnDragDrop: true,
+    allowColumnRemoval: true,
+    enablePagination: true,
+    pageSize: 5,
+    pageSizeOptions: [5, 10, 20],
     columns: [
-      { key: 'issue',     header: 'Issue' },
-      { key: 'status',    header: 'Status' },
-      { key: 'owner',     header: 'Owner' },
-      { key: 'priority',  header: 'Priorité',              optional: true },
-      { key: 'team',      header: 'Équipe',                optional: true },
-      { key: 'updatedAt', header: 'Dernière mise à jour',  optional: true },
+      col<RepoRow>('issue', 'Issue'),
+      col<RepoRow>('status', 'Status'),
+      col<RepoRow>('owner', 'Owner'),
     ],
-    slices: [
-      { title: 'Status', columnKey: 'status' },
-    ],
-    rowClass: (row) => {
-      if (row.status === 'Done')        return 'row-done';
-      if (row.status === 'In Progress') return 'row-in-progress';
-      return '';
+    optionalColumns: this.dynamicColumns,
+    categorySlice: {
+      title: 'Status',
+      allLabel: 'Tous',
+      categories: [
+        { key: 'backlog', label: 'Backlog', filter: (row) => row.status === 'Backlog' },
+        { key: 'in-progress', label: 'In Progress', filter: (row) => row.status === 'In Progress' },
+        { key: 'done', label: 'Done', filter: (row) => row.status === 'Done' },
+      ],
     },
+    data: this.tableData,
   };
 
   onRowSelected(row: RepoRow): void {

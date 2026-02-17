@@ -47,7 +47,7 @@ export class DemoComponent {
 	tableConfig: TableProvider<Row> = {
 		title: 'Ticket board',
 		showAddColumnButton: true,
-		enableColumnRemoval: true,
+		allowColumnRemoval: true,
 		columns: [col<Row>('issue', 'Issue'), col<Row>('status', 'Status')],
 		availableColumns: [col<Row>('owner', 'Owner'), col<Row>('priority', 'Priority')],
 		categorySlice: {
@@ -114,7 +114,7 @@ Le `config` complet reste disponible pour activer les fonctionnalités avancées
 - `config.showAddColumnButton`: active/désactive le bouton `+`
 - `config.showOptionsButton`: active/désactive le bouton `Options`
 - `config.bottomActionsLabel`: libellé des actions dockées en bas-gauche
-- `config.enableColumnRemoval`: autorise la suppression des colonnes
+- `config.allowColumnRemoval`: autorise la suppression des colonnes
 - `config.categorySlice`: configuration du panel de catégories à gauche
 - `config.data`: dataset source
 
@@ -140,50 +140,6 @@ tableConfig = {
 		{ action: 'utility:copyColumnKey', label: 'Copy column key' },
 	],
 };
-```
-
-## Personnalisation visuelle (CSS variables)
-
-Toutes les couleurs principales sont exposées via des CSS custom properties sur `:host`.  
-Pour les surcharger, ciblez `jquery-table` dans votre feuille de styles globale :
-
-```scss
-jquery-table {
-  /* Texte */
-  --jqt-title-color:       #1f2937;  /* titre du tableau (h3)                    */
-  --jqt-text-color:        #111827;  /* texte principal (cellules, labels)        */
-  --jqt-text-secondary:    #6b7280;  /* texte secondaire (badges, infos)          */
-  --jqt-text-muted:        #9ca3af;  /* placeholder, icônes discrètes            */
-
-  /* Surfaces */
-  --jqt-surface-color:     #ffffff;  /* fond des éléments (barre de recherche…)  */
-  --jqt-surface-alt-color: #f9fafb;  /* fond alternatif subtil                   */
-  --jqt-row-hover-bg:      #f3f4f6;  /* survol d'une ligne / fond badge          */
-
-  /* Bordures */
-  --jqt-border-color:      #e5e7eb;  /* bordures du tableau et éléments UI       */
-
-  /* Groupes (groupBy) */
-  --jqt-group-bg:          #eef2f7;  /* fond des lignes de groupe                */
-  --jqt-group-bg-hover:    #e4ecf4;  /* fond au survol d'une ligne de groupe     */
-  --jqt-group-accent:      #94a3b8;  /* bande colorée gauche des groupes         */
-  --jqt-group-border:      #d1d9e4;  /* bordures haut/bas des groupes            */
-
-  /* Accent & danger */
-  --jqt-primary-color:     #1d4ed8;  /* couleur d'accent (focus, sélection)      */
-  --jqt-danger-color:      #dc2626;  /* bouton reset (survol)                    */
-}
-```
-
-**Exemple** — thème violet :
-
-```scss
-jquery-table {
-  --jqt-primary-color:  #7c3aed;
-  --jqt-group-accent:   #7c3aed;
-  --jqt-group-bg:       #f5f3ff;
-  --jqt-group-border:   #ddd6fe;
-}
 ```
 
 ## Build
