@@ -1,45 +1,316 @@
-<div class="table-doc-container">
+﻿<div class="table-doc-container">
   <div class="doc-header">
     <h1>Documentation jquery-table</h1>
     <a routerLink="/table" class="back-link">Retour à la page de test</a>
   </div>
 
   <p class="intro">
-    Cette page explique comment utiliser <strong>jquery-table</strong> en restant
-    compatible avec Angular Material, tout en ajoutant les fonctionnalités métier
-    (slice catégorie, colonnes optionnelles, etc.).
+    <strong>jquery-table</strong> est un composant Angular Material qui encapsule
+    <code>mat-table</code> avec des fonctionnalités métier prêtes à l'emploi :
+    barre de recherche, tri, groupement, filtres latéraux (slices), colonnes optionnelles,
+    drag &amp; drop de colonnes, pagination, état de chargement et style de ligne personnalisé.
   </p>
 
   <section class="doc-section">
-    <h2>1) Angular Material classique vs wrapper jquery-table</h2>
-    <div class="comparison-grid">
-      <article class="comparison-card">
-        <h3>Implémentation Material classique</h3>
-        <ul>
-          <li>Vous gérez explicitement <strong>MatTableDataSource</strong>, pagination, tri et colonnes.</li>
-          <li>Vous implémentez vous-même le filtre latéral et les compteurs de catégorie.</li>
-          <li>Vous ajoutez manuellement les actions d’ajout/retrait de colonnes.</li>
-        </ul>
-      </article>
+    <h2>1) Installation &amp; import</h2>
+    <pre><code>import &#123; TableComponent, TableProvider, col &#125; from '@oneteme/jquery-table';</code></pre>
+    <p>Import dans un composant standalone :</p>
+    <pre><code>&#64;Component(&#123;
+  standalone: true,
+  imports: [TableComponent],
+  template: `&lt;jquery-table [config]="tableConfig" (rowSelected)="onRow($event)"&gt;&lt;/jquery-table&gt;`,
+&#125;)</code></pre>
+  </section>
 
-      <article class="comparison-card">
-        <h3>Implémentation avec jquery-table</h3>
-        <ul>
-          <li>Pagination interne en <strong>MatTableDataSource + MatPaginator</strong> natifs.</li>
-          <li>Configuration unifiée via <strong>TableProvider&lt;T&gt;</strong>.</li>
-          <li>Features métier prêtes à l’emploi (slice, colonnes optionnelles, events).</li>
-        </ul>
-      </article>
+  <section class="doc-section">
+    <h2>2) API â€” TableProvider&lt;T&gt;</h2>
+    <p>Toute la configuration se passe via l'entrée <code>[config]</code> qui accepte un objet <code>TableProvider&lt;T&gt;</code>.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Champ</th>
+            <th>Type</th>
+            <th>Défaut</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>columns</code></td>
+            <td><code>TableColumnProvider&lt;T&gt;[]</code></td>
+            <td>â€”</td>
+            <td>Colonnes affichées par défaut. Utilisez la fonction <code>col()</code>.</td>
+          </tr>
+          <tr>
+            <td><code>data</code></td>
+            <td><code>T[]</code></td>
+            <td>â€”</td>
+            <td>Tableau de données à afficher.</td>
+          </tr>
+          <tr>
+            <td><code>title</code></td>
+            <td><code>string</code></td>
+            <td>â€”</td>
+            <td>Titre affiché au-dessus du tableau.</td>
+          </tr>
+          <tr>
+            <td><code>enableSearchBar</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Active la barre de recherche texte au-dessus du tableau.</td>
+          </tr>
+          <tr>
+            <td><code>enableViewButton</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Active le bouton <strong>View</strong> (Champs / Group by / Slice by). Sans la barre de recherche, il reste positionné à droite à sa taille habituelle.</td>
+          </tr>
+          <tr>
+            <td><code>optional</code></td>
+            <td><code>boolean</code></td>
+            <td>â€"</td>
+            <td>Propriété à définir directement sur une colonne dans <code>columns</code>. Si <code>true</code>, la colonne est masquée par défaut et activable via <strong>View &gt; Champs</strong>.</td>
+          </tr>
+          <tr>
+            <td><code>allowColumnRemoval</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Permet de masquer les colonnes de base via <strong>View &gt; Champs</strong>.</td>
+          </tr>
+          <tr>
+            <td><code>slices</code></td>
+            <td><code>TableCategorySliceProvider&lt;T&gt;[]</code></td>
+            <td>â€”</td>
+            <td>Panneaux de filtres latéraux. Chaque slice correspond à un panneau de filtrage par catégorie.</td>
+          </tr>
+          <tr>
+            <td><code>showSliceToggle</code></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Affiche le bouton <code>â€¹</code> pour replier/déplier le panneau de slices.</td>
+          </tr>
+          <tr>
+            <td><code>enableColumnDragDrop</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Affiche une poignée <code>â ¿</code> sur chaque en-tête de colonne pour les réordonner par glisser-déposer. Le clic sur la poignée n'interfère pas avec le tri.</td>
+          </tr>
+          <tr>
+            <td><code>enablePagination</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Active le paginateur Material en bas du tableau.</td>
+          </tr>
+          <tr>
+            <td><code>pageSize</code></td>
+            <td><code>number</code></td>
+            <td><code>10</code></td>
+            <td>Nombre de lignes par page.</td>
+          </tr>
+          <tr>
+            <td><code>pageSizeOptions</code></td>
+            <td><code>number[]</code></td>
+            <td><code>[5, 10, 25]</code></td>
+            <td>Options disponibles dans le sélecteur de taille de page.</td>
+          </tr>
+          <tr>
+            <td><code>emptyStateLabel</code></td>
+            <td><code>string</code></td>
+            <td><code>'Aucune donnée'</code></td>
+            <td>Message affiché si le tableau est vide ou si la recherche ne retourne aucun résultat.</td>
+          </tr>
+          <tr>
+            <td><code>isLoading</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Affiche un état de chargement à la place des données.</td>
+          </tr>
+          <tr>
+            <td><code>loadingStateLabel</code></td>
+            <td><code>string</code></td>
+            <td><code>'Chargement...'</code></td>
+            <td>Texte affiché pendant le chargement.</td>
+          </tr>
+          <tr>
+            <td><code>rowClass</code></td>
+            <td><code>(row: T, index: number) =&gt; string | string[] | Record&lt;string, boolean&gt;</code></td>
+            <td>â€”</td>
+            <td>Fonction appelée pour chaque ligne. La valeur retournée est passée à <code>[ngClass]</code> sur le <code>&lt;tr&gt;</code>. Voir section 6.</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
   <section class="doc-section">
-    <h2>2) Modèle de données métier: RepoRow</h2>
-    <p>
-      <strong>RepoRow</strong> représente une ligne fonctionnelle de votre tableau.
-      Ce modèle est votre source de vérité métier.
-    </p>
+    <h2>3) API â€” TableCategorySliceProvider&lt;T&gt;</h2>
+    <p>Chaque entrée dans <code>slices</code> définit un panneau de filtres latéral.</p>
 
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Champ</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>title</code></td>
+            <td><code>string</code></td>
+            <td>Titre du bloc de filtre affichÃ© dans le panneau.</td>
+          </tr>
+          <tr>
+            <td><code>columnKey</code></td>
+            <td><code>string</code></td>
+            <td>Clé d'une colonne existante : les catégories sont générées <strong>automatiquement</strong> à partir des valeurs distinctes de la donnée.</td>
+          </tr>
+          <tr>
+            <td><code>categories</code></td>
+            <td><code>TableCategoryProvider&lt;T&gt;[]</code></td>
+            <td>Liste manuelle de catégories (utiliser <code>filter</code> pour des règles personnalisées). Mutuellement exclusif avec <code>columnKey</code>.</td>
+          </tr>
+          <tr>
+            <td><code>showAll</code></td>
+            <td><code>boolean</code></td>
+            <td>Affiche le bouton "Tous" en tête du panneau. Défaut : <code>true</code>.</td>
+          </tr>
+          <tr>
+            <td><code>multiSelect</code></td>
+            <td><code>boolean</code></td>
+            <td>Permet de sélectionner plusieurs catégories simultanément. Défaut : <code>false</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Mode automatique via <code>columnKey</code></h3>
+    <pre><code>slices: [
+  &#123; title: 'Status', columnKey: 'status', showAll: false &#125;,
+  &#123; title: 'Équipe',  columnKey: 'team',   showAll: true  &#125;,
+]</code></pre>
+    <p>Les catégories sont déduites en temps réel des valeurs présentes dans <code>data</code>.</p>
+
+    <h3>Mode manuel via <code>categories</code></h3>
+    <pre><code>slices: [
+  &#123;
+    title: 'Priorité',
+    categories: [
+      &#123; key: 'high',   label: 'Haute',   filter: (row) =&gt; row.priority === 'High' &#125;,
+      &#123; key: 'medium', label: 'Moyenne', filter: (row) =&gt; row.priority === 'Medium' &#125;,
+      &#123; key: 'low',    label: 'Basse',   filter: (row) =&gt; row.priority === 'Low' &#125;,
+    ],
+  &#125;,
+]</code></pre>
+  </section>
+
+  <section class="doc-section">
+    <h2>4) Le bouton View</h2>
+    <p>Activé via <code>enableViewButton: true</code>, le bouton <strong>View</strong> ouvre un menu avec trois sous-menus :</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Sous-menu</th>
+            <th>Description</th>
+            <th>Prérequis</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Champs</strong></td>
+            <td>Affiche/masque les colonnes. Les colonnes de base sont cochées par défaut (décochables si <code>allowColumnRemoval: true</code>). Les colonnes optionnelles sont décochées par défaut.</td>
+            <td><code>optional: true</code> sur la colonne ou <code>allowColumnRemoval</code></td>
+          </tr>
+          <tr>
+            <td><strong>Group by</strong></td>
+            <td>Regroupe les lignes selon les valeurs d'une colonne choisie. Un clic sur un groupe le replie/déplie. Re-cliquer sur la colonne active désactive le groupement.</td>
+            <td><code>columns</code> définies</td>
+          </tr>
+          <tr>
+            <td><strong>Slice by</strong></td>
+            <td>Ajoute dynamiquement un filtre latéral basé sur une colonne disponible. Les slices ajoutées dynamiquement apparaissent dans le panneau latéral avec un bouton ×.</td>
+            <td><code>enableViewButton: true</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <h2>5) Fonction utilitaire <code>col()</code></h2>
+    <pre><code>import &#123; col &#125; from '@oneteme/jquery-table';
+
+col&lt;T&gt;(key: string, header: string, sortable?: boolean): TableColumnProvider&lt;T&gt;</code></pre>
+    <p>
+      Crée rapidement un <code>TableColumnProvider</code> avec <code>sortable: true</code> par défaut
+      et la résolution automatique de valeur via <code>field(key)</code> de jquery-core.
+    </p>
+    <pre><code>columns: [
+  col&lt;RepoRow&gt;('issue',  'Issue'),
+  col&lt;RepoRow&gt;('status', 'Status'),
+  col&lt;RepoRow&gt;('owner',  'Owner', false), // non triable
+]</code></pre>
+  </section>
+
+  <section class="doc-section">
+    <h2>6) Style de ligne personnalisé — <code>rowClass</code></h2>
+    <p>
+      La fonction <code>rowClass</code> reçoit la ligne brute <code>T</code> et son index,
+      et retourne une valeur compatible <code>ngClass</code> appliquée sur le <code>&lt;tr&gt;</code>.
+    </p>
+    <pre><code>rowClass: (row: RepoRow, index: number) =&gt; &#123;
+  if (row.status === 'Done')        return 'row-done';
+  if (row.status === 'In Progress') return 'row-in-progress';
+  return '';
+&#125;</code></pre>
+    <p>Exemple CSS correspondant (à placer dans le composant consommateur) :</p>
+    <pre><code>::ng-deep tr.mat-mdc-row &#123;
+  &amp;.row-done &gt; td.mat-mdc-cell:first-of-type &#123;
+    border-left: 3px solid #4caf50;
+    background: linear-gradient(90deg, rgba(76,175,80,0.08) 0%, transparent 100%);
+  &#125;
+  &amp;.row-in-progress &gt; td.mat-mdc-cell:first-of-type &#123;
+    border-left: 3px solid #0080ff;
+    background: linear-gradient(90deg, rgba(0,128,255,0.08) 0%, transparent 100%);
+  &#125;
+&#125;</code></pre>
+    <p>Les trois formes de retour acceptées :</p>
+    <ul>
+      <li><code>string</code> — une classe CSS : <code>'row-error'</code></li>
+      <li><code>string[]</code> — plusieurs classes : <code>['row-error', 'row-bold']</code></li>
+      <li><code>Record&lt;string, boolean&gt;</code> — conditionnel : <code>&#123; 'row-error': true, 'row-bold': false &#125;</code></li>
+    </ul>
+  </section>
+
+  <section class="doc-section">
+    <h2>7) Outputs</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Événement</th>
+            <th>Type</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>(rowSelected)</code></td>
+            <td><code>EventEmitter&lt;T&gt;</code></td>
+            <td>Émis au clic sur une ligne de données (ne se déclenche pas sur les en-têtes de groupe).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="doc-section">
+    <h2>8) Exemple complet</h2>
     <pre><code>interface RepoRow &#123;
   issue: string;
   status: 'Backlog' | 'In Progress' | 'Done';
@@ -47,206 +318,43 @@
   priority: 'Low' | 'Medium' | 'High';
   team: string;
   updatedAt: string;
-&#125;</code></pre>
-  </section>
+&#125;
 
-  <section class="doc-section">
-    <h2>3) API TableProvider&lt;T&gt;</h2>
-    <p>
-      Tous les champs de <strong>TableProvider</strong> sont techniquement optionnels
-      côté TypeScript, mais certains sont <strong>recommandés</strong> pour un comportement
-      complet.
-    </p>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Champ</th>
-            <th>Optionnel</th>
-            <th>Natif Material</th>
-            <th>Usage</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>columns</td>
-            <td>Oui (recommandé)</td>
-            <td>Non</td>
-            <td>Colonnes de base affichées par défaut.</td>
-          </tr>
-          <tr>
-            <td>data</td>
-            <td>Oui (recommandé)</td>
-            <td>Oui (concept dataSource)</td>
-            <td>Données à afficher dans la table.</td>
-          </tr>
-          <tr>
-            <td>title</td>
-            <td>Oui</td>
-            <td>Non</td>
-            <td>Titre de l’exemple/tableau.</td>
-          </tr>
-          <tr>
-            <td>optionalColumns / availableColumns</td>
-            <td>Oui</td>
-            <td>Non</td>
-            <td>Colonnes affichées dans la section « Colonnes optionnelles » du menu Colonnes.</td>
-          </tr>
-          <tr>
-            <td>showAddColumnButton</td>
-            <td>Oui</td>
-            <td>Non</td>
-            <td>Affiche le bouton + ouvrant le menu « Colonnes » (checkbox).</td>
-          </tr>
-          <tr>
-            <td>categorySlice</td>
-            <td>Oui</td>
-            <td>Non</td>
-            <td>Panneau gauche (catégories + filtres).</td>
-          </tr>
-          <tr>
-            <td>enablePagination / pageSize / pageSizeOptions</td>
-            <td>Oui</td>
-            <td>Oui</td>
-            <td>Paramètres de pagination Material.</td>
-          </tr>
-          <tr>
-            <td>isLoading / loadingStateLabel</td>
-            <td>Oui</td>
-            <td>Non (ajout wrapper)</td>
-            <td>État de chargement et texte affiché.</td>
-          </tr>
-          <tr>
-            <td>emptyStateLabel</td>
-            <td>Oui</td>
-            <td>Non (ajout wrapper)</td>
-            <td>Message si aucune donnée.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="doc-section">
-    <h2>4) Champs natifs vs champs wrapper</h2>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Entrée composant</th>
-            <th>Type</th>
-            <th>Nature</th>
-            <th>Remarque</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td>dataSource</td>
-            <td>T[] | &#123; data: T[] &#125;</td>
-            <td>Natif-compatible</td>
-            <td>Compatible migration Material.</td>
-          </tr>
-          <tr>
-            <td>displayedColumns</td>
-            <td>string[]</td>
-            <td>Natif-compatible</td>
-            <td>Même logique que mat-table.</td>
-          </tr>
-          <tr>
-            <td>columnLabels</td>
-            <td>Record&lt;string, string&gt;</td>
-            <td>Wrapper utilitaire</td>
-            <td>Libellés rapides sans mapping manuel.</td>
-          </tr>
-          <tr>
-            <td>config</td>
-            <td>TableProvider&lt;T&gt;</td>
-            <td>Wrapper principal</td>
-            <td>Source de configuration avancée.</td>
-          </tr>
-          <tr>
-            <td>isLoading</td>
-            <td>boolean</td>
-            <td>Wrapper</td>
-            <td>Affichage “chargement” piloté.</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section class="doc-section">
-    <h2>5) Sur quelle base construire categorySlice ?</h2>
-    <p>
-      <strong>categorySlice</strong> se construit à partir d’un <strong>champ métier de RepoRow</strong>
-      qui segmente naturellement vos données (ex: <strong>status</strong>, <strong>priority</strong>,
-      <strong>team</strong>). Dans l’exemple, la base choisie est <strong>status</strong>.
-    </p>
-
-    <ul>
-      <li>1 catégorie = 1 règle de filtre <strong>filter(row) =&gt; boolean</strong>.</li>
-      <li>Les compteurs affichés proviennent du dataset courant (<strong>data</strong>).</li>
-      <li>Le libellé utilisateur est indépendant de la valeur technique.</li>
-      <li>Si votre métier change, vous adaptez seulement les règles de <strong>categories</strong>.</li>
-    </ul>
-
-    <pre><code>categorySlice: &#123;
-  title: 'Status',
-  allLabel: 'Tous',
-  categories: [
-    &#123; key: 'backlog', label: 'Backlog', filter: (row) =&gt; row.status === 'Backlog' &#125;,
-    &#123; key: 'in-progress', label: 'In Progress', filter: (row) =&gt; row.status === 'In Progress' &#125;,
-    &#123; key: 'done', label: 'Done', filter: (row) =&gt; row.status === 'Done' &#125;,
-  ],
-&#125;</code></pre>
-  </section>
-
-  <section class="doc-section">
-    <h2>6) Exemple complet recommandé</h2>
-    <pre><code>const tableConfig: TableProvider&lt;RepoRow&gt; = &#123;
+tableConfig: TableProvider&lt;RepoRow&gt; = &#123;
   title: 'Ticket board',
-  showAddColumnButton: true,
+  enableSearchBar: true,
+  enableViewButton: true,
+  enableColumnDragDrop: true,
+  allowColumnRemoval: true,
   enablePagination: true,
   pageSize: 5,
+  pageSizeOptions: [5, 10, 20],
   columns: [
-    col&lt;RepoRow&gt;('issue', 'Issue'),
+    col&lt;RepoRow&gt;('issue',  'Issue'),
     col&lt;RepoRow&gt;('status', 'Status'),
-    col&lt;RepoRow&gt;('owner', 'Owner'),
+    col&lt;RepoRow&gt;('owner',  'Owner'),
+    &#123; ...col&lt;RepoRow&gt;('priority',  'Priorité'),             optional: true &#125;,
+    &#123; ...col&lt;RepoRow&gt;('team',      'Équipe'),               optional: true &#125;,
+    &#123; ...col&lt;RepoRow&gt;('updatedAt', 'Dernière mise à jour'), optional: true &#125;,
   ],
-  optionalColumns: [
-    col&lt;RepoRow&gt;('priority', 'Priorité'),
-    col&lt;RepoRow&gt;('team', 'Équipe'),
+  slices: [
+    &#123; title: 'Status', columnKey: 'status', showAll: false &#125;,
   ],
-  categorySlice: &#123;
-    title: 'Status',
-    allLabel: 'Tous',
-    categories: [...],
+  rowClass: (row) =&gt; &#123;
+    if (row.status === 'Done')        return 'row-done';
+    if (row.status === 'In Progress') return 'row-in-progress';
+    return '';
   &#125;,
+  emptyStateLabel: 'Aucun résultat',
+  loadingStateLabel: 'Chargement...',
   data: rows,
-&#125;;</code></pre>
-
+&#125;;
+</code></pre>
     <pre><code>&lt;jquery-table
   [config]="tableConfig"
   [isLoading]="isLoading"
   (rowSelected)="onRowSelected($event)"
 &gt;&lt;/jquery-table&gt;</code></pre>
-
-    <p>
-      Le bouton <strong>+</strong> ouvre le menu <strong>Colonnes</strong> avec deux groupes:
-      <strong>Colonnes</strong> puis <strong>Colonnes optionnelles</strong>. Chaque entrée est une
-      checkbox pour afficher/masquer la colonne correspondante.
-    </p>
   </section>
 
-  <section class="doc-section">
-    <h2>7) Résumé opérationnel</h2>
-    <ul>
-      <li><strong>TableProvider</strong> centralise la config métier.</li>
-      <li><strong>RepoRow</strong> formalise clairement les données passées à la table.</li>
-      <li>Vous gardez les bases Angular Material tout en ajoutant des capacités spécifiques au wrapper.</li>
-      <li>La migration est progressive: mode natif-compatible ou mode config avancée.</li>
-    </ul>
-  </section>
 </div>

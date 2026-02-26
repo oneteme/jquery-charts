@@ -37,31 +37,32 @@ export class TableTestComponent {
 
   readonly tableConfigCode = `tableConfig: TableProvider<RepoRow> = {
   title: 'Ticket board',
-  showAddColumnButton: true,
-  addColumnLabel: 'Ajouter une colonne',
+  enableSearchBar: true,
+  enableViewButton: true,
   enableColumnDragDrop: true,
+  allowColumnRemoval: true,
   enablePagination: true,
   pageSize: 5,
+  pageSizeOptions: [5, 10, 20],
   columns: [
-    col<RepoRow>('issue', 'Issue'),
+    col<RepoRow>('issue',  'Issue'),
     col<RepoRow>('status', 'Status'),
-    col<RepoRow>('owner', 'Owner'),
+    col<RepoRow>('owner',  'Owner'),
+    { ...col<RepoRow>('priority',  'Priorité'),              optional: true },
+    { ...col<RepoRow>('team',      'Équipe'),                optional: true },
+    { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'),  optional: true },
   ],
-  optionalColumns: [
-    col<RepoRow>('priority', 'Priorité'),
-    col<RepoRow>('team', 'Équipe'),
-    col<RepoRow>('updatedAt', 'Dernière mise à jour'),
+  slices: [
+    { title: 'Status', columnKey: 'status', showAll: false },
   ],
-  categorySlice: {
-    title: 'Status',
-    allLabel: 'Tous',
-    categories: [
-      { key: 'backlog', label: 'Backlog', filter: (row) => row.status === 'Backlog' },
-      { key: 'in-progress', label: 'In Progress', filter: (row) => row.status === 'In Progress' },
-      { key: 'done', label: 'Done', filter: (row) => row.status === 'Done' },
-    ],
+  rowClass: (row) => {
+    if (row.status === 'Done')        return 'row-done';
+    if (row.status === 'In Progress') return 'row-in-progress';
+    return '';
   },
-  data: this.tableData,
+  emptyStateLabel: 'Aucun résultat',
+  loadingStateLabel: 'Chargement...',
+  data: rows,
 };`;
 
   get tableDataCode(): string {
@@ -112,35 +113,38 @@ export class TableTestComponent {
   ];
 
   private readonly dynamicColumns: TableColumnProvider<RepoRow>[] = [
-    col<RepoRow>('priority', 'Priorité'),
-    col<RepoRow>('team', 'Équipe'),
-    col<RepoRow>('updatedAt', 'Dernière mise à jour'),
+    { ...col<RepoRow>('priority', 'Priorité'), optional: true },
+    { ...col<RepoRow>('team', 'Équipe'), optional: true },
+    { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'), optional: true },
   ];
 
   tableConfig: TableProvider<RepoRow> = {
     title: 'Ticket board',
-    showAddColumnButton: true,
-    addColumnLabel: 'Ajouter une colonne',
+    enableSearchBar: true,
+    enableViewButton: true,
     enableColumnDragDrop: true,
     allowColumnRemoval: true,
     enablePagination: true,
     pageSize: 5,
     pageSizeOptions: [5, 10, 20],
     columns: [
-      col<RepoRow>('issue', 'Issue'),
+      col<RepoRow>('issue',  'Issue'),
       col<RepoRow>('status', 'Status'),
-      col<RepoRow>('owner', 'Owner'),
+      col<RepoRow>('owner',  'Owner'),
+      { ...col<RepoRow>('priority',  'Priorité'), optional: true },
+      { ...col<RepoRow>('team',      'Équipe'), optional: true },
+      { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'), optional: true },
     ],
-    optionalColumns: this.dynamicColumns,
-    categorySlice: {
-      title: 'Status',
-      allLabel: 'Tous',
-      categories: [
-        { key: 'backlog', label: 'Backlog', filter: (row) => row.status === 'Backlog' },
-        { key: 'in-progress', label: 'In Progress', filter: (row) => row.status === 'In Progress' },
-        { key: 'done', label: 'Done', filter: (row) => row.status === 'Done' },
-      ],
+    slices: [
+      { title: 'Status', columnKey: 'status', showAll: false },
+    ],
+    rowClass: (row) => {
+      if (row.status === 'Done')        return 'row-done';
+      if (row.status === 'In Progress') return 'row-in-progress';
+      return '';
     },
+    emptyStateLabel: 'Aucun résultat',
+    loadingStateLabel: 'Chargement...',
     data: this.tableData,
   };
 

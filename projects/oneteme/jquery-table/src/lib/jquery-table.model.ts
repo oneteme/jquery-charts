@@ -1,4 +1,5 @@
 import { DataProvider, field } from '@oneteme/jquery-core';
+import { Observable } from 'rxjs';
 
 export interface TableColumnProvider<T = any> {
   key: string;
@@ -6,6 +7,9 @@ export interface TableColumnProvider<T = any> {
   value?: DataProvider<any>;
   sortable?: boolean;
   removable?: boolean;
+  optional?: boolean;
+  lazy?: boolean;
+  fetchFn?: () => Observable<any[]>;
 }
 
 export interface TableCategoryProvider<T = any> {
@@ -16,29 +20,29 @@ export interface TableCategoryProvider<T = any> {
 
 export interface TableCategorySliceProvider<T = any> {
   title?: string;
-  allLabel?: string;
-  categories: TableCategoryProvider<T>[];
+  multiSelect?: boolean;
+  columnKey?: string;
+  categories?: TableCategoryProvider<T>[];
 }
 
 export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];
   data?: T[];
   title?: string;
-  showAddColumnButton?: boolean;
-  addColumnLabel?: string;
+  enableSearchBar?: boolean;
+  enableViewButton?: boolean;
+  slices?: TableCategorySliceProvider<T>[];
+  showSliceToggle?: boolean;
   allowColumnRemoval?: boolean;
-  availableColumns?: TableColumnProvider<T>[];
-  optionalColumns?: TableColumnProvider<T>[];
-  categorySlice?: TableCategorySliceProvider<T>;
-  showCategorySliceToggle?: boolean;
   enablePagination?: boolean;
   pageSize?: number;
   pageSizeOptions?: number[];
+  pageSizeOptionsGroupBy?: number[];
   enableColumnDragDrop?: boolean;
-  maxFilterValuesPerColumn?: number;
   emptyStateLabel?: string;
   isLoading?: boolean;
   loadingStateLabel?: string;
+  rowClass?: (row: T, index: number) => string | string[] | Record<string, boolean>;
 }
 
 export function col<T = any>(

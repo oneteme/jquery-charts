@@ -1,142 +1,267 @@
 <section class="jquery-table-wrapper">
-  <header class="table-header">
+  <header class="table-header" *ngIf="showTitle">
     <h3>{{ title }}</h3>
   </header>
 
   <div
     class="table-layout"
-    [class.slice-collapsed]="showCategorySlice && isCategorySliceCollapsed"
-    [class.no-slice]="!showCategorySlice"
+    [class.slice-collapsed]="showSlicePanel && isSlicePanelCollapsed"
+    [class.no-slice]="!showSlicePanel"
   >
-    <aside *ngIf="showCategorySlice" class="slice-panel" [class.collapsed]="isCategorySliceCollapsed">
-      <button
-        *ngIf="showCategorySliceToggle"
-        type="button"
-        class="slice-toggle"
-        [attr.aria-label]="isCategorySliceCollapsed ? 'Déplier le filtre' : 'Replier le filtre'"
-        (click)="toggleCategorySlice()"
-      >
-        <span class="slice-toggle-icon">{{ isCategorySliceCollapsed ? '›' : '‹' }}</span>
-      </button>
+    <div *ngIf="showSlicePanel" class="slice-panel-wrapper" [class.collapsed]="isSlicePanelCollapsed">
+      <aside class="slice-panel" [class.collapsed]="isSlicePanelCollapsed">
+        <div class="slice-panel-header">
+          <button
+            *ngIf="showSliceToggle"
+            type="button"
+            class="slice-toggle"
+            [attr.aria-label]="isSlicePanelCollapsed ? 'Déplier le filtre' : 'Replier le filtre'"
+            (click)="toggleSlicePanel()"
+          >
+            <span class="slice-toggle-icon">{{ isSlicePanelCollapsed ? '›' : '‹' }}</span>
+          </button>
+        </div>
 
-      <ng-container *ngIf="!isCategorySliceCollapsed">
-        <p class="slice-title">{{ categorySliceTitle }}</p>
+        <div class="slice-panel-body" *ngIf="!isSlicePanelCollapsed">
+        <ng-container *ngFor="let slice of slices; let si = index">
+          <div class="slice-title-row" (click)="toggleSliceCollapse(si)">
+            <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
+            <p class="slice-title">{{ slice.title || 'Filtrer' }}</p>
+            <button *ngIf="isSliceDynamic(si)" type="button" class="slice-remove-btn" (click)="$event.stopPropagation(); removeDynamicSlice(si)">×</button>
+          </div>
 
-        <button
-          class="slice-item"
-          type="button"
-          [class.active]="isCategoryActive(allCategoryKey)"
-          [attr.data-category-key]="allCategoryKey"
-          (click)="onCategorySelected(allCategoryKey)"
-        >
-          <span>{{ allCategoryLabel }}</span>
-          <span>{{ categoryCount(allCategoryKey) }}</span>
-        </button>
+          <div class="slice-section-items" *ngIf="!isSliceCollapsed(si)">
+            <ng-container *ngIf="isSliceLoading(si); else sliceContent">
+              <div class="slice-lazy-loading">
+                <span class="lazy-skeleton"></span>
+                <span class="lazy-skeleton"></span>
+                <span class="lazy-skeleton"></span>
+              </div>
+            </ng-container>
+            <ng-template #sliceContent>
+              <button
+                *ngFor="let category of slice.categories"
+                class="slice-item"
+                type="button"
+                [class.active]="isSliceCategoryActive(si, category.key)"
+                [attr.data-category-key]="category.key"
+                (click)="onSliceCategorySelected(si, category.key)"
+              >
+                <span>{{ category.label }}</span>
+                <span>{{ sliceCategoryCount(si, category.key) }}</span>
+              </button>
+            </ng-template>
+          </div>
 
-        <button
-          *ngFor="let category of categories"
-          class="slice-item"
-          type="button"
-          [class.active]="isCategoryActive(category.key)"
-          [attr.data-category-key]="category.key"
-          (click)="onCategorySelected(category.key)"
-        >
-          <span>{{ category.label }}</span>
-          <span>{{ categoryCount(category.key) }}</span>
-        </button>
-      </ng-container>
+          <hr *ngIf="si < slices.length - 1" class="slice-divider" />
+        </ng-container>
+
+
+      </div>
     </aside>
+    </div>
 
     <div class="table-shell">
-      <table mat-table [dataSource]="tableDataSource" class="jquery-table">
+      <div class="table-toolbar" *ngIf="showToolbar">
+        <div class="table-toolbar-left">
+          <div *ngIf="showSearchBar" class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M13 13L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            <input
+              class="search-input"
+              type="text"
+              [(ngModel)]="searchQuery"
+              (ngModelChange)="onSearchChange()"
+              placeholder="Rechercher..."
+              autocomplete="off"
+            />
+            <button *ngIf="searchQuery" type="button" class="search-clear-btn" (click)="searchQuery = ''; onSearchChange()">×</button>
+            <span class="search-count">{{ filteredRowCount }}</span>
+          </div>
+        </div>
+        <div *ngIf="showViewButton" class="table-toolbar-right">
+          <button type="button" class="view-btn" [matMenuTriggerFor]="viewMenu">
+            <mat-icon class="view-btn-icon">settings</mat-icon>
+            View
+          </button>
+
+          <mat-menu #viewMenu="matMenu" [panelClass]="'view-menu-panel'">
+            <button *ngIf="showFields" mat-menu-item [matMenuTriggerFor]="fieldsSubMenu" class="view-menu-sub-trigger">
+              <span class="view-menu-sub-label">Champs</span>
+              <span class="view-menu-sub-value">{{ visibleColumns.length }}/{{ totalColumnCount }}</span>
+            </button>
+            <button *ngIf="showGroupBySection" mat-menu-item [matMenuTriggerFor]="groupBySubMenu" class="view-menu-sub-trigger">
+              <span class="view-menu-sub-label">Group by</span>
+              <span class="view-menu-sub-value">{{ activeGroupByLabel }}</span>
+            </button>
+            <button *ngIf="showAddSliceButton" mat-menu-item [matMenuTriggerFor]="sliceBySubMenu" class="view-menu-sub-trigger">
+              <span class="view-menu-sub-label">Slice by</span>
+              <span class="view-menu-sub-value">{{ activeSliceByLabel }}</span>
+            </button>
+          </mat-menu>
+
+          <mat-menu #fieldsSubMenu="matMenu" [panelClass]="'view-submenu-panel'">
+            <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+              <button type="button" class="view-menu-item" *ngFor="let column of menuBaseColumns"
+                [disabled]="!column.optional && !allowColumnRemoval"
+                (click)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
+                <span class="view-menu-check">{{ isColumnVisible(column.key) ? '✓' : '' }}</span>
+                {{ column.header }}
+              </button>
+              <ng-container *ngIf="menuOptionalColumns.length > 0">
+                <hr class="view-menu-separator" />
+                <button type="button" class="view-menu-item" *ngFor="let column of menuOptionalColumns"
+                  [disabled]="(isColumnVisible(column.key) && visibleColumns.length === 1) || getLazyColumnStatus(column.key) === 'loading'"
+                  (click)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
+                  <span class="view-menu-check">{{ isColumnVisible(column.key) ? '✓' : '' }}</span>
+                  {{ column.header }}
+                  <span *ngIf="column.lazy && getLazyColumnStatus(column.key) === 'loading'" class="lazy-menu-spinner">↻</span>
+                  <span *ngIf="column.lazy && getLazyColumnStatus(column.key) === 'error'" class="lazy-menu-error" title="Erreur de chargement">⚠</span>
+                </button>
+              </ng-container>
+            </div>
+          </mat-menu>
+
+          <mat-menu #groupBySubMenu="matMenu" [panelClass]="'view-submenu-panel'">
+            <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+              <button type="button" class="view-menu-item" *ngFor="let col of groupByColumns"
+                [class.active]="activeGroupByKey === col.key"
+                (click)="onGroupByChange(activeGroupByKey === col.key ? null : col.key)">
+                <span class="view-menu-check">{{ activeGroupByKey === col.key ? '✓' : '' }}</span>
+                {{ col.header }}
+              </button>
+            </div>
+          </mat-menu>
+
+          <mat-menu #sliceBySubMenu="matMenu" [panelClass]="'view-submenu-panel'">
+            <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+              <button type="button" class="view-menu-item" *ngFor="let s of staticSlicesForMenu"
+                (click)="toggleStaticSlice(s.key)">
+                <span class="view-menu-check">{{ isStaticSliceVisible(s.key) ? '✓' : '' }}</span>
+                {{ s.title }}
+              </button>
+              <button type="button" class="view-menu-item active" *ngFor="let ds of activeDynamicSliceColumns"
+                (click)="removeDynamicSliceByKey(ds.key)">
+                <span class="view-menu-check">✓</span>
+                {{ ds.header }}
+              </button>
+              <button type="button" class="view-menu-item" *ngFor="let col of availableColumnsForDynamicSlice"
+                (click)="addDynamicSlice(col)">
+                <span class="view-menu-check"></span>
+                {{ col.header }}
+              </button>
+            </div>
+          </mat-menu>
+        </div>
+      </div>
+
+      <div class="table-body-scroll" #tableBodyScroll>
+      <table mat-table matSort [dataSource]="tableDataSource" class="jquery-table">
         <ng-container *ngFor="let column of visibleColumns" [matColumnDef]="column.key">
           <th
             mat-header-cell
             *matHeaderCellDef
+            [mat-sort-header]="column.sortable !== false ? column.key : ''"
+            [disabled]="column.sortable === false"
             [class.drag-enabled]="isColumnDragDropEnabled"
             [class.drop-target]="isHeaderDropTarget(column.key)"
-            [attr.draggable]="isColumnDragDropEnabled"
-            (dragstart)="onHeaderDragStart(column.key, $event)"
             (dragover)="onHeaderDragOver(column.key, $event)"
             (drop)="onHeaderDrop(column.key, $event)"
-            (dragend)="onHeaderDragEnd()"
           >
             <div class="head-cell">
               <span class="head-text" [title]="column.header">{{ column.header }}</span>
+              <span
+                *ngIf="isColumnDragDropEnabled"
+                class="drag-handle"
+                draggable="true"
+                (dragstart)="onHeaderDragStart(column.key, $event)"
+                (dragend)="onHeaderDragEnd()"
+                (click)="$event.stopPropagation()"
+              >
+                <mat-icon>drag_indicator</mat-icon>
+              </span>
             </div>
           </th>
           <td mat-cell *matCellDef="let row">
-            <span class="cell-text" [title]="asTitle(row[column.key])">{{ row[column.key] }}</span>
+            <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">
+              <span *ngSwitchCase="'loading'" class="lazy-skeleton"></span>
+              <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="retryLazyColumn(column)" title="Erreur de chargement — cliquer pour réessayer">
+                <span class="lazy-error-icon">⚠</span>
+                <span class="lazy-error-label">Réessayer</span>
+              </button>
+              <span *ngSwitchDefault class="cell-text" [title]="asTitle(row[column.key])">{{ row[column.key] }}</span>
+            </ng-container>
           </td>
         </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="renderedColumns"></tr>
+        <tr mat-header-row *matHeaderRowDef="renderedColumns; sticky: true"></tr>
         <tr
           mat-row
-          *matRowDef="let row; columns: renderedColumns"
+          *matRowDef="let row; columns: renderedColumns; when: !isGroupHeader"
           tabindex="0"
+          [ngClass]="getRowClass(row)"
           (click)="onRowClick(row)"
           (keydown.enter)="onRowClick(row)"
           (keydown.space)="onRowClick(row)"
         ></tr>
-        <tr class="mat-mdc-row" *matNoDataRow>
-          <td class="mat-mdc-cell" [attr.colspan]="renderedColumns.length">
+        <ng-container matColumnDef="__group_row">
+          <td mat-cell *matCellDef="let row" [attr.colspan]="renderedColumns.length" class="group-header-cell">
+            <div class="group-header-label">
+              <span class="group-chevron" [class.collapsed]="isGroupCollapsed(row.__groupKey)" *ngIf="row.__groupKey !== '__lazy_loading__'">›</span>
+              <span *ngIf="row.__groupKey !== '__lazy_loading__'" class="group-key-label">{{ row.__groupKey }}</span>
+              <span *ngIf="row.__groupKey === '__lazy_loading__'" class="lazy-skeleton group-lazy-key-skeleton"></span>
+              <span class="group-count-badge">{{ row.__groupCount }}</span>
+              <div class="group-pagination" *ngIf="!isGroupCollapsed(row.__groupKey) && row.__groupPageCount > 1" (click)="$event.stopPropagation()">
+                <button type="button" class="group-page-btn" [disabled]="row.__groupPage === 0" (click)="groupPageBack(row.__groupKey)">‹</button>
+                <span class="group-page-info">{{ row.__groupPage + 1 }} / {{ row.__groupPageCount }}</span>
+                <button type="button" class="group-page-btn" [disabled]="row.__groupPage >= row.__groupPageCount - 1" (click)="groupPageForward(row.__groupKey, row.__groupCount)">›</button>
+              </div>
+            </div>
+          </td>
+        </ng-container>
+        <tr mat-row *matRowDef="let row; columns: ['__group_row']; when: isGroupHeader"
+            class="group-header-row"
+            [class.group-header-loading]="row.__groupKey === '__lazy_loading__'"
+            [attr.data-group-key]="row.__groupKey"
+            (click)="row.__groupKey !== '__lazy_loading__' && toggleGroupCollapse(row.__groupKey)"></tr>
+        <tr class="mat-mdc-row no-data-row" *matNoDataRow>
+          <td class="mat-mdc-cell no-data-cell" [attr.colspan]="renderedColumns.length">
             {{ effectiveIsLoading ? loadingStateLabel : emptyStateLabel }}
           </td>
         </tr>
       </table>
-
-      <div class="bottom-actions-dock" *ngIf="showBottomActionsDock && showPagination">
-        <button
-          *ngIf="showAddColumnButton"
-          mat-icon-button
-          type="button"
-          class="dock-button"
-          data-add-column
-          [attr.aria-label]="addColumnLabel"
-          [matMenuTriggerFor]="columnsMenu"
-        >
-          +
-        </button>
       </div>
 
-      <mat-paginator
-        *ngIf="showPagination"
-        [length]="totalRows"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="pageSizeOptions"
-      ></mat-paginator>
+      <div class="bottom-bar" *ngIf="showPagination">
+        <mat-paginator
+          [length]="totalRows"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+        ></mat-paginator>
+      </div>
 
-      <mat-menu #columnsMenu="matMenu">
-        <div
-          class="columns-menu"
-          (mousedown)="$event.stopPropagation()"
-          (click)="$event.stopPropagation()"
-          (keydown)="$event.stopPropagation()"
-        >
-          <p class="columns-menu-title">Colonnes</p>
-          <div class="columns-menu-item" *ngFor="let column of menuBaseColumns">
-            <mat-checkbox
-              [checked]="isColumnVisible(column.key)"
-              [disabled]="isColumnVisible(column.key) && visibleColumns.length === 1"
-              (change)="onColumnVisibilityChange(column, $event.checked)"
-            >
-              {{ column.header }}
-            </mat-checkbox>
-          </div>
-
-          <p class="columns-menu-title" *ngIf="menuOptionalColumns.length > 0">Colonnes optionnelles</p>
-          <div class="columns-menu-item" *ngFor="let column of menuOptionalColumns">
-            <mat-checkbox
-              [checked]="isColumnVisible(column.key)"
-              [disabled]="isColumnVisible(column.key) && visibleColumns.length === 1"
-              (change)="onColumnVisibilityChange(column, $event.checked)"
-            >
-              {{ column.header }}
-            </mat-checkbox>
+      <div class="group-bottom-bar mat-mdc-paginator" *ngIf="activeGroupByKey">
+        <div class="mat-mdc-paginator-outer-container">
+          <div class="mat-mdc-paginator-container">
+            <div class="mat-mdc-paginator-page-size">
+              <div class="mat-mdc-paginator-page-size-label">Lignes par groupe :</div>
+              <mat-select
+                class="mat-mdc-paginator-page-size-select"
+                [(ngModel)]="groupPageSize"
+                (ngModelChange)="onGroupPageSizeChange($event)"
+                panelClass="mat-mdc-paginator-select-page-size group-page-size-panel"
+                [panelWidth]="'auto'"
+              >
+                <mat-select-trigger>{{ groupPageSize === 0 ? 'Toutes' : groupPageSize }}</mat-select-trigger>
+                <mat-option *ngFor="let opt of pageSizeOptionsGroupBy" [value]="opt">{{ opt }}</mat-option>
+                <mat-option [value]="0">Toutes</mat-option>
+              </mat-select>
+            </div>
           </div>
         </div>
-      </mat-menu>
+      </div>
     </div>
   </div>
 </section>
