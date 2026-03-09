@@ -1,12 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import {
-  TableComponent,
-  TableColumnProvider,
-  TableProvider,
-  col,
-} from '@oneteme/jquery-table';
+import { TableComponent, TableColumnProvider, TableProvider, col } from '@oneteme/jquery-table';
 
 interface RepoRow {
   issue: string;
@@ -18,13 +13,13 @@ interface RepoRow {
 }
 
 @Component({
-  selector: 'app-table-test',
+  selector: 'app-table',
   standalone: true,
   imports: [CommonModule, TableComponent, RouterLink],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
 })
-export class TableTestComponent {
+export class TableExempleComponent {
   isLoading = false;
   selectedRow: RepoRow | null = null;
   isCodeVisible = false;
@@ -71,7 +66,7 @@ export class TableTestComponent {
 
   private readonly tableData: RepoRow[] = [
     {
-      issue: 'Faire la doc',
+      issue: 'Présentation IA',
       status: 'In Progress',
       owner: 'Youssef Senior',
       priority: 'High',
@@ -79,7 +74,7 @@ export class TableTestComponent {
       updatedAt: '2026-02-12 15:42',
     },
     {
-      issue: 'Faire des tickets',
+      issue: 'Pulse',
       status: 'Backlog',
       owner: 'Fufu',
       priority: 'Medium',
@@ -103,9 +98,9 @@ export class TableTestComponent {
       updatedAt: '2026-02-13 08:27',
     },
     {
-      issue: 'Deploy Oraccle',
+      issue: 'Jquery-Table',
       status: 'Backlog',
-      owner: 'Thomas',
+      owner: 'Youssef',
       priority: 'Low',
       team: 'Backend',
       updatedAt: '2026-02-08 11:54',
@@ -136,7 +131,7 @@ export class TableTestComponent {
       { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'), optional: true },
     ],
     slices: [
-      { title: 'Status', columnKey: 'status', showAll: false },
+      { title: 'Status', columnKey: 'status' },
     ],
     rowClass: (row) => {
       if (row.status === 'Done')        return 'row-done';

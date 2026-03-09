@@ -28,6 +28,15 @@
     color: #4b5563;
   }
 
+  // jquery-table est un flex-column qui distribue la hauteur reçue de son parent.
+  // Sans hauteur définie sur l'hôte, le tableau est à 0px.
+  // Ici on fixe une hauteur absolue pour la page de démo (voir section Layout
+  // dans la documentation pour l'approche recommandée en production).
+  jquery-table {
+    display: block;
+    height: 462px;
+  }
+
   .row-selected {
     margin-top: 12px;
     color: #1f2937;

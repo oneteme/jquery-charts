@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, OnChanges, Output, SimpleChanges, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, inject, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,35 +9,20 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Subject, take, takeUntil } from 'rxjs';
-import { TableCategorySliceProvider, TableColumnProvider, TableProvider } from '../jquery-table.model';
-
-function getFrenchPaginatorIntl(): MatPaginatorIntl {
-  const intl = new MatPaginatorIntl();
-  intl.itemsPerPageLabel = 'Éléments par page :';
-  intl.nextPageLabel = 'Page suivante';
-  intl.previousPageLabel = 'Page précédente';
-  intl.firstPageLabel = 'Première page';
-  intl.lastPageLabel = 'Dernière page';
-  intl.getRangeLabel = (page: number, pageSize: number, length: number) => {
-    if (length === 0 || pageSize === 0) return `0 sur ${length}`;
-    length = Math.max(length, 0);
-    const start = page * pageSize;
-    const end = start < length ? Math.min(start + pageSize, length) : start + pageSize;
-    return `${start + 1} – ${end} sur ${length}`;
-  };
-  return intl;
-}
+import { TableColumnProvider, TableProvider } from '../jquery-table.model';
+import { SlicePanelComponent } from './slice-panel/slice-panel.component';
+import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
 
 @Component({
   standalone: true,
   selector: 'jquery-table',
-  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule ],
+  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: MatPaginatorIntl, useFactory: getFrenchPaginatorIntl }],
 })
-export class TableComponent<T = any> implements OnChanges, AfterViewInit {
+export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDestroy {
   @Input() config?: TableProvider<T>;
 
   @Input() dataSource?: T[] | { data: T[] };
@@ -57,31 +42,43 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
   @ViewChild(MatPaginator) paginator?: MatPaginator;
   @ViewChild(MatSort) sort?: MatSort;
   @ViewChild('tableBodyScroll') tableBodyScrollRef?: ElementRef<HTMLElement>;
+  @ViewChild(SlicePanelComponent) slicePanelRef?: SlicePanelComponent<T>;
 
   renderedColumns: string[] = [];
   tableDataSource = new MatTableDataSource<any>([]);
   activeColumns: TableColumnProvider<T>[] = [];
 
-  readonly allCategoryKey = '__all';
-  activeKeysBySlice: Map<number, Set<string>> = new Map();
-  isSlicePanelCollapsed = false;
-  private _expandedSlices = new Set<number>();
-  private _dynamicSlices: Array<{ key: string; slice: TableCategorySliceProvider<T> }> = [];
+  activeSliceFilter: (row: T) => boolean = () => true;
+
+  // Propriétés stables pour les bindings du template (contre erreur NG0100)
+  _sliceConfigs: any[] = [];
+  _sliceColumns: TableColumnProvider<T>[] = [];
+  _sliceData: T[] = [];
+  _sliceShowToggle = true;
+  _staticSlicesForMenu: Array<{ key: string; title: string }> = [];
+  _activeDynamicSliceColumns: TableColumnProvider<T>[] = [];
+  _availableColumnsForDynamicSlice: TableColumnProvider<T>[] = [];
+  _activeSliceByLabel = 'Aucun';
 
   searchQuery = '';
   activeGroupByKey: string | null = null;
   private _collapsedGroups = new Set<string>();
+  private _activeSort: { active: string; direction: 'asc' | 'desc' | '' } = { active: '', direction: '' };
+  private _sortSubscribed: MatSort | null = null;
+  private _destroy$ = new Subject<void>();
   private _defaultGroupCollapsed = false;
   private _groupPages = new Map<string, number>();
   private _totalFilteredCount = 0;
-  private _hiddenStaticSliceKeys = new Set<string>();
 
   _lazyColumnStatus = new Map<string, 'idle' | 'loading' | 'loaded' | 'error'>();
-  private _lazyColumnData = new Map<string, Map<any, any>>();
+  _lazyColumnData = new Map<string, Map<any, any>>();
   private _lazyFetchCancels = new Map<string, Subject<void>>();
   private _cdr = inject(ChangeDetectorRef);
+  private _el = inject(ElementRef<HTMLElement>);
 
   isGroupHeader = (_: number, row: any): boolean => row.__groupHeader === true;
+
+  // ── Lifecycle ──────────────────────────────────────────────────────────────
 
   pageSize = 5;
   pageSizeOptions: number[] = [5, 10, 20];
@@ -95,13 +92,22 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
   private resolvedConfig: TableProvider<T> = { columns: [], data: [] };
   private _preservePageIndex: number | null = null;
 
+  // ── Optimisation performance ─────────────────────────────────────────────
+  /** [A] Lignes brutes filtrées+triées — source de vérité sans projection */
+  private _allFilteredRows: T[] = [];
+  /** Référence du paginator déjà abonné (abonnement unique) */
+  private _paginatorSubscribed: MatPaginator | null = null;
+  /** [B] Timer du rendu différé — libère le thread principal */
+  private _pendingRender: ReturnType<typeof setTimeout> | null = null;
+
+
   ngOnChanges(changes: SimpleChanges): void {
     const dataChanged = !!(changes['config'] || changes['data'] || changes['dataSource']);
     if (dataChanged) {
       this._lazyFetchCancels.forEach(s => { s.next(); s.complete(); });
       this._lazyFetchCancels.clear();
-      this._lazyColumnStatus.clear();
-      this._lazyColumnData.clear();
+      this._lazyColumnStatus = new Map();
+      this._lazyColumnData = new Map();
     }
     this.refreshViewModel();
     if (dataChanged) {
@@ -112,7 +118,28 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
   ngAfterViewInit(): void {
     this.attachPaginator();
     this.attachSort();
+    this._measureHeaderHeight();
   }
+
+  ngOnDestroy(): void {
+    if (this._pendingRender !== null) {
+      clearTimeout(this._pendingRender);
+    }
+    this._destroy$.next();
+    this._destroy$.complete();
+  }
+
+  private _measureHeaderHeight(): void {
+    const headerRow = this._el.nativeElement.querySelector('tr.mat-mdc-header-row') as HTMLElement;
+    if (headerRow) {
+      const h = headerRow.getBoundingClientRect().height;
+      if (h > 0) {
+        this._el.nativeElement.style.setProperty('--actual-header-height', h + 'px');
+      }
+    }
+  }
+
+  // ── Getters d'affichage ────────────────────────────────────────────────────
 
   get title(): string {
     return this.resolvedConfig.title ?? '';
@@ -133,7 +160,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
   get showGroupBySection(): boolean { return this.showViewButton; }
 
   get filteredRowCount(): number {
-    return this.activeGroupByKey ? this._totalFilteredCount : this.tableDataSource.data.filter((r) => !r.__groupHeader).length;
+    return this.activeGroupByKey ? this._totalFilteredCount : this._allFilteredRows.length;
   }
 
   get activeGroupByLabel(): string {
@@ -147,33 +174,15 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
   }
 
   get activeSliceByLabel(): string {
-    const staticActiveCount = (this.resolvedConfig.slices || []).filter(
-      (s) => !s.columnKey || !this._hiddenStaticSliceKeys.has(s.columnKey)
-    ).length;
-    const total = staticActiveCount + this._dynamicSlices.length;
-    if (total === 0) return 'Aucun';
-    if (total === 1) {
-      const first = (this.resolvedConfig.slices || []).find(
-        (s) => !s.columnKey || !this._hiddenStaticSliceKeys.has(s.columnKey)
-      );
-      if (first) return first.title || first.columnKey || '1';
-      return this.activeDynamicSliceColumns[0]?.header || '1';
-    }
-    return `${total} actifs`;
+    return this._activeSliceByLabel;
   }
 
   get activeDynamicSliceColumns(): TableColumnProvider<T>[] {
-    const allCols = this.resolvedConfig.columns || [];
-    return this._dynamicSlices
-      .map((d) => allCols.find((c) => c.key === d.key))
-      .filter((c): c is TableColumnProvider<T> => !!c);
+    return this._activeDynamicSliceColumns;
   }
 
   removeDynamicSliceByKey(key: string): void {
-    const dynamicIndex = this._dynamicSlices.findIndex((d) => d.key === key);
-    if (dynamicIndex < 0) return;
-    const sliceIndex = this.staticSliceCount + dynamicIndex;
-    this.removeDynamicSlice(sliceIndex);
+    this.slicePanelRef?.removeDynamicSliceByKey(key);
   }
 
   get groupByColumns(): TableColumnProvider<T>[] {
@@ -185,6 +194,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
       return true;
     });
   }
+
+  // ── Actions utilisateur ────────────────────────────────────────────────────
 
   onSearchChange(): void {
     this._preservePageIndex = 0;
@@ -200,6 +211,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     this.groupPageSize = this.resolveDefaultGroupPageSize();
     this.refreshViewModel();
     this.paginator?.firstPage();
+    if (!key) {
+      setTimeout(() => {
+        this.tableBodyScrollRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 0);
+    }
     if (key) {
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
       if (colDef?.lazy && colDef.fetchFn && this._lazyColumnStatus.get(key) !== 'loaded') {
@@ -220,6 +236,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     }
   }
 
+  // ── Lazy loading ─────────────────────────────────────────────────────────
+
   getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
     return this._lazyColumnStatus.get(key) ?? 'idle';
   }
@@ -235,8 +253,12 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     const prev = this._lazyFetchCancels.get(k);
     if (prev) { prev.next(); prev.complete(); }
     this._lazyFetchCancels.delete(k);
-    this._lazyColumnStatus.delete(k);
-    this._lazyColumnData.delete(k);
+    const newStatus = new Map(this._lazyColumnStatus);
+    newStatus.delete(k);
+    this._lazyColumnStatus = newStatus;
+    const newData = new Map(this._lazyColumnData);
+    newData.delete(k);
+    this._lazyColumnData = newData;
     this.triggerLazyFetch(column);
   }
 
@@ -250,7 +272,9 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     const cancel$ = new Subject<void>();
     this._lazyFetchCancels.set(k, cancel$);
 
-    this._lazyColumnStatus.set(k, 'loading');
+    const newStatus1 = new Map(this._lazyColumnStatus);
+    newStatus1.set(k, 'loading');
+    this._lazyColumnStatus = newStatus1;
     this.refreshViewModel();
 
     column.fetchFn().pipe(
@@ -263,18 +287,26 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
         values.forEach((value, i) => {
           if (i < data.length) rowMap.set(data[i], value);
         });
-        this._lazyColumnData.set(k, rowMap);
-        this._lazyColumnStatus.set(k, 'loaded');
+        const newData = new Map(this._lazyColumnData);
+        newData.set(k, rowMap);
+        this._lazyColumnData = newData;
+        const newStatus2 = new Map(this._lazyColumnStatus);
+        newStatus2.set(k, 'loaded');
+        this._lazyColumnStatus = newStatus2;
         this.refreshViewModel();
         this._cdr.markForCheck();
       },
       error: () => {
-        this._lazyColumnStatus.set(k, 'error');
+        const newStatusErr = new Map(this._lazyColumnStatus);
+        newStatusErr.set(k, 'error');
+        this._lazyColumnStatus = newStatusErr;
         this.refreshViewModel();
         this._cdr.markForCheck();
       },
     });
   }
+
+  // ── Groupement ────────────────────────────────────────────────────────────
 
   toggleGroupCollapse(groupKey: string): void {
     if (this._collapsedGroups.has(groupKey)) {
@@ -293,10 +325,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     const row = container.querySelector<HTMLElement>(`tr[data-group-key="${CSS.escape(groupKey)}"]`);
     if (!row) return;
     const headerHeight = parseFloat(
-      getComputedStyle(container).getPropertyValue('--mat-table-header-container-height') || '56'
+      this._el.nativeElement.style.getPropertyValue('--actual-header-height') || '56'
     ) || 56;
-    const rowTop = row.offsetTop - container.offsetTop;
-    container.scrollTo({ top: rowTop - headerHeight, behavior: 'smooth' });
+    const containerRect = container.getBoundingClientRect();
+    const rowRect = row.getBoundingClientRect();
+    const currentScrollTop = container.scrollTop;
+    const targetScrollTop = currentScrollTop + (rowRect.top - containerRect.top) - headerHeight;
+    container.scrollTo({ top: targetScrollTop, behavior: 'smooth' });
   }
 
   isGroupCollapsed(groupKey: string): boolean {
@@ -320,30 +355,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     }
   }
 
-  isSliceCollapsed(sliceIndex: number): boolean {
-    if (this.slices.length === 1) {
-      return this._expandedSlices.has(-1 - sliceIndex);
-    }
-    return !this._expandedSlices.has(sliceIndex);
-  }
-
-  toggleSliceCollapse(sliceIndex: number): void {
-    if (this.slices.length === 1) {
-      const closedKey = -1 - sliceIndex;
-      if (this._expandedSlices.has(closedKey)) {
-        this._expandedSlices.delete(closedKey);
-      } else {
-        this._expandedSlices.add(closedKey);
-      }
-      return;
-    }
-    if (this._expandedSlices.has(sliceIndex)) {
-      this._expandedSlices.delete(sliceIndex);
-    } else {
-      this._expandedSlices.clear();
-      this._expandedSlices.add(sliceIndex);
-    }
-  }
+  // ── Colonnes ──────────────────────────────────────────────────────────────
 
   get hasAddableColumns(): boolean {
     return this.menuBaseColumns.length > 0 || this.menuOptionalColumns.length > 0;
@@ -366,153 +378,66 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     return this.resolvedConfig.allowColumnRemoval === true;
   }
 
-  get slices(): TableCategorySliceProvider<T>[] {
-    const cfg = this.resolvedConfig;
-    const data = cfg.data || [];
-    const staticSlices: TableCategorySliceProvider<T>[] = (cfg.slices || []).filter(
-      (s) => !s.columnKey || !this._hiddenStaticSliceKeys.has(s.columnKey)
-    );
-    const allSlices = [...staticSlices, ...this._dynamicSlices.map((d) => d.slice)];
-    return allSlices.map((slice) => this.materializeSlice(slice, data));
+  // ── Slices ────────────────────────────────────────────────────────────────
+
+  get hasSliceConfig(): boolean {
+    return (this.resolvedConfig.slices?.length ?? 0) > 0;
   }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string }> {
-    return (this.resolvedConfig.slices || [])
-      .filter((s) => !!s.columnKey)
-      .map((s) => ({ key: s.columnKey!, title: s.title || s.columnKey! }));
-  }
-
-  isStaticSliceVisible(columnKey: string): boolean {
-    return !this._hiddenStaticSliceKeys.has(columnKey);
-  }
-
-  toggleStaticSlice(columnKey: string): void {
-    const next = new Set(this._hiddenStaticSliceKeys);
-    if (next.has(columnKey)) next.delete(columnKey);
-    else next.add(columnKey);
-    this._hiddenStaticSliceKeys = next;
-    this.refreshViewModel();
-  }
-
-  private materializeSlice(slice: TableCategorySliceProvider<T>, data: T[]): TableCategorySliceProvider<T> {
-    if (!slice.columnKey || (slice.categories && slice.categories.length > 0)) {
-      return slice;
-    }
-    const col = (this.resolvedConfig.columns || []).find(c => c.key === slice.columnKey);
-    const isLazy = !!col?.lazy;
-
-    if (isLazy && this._lazyColumnStatus.get(slice.columnKey!) !== 'loaded') {
-      return { ...slice, categories: [] };
-    }
-
-    const distinctValues = [
-      ...new Set(
-        data
-          .map((row) => {
-            const val = this.getLazyAwareValue(slice.columnKey!, row);
-            return val != null && val !== '' ? String(val) : null;
-          })
-          .filter((v): v is string => v !== null)
-      ),
-    ].sort();
-    return {
-      ...slice,
-      categories: distinctValues.map((v) => ({
-        key: v,
-        label: v,
-        filter: (row: T) => String(this.getLazyAwareValue(slice.columnKey!, row) ?? '') === v,
-      })),
-    };
-  }
-
-  get staticSliceCount(): number {
-    return (this.resolvedConfig.slices || []).filter(
-      (s) => !s.columnKey || !this._hiddenStaticSliceKeys.has(s.columnKey)
-    ).length;
-  }
-
-  isSliceDynamic(sliceIndex: number): boolean {
-    return sliceIndex >= this.staticSliceCount;
-  }
-
-  getDynamicSliceColumnKey(sliceIndex: number): string | null {
-    const dynamicIndex = sliceIndex - this.staticSliceCount;
-    return this._dynamicSlices[dynamicIndex]?.key ?? null;
-  }
-
-  isSliceLoading(sliceIndex: number): boolean {
-    const key = this.getDynamicSliceColumnKey(sliceIndex);
-    if (!key) return false;
-    const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
-    if (!colDef?.lazy) return false;
-    const status = this._lazyColumnStatus.get(key) ?? 'idle';
-    return status === 'loading' || status === 'idle';
+  get showSlicePanel(): boolean {
+    return this.slicePanelRef?.showPanel ?? (this.hasSliceConfig && (this.resolvedConfig.data || []).length > 0);
   }
 
   get showAddSliceButton(): boolean { return this.showToolbar; }
 
+  get staticSlicesForMenu(): Array<{ key: string; title: string }> {
+    return this._staticSlicesForMenu;
+  }
+
   get availableColumnsForDynamicSlice(): TableColumnProvider<T>[] {
-    const dynamicKeys = new Set(this._dynamicSlices.map((d) => d.key));
-    const cfg = this.resolvedConfig;
-    const staticKeys = new Set(
-      (cfg.slices || []).map((s) => s.columnKey).filter((k): k is string => !!k)
-    );
-    const existingKeys = new Set([...dynamicKeys, ...staticKeys]);
-    const allCols = cfg.columns || [];
-    const seen = new Set<string>();
-    return allCols.filter((c) => {
-      if (existingKeys.has(c.key) || seen.has(c.key)) return false;
-      seen.add(c.key);
-      return true;
-    });
+    return this._availableColumnsForDynamicSlice;
+  }
+
+  isStaticSliceVisible(columnKey: string): boolean {
+    return this.slicePanelRef?.isStaticSliceVisible(columnKey) ?? true;
+  }
+
+  toggleStaticSlice(columnKey: string): void {
+    this.slicePanelRef?.toggleStaticSlice(columnKey);
   }
 
   addDynamicSlice(column: TableColumnProvider<T>): void {
-    const data = this.resolvedConfig.data || [];
-    const distinctValues = [
-      ...new Set(
-        data
-          .map((row) => {
-            const val = this.getLazyAwareValue(column.key, row);
-            return val != null && val !== '' ? String(val) : null;
-          })
-          .filter((v): v is string => v !== null)
-      ),
-    ].sort();
-    const newSlice: TableCategorySliceProvider<T> = {
-      title: column.header,
-      categories: distinctValues.map((v) => ({
-        key: v,
-        label: v,
-        filter: (row: T) => String(this.getLazyAwareValue(column.key, row) ?? '') === v,
-      })),
-    };
-    this._dynamicSlices = [...this._dynamicSlices, { key: column.key, slice: newSlice }];
-    this.refreshViewModel();
+    this.slicePanelRef?.addDynamicSlice(column);
     if (column.lazy && column.fetchFn && this._lazyColumnStatus.get(column.key) !== 'loaded') {
       this.triggerLazyFetch(column);
     }
   }
 
-  removeDynamicSlice(sliceIndex: number): void {
-    const dynamicIndex = sliceIndex - this.staticSliceCount;
-    if (dynamicIndex < 0) return;
-    const newActiveKeys = new Map<number, Set<string>>();
-    this.activeKeysBySlice.forEach((keys, idx) => {
-      if (idx < sliceIndex) newActiveKeys.set(idx, keys);
-      else if (idx > sliceIndex) newActiveKeys.set(idx - 1, keys);
-    });
-    this.activeKeysBySlice = newActiveKeys;
-    this._dynamicSlices = this._dynamicSlices.filter((_, i) => i !== dynamicIndex);
+  onSliceFilterChange(pred: (row: T) => boolean): void {
+    this.activeSliceFilter = pred;
+    this._preservePageIndex = 0;
     this.refreshViewModel();
+    this.paginator?.firstPage();
   }
 
-  get showSlicePanel(): boolean {
-    return this.slices.length > 0 && (this.resolvedConfig.data || []).length > 0;
-  }
-
-  get showSliceToggle(): boolean {
-    return this.resolvedConfig.showSliceToggle !== false;
+  onDynamicSliceKeysChange(keys: string[]): void {
+    const allCols = this.resolvedConfig.columns ?? [];
+    const staticKeys = new Set(
+      (this.resolvedConfig.slices ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
+    );
+    const dynamicKeySet = new Set(keys);
+    const existingKeys = new Set([...staticKeys, ...dynamicKeySet]);
+    this._activeDynamicSliceColumns = keys
+      .map(k => allCols.find(c => c.key === k))
+      .filter((c): c is TableColumnProvider<T> => !!c);
+    const seen = new Set<string>();
+    this._availableColumnsForDynamicSlice = allCols.filter(c => {
+      if (existingKeys.has(c.key) || seen.has(c.key)) return false;
+      seen.add(c.key);
+      return true;
+    });
+    this._computeSliceLabel();
+    this._cdr.markForCheck();
   }
 
   get emptyStateLabel(): string {
@@ -537,8 +462,12 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
   }
 
   get totalRows(): number {
-    return this.tableDataSource.data.filter((r) => !r.__groupHeader).length;
+    return this.activeGroupByKey
+      ? this.tableDataSource.data.filter((r) => !r.__groupHeader).length
+      : this._allFilteredRows.length;
   }
+
+  // ── Gestion des colonnes ─────────────────────────────────────────────────
 
   onAddColumn(column: TableColumnProvider<T>): void {
     this.userCustomizedColumns = true;
@@ -583,48 +512,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     return this.activeColumns.some((column) => column.key === columnKey);
   }
 
-  onCategorySelected(categoryKey: string): void {
-    this.onSliceCategorySelected(0, categoryKey);
-    this.categorySelected.emit(categoryKey);
-  }
-
-  onSliceCategorySelected(sliceIndex: number, categoryKey: string): void {
-    const slice = this.slices[sliceIndex];
-    if (!slice) return;
-
-    if (!this.activeKeysBySlice.has(sliceIndex)) {
-      this.activeKeysBySlice.set(sliceIndex, new Set());
-    }
-
-    const activeKeys = this.activeKeysBySlice.get(sliceIndex)!;
-    // Multi-select par défaut (sauf si multiSelect === false)
-    if (slice.multiSelect === false) {
-      if (activeKeys.has(categoryKey)) {
-        activeKeys.clear();
-      } else {
-        activeKeys.clear();
-        activeKeys.add(categoryKey);
-      }
-    } else {
-      if (activeKeys.has(categoryKey)) {
-        activeKeys.delete(categoryKey);
-      } else {
-        activeKeys.add(categoryKey);
-      }
-    }
-
-    this.refreshViewModel();
-    this.paginator?.firstPage();
-  }
-
-  onSliceAllSelected(sliceIndex: number): void {
-    if (this.activeKeysBySlice.has(sliceIndex)) {
-      this.activeKeysBySlice.get(sliceIndex)!.clear();
-    }
-    this.refreshViewModel();
-    this.paginator?.firstPage();
-  }
-
   onRemoveColumn(columnKey: string, event?: Event): void {
     event?.stopPropagation();
     if (!this.allowColumnRemoval) {
@@ -643,9 +530,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     this.columnRemoved.emit(column);
   }
 
-  toggleSlicePanel(): void {
-    this.isSlicePanelCollapsed = !this.isSlicePanelCollapsed;
-  }
+  // ── Lignes ────────────────────────────────────────────────────────────────
 
   getRowClass(row: any): string | string[] | Record<string, boolean> {
     const fn = this.resolvedConfig.rowClass;
@@ -657,6 +542,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     if (row?.__groupHeader) return;
     this.rowSelected.emit((row?.__raw ?? row) as T);
   }
+
+  // ── Drag & drop ───────────────────────────────────────────────────────────
 
   onHeaderDragStart(columnKey: string, event: DragEvent): void {
     if (!this.isColumnDragDropEnabled) {
@@ -721,34 +608,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     );
   }
 
-  isCategoryActive(categoryKey: string): boolean {
-    return this.isSliceCategoryActive(0, categoryKey);
-  }
-
-  isSliceCategoryActive(sliceIndex: number, categoryKey: string): boolean {
-    return this.activeKeysBySlice.get(sliceIndex)?.has(categoryKey) ?? false;
-  }
-
-  isSliceAllActive(sliceIndex: number): boolean {
-    return !this.activeKeysBySlice.has(sliceIndex) || this.activeKeysBySlice.get(sliceIndex)!.size === 0;
-  }
-
-  categoryCount(categoryKey: string): number {
-    return this.sliceCategoryCount(0, categoryKey);
-  }
-
-  sliceCategoryCount(sliceIndex: number, categoryKey: string): number {
-    const slice = this.slices[sliceIndex];
-    if (!slice) return 0;
-    const category = (slice.categories || []).find((item) => item.key === categoryKey);
-    if (!category) return 0;
-    return (this.resolvedConfig.data || []).filter((row) => category.filter(row)).length;
-  }
-
-  sliceAllCount(sliceIndex: number): number {
-    return (this.resolvedConfig.data || []).length;
-  }
-
   asTitle(value: any): string {
     if (value === null || value === undefined) {
       return '';
@@ -756,36 +615,10 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     return String(value);
   }
 
-  private refreshDynamicSlices(): void {
-    const data = this.resolvedConfig.data || [];
-    this._dynamicSlices = this._dynamicSlices.map(({ key, slice }) => {
-      const distinctValues = [
-        ...new Set(
-          data
-            .map((row) => {
-              const val = this.getLazyAwareValue(key, row);
-              return val != null && val !== '' ? String(val) : null;
-            })
-            .filter((v): v is string => v !== null)
-        ),
-      ].sort();
-      return {
-        key,
-        slice: {
-          ...slice,
-          categories: distinctValues.map((v) => ({
-            key: v,
-            label: v,
-            filter: (row: T) => String(this.getLazyAwareValue(key, row) ?? '') === v,
-          })),
-        },
-      };
-    });
-  }
+  // ── Pipeline de données (privé) ──────────────────────────────────────────
 
   private refreshViewModel(): void {
     this.resolvedConfig = this.buildEffectiveConfig();
-    this.refreshDynamicSlices();
     const defaultColumns = (this.resolvedConfig.columns || []).filter(c => !c.optional);
 
     if (!this.userCustomizedColumns || this.activeColumns.length === 0) {
@@ -799,18 +632,109 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
 
     this.renderedColumns = this.activeColumns.map((column) => column.key);
 
-    const categoryRows = this.getCategoryFilteredData();
-    const projectedRows = this.projectRows(categoryRows);
-
     this.pageSize = this.paginator?.pageSize || this.resolvePageSize();
     this.pageSizeOptions = this.resolvePageSizeOptions();
     this.pageSizeOptionsGroupBy = this.resolvePageSizeOptionsGroupBy();
     if (this.groupPageSize !== 0 && !this.pageSizeOptionsGroupBy.includes(this.groupPageSize)) {
       this.groupPageSize = this.resolveDefaultGroupPageSize();
     }
-    this.tableDataSource.data = projectedRows;
+
     this.attachPaginator();
     this.attachSort();
+
+    // Mise à jour des propriétés stables pour les bindings du template
+    this._sliceConfigs = this.resolvedConfig.slices ?? [];
+    this._sliceColumns = this.resolvedConfig.columns ?? [];
+    this._sliceData = this.resolvedConfig.data ?? [];
+    this._sliceShowToggle = this.resolvedConfig.showSliceToggle !== false;
+    this._staticSlicesForMenu = (this.resolvedConfig.slices ?? [])
+      .filter(s => !!s.columnKey)
+      .map(s => ({ key: s.columnKey!, title: s.title || s.columnKey! }));
+    // Initialiser _availableColumnsForDynamicSlice sans slicePanelRef
+    // (sera raffiné via onDynamicSliceKeysChange quand des slices dynamiques sont ajoutés)
+    const staticKeys = new Set(
+      (this.resolvedConfig.slices ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
+    );
+    const activeDynKeys = new Set(this._activeDynamicSliceColumns.map(c => c.key));
+    const seen = new Set<string>();
+    this._availableColumnsForDynamicSlice = (this.resolvedConfig.columns ?? []).filter(c => {
+      if (staticKeys.has(c.key) || activeDynKeys.has(c.key) || seen.has(c.key)) return false;
+      seen.add(c.key);
+      return true;
+    });
+    this._computeSliceLabel();
+
+    // [B] Déclencher le calcul lourd de manière asynchrone pour libérer le thread principal
+    this._scheduleRender();
+  }
+
+  private _computeSliceLabel(): void {
+    const total = this._sliceConfigs.length + this._activeDynamicSliceColumns.length;
+    if (total === 0) { this._activeSliceByLabel = 'Aucun'; return; }
+    if (total === 1) {
+      const first = this._sliceConfigs[0];
+      this._activeSliceByLabel = first?.title || first?.columnKey
+        || this._activeDynamicSliceColumns[0]?.header || '1';
+      return;
+    }
+    this._activeSliceByLabel = `${total} actifs`;
+  }
+
+  // ── [B] Rendu différé — libère le thread principal ────────────────────────
+
+  /** Planifie un rendu au prochain tick. Les appels successifs rapides sont dédoublonnés. */
+  private _scheduleRender(): void {
+    if (this._pendingRender !== null) {
+      clearTimeout(this._pendingRender);
+      this._pendingRender = null;
+    }
+    this._pendingRender = setTimeout(() => {
+      this._pendingRender = null;
+      this._executeRender();
+    }, 0);
+  }
+
+  /** [A+B] Filtre, trie, puis projette uniquement la page courante. */
+  private _executeRender(): void {
+    const categoryRows = this.getCategoryFilteredData();
+    const compareFn = this._buildSortComparator();
+    this._allFilteredRows = compareFn ? [...categoryRows].sort(compareFn) : categoryRows;
+
+    // Mettre à jour le paginator avec le nouveau total
+    if (this.paginator) {
+      const savedIndex = this._preservePageIndex ?? this.paginator.pageIndex;
+      const maxPage = Math.max(0, Math.ceil(this._allFilteredRows.length / this.pageSize) - 1);
+      this.paginator.length = this._allFilteredRows.length;
+      this.paginator.pageIndex = Math.min(savedIndex, maxPage);
+      this._preservePageIndex = null;
+    }
+
+    this._projectCurrentPage();
+    this._cdr.markForCheck();
+  }
+
+  /** [A] Projette uniquement les lignes de la page courante (pageSize lignes max). */
+  private _projectCurrentPage(): void {
+    if (this.activeGroupByKey) {
+      // Mode groupBy : comportement hérité (structure groupée complète)
+      this.tableDataSource.data = this.projectRows(this._allFilteredRows);
+      return;
+    }
+
+    const pageIndex = this.paginator?.pageIndex ?? 0;
+    const start = pageIndex * this.pageSize;
+    const pageRows = this._allFilteredRows.slice(start, start + this.pageSize);
+
+    const projected: any[] = [];
+    pageRows.forEach((row, i) => {
+      const idx = start + i;
+      const p: any = { __raw: row, __index: idx };
+      this.activeColumns.forEach((col) => {
+        p[col.key] = this.resolveCellValue(col, row, idx);
+      });
+      projected.push(p);
+    });
+    this.tableDataSource.data = projected;
   }
 
   private buildEffectiveConfig(): TableProvider<T> {
@@ -865,7 +789,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     if (this.displayedColumns?.length) {
       return this.displayedColumns.map((key) => ({
         key,
-        header: this.columnLabels?.[key] || this.humanizeKey(key),
+        header: this.columnLabels?.[key] || humanizeKey(key),
       }));
     }
 
@@ -876,26 +800,14 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
 
     return Object.keys(firstRow).map((key) => ({
       key,
-      header: this.columnLabels?.[key] || this.humanizeKey(key),
+      header: this.columnLabels?.[key] || humanizeKey(key),
     }));
   }
 
   private getCategoryFilteredData(): T[] {
     const data = this.resolvedConfig.data || [];
 
-    let filtered = data;
-    if (this.showSlicePanel) {
-      filtered = data.filter((row) =>
-        this.slices.every((slice, sliceIndex) => {
-          const activeKeys = this.activeKeysBySlice.get(sliceIndex);
-          if (!activeKeys || activeKeys.size === 0) return true;
-          return [...activeKeys].some((key) => {
-            const category = (slice.categories || []).find((c) => c.key === key);
-            return category ? category.filter(row) : false;
-          });
-        })
-      );
-    }
+    let filtered = data.filter(this.activeSliceFilter);
 
     const query = this.searchQuery?.trim().toLowerCase();
     if (query) {
@@ -952,9 +864,12 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     this._totalFilteredCount = rows.length;
     const pageSize = this.groupPageSize;
     const result: any[] = [];
+    const compareFn = this._buildSortComparator();
 
     groupOrder.forEach((groupValue) => {
-      const groupRows = groupMap.get(groupValue)!;
+      const rawGroupRows = groupMap.get(groupValue)!;
+      // Appliquer le tri à l'intérieur du groupe (sur les données brutes, avant pagination)
+      const groupRows = compareFn ? [...rawGroupRows].sort(compareFn) : rawGroupRows;
       const totalCount = groupRows.length;
       const currentPage = pageSize === 0 ? 0 : (this._groupPages.get(groupValue) ?? 0);
       const pageCount = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalCount / pageSize));
@@ -979,36 +894,29 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
     return result;
   }
 
-  private normalizeCellValue(value: any): any {
-    if (value === null || value === undefined) {
-      return '';
-    }
-
-    if (value instanceof Date) {
-      return value.toLocaleString('fr-FR');
-    }
-
-    if (Array.isArray(value)) {
-      return value.map((item) => this.normalizeCellValue(item)).join(', ');
-    }
-
-    if (typeof value === 'object') {
-      if ('label' in value && value.label !== undefined) {
-        return String(value.label);
-      }
-      if ('name' in value && value.name !== undefined) {
-        return String(value.name);
-      }
-      return JSON.stringify(value);
-    }
-
-    return value;
+  private _buildSortComparator(): ((a: T, b: T) => number) | null {
+    const { active, direction } = this._activeSort;
+    if (!active || !direction) return null;
+    return (a: T, b: T): number => {
+      const va = this.getLazyAwareValue(active, a);
+      const vb = this.getLazyAwareValue(active, b);
+      const sa = va == null ? '' : String(va).toLowerCase();
+      const sb = vb == null ? '' : String(vb).toLowerCase();
+      let cmp = 0;
+      if (sa < sb) cmp = -1;
+      else if (sa > sb) cmp = 1;
+      return direction === 'asc' ? cmp : -cmp;
+    };
   }
 
   private getLazyAwareValue(columnKey: string, row: T): any {
     const colDef = (this.resolvedConfig.columns || []).find(c => c.key === columnKey);
     if (colDef?.lazy) {
       return this._lazyColumnData.get(columnKey)?.get(row) ?? null;
+    }
+    // Utiliser le value provider si défini (la recherche porte sur la valeur affichée)
+    if (colDef?.value) {
+      return normalizeCellValue(colDef.value(row, 0));
     }
     return (row as any)[columnKey];
   }
@@ -1020,13 +928,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
       if (status === 'error') return '__lazy_error__';
       if (status === 'loaded') {
         const rowMap = this._lazyColumnData.get(col.key);
-        return this.normalizeCellValue(rowMap?.get(row) ?? '');
+        return normalizeCellValue(rowMap?.get(row) ?? '');
       }
       return '';
     }
     const valueProvider = col.value;
     const rawValue = valueProvider ? valueProvider(row, index) : (row as any)?.[col.key];
-    return this.normalizeCellValue(rawValue);
+    return normalizeCellValue(rawValue);
   }
 
   private resolvePageSize(): number {
@@ -1076,26 +984,43 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit {
       this.tableDataSource.paginator = null;
       return;
     }
+    if (!this.paginator) return;
 
-    if (this.paginator) {
-      const savedIndex = this._preservePageIndex ?? this.paginator.pageIndex;
-      this.paginator.pageSize = this.pageSize;
-      this.tableDataSource.paginator = this.paginator;
-      this.paginator.pageIndex = savedIndex;
-      this._preservePageIndex = null;
+    // [A] Ne jamais attacher au datasource — on gère la pagination manuellement
+    this.tableDataSource.paginator = null;
+    this.paginator.pageSize = this.pageSize;
+
+    // S'abonner une seule fois aux changements de page
+    if (this._paginatorSubscribed !== this.paginator) {
+      this._paginatorSubscribed = this.paginator;
+      this.paginator.page.pipe(takeUntil(this._destroy$)).subscribe(() => {
+        // Si un rendu complet est déjà planifié, le laisser gérer la projection
+        if (this._pendingRender !== null) return;
+        this._projectCurrentPage();
+        this._cdr.markForCheck();
+      });
     }
   }
 
   private attachSort(): void {
-    if (this.sort && this.tableDataSource.sort !== this.sort) {
-      this.tableDataSource.sort = this.sort;
+    if (!this.sort) return;
+
+    // [A] Toujours détacher du datasource — on trie manuellement dans _executeRender
+    this.tableDataSource.sort = null as any;
+
+    // S'abonner une seule fois aux changements de tri
+    if (this._sortSubscribed !== this.sort) {
+      this._sortSubscribed = this.sort;
+      this.sort.sortChange.pipe(takeUntil(this._destroy$)).subscribe(() => {
+        this._activeSort = {
+          active: this.sort.active,
+          direction: this.sort.direction,
+        };
+        // Re-trier et re-projeter (groupBy ou non)
+        this._scheduleRender();
+      });
     }
   }
 
-  private humanizeKey(key: string): string {
-    return key
-      .replaceAll(/([a-z0-9])([A-Z])/g, '$1 $2')
-      .replaceAll(/[_-]+/g, ' ')
-      .replace(/^./, (value) => value.toUpperCase());
-  }
 }
+

@@ -1,360 +1,641 @@
 ﻿<div class="table-doc-container">
-  <div class="doc-header">
+  <div class="page-header">
+    <div class="breadcrumb">
+      <a routerLink="/table">jquery-table</a>
+      <span class="sep">&rsaquo;</span>
+      <span>Documentation</span>
+    </div>
     <h1>Documentation jquery-table</h1>
-    <a routerLink="/table" class="back-link">Retour à la page de test</a>
+    <p class="subtitle">
+      Composant Angular Material encapsulant <code>mat-table</code> avec recherche, tri, groupement,
+      slices, colonnes optionnelles, drag&nbsp;&amp;&nbsp;drop et pagination. Le composant
+      <code>&lt;slice-panel&gt;</code> est &eacute;galement disponible de fa&ccedil;on ind&eacute;pendante
+      pour filtrer graphiques, listes&hellip;
+    </p>
   </div>
 
-  <p class="intro">
-    <strong>jquery-table</strong> est un composant Angular Material qui encapsule
-    <code>mat-table</code> avec des fonctionnalités métier prêtes à l'emploi :
-    barre de recherche, tri, groupement, filtres latéraux (slices), colonnes optionnelles,
-    drag &amp; drop de colonnes, pagination, état de chargement et style de ligne personnalisé.
-  </p>
-
+  <!-- 1. INSTALL -->
   <section class="doc-section">
     <h2>1) Installation &amp; import</h2>
-    <pre><code>import &#123; TableComponent, TableProvider, col &#125; from '@oneteme/jquery-table';</code></pre>
+    <pre><code>import &#123; TableComponent, SlicePanelComponent, TableProvider, SliceConfig, SliceCategory, col &#125; from '@oneteme/jquery-table';</code></pre>
     <p>Import dans un composant standalone :</p>
     <pre><code>&#64;Component(&#123;
   standalone: true,
-  imports: [TableComponent],
-  template: `&lt;jquery-table [config]="tableConfig" (rowSelected)="onRow($event)"&gt;&lt;/jquery-table&gt;`,
+  imports: [TableComponent],           // pour le tableau
+  // imports: [SlicePanelComponent],   // pour le panneau seul (graphique, etc.)
+  template: `&lt;jquery-table [config]="cfg" (rowSelected)="onRow($event)"&gt;&lt;/jquery-table&gt;`,
 &#125;)</code></pre>
   </section>
 
+  <!-- 2. TableProvider -->
   <section class="doc-section">
-    <h2>2) API â€” TableProvider&lt;T&gt;</h2>
-    <p>Toute la configuration se passe via l'entrée <code>[config]</code> qui accepte un objet <code>TableProvider&lt;T&gt;</code>.</p>
+    <h2>2) API &mdash; <code>TableProvider&lt;T&gt;</code></h2>
+    <p>Toute la configuration du tableau se passe via l&apos;entr&eacute;e <code>[config]</code>.</p>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>Champ</th>
-            <th>Type</th>
-            <th>Défaut</th>
-            <th>Description</th>
-          </tr>
+          <tr><th>Champ</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr>
             <td><code>columns</code></td>
             <td><code>TableColumnProvider&lt;T&gt;[]</code></td>
-            <td>â€”</td>
-            <td>Colonnes affichées par défaut. Utilisez la fonction <code>col()</code>.</td>
+            <td>&mdash;</td>
+            <td>Colonnes affich&eacute;es. Utilisez <code>col()</code> pour les cr&eacute;er rapidement. Voir section&nbsp;6.</td>
           </tr>
           <tr>
             <td><code>data</code></td>
             <td><code>T[]</code></td>
-            <td>â€”</td>
-            <td>Tableau de données à afficher.</td>
+            <td>&mdash;</td>
+            <td>Tableau de donn&eacute;es &agrave; afficher.</td>
           </tr>
           <tr>
             <td><code>title</code></td>
             <td><code>string</code></td>
-            <td>â€”</td>
-            <td>Titre affiché au-dessus du tableau.</td>
-          </tr>
-          <tr>
-            <td><code>enableSearchBar</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Active la barre de recherche texte au-dessus du tableau.</td>
-          </tr>
-          <tr>
-            <td><code>enableViewButton</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Active le bouton <strong>View</strong> (Champs / Group by / Slice by). Sans la barre de recherche, il reste positionné à droite à sa taille habituelle.</td>
-          </tr>
-          <tr>
-            <td><code>optional</code></td>
-            <td><code>boolean</code></td>
-            <td>â€"</td>
-            <td>Propriété à définir directement sur une colonne dans <code>columns</code>. Si <code>true</code>, la colonne est masquée par défaut et activable via <strong>View &gt; Champs</strong>.</td>
-          </tr>
-          <tr>
-            <td><code>allowColumnRemoval</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Permet de masquer les colonnes de base via <strong>View &gt; Champs</strong>.</td>
-          </tr>
-          <tr>
-            <td><code>slices</code></td>
-            <td><code>TableCategorySliceProvider&lt;T&gt;[]</code></td>
-            <td>â€”</td>
-            <td>Panneaux de filtres latéraux. Chaque slice correspond à un panneau de filtrage par catégorie.</td>
-          </tr>
-          <tr>
-            <td><code>showSliceToggle</code></td>
-            <td><code>boolean</code></td>
-            <td><code>true</code></td>
-            <td>Affiche le bouton <code>â€¹</code> pour replier/déplier le panneau de slices.</td>
-          </tr>
-          <tr>
-            <td><code>enableColumnDragDrop</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Affiche une poignée <code>â ¿</code> sur chaque en-tête de colonne pour les réordonner par glisser-déposer. Le clic sur la poignée n'interfère pas avec le tri.</td>
-          </tr>
-          <tr>
-            <td><code>enablePagination</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Active le paginateur Material en bas du tableau.</td>
-          </tr>
-          <tr>
-            <td><code>pageSize</code></td>
-            <td><code>number</code></td>
-            <td><code>10</code></td>
-            <td>Nombre de lignes par page.</td>
-          </tr>
-          <tr>
-            <td><code>pageSizeOptions</code></td>
-            <td><code>number[]</code></td>
-            <td><code>[5, 10, 25]</code></td>
-            <td>Options disponibles dans le sélecteur de taille de page.</td>
-          </tr>
-          <tr>
-            <td><code>emptyStateLabel</code></td>
-            <td><code>string</code></td>
-            <td><code>'Aucune donnée'</code></td>
-            <td>Message affiché si le tableau est vide ou si la recherche ne retourne aucun résultat.</td>
+            <td>&mdash;</td>
+            <td>Titre affich&eacute; dans la barre du tableau.</td>
           </tr>
           <tr>
             <td><code>isLoading</code></td>
             <td><code>boolean</code></td>
             <td><code>false</code></td>
-            <td>Affiche un état de chargement à la place des données.</td>
+            <td>Affiche des lignes skeleton &agrave; la place des donn&eacute;es.</td>
           </tr>
           <tr>
             <td><code>loadingStateLabel</code></td>
             <td><code>string</code></td>
             <td><code>'Chargement...'</code></td>
-            <td>Texte affiché pendant le chargement.</td>
+            <td>Texte affich&eacute; pendant le chargement.</td>
+          </tr>
+          <tr>
+            <td><code>emptyStateLabel</code></td>
+            <td><code>string</code></td>
+            <td><code>'Aucune donn&eacute;e'</code></td>
+            <td>Message si le tableau est vide ou si aucun filtre actif ne retourne de r&eacute;sultat.</td>
           </tr>
           <tr>
             <td><code>rowClass</code></td>
             <td><code>(row: T, index: number) =&gt; string | string[] | Record&lt;string, boolean&gt;</code></td>
-            <td>â€”</td>
-            <td>Fonction appelée pour chaque ligne. La valeur retournée est passée à <code>[ngClass]</code> sur le <code>&lt;tr&gt;</code>. Voir section 6.</td>
+            <td>&mdash;</td>
+            <td>Classe(s) CSS appliqu&eacute;e(s) sur chaque <code>&lt;tr&gt;</code>. Voir section&nbsp;7.</td>
+          </tr>
+          <tr>
+            <td><code>enableSearchBar</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Active la barre de recherche texte globale au-dessus du tableau.</td>
+          </tr>
+          <tr>
+            <td><code>enableViewButton</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>
+              Active le bouton <strong>View</strong> (Champs / Group&nbsp;by / Slice&nbsp;by).<br>
+              <strong>Requis</strong> pour <code>allowColumnRemoval</code>, les colonnes <code>optional</code> et le <em>Slice&nbsp;by</em> dynamique.
+            </td>
+          </tr>
+          <tr>
+            <td><code>allowColumnRemoval</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>
+              Autorise &agrave; masquer les colonnes de base via <strong>View &gt; Champs</strong>.<br>
+              <em>Sans effet si <code>enableViewButton</code> est &agrave; <code>false</code>.</em>
+            </td>
+          </tr>
+          <tr>
+            <td><code>optional</code> <small>(sur une colonne)</small></td>
+            <td><code>boolean</code></td>
+            <td>&mdash;</td>
+            <td>
+              Propri&eacute;t&eacute; d&apos;un <code>TableColumnProvider</code>. Si <code>true</code>, la colonne est masqu&eacute;e par d&eacute;faut et activable via <strong>View &gt; Champs</strong>.<br>
+              <em>Sans effet si <code>enableViewButton</code> est &agrave; <code>false</code>.</em>
+            </td>
+          </tr>
+          <tr>
+            <td><code>enableColumnDragDrop</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Poign&eacute;e sur chaque en-t&ecirc;te pour r&eacute;ordonner les colonnes. N&apos;interf&egrave;re pas avec le tri.</td>
+          </tr>
+          <tr>
+            <td><code>slices</code></td>
+            <td><code>SliceConfig&lt;T&gt;[]</code></td>
+            <td>&mdash;</td>
+            <td>Filtres lat&eacute;raux statiques. Voir section&nbsp;3.</td>
+          </tr>
+          <tr>
+            <td><code>showSliceToggle</code></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Bouton pour replier/d&eacute;plier le panneau de slices.</td>
+          </tr>
+          <tr>
+            <td><code>enablePagination</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Active la pagination. Compatible avec le mode groupement.</td>
+          </tr>
+          <tr>
+            <td><code>pageSize</code></td>
+            <td><code>number</code></td>
+            <td><code>10</code></td>
+            <td>Lignes par page. <em>Ignor&eacute; si <code>enablePagination: false</code>.</em></td>
+          </tr>
+          <tr>
+            <td><code>pageSizeOptions</code></td>
+            <td><code>number[]</code></td>
+            <td><code>[5,&nbsp;10,&nbsp;25]</code></td>
+            <td>Options du s&eacute;lecteur de taille de page. <em>Ignor&eacute; si <code>enablePagination: false</code>.</em></td>
+          </tr>
+          <tr>
+            <td><code>pageSizeOptionsGroupBy</code></td>
+            <td><code>number[]</code></td>
+            <td>&mdash;</td>
+            <td>Options de taille de page sp&eacute;cifiques au mode groupement. Si absent, utilise <code>pageSizeOptions</code>.</td>
           </tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- 3. SliceConfig -->
   <section class="doc-section">
-    <h2>3) API â€” TableCategorySliceProvider&lt;T&gt;</h2>
-    <p>Chaque entrée dans <code>slices</code> définit un panneau de filtres latéral.</p>
+    <h2>3) API &mdash; <code>SliceConfig&lt;T&gt;</code></h2>
+    <p>
+      Type export&eacute; par <code>@oneteme/jquery-table</code>. Chaque entr&eacute;e de <code>slices</code>
+      (ou de <code>[sliceConfigs]</code> sur <code>&lt;slice-panel&gt;</code>) d&eacute;finit un bloc de filtres.
+    </p>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>Champ</th>
-            <th>Type</th>
-            <th>Description</th>
-          </tr>
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr>
             <td><code>title</code></td>
             <td><code>string</code></td>
-            <td>Titre du bloc de filtre affichÃ© dans le panneau.</td>
+            <td>Libell&eacute; du bloc affich&eacute; dans le panneau.</td>
           </tr>
           <tr>
             <td><code>columnKey</code></td>
             <td><code>string</code></td>
-            <td>Clé d'une colonne existante : les catégories sont générées <strong>automatiquement</strong> à partir des valeurs distinctes de la donnée.</td>
+            <td>
+              Cat&eacute;gories g&eacute;n&eacute;r&eacute;es <strong>automatiquement</strong> depuis les valeurs distinctes de la cl&eacute;.<br>
+              <em>Mutuellement exclusif avec <code>categories</code>.</em>
+            </td>
           </tr>
           <tr>
             <td><code>categories</code></td>
-            <td><code>TableCategoryProvider&lt;T&gt;[]</code></td>
-            <td>Liste manuelle de catégories (utiliser <code>filter</code> pour des règles personnalisées). Mutuellement exclusif avec <code>columnKey</code>.</td>
-          </tr>
-          <tr>
-            <td><code>showAll</code></td>
-            <td><code>boolean</code></td>
-            <td>Affiche le bouton "Tous" en tête du panneau. Défaut : <code>true</code>.</td>
+            <td><code>SliceCategory&lt;T&gt;[]</code></td>
+            <td>
+              Cat&eacute;gories manuelles avec <code>filter</code> personnalis&eacute;. Voir section&nbsp;4.<br>
+              <em>Mutuellement exclusif avec <code>columnKey</code>.</em>
+            </td>
           </tr>
           <tr>
             <td><code>multiSelect</code></td>
             <td><code>boolean</code></td>
-            <td>Permet de sélectionner plusieurs catégories simultanément. Défaut : <code>false</code>.</td>
+            <td>S&eacute;lection multiple simultan&eacute;e. D&eacute;faut&nbsp;: <code>false</code>.</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <h3>Mode automatique via <code>columnKey</code></h3>
+    <h3>Mode automatique &mdash; <code>columnKey</code></h3>
     <pre><code>slices: [
-  &#123; title: 'Status', columnKey: 'status', showAll: false &#125;,
-  &#123; title: 'Équipe',  columnKey: 'team',   showAll: true  &#125;,
+  &#123; title: 'Status', columnKey: 'status' &#125;,
+  &#123; title: 'Equipe',  columnKey: 'team', multiSelect: true &#125;,
 ]</code></pre>
-    <p>Les catégories sont déduites en temps réel des valeurs présentes dans <code>data</code>.</p>
+    <p>Les cat&eacute;gories sont d&eacute;duites en temps r&eacute;el des valeurs pr&eacute;sentes dans <code>data</code>.</p>
 
-    <h3>Mode manuel via <code>categories</code></h3>
+    <h3>Mode manuel &mdash; <code>categories</code></h3>
     <pre><code>slices: [
   &#123;
-    title: 'Priorité',
+    title: 'Priorite',
     categories: [
-      &#123; key: 'high',   label: 'Haute',   filter: (row) =&gt; row.priority === 'High' &#125;,
+      &#123; key: 'high',   label: 'Haute',   filter: (row) =&gt; row.priority === 'High'   &#125;,
       &#123; key: 'medium', label: 'Moyenne', filter: (row) =&gt; row.priority === 'Medium' &#125;,
-      &#123; key: 'low',    label: 'Basse',   filter: (row) =&gt; row.priority === 'Low' &#125;,
+      &#123; key: 'low',    label: 'Basse',   filter: (row) =&gt; row.priority === 'Low'    &#125;,
     ],
   &#125;,
 ]</code></pre>
   </section>
 
+  <!-- 4. SliceCategory -->
   <section class="doc-section">
-    <h2>4) Le bouton View</h2>
-    <p>Activé via <code>enableViewButton: true</code>, le bouton <strong>View</strong> ouvre un menu avec trois sous-menus :</p>
+    <h2>4) API &mdash; <code>SliceCategory&lt;T&gt;</code></h2>
+    <p>Une cat&eacute;gorie cliquable dans un bloc de filtre.</p>
 
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>Sous-menu</th>
-            <th>Description</th>
-            <th>Prérequis</th>
-          </tr>
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>Champs</strong></td>
-            <td>Affiche/masque les colonnes. Les colonnes de base sont cochées par défaut (décochables si <code>allowColumnRemoval: true</code>). Les colonnes optionnelles sont décochées par défaut.</td>
-            <td><code>optional: true</code> sur la colonne ou <code>allowColumnRemoval</code></td>
+            <td><code>key</code></td>
+            <td><code>string</code></td>
+            <td>Identifiant unique (d&eacute;tecte les s&eacute;lections actives).</td>
           </tr>
           <tr>
-            <td><strong>Group by</strong></td>
-            <td>Regroupe les lignes selon les valeurs d'une colonne choisie. Un clic sur un groupe le replie/déplie. Re-cliquer sur la colonne active désactive le groupement.</td>
-            <td><code>columns</code> définies</td>
+            <td><code>label</code></td>
+            <td><code>string</code></td>
+            <td>Texte affich&eacute; dans le bouton.</td>
           </tr>
           <tr>
-            <td><strong>Slice by</strong></td>
-            <td>Ajoute dynamiquement un filtre latéral basé sur une colonne disponible. Les slices ajoutées dynamiquement apparaissent dans le panneau latéral avec un bouton ×.</td>
-            <td><code>enableViewButton: true</code></td>
+            <td><code>filter</code></td>
+            <td><code>(row: T) =&gt; boolean</code></td>
+            <td>Pr&eacute;dicat d&eacute;terminant si une ligne appartient &agrave; cette cat&eacute;gorie.</td>
           </tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- 5. BOUTON VIEW -->
   <section class="doc-section">
-    <h2>5) Fonction utilitaire <code>col()</code></h2>
+    <h2>5) Le bouton View</h2>
+    <p>Activ&eacute; via <code>enableViewButton:&nbsp;true</code>.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Sous-menu</th><th>Description</th><th>Pr&eacute;requis</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Champs</strong></td>
+            <td>
+              Affiche/masque les colonnes.<br>
+              &bull; Colonnes de base : coch&eacute;es par d&eacute;faut, d&eacute;cochables si <code>allowColumnRemoval:&nbsp;true</code>.<br>
+              &bull; Colonnes <code>optional:&nbsp;true</code> : d&eacute;coch&eacute;es par d&eacute;faut, toujours activables.
+            </td>
+            <td><code>enableViewButton:&nbsp;true</code></td>
+          </tr>
+          <tr>
+            <td><strong>Group by</strong></td>
+            <td>Regroupe les lignes par valeur de colonne. Clic sur un groupe : replie/d&eacute;plie. Re-clic sur la m&ecirc;me colonne : d&eacute;sactive. Compatible avec <code>enablePagination:&nbsp;false</code>.</td>
+            <td><code>enableViewButton:&nbsp;true</code></td>
+          </tr>
+          <tr>
+            <td><strong>Slice by</strong></td>
+            <td>Ajoute dynamiquement un filtre lat&eacute;ral bas&eacute; sur une colonne. Apparait dans le panneau avec un bouton &times; pour le retirer.</td>
+            <td><code>enableViewButton:&nbsp;true</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6. col() -->
+  <section class="doc-section">
+    <h2>6) Fonction utilitaire <code>col()</code></h2>
     <pre><code>import &#123; col &#125; from '@oneteme/jquery-table';
 
-col&lt;T&gt;(key: string, header: string, sortable?: boolean): TableColumnProvider&lt;T&gt;</code></pre>
+col&lt;T&gt;(key: string, header: string, sortable = true): TableColumnProvider&lt;T&gt;</code></pre>
     <p>
-      Crée rapidement un <code>TableColumnProvider</code> avec <code>sortable: true</code> par défaut
-      et la résolution automatique de valeur via <code>field(key)</code> de jquery-core.
+      Cr&eacute;e un <code>TableColumnProvider</code> avec <code>sortable:&nbsp;true</code> par d&eacute;faut
+      et r&eacute;solution automatique de la valeur via <code>field(key)</code>.
     </p>
     <pre><code>columns: [
-  col&lt;RepoRow&gt;('issue',  'Issue'),
-  col&lt;RepoRow&gt;('status', 'Status'),
-  col&lt;RepoRow&gt;('owner',  'Owner', false), // non triable
+  col&lt;Row&gt;('name',   'Nom'),
+  col&lt;Row&gt;('status', 'Statut'),
+  col&lt;Row&gt;('date',   'Date', false),               // non triable
+  &#123; ...col&lt;Row&gt;('team', 'Equipe'), optional: true &#125;, // masquee par defaut (enableViewButton requis)
 ]</code></pre>
   </section>
 
+  <!-- 7. rowClass -->
   <section class="doc-section">
-    <h2>6) Style de ligne personnalisé — <code>rowClass</code></h2>
+    <h2>7) Style de ligne &mdash; <code>rowClass</code></h2>
     <p>
-      La fonction <code>rowClass</code> reçoit la ligne brute <code>T</code> et son index,
-      et retourne une valeur compatible <code>ngClass</code> appliquée sur le <code>&lt;tr&gt;</code>.
+      Fonction appel&eacute;e pour chaque ligne. Retourne une valeur compatible <code>[ngClass]</code>
+      appliqu&eacute;e sur le <code>&lt;tr&gt;</code>.
     </p>
-    <pre><code>rowClass: (row: RepoRow, index: number) =&gt; &#123;
+    <p>Les trois formes accept&eacute;es :</p>
+    <ul>
+      <li><code>string</code> &mdash; une classe : <code>'row-error'</code></li>
+      <li><code>string[]</code> &mdash; plusieurs classes : <code>['row-error', 'row-bold']</code></li>
+      <li><code>Record&lt;string,&nbsp;boolean&gt;</code> &mdash; conditionnel : <code>&#123; 'row-error': true &#125;</code></li>
+    </ul>
+    <pre><code>rowClass: (row: Row) =&gt; &#123;
   if (row.status === 'Done')        return 'row-done';
   if (row.status === 'In Progress') return 'row-in-progress';
   return '';
 &#125;</code></pre>
-    <p>Exemple CSS correspondant (à placer dans le composant consommateur) :</p>
-    <pre><code>::ng-deep tr.mat-mdc-row &#123;
+    <pre><code>// styles a placer dans le composant consommateur
+::ng-deep tr.mat-mdc-row &#123;
   &amp;.row-done &gt; td.mat-mdc-cell:first-of-type &#123;
     border-left: 3px solid #4caf50;
-    background: linear-gradient(90deg, rgba(76,175,80,0.08) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(76,175,80,.08) 0%, transparent 100%);
   &#125;
   &amp;.row-in-progress &gt; td.mat-mdc-cell:first-of-type &#123;
     border-left: 3px solid #0080ff;
-    background: linear-gradient(90deg, rgba(0,128,255,0.08) 0%, transparent 100%);
+    background: linear-gradient(90deg, rgba(0,128,255,.08) 0%, transparent 100%);
   &#125;
 &#125;</code></pre>
-    <p>Les trois formes de retour acceptées :</p>
-    <ul>
-      <li><code>string</code> — une classe CSS : <code>'row-error'</code></li>
-      <li><code>string[]</code> — plusieurs classes : <code>['row-error', 'row-bold']</code></li>
-      <li><code>Record&lt;string, boolean&gt;</code> — conditionnel : <code>&#123; 'row-error': true, 'row-bold': false &#125;</code></li>
-    </ul>
   </section>
 
+  <!-- 8. OUTPUTS jquery-table -->
   <section class="doc-section">
-    <h2>7) Outputs</h2>
+    <h2>8) Outputs &mdash; <code>&lt;jquery-table&gt;</code></h2>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>Événement</th>
-            <th>Type</th>
-            <th>Description</th>
-          </tr>
+          <tr><th>Ev&eacute;nement</th><th>Type</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr>
             <td><code>(rowSelected)</code></td>
             <td><code>EventEmitter&lt;T&gt;</code></td>
-            <td>Émis au clic sur une ligne de données (ne se déclenche pas sur les en-têtes de groupe).</td>
+            <td>Emis au clic sur une ligne (pas sur les en-t&ecirc;tes de groupe).</td>
           </tr>
         </tbody>
       </table>
     </div>
   </section>
 
+  <!-- 9. slice-panel standalone -->
   <section class="doc-section">
-    <h2>8) Exemple complet</h2>
-    <pre><code>interface RepoRow &#123;
+    <h2>9) Composant standalone &mdash; <code>&lt;slice-panel&gt;</code></h2>
+    <p>
+      <code>SlicePanelComponent</code> peut s&apos;utiliser <strong>ind&eacute;pendamment</strong> du tableau
+      pour filtrer n&apos;importe quelle donn&eacute;e (graphique, liste&hellip;).
+      Ne pas passer <code>[columns]</code> en dehors du contexte tableau.
+    </p>
+
+    <h3>Inputs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Input</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>[sliceConfigs]</code></td>
+            <td><code>SliceConfig&lt;T&gt;[]</code></td>
+            <td><code>[]</code></td>
+            <td>D&eacute;finition des blocs de filtres. Voir section&nbsp;3.</td>
+          </tr>
+          <tr>
+            <td><code>[data]</code></td>
+            <td><code>T[]</code></td>
+            <td><code>[]</code></td>
+            <td>Source brute : calcul des compteurs et des cat&eacute;gories automatiques (<code>columnKey</code>).</td>
+          </tr>
+          <tr>
+            <td><code>[columns]</code></td>
+            <td><code>SliceColumnDef&lt;T&gt;[]</code></td>
+            <td><code>[]</code></td>
+            <td>
+              Colonnes pour le menu <em>Slice by</em> dynamique.<br>
+              <strong>Optionnel &mdash; ne pas passer dans un contexte graphique.</strong>
+            </td>
+          </tr>
+          <tr>
+            <td><code>[showToggle]</code></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Bouton pour replier/d&eacute;plier le panneau.</td>
+          </tr>
+          <tr>
+            <td><code>[showCounts]</code></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Nombre d&apos;&eacute;l&eacute;ments par cat&eacute;gorie.</td>
+          </tr>
+          <tr>
+            <td><code>[collapsedByDefault]</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Tous les blocs repli&eacute;s &agrave; l&apos;initialisation.</td>
+          </tr>
+          <tr>
+            <td><code>[alwaysShow]</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Panneau visible m&ecirc;me sans filtre configur&eacute;.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Outputs</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Ev&eacute;nement</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>(filterChange)</code></td>
+            <td><code>EventEmitter&lt;(row: T) =&gt; boolean&gt;</code></td>
+            <td>
+              Pr&eacute;dicat combin&eacute; pr&ecirc;t &agrave; l&apos;emploi :
+              <code>data.filter(predicate)</code>.
+            </td>
+          </tr>
+          <tr>
+            <td><code>(activeKeysChange)</code></td>
+            <td><code>EventEmitter&lt;string[][]&gt;</code></td>
+            <td>
+              Cl&eacute;s actives par bloc.
+              <code>[i]</code> = cl&eacute;s s&eacute;lectionn&eacute;es pour le bloc <code>i</code>.
+              Utile pour un r&eacute;capitulatif des filtres.
+            </td>
+          </tr>
+          <tr>
+            <td><code>(dynamicSliceKeysChange)</code></td>
+            <td><code>EventEmitter&lt;string[]&gt;</code></td>
+            <td>Cl&eacute;s des colonnes ajout&eacute;es via <em>Slice by</em>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 9b. LAYOUT -->
+  <section class="doc-section">
+    <h2>9b) Pr&eacute;requis de rendu &mdash; hauteur parent</h2>
+    <p>
+      <code>&lt;jquery-table&gt;</code> distribue la hauteur re&ccedil;ue via <strong>flex-column</strong> interne.
+      Si aucune hauteur n&apos;est fournie par le parent, le corps du tableau s&apos;effondre &agrave;&nbsp;<code>0px</code>
+      et les lignes deviennent invisibles (seuls le header de toolbar et le paginator restent visibles).
+    </p>
+    <p>Deux approches selon le contexte :</p>
+
+    <h3>A) Hauteur fixe (page de d&eacute;mo, carte, modale)</h3>
+    <pre><code>/* SCSS du composant parent */
+jquery-table &#123;
+  display: block;   /* l'&eacute;l&eacute;ment est inline par d&eacute;faut */
+  height: 460px;    /* hauteur suffisante pour afficher les lignes */
+&#125;</code></pre>
+
+    <h3>B) Hauteur fluide &mdash; remplissage de la fen&ecirc;tre (tableau plein &eacute;cran)</h3>
+    <pre><code>/* SCSS du composant parent — pattern recommand&eacute; */
+:host &#123;
+  display: flex;
+  flex-direction: column;
+  height: 100%;      /* le parent (ex. mat-drawer-content) doit lui-m&ecirc;me avoir une hauteur */
+  overflow: hidden;
+&#125;
+
+jquery-table &#123;
+  flex: 1 1 0;       /* occupe tout l&apos;espace restant apr&egrave;s les autres &eacute;l&eacute;ments */
+  min-height: 0;     /* autorise le flex-item &agrave; se r&eacute;duire en-de&ccedil;&agrave; de son contenu */
+&#125;</code></pre>
+    <p>
+      Ce second pattern suppose que la cha&icirc;ne de conteneurs anc&ecirc;tres fournit
+      une hauteur concr&egrave;te jusqu&apos;&agrave; la racine (ex.
+      <code>html, body &#123; height: 100%; &#125;</code> ou un layout Angular Material avec
+      <code>mat-sidenav-content</code> qui impose sa propre hauteur).
+    </p>
+  </section>
+
+  <!-- 10. EXEMPLE TABLE -->
+  <section class="doc-section">
+    <h2>10) Exemple complet &mdash; Tableau</h2>
+    <pre><code>interface Row &#123;
   issue: string;
   status: 'Backlog' | 'In Progress' | 'Done';
   owner: string;
   priority: 'Low' | 'Medium' | 'High';
   team: string;
-  updatedAt: string;
 &#125;
 
-tableConfig: TableProvider&lt;RepoRow&gt; = &#123;
+readonly cfg: TableProvider&lt;Row&gt; = &#123;
   title: 'Ticket board',
   enableSearchBar: true,
+  // Le bouton View active Champs, Group by et Slice by dynamique
   enableViewButton: true,
-  enableColumnDragDrop: true,
+  // allowColumnRemoval n'a d'effet que si enableViewButton est true
   allowColumnRemoval: true,
+  enableColumnDragDrop: true,
   enablePagination: true,
-  pageSize: 5,
-  pageSizeOptions: [5, 10, 20],
+  pageSize: 10,
+  pageSizeOptions: [5, 10, 25],
   columns: [
-    col&lt;RepoRow&gt;('issue',  'Issue'),
-    col&lt;RepoRow&gt;('status', 'Status'),
-    col&lt;RepoRow&gt;('owner',  'Owner'),
-    &#123; ...col&lt;RepoRow&gt;('priority',  'Priorité'),             optional: true &#125;,
-    &#123; ...col&lt;RepoRow&gt;('team',      'Équipe'),               optional: true &#125;,
-    &#123; ...col&lt;RepoRow&gt;('updatedAt', 'Dernière mise à jour'), optional: true &#125;,
+    col&lt;Row&gt;('issue',  'Issue'),
+    col&lt;Row&gt;('status', 'Statut'),
+    col&lt;Row&gt;('owner',  'Responsable'),
+    // optional: true =&gt; masquee par defaut, activable via View &gt; Champs (enableViewButton requis)
+    &#123; ...col&lt;Row&gt;('priority', 'Priorite'), optional: true &#125;,
+    &#123; ...col&lt;Row&gt;('team',     'Equipe'),   optional: true &#125;,
   ],
   slices: [
-    &#123; title: 'Status', columnKey: 'status', showAll: false &#125;,
+    &#123; title: 'Statut', columnKey: 'status' &#125;,
+    &#123;
+      title: 'Priorite',
+      categories: [
+        &#123; key: 'high',   label: 'Haute',   filter: r =&gt; r.priority === 'High'   &#125;,
+        &#123; key: 'medium', label: 'Moyenne', filter: r =&gt; r.priority === 'Medium' &#125;,
+        &#123; key: 'low',    label: 'Basse',   filter: r =&gt; r.priority === 'Low'    &#125;,
+      ],
+    &#125;,
   ],
-  rowClass: (row) =&gt; &#123;
-    if (row.status === 'Done')        return 'row-done';
-    if (row.status === 'In Progress') return 'row-in-progress';
+  rowClass: r =&gt; &#123;
+    if (r.status === 'Done')        return 'row-done';
+    if (r.status === 'In Progress') return 'row-in-progress';
     return '';
   &#125;,
-  emptyStateLabel: 'Aucun résultat',
-  loadingStateLabel: 'Chargement...',
   data: rows,
-&#125;;
-</code></pre>
-    <pre><code>&lt;jquery-table
-  [config]="tableConfig"
-  [isLoading]="isLoading"
-  (rowSelected)="onRowSelected($event)"
-&gt;&lt;/jquery-table&gt;</code></pre>
+&#125;;</code></pre>
+    <pre><code>&lt;jquery-table [config]="cfg" (rowSelected)="onRow($event)"&gt;&lt;/jquery-table&gt;</code></pre>
   </section>
 
+  <!-- 11. PERSONNALISATION VISUELLE -->
+  <section class="doc-section">
+    <h2>11) Personnalisation visuelle &mdash; CSS custom properties</h2>
+    <p>
+      Toutes les couleurs principales du composant sont expos&eacute;es via des
+      <strong>CSS custom properties</strong> sur <code>:host</code>.
+      Aucun <code>::ng-deep</code>, aucun <code>!important</code> n&apos;est n&eacute;cessaire
+      c&ocirc;t&eacute; consommateur &mdash; il suffit de surcharger les variables depuis votre
+      feuille de styles globale.
+    </p>
+
+    <pre><code>/* styles.scss (ou tout fichier global) */
+jquery-table &#123;
+  /* ── Texte ───────────────────────────────────────────── */
+  --jqt-title-color:        #1f2937;  /* titre du tableau (h3)                    */
+  --jqt-text-color:         #111827;  /* texte principal (cellules, labels)        */
+  --jqt-text-secondary:     #6b7280;  /* texte secondaire (badges, infos)          */
+  --jqt-text-muted:         #9ca3af;  /* placeholder, ic&ocirc;nes discr&egrave;tes              */
+
+  /* ── Surfaces g&eacute;n&eacute;rales ─────────────────────────────── */
+  --jqt-surface-color:      #ffffff;  /* fond barre recherche, boutons, panel      */
+  --jqt-surface-alt-color:  #f9fafb;  /* fond alternatif subtil                    */
+  --jqt-row-hover-bg:       #f3f4f6;  /* survol d&apos;une ligne / fond badge           */
+
+  /* ── Cellules (Angular Material) ─────────────────────── */
+  --jqt-header-bg:          transparent; /* fond de la ligne d&apos;en-t&ecirc;te            */
+  --jqt-header-text-color:  #374151;     /* texte des cellules d&apos;en-t&ecirc;te           */
+  --jqt-cell-bg:            transparent; /* fond des cellules de corps               */
+
+  /* ── Footer / paginator ──────────────────────────────── */
+  --jqt-footer-bg:          #ffffff;  /* fond de la barre de pagination            */
+
+  /* ── Bordures ────────────────────────────────────────── */
+  --jqt-border-color:       #e5e7eb;  /* bordures du tableau et &eacute;l&eacute;ments UI     */
+
+  /* ── Lignes de groupe (groupBy) ──────────────────────── */
+  --jqt-group-bg:           #eef2f7;  /* fond des lignes de groupe                 */
+  --jqt-group-bg-hover:     #e4ecf4;  /* fond au survol d&apos;une ligne de groupe      */
+  --jqt-group-accent:       #94a3b8;  /* bande color&eacute;e gauche des groupes         */
+  --jqt-group-border:       #d1d9e4;  /* bordures haut/bas des groupes             */
+
+  /* ── Accent &amp; danger ──────────────────────────────────── */
+  --jqt-primary-color:      #1d4ed8;  /* couleur d&apos;accent (focus, s&eacute;lection)     */
+  --jqt-danger-color:       #dc2626;  /* ic&ocirc;ne/texte bouton reset (survol)        */
+  --jqt-danger-hover-bg:    #fef2f2;  /* fond bouton reset au survol               */
+  --jqt-danger-border:      #fca5a5;  /* bordure bouton reset au survol            */
+&#125;</code></pre>
+
+    <p>Les valeurs indiqu&eacute;es sont les valeurs par d&eacute;faut — vous ne surchargez que ce dont vous avez besoin.</p>
+
+    <h3>Exemples de th&egrave;mes</h3>
+
+    <pre><code>/* Th&egrave;me violet */
+jquery-table &#123;
+  --jqt-primary-color: #7c3aed;
+  --jqt-group-accent:  #7c3aed;
+  --jqt-group-bg:      #f5f3ff;
+  --jqt-group-border:  #ddd6fe;
+&#125;
+
+/* Th&egrave;me vert */
+jquery-table &#123;
+  --jqt-primary-color: #16a34a;
+  --jqt-group-accent:  #16a34a;
+  --jqt-group-bg:      #f0fdf4;
+  --jqt-group-border:  #bbf7d0;
+&#125;
+
+/* Mode sombre */
+jquery-table &#123;
+  --jqt-title-color:       #f1f5f9;
+  --jqt-text-color:        #e2e8f0;
+  --jqt-text-secondary:    #94a3b8;
+  --jqt-text-muted:        #64748b;
+  --jqt-surface-color:     #1e293b;
+  --jqt-surface-alt-color: #0f172a;
+  --jqt-row-hover-bg:      #334155;
+  --jqt-border-color:      #334155;
+  --jqt-header-bg:         #1e293b;
+  --jqt-header-text-color: #94a3b8;
+  --jqt-cell-bg:           #0f172a;
+  --jqt-footer-bg:         #1e293b;
+  --jqt-group-bg:          #1e3a5f;
+  --jqt-group-bg-hover:    #1e3a8a;
+  --jqt-group-accent:      #3b82f6;
+  --jqt-group-border:      #1d4ed8;
+  --jqt-primary-color:     #60a5fa;
+  --jqt-danger-color:      #f87171;
+  --jqt-danger-hover-bg:   #450a0a;
+  --jqt-danger-border:     #7f1d1d;
+&#125;</code></pre>
+  </section>
 </div>

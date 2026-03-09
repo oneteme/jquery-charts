@@ -1,9 +1,12 @@
 import { DataProvider, field } from '@oneteme/jquery-core';
 import { Observable } from 'rxjs';
+import { SliceConfig } from './component/slice-panel/slice-panel.model';
+export { SliceConfig } from './component/slice-panel/slice-panel.model';
 
 export interface TableColumnProvider<T = any> {
   key: string;
   header: string;
+  icon?: string;
   value?: DataProvider<any>;
   sortable?: boolean;
   removable?: boolean;
@@ -12,26 +15,13 @@ export interface TableColumnProvider<T = any> {
   fetchFn?: () => Observable<any[]>;
 }
 
-export interface TableCategoryProvider<T = any> {
-  key: string;
-  label: string;
-  filter: (row: T) => boolean;
-}
-
-export interface TableCategorySliceProvider<T = any> {
-  title?: string;
-  multiSelect?: boolean;
-  columnKey?: string;
-  categories?: TableCategoryProvider<T>[];
-}
-
 export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];
   data?: T[];
   title?: string;
   enableSearchBar?: boolean;
   enableViewButton?: boolean;
-  slices?: TableCategorySliceProvider<T>[];
+  slices?: SliceConfig<T>[];
   showSliceToggle?: boolean;
   allowColumnRemoval?: boolean;
   enablePagination?: boolean;
@@ -45,10 +35,6 @@ export interface TableProvider<T = any> {
   rowClass?: (row: T, index: number) => string | string[] | Record<string, boolean>;
 }
 
-export function col<T = any>(
-  key: string,
-  header: string,
-  sortable: boolean = true,
-): TableColumnProvider<T> {
+export function col<T = any>( key: string, header: string, sortable: boolean = true ): TableColumnProvider<T> {
   return { key, header, sortable, value: field(key) };
 }

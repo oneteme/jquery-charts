@@ -45,3 +45,38 @@ Updated: 2026-02-13
 - Exposed API for columns and categories: implemented.
 - Unit/integration tests: present in `table.component.spec.ts`.
 - Documentation with usage examples: updated in `README.md`.
+
+## Visual customisation
+All main colors are exposed as CSS custom properties on `:host` — no `::ng-deep` or `!important` needed from consumer side.
+
+Override from the host application's global stylesheet:
+
+```scss
+jquery-table {
+  /* Text */
+  --jqt-title-color:       #1f2937;
+  --jqt-text-color:        #111827;
+  --jqt-text-secondary:    #6b7280;
+  --jqt-text-muted:        #9ca3af;
+
+  /* Surfaces */
+  --jqt-surface-color:     #ffffff;
+  --jqt-surface-alt-color: #f9fafb;
+  --jqt-row-hover-bg:      #f3f4f6;
+
+  /* Borders */
+  --jqt-border-color:      #e5e7eb;
+
+  /* Group rows (groupBy) */
+  --jqt-group-bg:          #eef2f7;
+  --jqt-group-bg-hover:    #e4ecf4;
+  --jqt-group-accent:      #94a3b8;
+  --jqt-group-border:      #d1d9e4;
+
+  /* Accent & danger */
+  --jqt-primary-color:     #1d4ed8;
+  --jqt-danger-color:      #dc2626;
+}
+```
+
+Full reference in `README.md` → section *Personnalisation visuelle*.

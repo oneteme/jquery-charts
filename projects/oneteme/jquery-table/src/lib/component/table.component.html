@@ -5,61 +5,20 @@
 
   <div
     class="table-layout"
-    [class.slice-collapsed]="showSlicePanel && isSlicePanelCollapsed"
+    [class.slice-collapsed]="showSlicePanel && (slicePanelRef?.isCollapsed ?? false)"
     [class.no-slice]="!showSlicePanel"
   >
-    <div *ngIf="showSlicePanel" class="slice-panel-wrapper" [class.collapsed]="isSlicePanelCollapsed">
-      <aside class="slice-panel" [class.collapsed]="isSlicePanelCollapsed">
-        <div class="slice-panel-header">
-          <button
-            *ngIf="showSliceToggle"
-            type="button"
-            class="slice-toggle"
-            [attr.aria-label]="isSlicePanelCollapsed ? 'Déplier le filtre' : 'Replier le filtre'"
-            (click)="toggleSlicePanel()"
-          >
-            <span class="slice-toggle-icon">{{ isSlicePanelCollapsed ? '›' : '‹' }}</span>
-          </button>
-        </div>
-
-        <div class="slice-panel-body" *ngIf="!isSlicePanelCollapsed">
-        <ng-container *ngFor="let slice of slices; let si = index">
-          <div class="slice-title-row" (click)="toggleSliceCollapse(si)">
-            <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
-            <p class="slice-title">{{ slice.title || 'Filtrer' }}</p>
-            <button *ngIf="isSliceDynamic(si)" type="button" class="slice-remove-btn" (click)="$event.stopPropagation(); removeDynamicSlice(si)">×</button>
-          </div>
-
-          <div class="slice-section-items" *ngIf="!isSliceCollapsed(si)">
-            <ng-container *ngIf="isSliceLoading(si); else sliceContent">
-              <div class="slice-lazy-loading">
-                <span class="lazy-skeleton"></span>
-                <span class="lazy-skeleton"></span>
-                <span class="lazy-skeleton"></span>
-              </div>
-            </ng-container>
-            <ng-template #sliceContent>
-              <button
-                *ngFor="let category of slice.categories"
-                class="slice-item"
-                type="button"
-                [class.active]="isSliceCategoryActive(si, category.key)"
-                [attr.data-category-key]="category.key"
-                (click)="onSliceCategorySelected(si, category.key)"
-              >
-                <span>{{ category.label }}</span>
-                <span>{{ sliceCategoryCount(si, category.key) }}</span>
-              </button>
-            </ng-template>
-          </div>
-
-          <hr *ngIf="si < slices.length - 1" class="slice-divider" />
-        </ng-container>
-
-
-      </div>
-    </aside>
-    </div>
+    <slice-panel
+      [style.display]="showSlicePanel ? null : 'none'"
+      [sliceConfigs]="_sliceConfigs"
+      [columns]="_sliceColumns"
+      [data]="_sliceData"
+      [lazyData]="_lazyColumnData"
+      [lazyStatus]="_lazyColumnStatus"
+      [showToggle]="_sliceShowToggle"
+      (filterChange)="onSliceFilterChange($event)"
+      (dynamicSliceKeysChange)="onDynamicSliceKeysChange($event)"
+    ></slice-panel>
 
     <div class="table-shell">
       <div class="table-toolbar" *ngIf="showToolbar">
@@ -171,6 +130,7 @@
             (drop)="onHeaderDrop(column.key, $event)"
           >
             <div class="head-cell">
+              <mat-icon *ngIf="column.icon" class="head-icon" fontSet="material-icons-outlined">{{ column.icon }}</mat-icon>
               <span class="head-text" [title]="column.header">{{ column.header }}</span>
               <span
                 *ngIf="isColumnDragDropEnabled"
@@ -245,6 +205,13 @@
       <div class="group-bottom-bar mat-mdc-paginator" *ngIf="activeGroupByKey">
         <div class="mat-mdc-paginator-outer-container">
           <div class="mat-mdc-paginator-container">
+            <button type="button" class="group-reset-btn" (click)="onGroupByChange(null)">
+              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-reset-icon">
+                <path d="M3 8a5 5 0 1 0 5-5 5 5 0 0 0-3.54 1.46L3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M3 3v2.5H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Retirer le groupe
+            </button>
             <div class="mat-mdc-paginator-page-size">
               <div class="mat-mdc-paginator-page-size-label">Lignes par groupe :</div>
               <mat-select
