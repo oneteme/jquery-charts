@@ -8,16 +8,21 @@ export interface TableColumnProvider<T = any> {
   header: string;
   icon?: string;
   value?: DataProvider<any>;
+  /** Valeur utilisée pour le tri si différente de `value`. Utile quand `value` retourne une chaîne formatée (date, durée...). */
+  sortValue?: DataProvider<any>;
   sortable?: boolean;
   removable?: boolean;
   optional?: boolean;
+  /** Exclure cette colonne de la liste GroupBy (défaut: inclus). */
+  groupable?: boolean;
+  /** Exclure cette colonne de la liste Slice by (défaut: inclus). */
+  sliceable?: boolean;
   lazy?: boolean;
   fetchFn?: () => Observable<any[]>;
 }
 
 export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];
-  data?: T[];
   title?: string;
   enableSearchBar?: boolean;
   enableViewButton?: boolean;
@@ -30,8 +35,9 @@ export interface TableProvider<T = any> {
   pageSizeOptionsGroupBy?: number[];
   enableColumnDragDrop?: boolean;
   emptyStateLabel?: string;
-  isLoading?: boolean;
   loadingStateLabel?: string;
+  /** Tri initial appliqué au chargement. N'est pas écrasé par les changements de données. */
+  defaultSort?: { active: string; direction: 'asc' | 'desc' };
   rowClass?: (row: T, index: number) => string | string[] | Record<string, boolean>;
 }
 

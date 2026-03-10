@@ -600,42 +600,65 @@ jquery-table &#123;
 
     <pre><code>/* Th&egrave;me violet */
 jquery-table &#123;
-  --jqt-primary-color: #7c3aed;
-  --jqt-group-accent:  #7c3aed;
-  --jqt-group-bg:      #f5f3ff;
-  --jqt-group-border:  #ddd6fe;
+  --jqt-primary-color:      #7c3aed;  /* accent (focus, s&eacute;lection, lien actif)   */
+  --jqt-title-color:        #4c1d95;  /* titre du tableau                          */
+  --jqt-header-text-color:  #5b21b6;  /* texte en-t&ecirc;tes de colonnes               */
+  --jqt-row-hover-bg:       #f5f3ff;  /* survol de ligne                           */
+  --jqt-border-color:       #ddd6fe;  /* bordures g&eacute;n&eacute;rales                       */
+  --jqt-group-bg:           #f5f3ff;  /* fond des lignes de groupe                 */
+  --jqt-group-bg-hover:     #ede9fe;  /* fond au survol d&apos;une ligne de groupe      */
+  --jqt-group-accent:       #7c3aed;  /* bande color&eacute;e gauche des groupes         */
+  --jqt-group-border:       #ddd6fe;  /* bordures haut/bas des groupes             */
 &#125;
 
 /* Th&egrave;me vert */
 jquery-table &#123;
-  --jqt-primary-color: #16a34a;
-  --jqt-group-accent:  #16a34a;
-  --jqt-group-bg:      #f0fdf4;
-  --jqt-group-border:  #bbf7d0;
+  --jqt-primary-color:      #16a34a;  /* accent (focus, s&eacute;lection, lien actif)   */
+  --jqt-title-color:        #14532d;  /* titre du tableau                          */
+  --jqt-header-text-color:  #15803d;  /* texte en-t&ecirc;tes de colonnes               */
+  --jqt-row-hover-bg:       #f0fdf4;  /* survol de ligne                           */
+  --jqt-border-color:       #d1fae5;  /* bordures g&eacute;n&eacute;rales                       */
+  --jqt-group-bg:           #f0fdf4;  /* fond des lignes de groupe                 */
+  --jqt-group-bg-hover:     #dcfce7;  /* fond au survol d&apos;une ligne de groupe      */
+  --jqt-group-accent:       #16a34a;  /* bande color&eacute;e gauche des groupes         */
+  --jqt-group-border:       #bbf7d0;  /* bordures haut/bas des groupes             */
 &#125;
 
 /* Mode sombre */
 jquery-table &#123;
-  --jqt-title-color:       #f1f5f9;
-  --jqt-text-color:        #e2e8f0;
-  --jqt-text-secondary:    #94a3b8;
-  --jqt-text-muted:        #64748b;
-  --jqt-surface-color:     #1e293b;
-  --jqt-surface-alt-color: #0f172a;
-  --jqt-row-hover-bg:      #334155;
-  --jqt-border-color:      #334155;
-  --jqt-header-bg:         #1e293b;
-  --jqt-header-text-color: #94a3b8;
-  --jqt-cell-bg:           #0f172a;
-  --jqt-footer-bg:         #1e293b;
-  --jqt-group-bg:          #1e3a5f;
-  --jqt-group-bg-hover:    #1e3a8a;
-  --jqt-group-accent:      #3b82f6;
-  --jqt-group-border:      #1d4ed8;
-  --jqt-primary-color:     #60a5fa;
-  --jqt-danger-color:      #f87171;
-  --jqt-danger-hover-bg:   #450a0a;
-  --jqt-danger-border:     #7f1d1d;
+  /* Texte */
+  --jqt-title-color:          #f1f5f9;  /* titre du tableau                        */
+  --jqt-text-color:           #e2e8f0;  /* texte principal (cellules, labels)      */
+  --jqt-text-secondary:       #94a3b8;  /* texte secondaire (badges, infos)        */
+  --jqt-text-muted:           #64748b;  /* placeholder, ic&ocirc;nes discr&egrave;tes          */
+
+  /* Surfaces */
+  --jqt-surface-color:        #1e293b;  /* fond barre recherche, boutons, panel    */
+  --jqt-surface-alt-color:    #0f172a;  /* fond alternatif subtil                  */
+  --jqt-row-hover-bg:         #334155;  /* survol d&apos;une ligne                      */
+  --jqt-border-color:         #334155;  /* bordures du tableau et &eacute;l&eacute;ments UI   */
+
+  /* Cellules (Angular Material) */
+  --jqt-header-bg:            #1e293b;  /* fond de la ligne d&apos;en-t&ecirc;te (opaque)   */
+  --jqt-header-text-color:    #94a3b8;  /* texte des cellules d&apos;en-t&ecirc;te           */
+  --jqt-cell-bg:              #0f172a;  /* fond des cellules de corps              */
+
+  /* Footer / paginator */
+  --jqt-footer-bg:            #1e293b;  /* fond de la barre de pagination          */
+  --jqt-footer-text-color:    #94a3b8;  /* texte paginator                         */
+  --jqt-footer-icon-color:    #64748b;  /* fl&egrave;ches et ic&ocirc;nes de navigation          */
+
+  /* Lignes de groupe (groupBy) */
+  --jqt-group-bg:             #172554;  /* fond des lignes de groupe               */
+  --jqt-group-bg-hover:       #1e3a8a;  /* fond au survol d&apos;une ligne de groupe    */
+  --jqt-group-accent:         #3b82f6;  /* bande color&eacute;e gauche des groupes       */
+  --jqt-group-border:         #1d4ed8;  /* bordures haut/bas des groupes           */
+
+  /* Accent &amp; danger */
+  --jqt-primary-color:        #60a5fa;  /* accent (focus, s&eacute;lection)              */
+  --jqt-danger-color:         #f87171;  /* texte/ic&ocirc;ne bouton reset               */
+  --jqt-danger-hover-bg:      #450a0a;  /* fond bouton reset au survol             */
+  --jqt-danger-border:        #7f1d1d;  /* bordure bouton reset au survol          */
 &#125;</code></pre>
   </section>
 </div>

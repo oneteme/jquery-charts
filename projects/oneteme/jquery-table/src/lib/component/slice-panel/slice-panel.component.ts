@@ -70,7 +70,10 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   // ── Computed ──────────────────────────────────────────────────
 
   get showPanel(): boolean {
-    const hasCfg = (this.sliceConfigs?.length ?? 0) > 0 || this._dynamicSlices.length > 0;
+    const visibleStaticCount = (this.sliceConfigs || []).filter(
+      (s) => !s.columnKey || !this._hiddenStaticSliceKeys.has(s.columnKey)
+    ).length;
+    const hasCfg = visibleStaticCount > 0 || this._dynamicSlices.length > 0;
     if (this.alwaysShow) return hasCfg;
     return hasCfg && (this.data?.length ?? 0) > 0;
   }

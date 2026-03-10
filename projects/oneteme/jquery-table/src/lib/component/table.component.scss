@@ -40,6 +40,8 @@
   --jqt-header-text-color:  #374151;      // texte des cellules d'en-tête
   --jqt-cell-bg:            #ffffff;      // fond des cellules de corps
   --jqt-footer-bg:          #ffffff;      // fond de la barre footer/paginator
+  --jqt-footer-text-color:  #6b7280;      // texte paginator (label, nombre de pages)
+  --jqt-footer-icon-color:  #9ca3af;      // icônes/flèches navigateur de page
 }
 
 .jquery-table-wrapper {

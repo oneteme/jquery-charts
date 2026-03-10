@@ -101,23 +101,23 @@
                 <span class="view-menu-check">{{ isStaticSliceVisible(s.key) ? '✓' : '' }}</span>
                 {{ s.title }}
               </button>
-              <button type="button" class="view-menu-item active" *ngFor="let ds of activeDynamicSliceColumns"
-                (click)="removeDynamicSliceByKey(ds.key)">
-                <span class="view-menu-check">✓</span>
-                {{ ds.header }}
-              </button>
-              <button type="button" class="view-menu-item" *ngFor="let col of availableColumnsForDynamicSlice"
-                (click)="addDynamicSlice(col)">
-                <span class="view-menu-check"></span>
-                {{ col.header }}
-              </button>
+              <ng-container *ngIf="allDynamicSliceColumns.length > 0">
+                <hr *ngIf="staticSlicesForMenu.length > 0" class="view-menu-separator" />
+                <button type="button" class="view-menu-item" *ngFor="let col of allDynamicSliceColumns"
+                  [class.active]="isDynamicSliceActive(col.key)"
+                  (click)="toggleDynamicSlice(col)">
+                  <span class="view-menu-check">{{ isDynamicSliceActive(col.key) ? '✓' : '' }}</span>
+                  {{ col.header }}
+                </button>
+              </ng-container>
             </div>
           </mat-menu>
         </div>
       </div>
 
       <div class="table-body-scroll" #tableBodyScroll>
-      <table mat-table matSort [dataSource]="tableDataSource" class="jquery-table">
+      <table mat-table matSort [dataSource]="tableDataSource" class="jquery-table"
+             [matSortActive]="_matSortActive" [matSortDirection]="_matSortDirection">
         <ng-container *ngFor="let column of visibleColumns" [matColumnDef]="column.key">
           <th
             mat-header-cell
@@ -145,14 +145,19 @@
             </div>
           </th>
           <td mat-cell *matCellDef="let row">
-            <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">
-              <span *ngSwitchCase="'loading'" class="lazy-skeleton"></span>
-              <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="retryLazyColumn(column)" title="Erreur de chargement — cliquer pour réessayer">
-                <span class="lazy-error-icon">⚠</span>
-                <span class="lazy-error-label">Réessayer</span>
-              </button>
-              <span *ngSwitchDefault class="cell-text" [title]="asTitle(row[column.key])">{{ row[column.key] }}</span>
+            <ng-container *ngIf="getCellTemplate(column.key) as customTpl; else defaultCellTpl">
+              <ng-container *ngTemplateOutlet="customTpl; context: { $implicit: row.__raw, index: row.__index }"></ng-container>
             </ng-container>
+            <ng-template #defaultCellTpl>
+              <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">
+                <span *ngSwitchCase="'loading'" class="lazy-skeleton"></span>
+                <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="retryLazyColumn(column)" title="Erreur de chargement — cliquer pour réessayer">
+                  <span class="lazy-error-icon">⚠</span>
+                  <span class="lazy-error-label">Réessayer</span>
+                </button>
+                <span *ngSwitchDefault class="cell-text" [title]="asTitle(row[column.key])">{{ row[column.key] }}</span>
+              </ng-container>
+            </ng-template>
           </td>
         </ng-container>
 

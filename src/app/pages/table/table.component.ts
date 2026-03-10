@@ -26,6 +26,7 @@ export class TableExempleComponent {
 
   readonly tableTemplateCode = `<jquery-table
   [config]="tableConfig"
+  [data]="tableData"
   [isLoading]="isLoading"
   (rowSelected)="onRowSelected($event)"
 ></jquery-table>`;
@@ -57,14 +58,13 @@ export class TableExempleComponent {
   },
   emptyStateLabel: 'Aucun résultat',
   loadingStateLabel: 'Chargement...',
-  data: rows,
 };`;
 
   get tableDataCode(): string {
     return `const tableData: RepoRow[] = ${JSON.stringify(this.tableData, null, 2)};`;
   }
 
-  private readonly tableData: RepoRow[] = [
+  readonly tableData: RepoRow[] = [
     {
       issue: 'Présentation IA',
       status: 'In Progress',
@@ -140,7 +140,6 @@ export class TableExempleComponent {
     },
     emptyStateLabel: 'Aucun résultat',
     loadingStateLabel: 'Chargement...',
-    data: this.tableData,
   };
 
   onRowSelected(row: RepoRow): void {
