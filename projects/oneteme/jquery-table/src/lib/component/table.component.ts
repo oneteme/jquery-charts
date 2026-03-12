@@ -3,7 +3,7 @@ import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, C
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -40,10 +40,20 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   @Output() categorySelected = new EventEmitter<string>();
   @Output() rowSelected = new EventEmitter<T>();
 
-  @ViewChild(MatPaginator) paginator?: MatPaginator;
+  @ViewChild(MatPaginator)
+  set paginator(value: MatPaginator | undefined) {
+    this._paginator = value;
+    if (value) {
+      this.attachPaginator();
+      this._scheduleRender();
+    }
+  }
+  get paginator(): MatPaginator | undefined { return this._paginator; }
+  private _paginator?: MatPaginator;
   @ViewChild(MatSort) sort?: MatSort;
   @ViewChild('tableBodyScroll') tableBodyScrollRef?: ElementRef<HTMLElement>;
   @ViewChild(SlicePanelComponent) slicePanelRef?: SlicePanelComponent<T>;
+  @ViewChild('viewMenuTrigger') viewMenuTrigger?: MatMenuTrigger;
   @ContentChildren(JqtCellDefDirective) _cellDefs!: QueryList<JqtCellDefDirective>;
 
   renderedColumns: string[] = [];
@@ -57,7 +67,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   _sliceColumns: TableColumnProvider<T>[] = [];
   _sliceData: T[] = [];
   _sliceShowToggle = true;
-  _staticSlicesForMenu: Array<{ key: string; title: string }> = [];
+  _staticSlicesForMenu: Array<{ key: string; title: string; icon?: string }> = [];
   _activeDynamicSliceColumns: TableColumnProvider<T>[] = [];
   _availableColumnsForDynamicSlice: TableColumnProvider<T>[] = [];
   _allDynamicSliceColumns: TableColumnProvider<T>[] = [];
@@ -89,6 +99,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   pageSizeOptions: number[] = [5, 10, 20];
   pageSizeOptionsGroupBy: number[] = [5, 10, 20];
   groupPageSize = 5;
+  groupSortOrder: 'asc' | 'desc' = 'asc';
 
   draggedColumnKey: string | null = null;
   dragOverColumnKey: string | null = null;
@@ -97,13 +108,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   private resolvedConfig: TableProvider<T> = { columns: [] };
   private _resolvedData: T[] = [];
   private _preservePageIndex: number | null = null;
+  private _initialSearchApplied = false;
 
   // ── Optimisation performance ─────────────────────────────────────────────
-  /** [A] Lignes brutes filtrées+triées — source de vérité sans projection */
   private _allFilteredRows: T[] = [];
-  /** Référence du paginator déjà abonné (abonnement unique) */
   private _paginatorSubscribed: MatPaginator | null = null;
-  /** [B] Timer du rendu différé — libère le thread principal */
   private _pendingRender: ReturnType<typeof setTimeout> | null = null;
 
 
@@ -114,6 +123,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this._lazyFetchCancels.clear();
       this._lazyColumnStatus = new Map();
       this._lazyColumnData = new Map();
+    }
+    if (changes['config'] && !this._initialSearchApplied) {
+      const initial = this.config?.initialSearchQuery;
+      if (initial != null) {
+        this.searchQuery = initial;
+        this._initialSearchApplied = true;
+      }
     }
     this.refreshViewModel();
     if (dataChanged) {
@@ -196,9 +212,14 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const seen = new Set<string>();
     return all.filter((c) => {
       if (c.groupable === false || seen.has(c.key)) return false;
+      if (!c.header && c.groupable !== true) return false;
       seen.add(c.key);
       return true;
     });
+  }
+
+  colLabel(col: { key: string; header?: string }): string {
+    return col.header || humanizeKey(col.key);
   }
 
   // ── Actions utilisateur ────────────────────────────────────────────────────
@@ -217,21 +238,28 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this.groupPageSize = this.resolveDefaultGroupPageSize();
     this.refreshViewModel();
     this.paginator?.firstPage();
-    if (!key) {
-      setTimeout(() => {
-        this.tableBodyScrollRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 0);
-    }
     if (key) {
+      this.viewMenuTrigger?.closeMenu();
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
       if (colDef?.lazy && colDef.fetchFn && this._lazyColumnStatus.get(key) !== 'loaded') {
         this.triggerLazyFetch(colDef);
       }
+    } else {
+      setTimeout(() => {
+        this.tableBodyScrollRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 0);
     }
   }
 
   onGroupPageSizeChange(size: number | string): void {
     this.groupPageSize = Number(size);
+    this._groupPages.clear();
+    this.refreshViewModel();
+  }
+
+  onGroupSortToggle(dir: 'asc' | 'desc'): void {
+    if (this.groupSortOrder === dir) return;
+    this.groupSortOrder = dir;
     this._groupPages.clear();
     this.refreshViewModel();
     const openGroup = this._defaultGroupCollapsed
@@ -396,7 +424,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   get showAddSliceButton(): boolean { return this.showToolbar; }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string }> {
+  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
     return this._staticSlicesForMenu;
   }
 
@@ -471,7 +499,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get effectiveIsLoading(): boolean {
-    return this.isLoading;
+    return this.isLoading || this._pendingRender !== null;
+  }
+
+  get isEmpty(): boolean {
+    return !this.effectiveIsLoading && this._allFilteredRows.length === 0;
   }
 
   get showPagination(): boolean {
@@ -496,10 +528,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const configCols = this.resolvedConfig.columns ?? [];
     const configIndex = configCols.findIndex(c => c.key === column.key);
     if (configIndex === -1) {
-      // Colonne hors config : ajout en fin de liste
       this.activeColumns = [...this.activeColumns, column];
     } else {
-      // Insertion à la position config parmi les colonnes déjà visibles
       const insertBefore = this.activeColumns.findIndex(c => {
         const ci = configCols.findIndex(cc => cc.key === c.key);
         return ci !== -1 && ci > configIndex;
@@ -576,6 +606,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return this._cellDefs?.find((d) => d.columnKey === key)?.template ?? null;
   }
 
+  get hasCustomCellDefs(): boolean {
+    return (this._cellDefs?.length ?? 0) > 0;
+  }
+
+  trackRowFn = (_index: number, row: any): any =>
+    row.__groupHeader ? `__group_${row.__groupKey}` : row.__index ?? _index;
+
   getRowClass(row: any): string | string[] | Record<string, boolean> {
     const fn = this.resolvedConfig.rowClass;
     if (!fn || row?.__groupHeader) return {};
@@ -584,6 +621,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   onRowClick(row: any): void {
     if (row?.__groupHeader) return;
+    if (this.hasCustomCellDefs) return;
     this.rowSelected.emit((row?.__raw ?? row) as T);
   }
 
@@ -694,14 +732,14 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._sliceShowToggle = this.resolvedConfig.showSliceToggle !== false;
     this._staticSlicesForMenu = (this.resolvedConfig.slices ?? [])
       .filter(s => !!s.columnKey)
-      .map(s => ({ key: s.columnKey!, title: s.title || s.columnKey! }));
-    // Initialiser le tri visuel par défaut (lu une seule fois avant que l'utilisateur interagisse)
+      .map(s => {
+        const colIcon = (this.resolvedConfig.columns ?? []).find(c => c.key === s.columnKey)?.icon;
+        return { key: s.columnKey!, title: s.title || humanizeKey(s.columnKey!), icon: s.icon ?? colIcon };
+      });
     if (!this._activeSort.active && this.resolvedConfig.defaultSort) {
       this._matSortActive = this.resolvedConfig.defaultSort.active;
       this._matSortDirection = this.resolvedConfig.defaultSort.direction;
     }
-    // Initialiser _availableColumnsForDynamicSlice sans slicePanelRef
-    // (sera raffiné via onDynamicSliceKeysChange quand des slices dynamiques sont ajoutés)
     const staticKeys = new Set(
       (this.resolvedConfig.slices ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
     );
@@ -709,23 +747,23 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const seen = new Set<string>();
     this._availableColumnsForDynamicSlice = (this.resolvedConfig.columns ?? []).filter(c => {
       if (c.sliceable === false || staticKeys.has(c.key) || activeDynKeys.has(c.key) || seen.has(c.key)) return false;
+      if (!c.header && c.sliceable !== true) return false;
       seen.add(c.key);
       return true;
     });
     const seen2 = new Set<string>();
     this._allDynamicSliceColumns = (this.resolvedConfig.columns ?? []).filter(c => {
       if (c.sliceable === false || staticKeys.has(c.key) || seen2.has(c.key)) return false;
+      if (!c.header && c.sliceable !== true) return false;
       seen2.add(c.key);
       return true;
     });
     this._computeSliceLabel();
 
-    // [B] Déclencher le calcul lourd de manière asynchrone pour libérer le thread principal
     this._scheduleRender();
   }
 
   private _computeSliceLabel(): void {
-    // Utiliser slicePanelRef.staticSliceCount qui exclut les slices statiques masqués
     const visibleStaticCount = this.slicePanelRef?.staticSliceCount
       ?? this._sliceConfigs.length;
     const total = visibleStaticCount + this._activeDynamicSliceColumns.length;
@@ -744,9 +782,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._activeSliceByLabel = `${total} actifs`;
   }
 
-  // ── [B] Rendu différé — libère le thread principal ────────────────────────
-
-  /** Planifie un rendu au prochain tick. Les appels successifs rapides sont dédoublonnés. */
   private _scheduleRender(): void {
     if (this._pendingRender !== null) {
       clearTimeout(this._pendingRender);
@@ -758,7 +793,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }, 0);
   }
 
-  /** [A+B] Filtre, trie, puis projette uniquement la page courante. */
   private _executeRender(): void {
     const categoryRows = this.getCategoryFilteredData();
     const compareFn = this._buildSortComparator();
@@ -777,10 +811,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._cdr.markForCheck();
   }
 
-  /** [A] Projette uniquement les lignes de la page courante (pageSize lignes max). */
   private _projectCurrentPage(): void {
     if (this.activeGroupByKey) {
-      // Mode groupBy : comportement hérité (structure groupée complète)
       this.tableDataSource.data = this.projectRows(this._allFilteredRows);
       return;
     }
@@ -905,7 +937,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const sorted = [...rows].sort((a, b) => {
       const va = String(this.getLazyAwareValue(groupKey, a) ?? '');
       const vb = String(this.getLazyAwareValue(groupKey, b) ?? '');
-      return va.localeCompare(vb);
+      const cmp = va.localeCompare(vb);
+      return this.groupSortOrder === 'desc' ? -cmp : cmp;
     });
 
     const groupOrder: string[] = [];
@@ -926,7 +959,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
     groupOrder.forEach((groupValue) => {
       const rawGroupRows = groupMap.get(groupValue)!;
-      // Appliquer le tri à l'intérieur du groupe (sur les données brutes, avant pagination)
       const groupRows = compareFn ? [...rawGroupRows].sort(compareFn) : rawGroupRows;
       const totalCount = groupRows.length;
       const currentPage = pageSize === 0 ? 0 : (this._groupPages.get(groupValue) ?? 0);
@@ -978,7 +1010,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     if (colDef?.lazy) {
       return this._lazyColumnData.get(columnKey)?.get(row) ?? null;
     }
-    // sortValue a priorité sur value pour le tri (valeur brute vs valeur affichée)
     if (colDef?.sortValue) {
       return normalizeCellValue(colDef.sortValue(row, 0));
     }
@@ -1053,15 +1084,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }
     if (!this.paginator) return;
 
-    // [A] Ne jamais attacher au datasource — on gère la pagination manuellement
     this.tableDataSource.paginator = null;
     this.paginator.pageSize = this.pageSize;
 
-    // S'abonner une seule fois aux changements de page
     if (this._paginatorSubscribed !== this.paginator) {
       this._paginatorSubscribed = this.paginator;
       this.paginator.page.pipe(takeUntil(this._destroy$)).subscribe(() => {
-        // Si un rendu complet est déjà planifié, le laisser gérer la projection
+        this.pageSize = this.paginator!.pageSize;
         if (this._pendingRender !== null) return;
         this._projectCurrentPage();
         this._cdr.markForCheck();
@@ -1072,10 +1101,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   private attachSort(): void {
     if (!this.sort) return;
 
-    // [A] Toujours détacher du datasource — on trie manuellement dans _executeRender
     this.tableDataSource.sort = null as any;
 
-    // S'abonner une seule fois aux changements de tri
     if (this._sortSubscribed !== this.sort) {
       this._sortSubscribed = this.sort;
       this.sort.sortChange.pipe(takeUntil(this._destroy$)).subscribe(() => {
@@ -1083,7 +1110,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
           active: this.sort.active,
           direction: this.sort.direction,
         };
-        // Re-trier et re-projeter (groupBy ou non)
         this._scheduleRender();
       });
     }

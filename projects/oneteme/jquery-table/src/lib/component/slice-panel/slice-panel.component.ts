@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component,
   ElementRef, EventEmitter, Input, OnChanges, OnInit, Output,
@@ -9,7 +10,7 @@ import { SliceColumnDef, SliceConfig } from './slice-panel.model';
 @Component({
   standalone: true,
   selector: 'slice-panel',
-  imports: [CommonModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './slice-panel.component.html',
   styleUrls: ['./slice-panel.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,18 +23,13 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   @Input() lazyData: Map<string, Map<any, any>> = new Map();
   @Input() lazyStatus: Map<string, 'idle' | 'loading' | 'loaded' | 'error'> = new Map();
   @Input() showToggle = true;
-  /** Affiche le compteur de lignes sur chaque catégorie. Désactiver pour les contextes non-tabulaires (graphiques…). */
   @Input() showCounts = true;
-  /** Replie le panneau entier à l'initialisation. */
   @Input() collapsedByDefault = false;
-  /** Affiche le panneau même si `data` est vide. Utile pour les graphiques où les données ne transitent pas par `data`. */
   @Input() alwaysShow = false;
 
   @Output() filterChange = new EventEmitter<(row: T) => boolean>();
-  /** Émet les clés actives par slice en parallèle de `sliceConfigs` (index 0 = première slice, etc.). Alternatif à `filterChange` pour les consommateurs non-tabulaires. */
   @Output() activeKeysChange = new EventEmitter<string[][]>();
   @Output() dynamicSliceKeysChange = new EventEmitter<string[]>();
-  /** Émet `true` quand le panneau est replié, `false` quand il est ouvert. */
   @Output() collapsedChange = new EventEmitter<boolean>();
 
   @ViewChild('slicePanelBody') slicePanelBodyRef?: ElementRef<HTMLElement>;
@@ -171,7 +167,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   isSliceLoading(sliceIndex: number): boolean {
-    // Slice statique avec columnKey lazy
     const staticSlice = (this.sliceConfigs || [])[sliceIndex];
     if (staticSlice?.columnKey) {
       const colDef = (this.columns || []).find(c => c.key === staticSlice.columnKey);
@@ -181,7 +176,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       }
       return false;
     }
-    // Slice dynamique
     const key = this._getDynamicSliceColumnKey(sliceIndex);
     if (!key) return false;
     const colDef = (this.columns || []).find(c => c.key === key);
@@ -205,7 +199,13 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   // ── Selection ─────────────────────────────────────────────────
-
+  getSliceIcon(slice: SliceConfig<T>): string | undefined {
+    if (slice.icon) return slice.icon;
+    if (slice.columnKey) {
+      return (this.columns || []).find(c => c.key === slice.columnKey)?.icon;
+    }
+    return undefined;
+  }
   isSliceCategoryActive(sliceIndex: number, categoryKey: string): boolean {
     return this.activeKeysBySlice.get(sliceIndex)?.has(categoryKey) ?? false;
   }
@@ -266,6 +266,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     const distinctValues = this._computeDistinctValues(column.key);
     const newSlice: SliceConfig<T> = {
       title: column.header,
+      columnKey: column.key,
       categories: distinctValues.map((v) => ({
         key: v,
         label: v,
@@ -308,7 +309,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     const slices = this.slices;
     const activeKeysBySlice = this.activeKeysBySlice;
 
-    // Emit active keys per slice (for non-predicate consumers e.g. charts)
     this.activeKeysChange.emit(
       slices.map((_, i) => {
         const keys = activeKeysBySlice.get(i);
@@ -316,7 +316,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       })
     );
 
-    // Emit row predicate (for tabular consumers)
     const pred = (row: T): boolean =>
       slices.every((slice, sliceIndex) => {
         const activeKeys = activeKeysBySlice.get(sliceIndex);
@@ -342,6 +341,17 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     const isLazy = !!col?.lazy;
     if (isLazy && this.lazyStatus.get(slice.columnKey!) !== 'loaded') {
       return { ...slice, categories: [] };
+    }
+    if (slice.bucket) {
+      const distinctValues = [...new Set((this.data || []).map(slice.bucket))].sort();
+      return {
+        ...slice,
+        categories: distinctValues.map((v) => ({
+          key: v,
+          label: v,
+          filter: (row: T) => slice.bucket!(row) === v,
+        })),
+      };
     }
     const distinctValues = this._computeDistinctValues(slice.columnKey!);
     return {
@@ -371,6 +381,9 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     const colDef = (this.columns || []).find(c => c.key === columnKey);
     if (colDef?.lazy) {
       return this.lazyData.get(columnKey)?.get(row) ?? null;
+    }
+    if (colDef?.value) {
+      return colDef.value(row, 0);
     }
     return (row as any)[columnKey];
   }

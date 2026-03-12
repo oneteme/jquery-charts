@@ -13,9 +13,8 @@ export interface TableColumnProvider<T = any> {
   sortable?: boolean;
   removable?: boolean;
   optional?: boolean;
-  /** Exclure cette colonne de la liste GroupBy (défaut: inclus). */
+  width?: string;
   groupable?: boolean;
-  /** Exclure cette colonne de la liste Slice by (défaut: inclus). */
   sliceable?: boolean;
   lazy?: boolean;
   fetchFn?: () => Observable<any[]>;
@@ -25,6 +24,7 @@ export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];
   title?: string;
   enableSearchBar?: boolean;
+  initialSearchQuery?: string;
   enableViewButton?: boolean;
   slices?: SliceConfig<T>[];
   showSliceToggle?: boolean;

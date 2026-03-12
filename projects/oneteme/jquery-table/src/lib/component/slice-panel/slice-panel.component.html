@@ -1,6 +1,10 @@
 <div class="slice-panel-wrapper" [class.collapsed]="isCollapsed">
   <aside class="slice-panel" [class.collapsed]="isCollapsed">
     <div class="slice-panel-header">
+      <span *ngIf="!isCollapsed" class="slice-panel-title">
+        <mat-icon class="slice-panel-title-icon" fontSet="material-icons-outlined">filter_list</mat-icon>
+        {{ slices.length > 1 ? 'Filtres' : 'Filtre' }}
+      </span>
       <button
         *ngIf="showToggle"
         type="button"
@@ -16,6 +20,7 @@
       <ng-container *ngFor="let slice of slices; let si = index; trackBy: trackBySliceIndex">
         <div class="slice-title-row" [attr.data-slice-index]="si" (click)="toggleSliceCollapse(si)">
           <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
+          <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon" fontSet="material-icons-outlined">{{ getSliceIcon(slice) }}</mat-icon>
           <p class="slice-title">{{ slice.title || 'Filtrer' }}</p>
           <button
             *ngIf="isSliceDynamic(si)"
@@ -34,18 +39,20 @@
             </div>
           </ng-container>
           <ng-template #sliceContent>
-            <button
-              *ngFor="let category of slice.categories; trackBy: trackByCategoryKey"
-              class="slice-item"
-              type="button"
-              [class.active]="isSliceCategoryActive(si, category.key)"
-              [attr.data-category-key]="category.key"
-              [title]="category.label"
-              (click)="onSliceCategorySelected(si, category.key)"
-            >
-              <span>{{ category.label }}</span>
-              <span *ngIf="showCounts">{{ sliceCategoryCount(si, category.key) }}</span>
-            </button>
+            <ng-container *ngFor="let category of slice.categories; trackBy: trackByCategoryKey">
+              <button
+                *ngIf="sliceCategoryCount(si, category.key) > 0"
+                class="slice-item"
+                type="button"
+                [class.active]="isSliceCategoryActive(si, category.key)"
+                [attr.data-category-key]="category.key"
+                [title]="category.label"
+                (click)="onSliceCategorySelected(si, category.key)"
+              >
+                <span>{{ category.label }}</span>
+                <span *ngIf="showCounts">{{ sliceCategoryCount(si, category.key) }}</span>
+              </button>
+            </ng-container>
           </ng-template>
         </div>
 

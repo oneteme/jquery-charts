@@ -36,12 +36,12 @@
   --jqt-danger-border:      #fca5a5;  // bordure bouton reset au survol
 
   // Header & cellules (Angular Material)
-  --jqt-header-bg:          #ffffff;      // fond des cellules d'en-tête (doit être opaque pour sticky)
+  --jqt-header-bg:          #f5f5f5;      // fond des cellules d'en-tête (doit être opaque pour sticky)
   --jqt-header-text-color:  #374151;      // texte des cellules d'en-tête
   --jqt-cell-bg:            #ffffff;      // fond des cellules de corps
-  --jqt-footer-bg:          #ffffff;      // fond de la barre footer/paginator
-  --jqt-footer-text-color:  #6b7280;      // texte paginator (label, nombre de pages)
-  --jqt-footer-icon-color:  #9ca3af;      // icônes/flèches navigateur de page
+  --jqt-footer-bg:          #f5f5f5;      // fond de la barre footer/paginator
+  --jqt-footer-text-color:  #374151;      // texte paginator (label, nombre de pages)
+  --jqt-footer-icon-color:  #374151;      // icônes/flèches navigateur de page
 }
 
 .jquery-table-wrapper {
@@ -96,6 +96,14 @@
   max-width: 100%;
 }
 
+.table-body-wrapper {
+  position: relative;
+  flex: 1 1 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
 .table-body-scroll {
   flex: 1 1 0;
   overflow-y: auto;
@@ -110,6 +118,27 @@
 
   &::-webkit-scrollbar { width: 6px; }
   &::-webkit-scrollbar-thumb { background: var(--jqt-border-color); border-radius: 4px; }
+}
+
+.table-body-overlay {
+  position: absolute;
+  top: var(--actual-header-height, 56px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--jqt-surface-color);
+  border-right: 1px solid var(--jqt-border-color);
+  border-left: 1px solid var(--jqt-border-color);
+  pointer-events: none;
+}
+
+.table-body-overlay-text {
+  font-size: 14px;
+  color: var(--jqt-text-secondary);
 }
 
 // ─── Toolbar & barre de recherche ─────────────────────────────
@@ -274,7 +303,7 @@
 }
 
 .group-key-label {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -284,11 +313,12 @@
 .group-count-badge {
   flex-shrink: 0;
   font-size: 11px;
+  line-height: 1;
   font-weight: 600;
-  color: var(--jqt-text-secondary);
-  background: var(--jqt-border-color);
+  color: #fff;
+  background: var(--jqt-text-secondary, #6b7280);
   border-radius: 10px;
-  padding: 1px 7px;
+  padding: 3px 7px;
   min-width: 20px;
   text-align: center;
   text-transform: none;
@@ -300,7 +330,7 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
-  margin-left: 4px;
+  margin-left: auto;
 }
 
 .group-page-btn {
@@ -316,7 +346,7 @@
   font-size: 14px;
   color: var(--jqt-text-color);
   line-height: 1;
-  padding: 0;
+  padding: 0 0 3px 0;
   text-transform: none;
   letter-spacing: 0;
 
@@ -335,10 +365,10 @@
 }
 
 .group-chevron {
-  display: inline-flex;
-  align-items: center;
-  font-size: 16px;
-  line-height: 1;
+  flex-shrink: 0;
+  font-size: 14px;
+  font-weight: 700;
+  padding-bottom: 3px;
   transition: transform 0.15s ease;
   transform: rotate(90deg);
 
@@ -352,10 +382,9 @@
 }
 
 .no-data-cell {
-  text-align: center !important;
-  padding: 32px 16px !important;
-  color: var(--jqt-text-secondary);
-  font-size: 14px;
+  padding: 0 !important;
+  height: 0 !important;
+  border: none !important;
 }
 
 // ─── Colonnes & entêtes ───────────────────────────────────────
@@ -394,6 +423,10 @@
 :host ::ng-deep .mat-mdc-row {
   cursor: pointer;
   border-bottom-color: var(--jqt-border-color);
+}
+
+:host ::ng-deep .mat-mdc-row.no-pointer {
+  cursor: auto;
 }
 
 :host ::ng-deep .mat-mdc-row.no-data-row {
@@ -481,28 +514,94 @@
   flex: 0 0 auto;
   background: var(--jqt-footer-bg);
   border-top: 1px solid var(--jqt-border-color);
+  border-right: 1px solid var(--jqt-border-color);
+  border-bottom: 1px solid var(--jqt-border-color);
+  border-left: 1px solid var(--jqt-border-color);
+  border-radius: 0 0 8px 8px;
 }
 
 :host ::ng-deep .bottom-bar mat-paginator {
   flex: 1 1 auto;
-  background: var(--jqt-footer-bg);
+  background: transparent;
   color: var(--jqt-footer-text-color);
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-paginator-outer-container {
+  display: flex;
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-paginator-container {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-height: 0;
+  height: var(--actual-header-height, 56px);
+  padding: 0 8px;
+  box-sizing: border-box;
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-paginator-range-label,
 :host ::ng-deep .bottom-bar .mat-mdc-paginator-page-size-label {
+  font-size: 12px;
   color: var(--jqt-footer-text-color);
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-icon-button {
   color: var(--jqt-footer-icon-color);
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  --mdc-icon-button-state-layer-size: 28px;
+
+  .mat-mdc-button-persistent-ripple,
+  .mdc-icon-button__state-layer {
+    width: 28px;
+    height: 28px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-icon-button .mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-icon-button:disabled {
   opacity: 0.35;
 }
 
+:host ::ng-deep .bottom-bar .mat-mdc-paginator-page-size-select {
+  width: 72px;
+  font-size: 12px;
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-text-field-wrapper {
+  padding: 0 8px;
+}
+
+:host ::ng-deep .bottom-bar .mdc-text-field--outlined {
+  height: 28px;
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-form-field-infix {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
 :host ::ng-deep .bottom-bar .mat-mdc-select-value-text {
+  font-size: 12px;
   color: var(--jqt-text-color);
 }
 
@@ -513,56 +612,136 @@
 }
 
 .group-bottom-bar {
+  display: flex;
+  align-items: center;
   flex: 0 0 auto;
   background: var(--jqt-footer-bg);
   border-top: 1px solid var(--jqt-border-color);
+  border-right: 1px solid var(--jqt-border-color);
+  border-bottom: 1px solid var(--jqt-border-color);
+  border-left: 1px solid var(--jqt-border-color);
+  border-radius: 0 0 8px 8px;
+}
 
-  // Styles autonomes — ne pas dépendre des styles injectés par mat-paginator
-  .mat-mdc-paginator-outer-container {
-    display: flex;
+.group-bottom-bar-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  height: var(--actual-header-height, 56px);
+  padding: 0 16px;
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.group-bar-separator {
+  width: 1px;
+  height: 20px;
+  background: #9ca3af;
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.group-bottom-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.group-sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.group-sort-label {
+  font-size: 12px;
+  color: var(--jqt-footer-text-color);
+  white-space: nowrap;
+  margin-right: 2px;
+}
+
+.group-sort-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--jqt-footer-icon-color);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 16px;
   }
 
-  .mat-mdc-paginator-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    min-height: 52px;
-    padding: 0 8px;
-    box-sizing: border-box;
-    width: 100%;
+  &:hover {
+    background: rgba(0, 0, 0, 0.04);
   }
 
-  .mat-mdc-paginator-page-size {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  &.active {
+    color: var(--jqt-primary-color, #1976d2);
+    border-color: var(--jqt-primary-color, #1976d2);
+    background: rgba(25, 118, 210, 0.08);
   }
+}
 
-  .mat-mdc-paginator-page-size-label {
-    font-size: 12px;
-    color: var(--jqt-footer-text-color);
-    white-space: nowrap;
-  }
+:host ::ng-deep .group-bottom-bar .mat-mdc-paginator-page-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 
-  .mat-mdc-paginator-page-size-select {
-    width: 72px;
-  }
+:host ::ng-deep .group-bottom-bar .mat-mdc-paginator-page-size-label {
+  font-size: 12px;
+  color: var(--jqt-footer-text-color);
+  white-space: nowrap;
+}
 
-  // mat-select colors (page size selector)
-  .mat-mdc-select-value-text {
-    color: var(--jqt-text-color);
-  }
+:host ::ng-deep .group-bottom-bar .mat-mdc-paginator-page-size-select {
+  width: 72px;
+  font-size: 12px;
+}
 
-  .mdc-notched-outline__leading,
-  .mdc-notched-outline__notch,
-  .mdc-notched-outline__trailing {
-    border-color: var(--jqt-border-color) !important;
-  }
+:host ::ng-deep .group-bottom-bar .mat-mdc-text-field-wrapper {
+  padding: 0 8px;
+}
 
-  .mat-mdc-select-arrow {
-    color: var(--jqt-footer-text-color);
-  }
+:host ::ng-deep .group-bottom-bar .mdc-text-field--outlined {
+  height: 28px;
+}
+
+:host ::ng-deep .group-bottom-bar .mat-mdc-form-field-infix {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+:host ::ng-deep .group-bottom-bar .mat-mdc-select-value-text {
+  font-size: 12px;
+  color: var(--jqt-text-color);
+}
+
+:host ::ng-deep .group-bottom-bar .mdc-notched-outline__leading,
+:host ::ng-deep .group-bottom-bar .mdc-notched-outline__notch,
+:host ::ng-deep .group-bottom-bar .mdc-notched-outline__trailing {
+  border-color: var(--jqt-border-color);
+}
+
+:host ::ng-deep .group-bottom-bar .mat-mdc-select-arrow {
+  color: var(--jqt-footer-text-color);
 }
 
 .group-reset-btn {
@@ -701,6 +880,14 @@
   &:hover { background: var(--jqt-row-hover-bg); }
   &.active { font-weight: 600; }
   &:disabled { opacity: 0.4; cursor: default; }
+}
+
+::ng-deep .view-menu-col-icon {
+  flex-shrink: 0;
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: var(--jqt-text-muted);
 }
 
 ::ng-deep .view-menu-check {
