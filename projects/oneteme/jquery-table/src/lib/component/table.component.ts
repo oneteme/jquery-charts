@@ -622,7 +622,9 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   onRowClick(row: any): void {
     if (row?.__groupHeader) return;
     if (this.hasCustomCellDefs) return;
-    this.rowSelected.emit((row?.__raw ?? row) as T);
+    const resolved = (row?.__raw ?? row) as T;
+    this.rowSelected.emit(resolved);
+    this.config?.onRowSelected?.(resolved);
   }
 
   // ── Drag & drop ───────────────────────────────────────────────────────────

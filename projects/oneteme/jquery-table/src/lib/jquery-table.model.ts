@@ -1,4 +1,4 @@
-import { DataProvider, field } from '@oneteme/jquery-core';
+import { DataProvider } from '@oneteme/jquery-core';
 import { Observable } from 'rxjs';
 import { SliceConfig } from './component/slice-panel/slice-panel.model';
 export { SliceConfig } from './component/slice-panel/slice-panel.model';
@@ -39,8 +39,6 @@ export interface TableProvider<T = any> {
   /** Tri initial appliqué au chargement. N'est pas écrasé par les changements de données. */
   defaultSort?: { active: string; direction: 'asc' | 'desc' };
   rowClass?: (row: T, index: number) => string | string[] | Record<string, boolean>;
+  onRowSelected?: (row: T) => void;
 }
 
-export function col<T = any>( key: string, header: string, sortable: boolean = true ): TableColumnProvider<T> {
-  return { key, header, sortable, value: field(key) };
-}
