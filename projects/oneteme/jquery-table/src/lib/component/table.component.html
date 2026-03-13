@@ -175,9 +175,9 @@
         <tr
           mat-row
           *matRowDef="let row; columns: renderedColumns; when: !isGroupHeader"
-          [attr.tabindex]="hasCustomCellDefs ? null : 0"
+          [attr.tabindex]="hasRowClickHandler ? 0 : null"
           [ngClass]="getRowClass(row)"
-          [class.no-pointer]="hasCustomCellDefs"
+          [class.no-pointer]="!hasRowClickHandler"
           (click)="onRowClick(row)"
           (keydown.enter)="onRowClick(row)"
           (keydown.space)="onRowClick(row)"

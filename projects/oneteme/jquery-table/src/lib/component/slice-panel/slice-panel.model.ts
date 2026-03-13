@@ -15,6 +15,7 @@ export interface SliceConfig<T = any> {
   icon?: string;
   multiSelect?: boolean;
   columnKey?: string;
+  hidden?: boolean;
   /**
    * Fonction de bucketing optionnelle. Si définie, mappe chaque row vers un label de tranche
    * (ex: '< 1h', '1j - 7j'). Permet de regrouper des valeurs continues en plages discrètes.

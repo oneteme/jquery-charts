@@ -179,7 +179,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   get showViewButton(): boolean { return this.resolvedConfig.enableViewButton === true; }
   get showToolbar(): boolean { return this.showSearchBar || this.showViewButton; }
   get showFields(): boolean { return this.showViewButton; }
-  get showGroupBySection(): boolean { return this.showViewButton; }
+  get showGroupBySection(): boolean { return this.showViewButton && this.groupByColumns.length > 0; }
 
   get filteredRowCount(): number {
     return this.activeGroupByKey ? this._totalFilteredCount : this._allFilteredRows.length;
@@ -422,7 +422,9 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return this.slicePanelRef?.showPanel ?? (this.hasSliceConfig && this._resolvedData.length > 0);
   }
 
-  get showAddSliceButton(): boolean { return this.showToolbar; }
+  get showAddSliceButton(): boolean {
+    return this.showViewButton && ((this.resolvedConfig.slices?.length ?? 0) > 0 || this._allDynamicSliceColumns.length > 0);
+  }
 
   get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
     return this._staticSlicesForMenu;
@@ -610,6 +612,10 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return (this._cellDefs?.length ?? 0) > 0;
   }
 
+  get hasRowClickHandler(): boolean {
+    return this.rowSelected.observed || !!this.config?.onRowSelected;
+  }
+
   trackRowFn = (_index: number, row: any): any =>
     row.__groupHeader ? `__group_${row.__groupKey}` : row.__index ?? _index;
 
@@ -621,7 +627,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   onRowClick(row: any): void {
     if (row?.__groupHeader) return;
-    if (this.hasCustomCellDefs) return;
+    if (!this.hasRowClickHandler) return;
     const resolved = (row?.__raw ?? row) as T;
     this.rowSelected.emit(resolved);
     this.config?.onRowSelected?.(resolved);

@@ -53,6 +53,12 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
 
   ngOnInit(): void {
     this.isCollapsed = this.collapsedByDefault;
+    const initiallyHidden = (this.sliceConfigs || [])
+      .filter(s => s.hidden === true && !!s.columnKey)
+      .map(s => s.columnKey!);
+    if (initiallyHidden.length) {
+      this._hiddenStaticSliceKeys = new Set([...this._hiddenStaticSliceKeys, ...initiallyHidden]);
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
