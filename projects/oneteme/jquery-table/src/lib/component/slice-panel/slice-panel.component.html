@@ -53,6 +53,7 @@
                 <span *ngIf="showCounts">{{ sliceCategoryCount(si, category.key) }}</span>
               </button>
             </ng-container>
+            <div *ngIf="isSliceEmpty(si)" class="slice-empty-state">Aucune donnée</div>
           </ng-template>
         </div>
 

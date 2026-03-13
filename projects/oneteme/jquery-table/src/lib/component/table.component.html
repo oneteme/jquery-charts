@@ -71,7 +71,6 @@
                 {{ colLabel(column) }}
               </button>
               <ng-container *ngIf="menuOptionalColumns.length > 0">
-                <hr class="view-menu-separator" />
                 <button type="button" class="view-menu-item" *ngFor="let column of menuOptionalColumns"
                   [disabled]="(isColumnVisible(column.key) && visibleColumns.length === 1) || getLazyColumnStatus(column.key) === 'loading'"
                   (click)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
@@ -178,16 +177,17 @@
           [attr.tabindex]="hasRowClickHandler ? 0 : null"
           [ngClass]="getRowClass(row)"
           [class.no-pointer]="!hasRowClickHandler"
-          (click)="onRowClick(row)"
-          (keydown.enter)="onRowClick(row)"
-          (keydown.space)="onRowClick(row)"
+          (click)="onRowClick(row, $event)"
+          (keydown.enter)="onRowClick(row, null)"
+          (keydown.space)="onRowClick(row, null)"
         ></tr>
         <ng-container matColumnDef="__group_row">
           <td mat-cell *matCellDef="let row" [attr.colspan]="renderedColumns.length" class="group-header-cell">
             <div class="group-header-label">
-              <span class="group-chevron" [class.collapsed]="isGroupCollapsed(row.__groupKey)" *ngIf="row.__groupKey !== '__lazy_loading__'">›</span>
-              <span *ngIf="row.__groupKey !== '__lazy_loading__'" class="group-key-label">{{ row.__groupKey }}</span>
+              <span class="group-chevron" [class.collapsed]="isGroupCollapsed(row.__groupKey)" *ngIf="row.__groupKey !== '__lazy_loading__' && row.__groupKey !== '__too_many_groups__'">›</span>
+              <span *ngIf="row.__groupKey !== '__lazy_loading__' && row.__groupKey !== '__too_many_groups__'" class="group-key-label">{{ row.__groupKey }}</span>
               <span *ngIf="row.__groupKey === '__lazy_loading__'" class="lazy-skeleton group-lazy-key-skeleton"></span>
+              <span *ngIf="row.__groupKey === '__too_many_groups__'" class="group-too-many-label">⚠ Trop de groupes ({{ row.__groupCount }}) — affinez les données ou choisissez une autre colonne</span>
               <span class="group-count-badge">{{ row.__groupCount }}</span>
               <div class="group-pagination" *ngIf="!isGroupCollapsed(row.__groupKey) && row.__groupPageCount > 1" (click)="$event.stopPropagation()">
                 <button type="button" class="group-page-btn" [disabled]="row.__groupPage === 0" (click)="groupPageBack(row.__groupKey)">‹</button>
@@ -200,8 +200,9 @@
         <tr mat-row *matRowDef="let row; columns: ['__group_row']; when: isGroupHeader"
             class="group-header-row"
             [class.group-header-loading]="row.__groupKey === '__lazy_loading__'"
+            [class.group-header-too-many]="row.__groupKey === '__too_many_groups__'"
             [attr.data-group-key]="row.__groupKey"
-            (click)="row.__groupKey !== '__lazy_loading__' && toggleGroupCollapse(row.__groupKey)"></tr>
+            (click)="row.__groupKey !== '__lazy_loading__' && row.__groupKey !== '__too_many_groups__' && toggleGroupCollapse(row.__groupKey)"></tr>
         <tr class="mat-mdc-row no-data-row" *matNoDataRow>
           <td class="mat-mdc-cell no-data-cell" [attr.colspan]="renderedColumns.length"></td>
         </tr>

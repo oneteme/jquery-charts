@@ -233,6 +233,12 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     return count;
   }
 
+  isSliceEmpty(sliceIndex: number): boolean {
+    const slice = this._cachedSlices[sliceIndex];
+    if (!slice) return true;
+    return (slice.categories || []).every(c => this.sliceCategoryCount(sliceIndex, c.key) === 0);
+  }
+
   onSliceCategorySelected(sliceIndex: number, categoryKey: string): void {
     const slice = this.slices[sliceIndex];
     if (!slice) return;

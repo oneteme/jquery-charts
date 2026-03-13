@@ -106,13 +106,26 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   private userCustomizedColumns = false;
   private resolvedConfig: TableProvider<T> = { columns: [] };
+  private _columnMap: Map<string, TableColumnProvider<T>> = new Map();
   private _resolvedData: T[] = [];
   private _preservePageIndex: number | null = null;
   private _initialSearchApplied = false;
 
+  // Seuil au-delà duquel le rendu groupé est bloqué pour protéger le navigateur
+  private static readonly MAX_GROUP_COUNT = 500;
+
   // ── Optimisation performance ─────────────────────────────────────────────
   private _allFilteredRows: T[] = [];
   private _paginatorSubscribed: MatPaginator | null = null;
+
+  // Cache groupBy : invalide uniquement quand les données/tri/groupKey changent
+  private _groupCacheRows: T[] | null = null;
+  private _groupCacheKey: string | null = null;
+  private _groupCacheSortOrder: 'asc' | 'desc' = 'asc';
+  private _groupCacheSortActive: string = '';
+  private _groupCacheSortDir: string = '';
+  private _groupCacheOrder: string[] = [];
+  private _groupCacheMap: Map<string, T[]> = new Map();
   private _pendingRender: ReturnType<typeof setTimeout> | null = null;
 
 
@@ -350,7 +363,10 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this._collapsedGroups.add(groupKey);
       setTimeout(() => this.scrollToGroupHeader(groupKey), 0);
     }
-    this.refreshViewModel();
+    // Court-circuit de refreshViewModel : la data et les colonnes n'ont pas changé,
+    // seul l'état collapsed change — reprojection directe sans rebuild complet
+    this._projectCurrentPage();
+    this._cdr.markForCheck();
   }
 
   private scrollToGroupHeader(groupKey: string): void {
@@ -376,7 +392,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const current = this._groupPages.get(groupKey) ?? 0;
     if (current > 0) {
       this._groupPages.set(groupKey, current - 1);
-      this.refreshViewModel();
+      this._projectCurrentPage();
+      this._cdr.markForCheck();
     }
   }
 
@@ -385,7 +402,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const current = this._groupPages.get(groupKey) ?? 0;
     if (current < maxPage) {
       this._groupPages.set(groupKey, current + 1);
-      this.refreshViewModel();
+      this._projectCurrentPage();
+      this._cdr.markForCheck();
     }
   }
 
@@ -625,12 +643,12 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return fn(row.__raw ?? row, row.__index ?? 0);
   }
 
-  onRowClick(row: any): void {
+  onRowClick(row: any, event: MouseEvent | null): void {
     if (row?.__groupHeader) return;
     if (!this.hasRowClickHandler) return;
     const resolved = (row?.__raw ?? row) as T;
     this.rowSelected.emit(resolved);
-    this.config?.onRowSelected?.(resolved);
+    this.config?.onRowSelected?.(resolved, event);
   }
 
   // ── Drag & drop ───────────────────────────────────────────────────────────
@@ -710,6 +728,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   private refreshViewModel(): void {
     this._resolvedData = this.resolveData();
     this.resolvedConfig = this.buildEffectiveConfig();
+    this._columnMap = new Map((this.resolvedConfig.columns || []).map(c => [c.key, c]));
     const defaultColumns = (this.resolvedConfig.columns || []).filter(c => !c.optional);
 
     if (!this.userCustomizedColumns || this.activeColumns.length === 0) {
@@ -803,8 +822,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   private _executeRender(): void {
     const categoryRows = this.getCategoryFilteredData();
-    const compareFn = this._buildSortComparator();
-    this._allFilteredRows = compareFn ? [...categoryRows].sort(compareFn) : categoryRows;
+    if (this.activeGroupByKey) {
+      // En mode groupBy, projectRows gère tout le tri internement — pas de sort global inutile
+      this._allFilteredRows = categoryRows;
+    } else {
+      const compareFn = this._buildSortComparator();
+      this._allFilteredRows = compareFn ? [...categoryRows].sort(compareFn) : categoryRows;
+    }
 
     // Mettre à jour le paginator avec le nouveau total
     if (this.paginator) {
@@ -934,7 +958,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       return result;
     }
 
-    const groupColDef = (this.resolvedConfig.columns || []).find(c => c.key === groupKey);
+    const groupColDef = this._columnMap.get(groupKey);
     const groupLazyStatus = groupColDef?.lazy ? (this._lazyColumnStatus.get(groupKey) ?? 'idle') : 'loaded';
 
     if (groupLazyStatus !== 'loaded') {
@@ -942,32 +966,98 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       return [{ __groupHeader: true, __groupKey: '__lazy_loading__', __groupCount: rows.length, __groupPage: 0, __groupPageCount: 1 }];
     }
 
-    const sorted = [...rows].sort((a, b) => {
-      const va = String(this.getLazyAwareValue(groupKey, a) ?? '');
-      const vb = String(this.getLazyAwareValue(groupKey, b) ?? '');
-      const cmp = va.localeCompare(vb);
-      return this.groupSortOrder === 'desc' ? -cmp : cmp;
-    });
+    const effectiveSort = this._activeSort.active && this._activeSort.direction
+      ? this._activeSort
+      : this.resolvedConfig.defaultSort ?? { active: '', direction: '' as const };
 
-    const groupOrder: string[] = [];
-    const groupMap = new Map<string, T[]>();
-    sorted.forEach((row) => {
-      const groupValue = String(this.getLazyAwareValue(groupKey, row) ?? '');
-      if (!groupMap.has(groupValue)) {
-        groupOrder.push(groupValue);
-        groupMap.set(groupValue, []);
+    // Vérifie si le cache est encore valide (même référence de rows + même paramètres de tri/groupe)
+    const cacheValid =
+      this._groupCacheRows === rows &&
+      this._groupCacheKey === groupKey &&
+      this._groupCacheSortOrder === this.groupSortOrder &&
+      this._groupCacheSortActive === (effectiveSort.active ?? '') &&
+      this._groupCacheSortDir === (effectiveSort.direction ?? '');
+
+    let groupOrder: string[];
+    let groupMap: Map<string, T[]>;
+
+    if (cacheValid) {
+      groupOrder = this._groupCacheOrder;
+      groupMap = this._groupCacheMap;
+    } else {
+      // Pré-calcul des valeurs de groupe en un seul passage (évite O(n) find() par comparaison)
+      const groupValueCache = new Map<T, string>();
+      rows.forEach(row => groupValueCache.set(row, String(this.getLazyAwareValue(groupKey, row) ?? '')));
+
+      // Pré-calcul des valeurs de tri (évite O(n log n) × getLazyAwareValue dans le comparateur)
+      let fastCompareFn: ((a: T, b: T) => number) | null = null;
+      if (effectiveSort.active && effectiveSort.direction) {
+        const sortValueCache = new Map<T, any>();
+        rows.forEach(row => sortValueCache.set(row, this.getLazyAwareValue(effectiveSort.active, row)));
+        const dir = effectiveSort.direction;
+        fastCompareFn = (a: T, b: T): number => {
+          const va = sortValueCache.get(a);
+          const vb = sortValueCache.get(b);
+          let cmp = 0;
+          if (typeof va === 'number' && typeof vb === 'number') {
+            cmp = va < vb ? -1 : va > vb ? 1 : 0;
+          } else {
+            const sa = va == null ? '' : String(va).toLowerCase();
+            const sb = vb == null ? '' : String(vb).toLowerCase();
+            cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
+          }
+          return dir === 'asc' ? cmp : -cmp;
+        };
       }
-      groupMap.get(groupValue)!.push(row);
-    });
+
+      const sorted = [...rows].sort((a, b) => {
+        const va = groupValueCache.get(a)!;
+        const vb = groupValueCache.get(b)!;
+        const cmp = va.localeCompare(vb);
+        return this.groupSortOrder === 'desc' ? -cmp : cmp;
+      });
+
+      groupOrder = [];
+      groupMap = new Map<string, T[]>();
+      sorted.forEach((row) => {
+        const groupValue = groupValueCache.get(row)!;
+        if (!groupMap.has(groupValue)) {
+          groupOrder.push(groupValue);
+          groupMap.set(groupValue, []);
+        }
+        groupMap.get(groupValue)!.push(row);
+      });
+
+      // Tri intra-groupe stocké dans le cache — évite le re-tri sur collapse/expand/pagination
+      if (fastCompareFn) {
+        const fn = fastCompareFn;
+        groupMap.forEach((groupRows, key) => {
+          groupMap.set(key, [...groupRows].sort(fn));
+        });
+      }
+
+      // Mise en cache
+      this._groupCacheRows = rows;
+      this._groupCacheKey = groupKey;
+      this._groupCacheSortOrder = this.groupSortOrder;
+      this._groupCacheSortActive = effectiveSort.active ?? '';
+      this._groupCacheSortDir = effectiveSort.direction ?? '';
+      this._groupCacheOrder = groupOrder;
+      this._groupCacheMap = groupMap;
+    }
 
     this._totalFilteredCount = rows.length;
+
+    // Protection contre les jeux de données à trop haute cardinalité
+    if (groupOrder.length > TableComponent.MAX_GROUP_COUNT) {
+      return [{ __groupHeader: true, __groupKey: '__too_many_groups__', __groupCount: groupOrder.length, __groupPage: 0, __groupPageCount: 1 }];
+    }
+
     const pageSize = this.groupPageSize;
     const result: any[] = [];
-    const compareFn = this._buildSortComparator();
 
     groupOrder.forEach((groupValue) => {
-      const rawGroupRows = groupMap.get(groupValue)!;
-      const groupRows = compareFn ? [...rawGroupRows].sort(compareFn) : rawGroupRows;
+      const groupRows = groupMap.get(groupValue)!;
       const totalCount = groupRows.length;
       const currentPage = pageSize === 0 ? 0 : (this._groupPages.get(groupValue) ?? 0);
       const pageCount = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalCount / pageSize));
@@ -1014,7 +1104,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   private getLazyAwareValue(columnKey: string, row: T): any {
-    const colDef = (this.resolvedConfig.columns || []).find(c => c.key === columnKey);
+    const colDef = this._columnMap.get(columnKey);
     if (colDef?.lazy) {
       return this._lazyColumnData.get(columnKey)?.get(row) ?? null;
     }

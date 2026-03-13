@@ -39,6 +39,6 @@ export interface TableProvider<T = any> {
   /** Tri initial appliqué au chargement. N'est pas écrasé par les changements de données. */
   defaultSort?: { active: string; direction: 'asc' | 'desc' };
   rowClass?: (row: T, index: number) => string | string[] | Record<string, boolean>;
-  onRowSelected?: (row: T) => void;
+  onRowSelected?: (row: T, event: MouseEvent | null) => void;
 }
 

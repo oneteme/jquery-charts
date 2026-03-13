@@ -281,9 +281,18 @@
 }
 
 :host ::ng-deep .group-header-loading td,
-:host ::ng-deep .group-header-loading:hover td {
+:host ::ng-deep .group-header-loading:hover td,
+:host ::ng-deep .group-header-too-many td,
+:host ::ng-deep .group-header-too-many:hover td {
   cursor: default;
   background: var(--jqt-surface-alt-color);
+}
+
+.group-too-many-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--jqt-warn-color, #b45309);
+  font-style: italic;
 }
 
 .group-header-cell {
