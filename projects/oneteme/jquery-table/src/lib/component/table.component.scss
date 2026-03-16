@@ -515,6 +515,11 @@
   white-space: nowrap;
 }
 
+.cell-empty {
+  color: var(--jqt-empty-cell-color, #9ca3af);
+  font-style: italic;
+}
+
 // ─── Pagination ───────────────────────────────────────────────
 
 .bottom-bar {

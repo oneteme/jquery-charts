@@ -164,7 +164,7 @@
                   <span class="lazy-error-icon">⚠</span>
                   <span class="lazy-error-label">Réessayer</span>
                 </button>
-                <span *ngSwitchDefault class="cell-text" [title]="asTitle(row[column.key])">{{ row[column.key] }}</span>
+                <span *ngSwitchDefault class="cell-text" [class.cell-empty]="isCellEmpty(row[column.key])" [title]="asTitle(row[column.key])">{{ isCellEmpty(row[column.key]) ? 'N/A' : row[column.key] }}</span>
               </ng-container>
             </ng-template>
           </td>

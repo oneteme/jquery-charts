@@ -7,6 +7,9 @@ import {
 } from '@angular/core';
 import { SliceColumnDef, SliceConfig } from './slice-panel.model';
 
+const EMPTY_CATEGORY_KEY = '__empty__';
+const EMPTY_CATEGORY_LABEL = 'Vide';
+
 @Component({
   standalone: true,
   selector: 'slice-panel',
@@ -279,11 +282,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     const newSlice: SliceConfig<T> = {
       title: column.header,
       columnKey: column.key,
-      categories: distinctValues.map((v) => ({
-        key: v,
-        label: v,
-        filter: (row: T) => String(this._getLazyAwareValue(column.key, row) ?? '') === v,
-      })),
+      categories: distinctValues.map((v) => this._buildCategoryFromValue(column.key, v)),
     };
     this._dynamicSlices = [...this._dynamicSlices, { key: column.key, slice: newSlice }];
     this._rebuildCache();
@@ -368,25 +367,38 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     const distinctValues = this._computeDistinctValues(slice.columnKey!);
     return {
       ...slice,
-      categories: distinctValues.map((v) => ({
-        key: v,
-        label: v,
-        filter: (row: T) => String(this._getLazyAwareValue(slice.columnKey!, row) ?? '') === v,
-      })),
+      categories: distinctValues.map((v) => this._buildCategoryFromValue(slice.columnKey!, v)),
+    };
+  }
+
+  private _buildCategoryFromValue(columnKey: string, v: string): { key: string; label: string; filter: (row: T) => boolean } {
+    if (v === EMPTY_CATEGORY_KEY) {
+      return {
+        key: EMPTY_CATEGORY_KEY,
+        label: EMPTY_CATEGORY_LABEL,
+        filter: (row: T) => {
+          const val = this._getLazyAwareValue(columnKey, row);
+          return val == null || val === '';
+        },
+      };
+    }
+    return {
+      key: v,
+      label: v,
+      filter: (row: T) => String(this._getLazyAwareValue(columnKey, row) ?? '') === v,
     };
   }
 
   private _computeDistinctValues(columnKey: string): string[] {
-    return [
-      ...new Set(
-        (this.data || [])
-          .map((row) => {
-            const val = this._getLazyAwareValue(columnKey, row);
-            return val != null && val !== '' ? String(val) : null;
-          })
-          .filter((v): v is string => v !== null)
-      ),
-    ].sort();
+    const rawValues = (this.data || []).map((row) => {
+      const val = this._getLazyAwareValue(columnKey, row);
+      return val != null && val !== '' ? String(val) : null;
+    });
+    const distinct = [...new Set(rawValues.filter((v): v is string => v !== null))].sort();
+    if (rawValues.some(v => v === null)) {
+      distinct.push(EMPTY_CATEGORY_KEY);
+    }
+    return distinct;
   }
 
   private _getLazyAwareValue(columnKey: string, row: T): any {
@@ -416,11 +428,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
         key,
         slice: {
           ...slice,
-          categories: distinctValues.map((v) => ({
-            key: v,
-            label: v,
-            filter: (row: T) => String(this._getLazyAwareValue(key, row) ?? '') === v,
-          })),
+          categories: distinctValues.map((v) => this._buildCategoryFromValue(key, v)),
         },
       };
     });

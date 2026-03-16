@@ -716,6 +716,10 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     );
   }
 
+  isCellEmpty(value: any): boolean {
+    return value === '' || value == null;
+  }
+
   asTitle(value: any): string {
     if (value === null || value === undefined) {
       return '';
