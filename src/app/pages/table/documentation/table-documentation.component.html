@@ -92,11 +92,11 @@
             <td><code>false</code></td>
             <td>
               Active le bouton <strong>View</strong> (Champs / Group&nbsp;by / Slice&nbsp;by).<br>
-              <strong>Requis</strong> pour <code>allowColumnRemoval</code>, les colonnes <code>optional</code> et le <em>Slice&nbsp;by</em> dynamique.
+              <strong>Requis</strong> pour <code>enableColumnRemoval</code>, les colonnes <code>optional</code> et le <em>Slice&nbsp;by</em> dynamique.
             </td>
           </tr>
           <tr>
-            <td><code>allowColumnRemoval</code></td>
+            <td><code>enableColumnRemoval</code></td>
             <td><code>boolean</code></td>
             <td><code>false</code></td>
             <td>
@@ -270,7 +270,7 @@
             <td><strong>Champs</strong></td>
             <td>
               Affiche/masque les colonnes.<br>
-              &bull; Colonnes de base : coch&eacute;es par d&eacute;faut, d&eacute;cochables si <code>allowColumnRemoval:&nbsp;true</code>.<br>
+              &bull; Colonnes de base : coch&eacute;es par d&eacute;faut, d&eacute;cochables si <code>enableColumnRemoval:&nbsp;true</code>.<br>
               &bull; Colonnes <code>optional:&nbsp;true</code> : d&eacute;coch&eacute;es par d&eacute;faut, toujours activables.
             </td>
             <td><code>enableViewButton:&nbsp;true</code></td>
@@ -388,7 +388,7 @@ col&lt;T&gt;(key: string, header: string, sortable = true): TableColumnProvider&
           </tr>
           <tr>
             <td><code>[columns]</code></td>
-            <td><code>SliceColumnDef&lt;T&gt;[]</code></td>
+            <td><code>TableColumnProvider&lt;T&gt;[]</code></td>
             <td><code>[]</code></td>
             <td>
               Colonnes pour le menu <em>Slice by</em> dynamique.<br>
@@ -511,8 +511,8 @@ readonly cfg: TableProvider&lt;Row&gt; = &#123;
   enableSearchBar: true,
   // Le bouton View active Champs, Group by et Slice by dynamique
   enableViewButton: true,
-  // allowColumnRemoval n'a d'effet que si enableViewButton est true
-  allowColumnRemoval: true,
+  // enableColumnRemoval n'a d'effet que si enableViewButton est true
+  enableColumnRemoval: true,
   enableColumnDragDrop: true,
   enablePagination: true,
   pageSize: 10,

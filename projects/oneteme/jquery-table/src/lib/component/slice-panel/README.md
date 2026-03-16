@@ -26,7 +26,7 @@ import { SlicePanelComponent } from '@oneteme/jquery-table';
 |---|---|---|---|
 | `sliceConfigs` | `SliceConfig<T>[]` | `[]` | Définition des slices. Peut auto-générer les catégories via `columnKey`. |
 | `data` | `T[]` | `[]` | Données source. Sert aux catégories auto et aux compteurs. |
-| `columns` | `SliceColumnDef<T>[]` | `[]` | **Optionnel.** Requis uniquement pour le mode lazy ou les slices dynamiques (fonctionnalités table). Dans un contexte graphique, ne pas le passer. |
+| `columns` | `TableColumnProvider<T>[]` | `[]` | **Optionnel.** Requis uniquement pour le mode lazy ou les slices dynamiques (fonctionnalités table). Dans un contexte graphique, ne pas le passer. |
 | `lazyData` | `Map<string, Map<any, any>>` | `new Map()` | Données lazy par colonne puis par ligne. Toujours passer une **nouvelle instance**. |
 | `lazyStatus` | `Map<string, 'idle'\|'loading'\|'loaded'\|'error'>` | `new Map()` | Statut de chargement par colonne. Toujours passer une **nouvelle instance**. |
 | `showToggle` | `boolean` | `true` | Affiche le bouton collapse du panneau. |
@@ -62,7 +62,7 @@ interface SliceCategory<T = any> {
   filter: (row: T) => boolean;
 }
 
-interface SliceColumnDef<T = any> {
+interface TableColumnProvider<T = any> {
   key: string;
   header?: string;
   lazy?: boolean;

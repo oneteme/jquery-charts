@@ -138,7 +138,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this._lazyColumnData = new Map();
     }
     if (changes['config'] && !this._initialSearchApplied) {
-      const initial = this.config?.initialSearchQuery;
+      const initial = this.config?.search?.initialQuery;
       if (initial != null) {
         this.searchQuery = initial;
         this._initialSearchApplied = true;
@@ -146,7 +146,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }
     this.refreshViewModel();
     if (dataChanged) {
-      this.activeColumns.filter(c => c.lazy && c.fetchFn).forEach(c => this.triggerLazyFetch(c));
+      this.activeColumns.filter(c => c.lazy).forEach(c => this.triggerLazyFetch(c));
     }
   }
 
@@ -188,8 +188,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return this.activeColumns;
   }
 
-  get showSearchBar(): boolean { return this.resolvedConfig.enableSearchBar === true; }
-  get showViewButton(): boolean { return this.resolvedConfig.enableViewButton === true; }
+  get showSearchBar(): boolean { return this.resolvedConfig.search?.enabled === true; }
+  get showViewButton(): boolean { return this.resolvedConfig.view?.enabled === true; }
   get showToolbar(): boolean { return this.showSearchBar || this.showViewButton; }
   get showFields(): boolean { return this.showViewButton; }
   get showGroupBySection(): boolean { return this.showViewButton && this.groupByColumns.length > 0; }
@@ -254,7 +254,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     if (key) {
       this.viewMenuTrigger?.closeMenu();
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
-      if (colDef?.lazy && colDef.fetchFn && this._lazyColumnStatus.get(key) !== 'loaded') {
+      if (colDef?.lazy && this._lazyColumnStatus.get(key) !== 'loaded') {
         this.triggerLazyFetch(colDef);
       }
     } else {
@@ -310,7 +310,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   triggerLazyFetch(column: TableColumnProvider<T>): void {
-    if (!column.fetchFn) return;
+    if (!column.lazy) return;
     const k = column.key;
     if (this._lazyColumnStatus.get(k) === 'loading') return;
 
@@ -324,7 +324,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._lazyColumnStatus = newStatus1;
     this.refreshViewModel();
 
-    column.fetchFn().pipe(
+    column.lazy.fetchFn().pipe(
       take(1),
       takeUntil(cancel$),
     ).subscribe({
@@ -427,7 +427,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get allowColumnRemoval(): boolean {
-    return this.resolvedConfig.allowColumnRemoval === true;
+    return this.resolvedConfig.view?.enableColumnRemoval !== false;
   }
 
   // ── Slices ────────────────────────────────────────────────────────────────
@@ -462,7 +462,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   addDynamicSlice(column: TableColumnProvider<T>): void {
     this.slicePanelRef?.addDynamicSlice(column);
-    if (column.lazy && column.fetchFn && this._lazyColumnStatus.get(column.key) !== 'loaded') {
+    if (column.lazy && this._lazyColumnStatus.get(column.key) !== 'loaded') {
       this.triggerLazyFetch(column);
     }
   }
@@ -511,11 +511,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get emptyStateLabel(): string {
-    return this.resolvedConfig.emptyStateLabel || 'Aucune donnée';
+    return this.resolvedConfig.labels?.empty || 'Aucune donnée';
   }
 
   get loadingStateLabel(): string {
-    return this.resolvedConfig.loadingStateLabel || 'Chargement des données...';
+    return this.resolvedConfig.labels?.loading || 'Chargement des données...';
   }
 
   get effectiveIsLoading(): boolean {
@@ -528,11 +528,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   get showPagination(): boolean {
     if (this.activeGroupByKey !== null) return false;
-    return this.resolvedConfig.enablePagination !== false;
+    return this.resolvedConfig.pagination?.enabled !== false;
   }
 
   get isColumnDragDropEnabled(): boolean {
-    return this.resolvedConfig.enableColumnDragDrop === true;
+    return this.resolvedConfig.view?.enableColumnDragDrop === true;
   }
 
   get totalRows(): number {
@@ -565,7 +565,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._preservePageIndex = this.paginator?.pageIndex ?? null;
     this.refreshViewModel();
 
-    if (column.lazy && column.fetchFn) {
+    if (column.lazy) {
       this.triggerLazyFetch(column);
     }
 
@@ -756,7 +756,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._sliceConfigs = this.resolvedConfig.slices ?? [];
     this._sliceColumns = this.resolvedConfig.columns ?? [];
     this._sliceData = this._resolvedData;
-    this._sliceShowToggle = this.resolvedConfig.showSliceToggle !== false;
+    this._sliceShowToggle = this.resolvedConfig.enableSliceToggle !== false;
     this._staticSlicesForMenu = (this.resolvedConfig.slices ?? [])
       .filter(s => !!s.columnKey)
       .map(s => {
@@ -877,17 +877,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return {
       ...config,
       columns,
-      enableSearchBar: config.enableSearchBar ?? false,
-      enableViewButton: config.enableViewButton ?? false,
-      showSliceToggle: config.showSliceToggle ?? true,
       slices: config.slices || [],
-      allowColumnRemoval: config.allowColumnRemoval ?? true,
-      enablePagination: config.enablePagination ?? true,
-      enableColumnDragDrop: config.enableColumnDragDrop ?? false,
-      pageSize: config.pageSize || 5,
-      pageSizeOptions: config.pageSizeOptions || [5, 10, 20],
-      pageSizeOptionsGroupBy: config.pageSizeOptionsGroupBy || undefined,
-      loadingStateLabel: config.loadingStateLabel,
+      enableSliceToggle: config.enableSliceToggle ?? true,
     };
   }
 
@@ -1134,11 +1125,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   private resolvePageSize(): number {
-    return Math.max(1, this.resolvedConfig.pageSize || this.pageSize || 5);
+    return Math.max(1, this.resolvedConfig.pagination?.pageSize || this.pageSize || 5);
   }
 
   private resolvePageSizeOptions(): number[] {
-    const options = this.resolvedConfig.pageSizeOptions || [5, 10, 20];
+    const options = this.resolvedConfig.pagination?.pageSizeOptions || [5, 10, 20];
     const unique = [...new Set(options.filter((value) => value > 0))];
 
     if (!unique.includes(this.pageSize)) {
@@ -1149,7 +1140,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   private resolvePageSizeOptionsGroupBy(): number[] {
-    const options = this.resolvedConfig.pageSizeOptionsGroupBy || this.resolvedConfig.pageSizeOptions || [5, 10, 20];
+    const options = this.resolvedConfig.pagination?.pageSizeOptionsGroupBy || this.resolvedConfig.pagination?.pageSizeOptions || [5, 10, 20];
     const unique = [...new Set(options.filter((v) => v > 0))];
     if (this.groupPageSize > 0 && !unique.includes(this.groupPageSize)) {
       unique.push(this.groupPageSize);
@@ -1159,9 +1150,9 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   private resolveDefaultGroupPageSize(): number {
     const cfg = this.resolvedConfig;
-    const options = cfg.pageSizeOptionsGroupBy || cfg.pageSizeOptions;
+    const options = cfg.pagination?.pageSizeOptionsGroupBy || cfg.pagination?.pageSizeOptions;
     if (options?.length) return options[0];
-    return cfg.pageSize || 5;
+    return cfg.pagination?.pageSize || 5;
   }
 
   private uniqueColumnsByKey(columns: TableColumnProvider<T>[]): TableColumnProvider<T>[] {

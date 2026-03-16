@@ -47,7 +47,7 @@ export class DemoComponent {
 	tableConfig: TableProvider<Row> = {
 		title: 'Ticket board',
 		showAddColumnButton: true,
-		allowColumnRemoval: true,
+		enableColumnRemoval: true,
 		columns: [col<Row>('issue', 'Issue'), col<Row>('status', 'Status')],
 		availableColumns: [col<Row>('owner', 'Owner'), col<Row>('priority', 'Priority')],
 		categorySlice: {
@@ -114,7 +114,7 @@ Le `config` complet reste disponible pour activer les fonctionnalités avancées
 - `config.showAddColumnButton`: active/désactive le bouton `+`
 - `config.showOptionsButton`: active/désactive le bouton `Options`
 - `config.bottomActionsLabel`: libellé des actions dockées en bas-gauche
-- `config.allowColumnRemoval`: autorise la suppression des colonnes
+- `config.enableColumnRemoval`: autorise la suppression des colonnes
 - `config.categorySlice`: configuration du panel de catégories à gauche
 - `config.data`: dataset source
 
