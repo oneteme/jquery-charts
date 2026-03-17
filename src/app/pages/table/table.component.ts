@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TableComponent, TableColumnProvider, TableProvider, col } from '@oneteme/jquery-table';
+import { TableComponent, TableColumnProvider, TableProvider } from '@oneteme/jquery-table';
 
 interface RepoRow {
   issue: string;
@@ -33,31 +33,26 @@ export class TableExempleComponent {
 
   readonly tableConfigCode = `tableConfig: TableProvider<RepoRow> = {
   title: 'Ticket board',
-  enableSearchBar: true,
-  enableViewButton: true,
-  enableColumnDragDrop: true,
-  allowColumnRemoval: true,
-  enablePagination: true,
-  pageSize: 5,
-  pageSizeOptions: [5, 10, 20],
+  search: { enabled: true },
+  view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
+  pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10, 20] },
+  labels: { empty: 'Aucun résultat', loading: 'Chargement...' },
   columns: [
-    col<RepoRow>('issue',  'Issue'),
-    col<RepoRow>('status', 'Status'),
-    col<RepoRow>('owner',  'Owner'),
-    { ...col<RepoRow>('priority',  'Priorité'),              optional: true },
-    { ...col<RepoRow>('team',      'Équipe'),                optional: true },
-    { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'),  optional: true },
+    { key: 'issue',     header: 'Issue' },
+    { key: 'status',    header: 'Status' },
+    { key: 'owner',     header: 'Owner' },
+    { key: 'priority',  header: 'Priorité',             optional: true },
+    { key: 'team',      header: 'Équipe',               optional: true },
+    { key: 'updatedAt', header: 'Dernière mise à jour', optional: true },
   ],
   slices: [
-    { title: 'Status', columnKey: 'status', showAll: false },
+    { title: 'Status', columnKey: 'status' },
   ],
   rowClass: (row) => {
     if (row.status === 'Done')        return 'row-done';
     if (row.status === 'In Progress') return 'row-in-progress';
     return '';
   },
-  emptyStateLabel: 'Aucun résultat',
-  loadingStateLabel: 'Chargement...',
 };`;
 
   get tableDataCode(): string {
@@ -108,27 +103,24 @@ export class TableExempleComponent {
   ];
 
   private readonly dynamicColumns: TableColumnProvider<RepoRow>[] = [
-    { ...col<RepoRow>('priority', 'Priorité'), optional: true },
-    { ...col<RepoRow>('team', 'Équipe'), optional: true },
-    { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'), optional: true },
+    { key: 'priority', header: 'Priorité', optional: true },
+    { key: 'team', header: 'Équipe', optional: true },
+    { key: 'updatedAt', header: 'Dernière mise à jour', optional: true },
   ];
 
   tableConfig: TableProvider<RepoRow> = {
     title: 'Ticket board',
-    enableSearchBar: true,
-    enableViewButton: true,
-    enableColumnDragDrop: true,
-    allowColumnRemoval: true,
-    enablePagination: true,
-    pageSize: 5,
-    pageSizeOptions: [5, 10, 20],
+    search: { enabled: true },
+    view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
+    pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10, 20] },
+    labels: { empty: 'Aucun résultat', loading: 'Chargement...' },
     columns: [
-      col<RepoRow>('issue',  'Issue'),
-      col<RepoRow>('status', 'Status'),
-      col<RepoRow>('owner',  'Owner'),
-      { ...col<RepoRow>('priority',  'Priorité'), optional: true },
-      { ...col<RepoRow>('team',      'Équipe'), optional: true },
-      { ...col<RepoRow>('updatedAt', 'Dernière mise à jour'), optional: true },
+      { key: 'issue',     header: 'Issue' },
+      { key: 'status',    header: 'Status' },
+      { key: 'owner',     header: 'Owner' },
+      { key: 'priority',  header: 'Priorité',              optional: true },
+      { key: 'team',      header: 'Équipe',                optional: true },
+      { key: 'updatedAt', header: 'Dernière mise à jour',  optional: true },
     ],
     slices: [
       { title: 'Status', columnKey: 'status' },
@@ -138,8 +130,6 @@ export class TableExempleComponent {
       if (row.status === 'In Progress') return 'row-in-progress';
       return '';
     },
-    emptyStateLabel: 'Aucun résultat',
-    loadingStateLabel: 'Chargement...',
   };
 
   onRowSelected(row: RepoRow): void {

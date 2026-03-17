@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { TableComponent as JQueryTableComponent, TableProvider, col } from '@oneteme/jquery-table';
+import { TableComponent as JQueryTableComponent, TableProvider } from '@oneteme/jquery-table';
 
 interface Task {
   taskId: string;
@@ -43,19 +43,16 @@ export class TableComparatifComponent {
   readonly tableConfig: TableProvider<Task> = {
     title: 'Backlog de sprint',
     columns: [
-      col('taskId',    'ID',             false),
-      col('summary',   'Résumé',         true),
-      col('owner',     'Développeur',    true),
-      col('status',    'Statut',         true),
-      col('sprint',    'Sprint',         true),
-      col('updatedAt', 'Mis à jour le',  true),
+      { key: 'taskId',    header: 'ID' },
+      { key: 'summary',   header: 'Résumé' },
+      { key: 'owner',     header: 'Développeur' },
+      { key: 'status',    header: 'Statut' },
+      { key: 'sprint',    header: 'Sprint' },
+      { key: 'updatedAt', header: 'Mis à jour le' },
     ],
-    enableSearchBar:      true,
-    enablePagination:     true,
-    pageSize:             5,
-    pageSizeOptions:      [5, 10],
-    allowColumnRemoval:   true,
-    enableColumnDragDrop: true,
+    search: { enabled: true },
+    pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
+    view: { enableColumnRemoval: true, enableColumnDragDrop: true },
     slices: [
       { title: 'Statut',       columnKey: 'status' },
       { title: 'Sprint',       columnKey: 'sprint' },
@@ -96,19 +93,16 @@ applySearch() {
 readonly tableConfig: TableProvider<Task> = {
   title: 'Backlog de sprint',
   columns: [
-    col('taskId',    'ID',            false),
-    col('summary',   'Résumé',        true),
-    col('owner',     'Développeur',   true),
-    col('status',    'Statut',        true),
-    col('sprint',    'Sprint',        true),
-    col('updatedAt', 'Mis à jour le', true),
+    { key: 'taskId',    header: 'ID' },
+    { key: 'summary',   header: 'Résumé' },
+    { key: 'owner',     header: 'Développeur' },
+    { key: 'status',    header: 'Statut' },
+    { key: 'sprint',    header: 'Sprint' },
+    { key: 'updatedAt', header: 'Mis à jour le' },
   ],
-  enableSearchBar:      true,
-  enablePagination:     true,
-  pageSize:             5,
-  pageSizeOptions:      [5, 10],
-  allowColumnRemoval:   true,
-  enableColumnDragDrop: true,
+  search: { enabled: true },
+  pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
+  view: { enableColumnRemoval: true, enableColumnDragDrop: true },
   slices: [
     { title: 'Statut',      columnKey: 'status' },
     { title: 'Sprint',      columnKey: 'sprint' },
