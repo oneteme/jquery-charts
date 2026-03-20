@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { ChartProvider, ChartType, ViewConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ChartDirective } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils';
+import { ChartViewFacade } from './view/chart-view.facade';
 
 const STANDARD_CHARTS: ChartType[] = [ 'line', 'area', 'spline', 'areaspline', 'bar', 'column', 'scatter' ];
 const SIMPLE_CHARTS: ChartType[] = ['pie', 'donut', 'funnel', 'pyramid'];
@@ -21,7 +22,7 @@ const ALL_COMPATIBLE_CHARTS: ChartType[] = [ ...STANDARD_CHARTS, ...SIMPLE_CHART
   template: `<div
     chart-directive
     [type]="_type"
-    [config]="config"
+    [config]="_effectiveConfig"
     [data]="data"
     [possibleTypes]="possibleTypes"
     [debug]="debug"
@@ -45,7 +46,7 @@ const ALL_COMPATIBLE_CHARTS: ChartType[] = [ ...STANDARD_CHARTS, ...SIMPLE_CHART
     `,
   ],
 })
-export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
+export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements OnChanges, OnDestroy {
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
@@ -91,8 +92,26 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   @Input() debug: boolean = false;
   @Input() isLoading: boolean = false;
   @Input() enablePivot: boolean = false;
+  @Input() view?: ViewConfig;
+
+  _effectiveConfig!: ChartProvider<X, Y>;
+
+  readonly _viewFacade = new ChartViewFacade<X, Y>();
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['config'] || changes['view']) {
+      if (this.config) {
+        this._viewFacade.update(this.view ?? {}, this.config);
+      }
+      this._effectiveConfig = this.config ? this._viewFacade.getEffectiveProvider() : this.config;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this._viewFacade.destroy();
+  }
 
   change(event: ChartCustomEvent) {
     const charts = this.possibleTypes || this._charts[this._type]?.possibleType;

@@ -9,10 +9,12 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { Subject, take, takeUntil } from 'rxjs';
-import { TableColumnProvider, TableProvider } from '../jquery-table.model';
+import { TableColumnProvider, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
+import { SliceConfig } from './slice-panel/slice-panel.model';
 import { SlicePanelComponent } from './slice-panel/slice-panel.component';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
+import { ViewFacade } from './view/view.facade';
 
 @Component({
   standalone: true,
@@ -30,6 +32,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   @Input() data?: T[];
   @Input() displayedColumns?: string[];
   @Input() columnsConfig?: TableColumnProvider<T>[];
+
+  /**
+   * Mode HTML : active et configure le panneau View indépendamment du `[config]`.
+   * Prend le dessus sur `config.view` si défini.
+   * Exemple : `<jquery-table [view]="{ enabled: true }">`
+   */
+  @Input() view?: TableViewConfig;
 
   @Input() columnLabels?: Record<string, string>;
   @Input() isLoading = false;
@@ -58,6 +67,14 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   renderedColumns: string[] = [];
   tableDataSource = new MatTableDataSource<any>([]);
+
+  /** Facade View : état et actions centralisés (Champs / Group by / Slice by) */
+  readonly _view = new ViewFacade<T>();
+
+  /**
+   * Snapshot stable synchronisé depuis _view.fields.activeColumns dans refreshViewModel().
+   * Propriété (non getter) pour qu'Angular puisse la suivre sans NG0100.
+   */
   activeColumns: TableColumnProvider<T>[] = [];
 
   activeSliceFilter: (row: T) => boolean = () => true;
@@ -67,14 +84,20 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   _sliceColumns: TableColumnProvider<T>[] = [];
   _sliceData: T[] = [];
   _sliceShowToggle = true;
-  _staticSlicesForMenu: Array<{ key: string; title: string; icon?: string }> = [];
-  _activeDynamicSliceColumns: TableColumnProvider<T>[] = [];
-  _availableColumnsForDynamicSlice: TableColumnProvider<T>[] = [];
-  _allDynamicSliceColumns: TableColumnProvider<T>[] = [];
-  _activeSliceByLabel = 'Aucun';
+  /** Snapshot stable de la visibilité du panneau slice — jamais calculé depuis @ViewChild */
+  _showSlicePanel = false;
+  /** Snapshot stable de l'état collapsed du panneau slice, mis à jour via (collapsedChange) */
+  _slicePanelCollapsed = false;
+
+  // Délégués vers _view (conservés pour compatibilité template sans refactoring HTML)
+  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> { return this._view.staticSlicesForMenu; }
+  get _activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.activeDynamicColumns; }
+  get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._view.sliceBy.availableForDynamic; }
+  get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.allDynamicColumns; }
+  get _activeSliceByLabel(): string { return this._view.sliceBy.activeLabel; }
 
   searchQuery = '';
-  activeGroupByKey: string | null = null;
+  get activeGroupByKey(): string | null { return this._view.groupBy.activeKey; }
   _matSortActive = '';
   _matSortDirection: 'asc' | 'desc' | '' = '';
   private _collapsedGroups = new Set<string>();
@@ -104,7 +127,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   draggedColumnKey: string | null = null;
   dragOverColumnKey: string | null = null;
 
-  private userCustomizedColumns = false;
+  private userCustomizedColumns: boolean = false; // conservé par rétrocompat — géré via _view.fields.userCustomized
   private resolvedConfig: TableProvider<T> = { columns: [] };
   private _columnMap: Map<string, TableColumnProvider<T>> = new Map();
   private _resolvedData: T[] = [];
@@ -127,6 +150,10 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   private _groupCacheOrder: string[] = [];
   private _groupCacheMap: Map<string, T[]> = new Map();
   private _pendingRender: ReturnType<typeof setTimeout> | null = null;
+
+  // Snapshot stable des clés de slices statiques cachées (évite lecture @ViewChild en binding)
+  private _staticSliceHiddenKeys = new Set<string>();
+  private _lastSlicesConfigRef: any = null;
 
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -162,6 +189,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }
     this._destroy$.next();
     this._destroy$.complete();
+    this._view.destroy();
   }
 
   private _measureHeaderHeight(): void {
@@ -189,51 +217,30 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get showSearchBar(): boolean { return this.resolvedConfig.search?.enabled === true; }
-  get showViewButton(): boolean { return this.resolvedConfig.view?.enabled === true; }
+  get showViewButton(): boolean { return this._view.enabled; }
   get showToolbar(): boolean { return this.showSearchBar || this.showViewButton; }
-  get showFields(): boolean { return this.showViewButton; }
-  get showGroupBySection(): boolean { return this.showViewButton && this.groupByColumns.length > 0; }
+  get showFields(): boolean { return this._view.showFields; }
+  get showGroupBySection(): boolean { return this._view.showGroupBySection; }
 
   get filteredRowCount(): number {
     return this.activeGroupByKey ? this._totalFilteredCount : this._allFilteredRows.length;
   }
 
-  get activeGroupByLabel(): string {
-    if (!this.activeGroupByKey) return 'Aucun';
-    const col = this.groupByColumns.find((c) => c.key === this.activeGroupByKey);
-    return col?.header || this.activeGroupByKey;
-  }
+  get activeGroupByLabel(): string { return this._view.activeGroupByLabel; }
 
-  get totalColumnCount(): number {
-    return new Set((this.resolvedConfig.columns || []).map((c) => c.key)).size;
-  }
+  get totalColumnCount(): number { return this._view.totalColumnCount; }
 
-  get activeSliceByLabel(): string {
-    return this._activeSliceByLabel;
-  }
+  get activeSliceByLabel(): string { return this._view.sliceBy.activeLabel; }
 
-  get activeDynamicSliceColumns(): TableColumnProvider<T>[] {
-    return this._activeDynamicSliceColumns;
-  }
+  get activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.activeDynamicColumns; }
 
   removeDynamicSliceByKey(key: string): void {
     this.slicePanelRef?.removeDynamicSliceByKey(key);
   }
 
-  get groupByColumns(): TableColumnProvider<T>[] {
-    const all = this.resolvedConfig.columns || [];
-    const seen = new Set<string>();
-    return all.filter((c) => {
-      if (c.groupable === false || seen.has(c.key)) return false;
-      if (!c.header && c.groupable !== true) return false;
-      seen.add(c.key);
-      return true;
-    });
-  }
+  get groupByColumns(): TableColumnProvider<T>[] { return this._view.groupByColumns; }
 
-  colLabel(col: { key: string; header?: string }): string {
-    return col.header || humanizeKey(col.key);
-  }
+  colLabel(col: { key: string; header?: string }): string { return this._view.colLabel(col); }
 
   // ── Actions utilisateur ────────────────────────────────────────────────────
 
@@ -244,7 +251,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   onGroupByChange(key: string | null): void {
-    this.activeGroupByKey = key;
+    this._view.setGroupBy(key);
     this._defaultGroupCollapsed = key !== null;
     this._collapsedGroups.clear();
     this._groupPages.clear();
@@ -410,15 +417,15 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   // ── Colonnes ──────────────────────────────────────────────────────────────
 
   get hasAddableColumns(): boolean {
-    return this.menuBaseColumns.length > 0 || this.menuOptionalColumns.length > 0;
+    return this._view.menuBaseColumns.length > 0 || this._view.menuOptionalColumns.length > 0;
   }
 
   get menuBaseColumns(): TableColumnProvider<T>[] {
-    return this.uniqueColumnsByKey((this.resolvedConfig.columns || []).filter((c) => !c.optional));
+    return this._view.menuBaseColumns;
   }
 
   get menuOptionalColumns(): TableColumnProvider<T>[] {
-    return this.uniqueColumnsByKey((this.resolvedConfig.columns || []).filter((c) => c.optional));
+    return this._view.menuOptionalColumns;
   }
 
   get availableColumnsToAdd(): TableColumnProvider<T>[] {
@@ -427,7 +434,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get allowColumnRemoval(): boolean {
-    return this.resolvedConfig.view?.enableColumnRemoval !== false;
+    return this._view.allowColumnRemoval;
   }
 
   // ── Slices ────────────────────────────────────────────────────────────────
@@ -437,27 +444,59 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get showSlicePanel(): boolean {
-    return this.slicePanelRef?.showPanel ?? (this.hasSliceConfig && this._resolvedData.length > 0);
+    return this._showSlicePanel;
+  }
+
+  onSlicePanelCollapsedChange(collapsed: boolean): void {
+    this._slicePanelCollapsed = collapsed;
+    this._cdr.markForCheck();
+  }
+
+  private _recomputeShowSlicePanel(): void {
+    const hasCfg = this._sliceConfigs.length > 0 || this._view.sliceBy.activeDynamicColumns.length > 0;
+    this._showSlicePanel = hasCfg && this._resolvedData.length > 0;
   }
 
   get showAddSliceButton(): boolean {
-    return this.showViewButton && ((this.resolvedConfig.slices?.length ?? 0) > 0 || this._allDynamicSliceColumns.length > 0);
+    return this._view.showSliceBySection;
   }
 
   get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
-    return this._staticSlicesForMenu;
+    const result = this._view.staticSlicesForMenu;
+    console.log('[TABLE staticSlicesForMenu]', result.map(s => s.key + '(' + s.title + ')'));
+    return result;
   }
 
   get availableColumnsForDynamicSlice(): TableColumnProvider<T>[] {
-    return this._availableColumnsForDynamicSlice;
+    return this._view.sliceBy.availableForDynamic;
   }
 
   isStaticSliceVisible(columnKey: string): boolean {
-    return this.slicePanelRef?.isStaticSliceVisible(columnKey) ?? true;
+    return !this._staticSliceHiddenKeys.has(columnKey);
   }
 
   toggleStaticSlice(columnKey: string): void {
-    this.slicePanelRef?.toggleStaticSlice(columnKey);
+    const before = [...this._staticSliceHiddenKeys];
+    const next = new Set(this._staticSliceHiddenKeys);
+    if (next.has(columnKey)) next.delete(columnKey);
+    else next.add(columnKey);
+    this._staticSliceHiddenKeys = next;
+    this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+    this._sliceConfigs = this._computeSliceConfigs();
+    // Si une slice vient d'être cachée, réinitialise le filtre actif pour éviter
+    // un filtre orphelin (la slice n'est plus visible mais son filtre resterait actif)
+    if (next.has(columnKey)) {
+      this.activeSliceFilter = () => true;
+    }
+    this._recomputeShowSlicePanel();
+    console.log('[TABLE toggleStaticSlice]', columnKey,
+      '| hiddenKeys avant:', before,
+      '| hiddenKeys après:', [...this._staticSliceHiddenKeys],
+      '| _sliceConfigs:', this._sliceConfigs.map(s => s.title),
+      '| _showSlicePanel:', this._showSlicePanel,
+      '| _resolvedData.length:', this._resolvedData.length);
+    this._scheduleRender();
+    this._cdr.markForCheck();
   }
 
   addDynamicSlice(column: TableColumnProvider<T>): void {
@@ -468,14 +507,17 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get allDynamicSliceColumns(): TableColumnProvider<T>[] {
-    return this._allDynamicSliceColumns;
+    const result = this._allDynamicSliceColumns;
+    console.log('[TABLE allDynamicSliceColumns]', result.map(c => c.key));
+    return result;
   }
 
   isDynamicSliceActive(key: string): boolean {
-    return this._activeDynamicSliceColumns.some(c => c.key === key);
+    return this._view.isDynamicSliceActive(key);
   }
 
   toggleDynamicSlice(col: TableColumnProvider<T>): void {
+    console.log('[TABLE toggleDynamicSlice]', col.key);
     if (this.isDynamicSliceActive(col.key)) {
       this.removeDynamicSliceByKey(col.key);
     } else {
@@ -491,22 +533,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   onDynamicSliceKeysChange(keys: string[]): void {
-    const allCols = this.resolvedConfig.columns ?? [];
-    const staticKeys = new Set(
-      (this.resolvedConfig.slices ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
-    );
-    const dynamicKeySet = new Set(keys);
-    const existingKeys = new Set([...staticKeys, ...dynamicKeySet]);
-    this._activeDynamicSliceColumns = keys
-      .map(k => allCols.find(c => c.key === k))
-      .filter((c): c is TableColumnProvider<T> => !!c);
-    const seen = new Set<string>();
-    this._availableColumnsForDynamicSlice = allCols.filter(c => {
-      if (c.sliceable === false || existingKeys.has(c.key) || seen.has(c.key)) return false;
-      seen.add(c.key);
-      return true;
-    });
-    this._computeSliceLabel();
+    this._view.onDynamicSliceKeysChange(keys);
+    this._recomputeShowSlicePanel();
     this._cdr.markForCheck();
   }
 
@@ -519,11 +547,12 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get effectiveIsLoading(): boolean {
-    return this.isLoading || this._pendingRender !== null;
+    return this.isLoading;
   }
 
   get isEmpty(): boolean {
-    return !this.effectiveIsLoading && this._allFilteredRows.length === 0;
+    // _pendingRender : le rendu interne n'est pas encore terminé → pas de message vide prématuré
+    return !this.isLoading && this._pendingRender === null && this._allFilteredRows.length === 0;
   }
 
   get showPagination(): boolean {
@@ -532,7 +561,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get isColumnDragDropEnabled(): boolean {
-    return this.resolvedConfig.view?.enableColumnDragDrop === true;
+    return this._view.isColumnDragDropEnabled;
   }
 
   get totalRows(): number {
@@ -544,24 +573,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   // ── Gestion des colonnes ─────────────────────────────────────────────────
 
   onAddColumn(column: TableColumnProvider<T>): void {
-    this.userCustomizedColumns = true;
-    const configCols = this.resolvedConfig.columns ?? [];
-    const configIndex = configCols.findIndex(c => c.key === column.key);
-    if (configIndex === -1) {
-      this.activeColumns = [...this.activeColumns, column];
-    } else {
-      const insertBefore = this.activeColumns.findIndex(c => {
-        const ci = configCols.findIndex(cc => cc.key === c.key);
-        return ci !== -1 && ci > configIndex;
-      });
-      if (insertBefore === -1) {
-        this.activeColumns = [...this.activeColumns, column];
-      } else {
-        const copy = [...this.activeColumns];
-        copy.splice(insertBefore, 0, column);
-        this.activeColumns = copy;
-      }
-    }
+    this._view.addColumn(column);
     this._preservePageIndex = this.paginator?.pageIndex ?? null;
     this.refreshViewModel();
 
@@ -574,7 +586,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   onColumnVisibilityChange(column: TableColumnProvider<T>, checked: boolean): void {
-    const isVisible = this.isColumnVisible(column.key);
+    const isVisible = this._view.isColumnVisible(column.key);
 
     if (checked && !isVisible) {
       this.onAddColumn(column);
@@ -582,16 +594,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }
 
     if (!checked && isVisible) {
-      if (!column.optional && !this.allowColumnRemoval) {
-        return;
-      }
-
-      if (this.activeColumns.length <= 1) {
-        return;
-      }
-
-      this.userCustomizedColumns = true;
-      this.activeColumns = this.activeColumns.filter((item) => item.key !== column.key);
+      const removed = this._view.removeColumn(column.key);
+      if (!removed) return;
       this._preservePageIndex = this.paginator?.pageIndex ?? null;
       this.refreshViewModel();
       this.columnRemoved.emit(column);
@@ -599,23 +603,15 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   isColumnVisible(columnKey: string): boolean {
-    return this.activeColumns.some((column) => column.key === columnKey);
+    return this.activeColumns.some(c => c.key === columnKey);
   }
 
   onRemoveColumn(columnKey: string, event?: Event): void {
     event?.stopPropagation();
-    if (!this.allowColumnRemoval) {
-      return;
-    }
-
-    const column = this.activeColumns.find((item) => item.key === columnKey);
-    if (!column || !this.canRemoveColumn(column)) {
-      return;
-    }
-
-    this.userCustomizedColumns = true;
-    this.activeColumns = this.activeColumns.filter((item) => item.key !== columnKey);
-
+    const column = this.activeColumns.find(item => item.key === columnKey);
+    if (!column) return;
+    const removed = this._view.removeColumn(columnKey);
+    if (!removed) return;
     this.refreshViewModel();
     this.columnRemoved.emit(column);
   }
@@ -682,19 +678,12 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
     event.preventDefault();
 
-    const previousIndex = this.activeColumns.findIndex((column) => column.key === this.draggedColumnKey);
-    const currentIndex = this.activeColumns.findIndex((column) => column.key === targetColumnKey);
-
-    if (previousIndex === -1 || currentIndex === -1 || previousIndex === currentIndex) {
+    const moved = this._view.reorderColumns(this.draggedColumnKey, targetColumnKey);
+    if (!moved) {
       this.onHeaderDragEnd();
       return;
     }
 
-    this.userCustomizedColumns = true;
-    const reordered = [...this.activeColumns];
-    const [moved] = reordered.splice(previousIndex, 1);
-    reordered.splice(currentIndex, 0, moved);
-    this.activeColumns = reordered;
     this.refreshViewModel();
     this.onHeaderDragEnd();
   }
@@ -710,7 +699,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   canRemoveColumn(column: TableColumnProvider<T>): boolean {
     return (
-      this.allowColumnRemoval &&
+      this._view.allowColumnRemoval &&
       column.removable !== false &&
       this.activeColumns.length > 1
     );
@@ -733,18 +722,17 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this._resolvedData = this.resolveData();
     this.resolvedConfig = this.buildEffectiveConfig();
     this._columnMap = new Map((this.resolvedConfig.columns || []).map(c => [c.key, c]));
-    const defaultColumns = (this.resolvedConfig.columns || []).filter(c => !c.optional);
 
-    if (!this.userCustomizedColumns || this.activeColumns.length === 0) {
-      this.activeColumns = [...defaultColumns];
-    } else {
-      const allowedKeys = new Set(
-        (this.resolvedConfig.columns || []).map((column) => column.key)
-      );
-      this.activeColumns = this.activeColumns.filter((column) => allowedKeys.has(column.key));
-    }
+    // Délègue à la facade : mise à jour de l'état View (colonnes, groupBy meta, sliceBy meta)
+    this._view.update({
+      config: this.resolvedConfig.view,
+      columns: this.resolvedConfig.columns ?? [],
+      sliceConfigs: this.resolvedConfig.slices ?? [],
+    });
+    // Synchronise la propriété stable (évite NG0100 — la facade est source de vérité)
+    this.activeColumns = this._view.fields.activeColumns;
 
-    this.renderedColumns = this.activeColumns.map((column) => column.key);
+    this.renderedColumns = this.activeColumns.map(c => c.key);
 
     this.pageSize = this.paginator?.pageSize || this.resolvePageSize();
     this.pageSizeOptions = this.resolvePageSizeOptions();
@@ -756,61 +744,42 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this.attachPaginator();
     this.attachSort();
 
-    // Mise à jour des propriétés stables pour les bindings du template
-    this._sliceConfigs = this.resolvedConfig.slices ?? [];
+    // Snapshot stable des slices cachées (évite NG0100 via lecure @ViewChild dans isStaticSliceVisible)
+    const currentSlicesRef = this.resolvedConfig.slices;
+    if (currentSlicesRef !== this._lastSlicesConfigRef) {
+      this._lastSlicesConfigRef = currentSlicesRef;
+      this._staticSliceHiddenKeys = new Set(
+        (currentSlicesRef ?? []).filter(s => s.hidden && s.columnKey).map(s => s.columnKey!)
+      );
+      // Notifier la facade pour que le label reflète uniquement les slices visibles
+      this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+    }
+
+    // Propriétés stables pour les bindings du template
+    // On recalcule _sliceConfigs en reflétant l'état courant des slices cachées,
+    // pour que SlicePanelComponent.ngOnInit reçoive la bonne valeur de `hidden`
+    // même quand le composant est créé pour la 1ère fois après un toggle.
+    this._sliceConfigs = this._computeSliceConfigs();
     this._sliceColumns = this.resolvedConfig.columns ?? [];
     this._sliceData = this._resolvedData;
     this._sliceShowToggle = this.resolvedConfig.enableSliceToggle !== false;
-    this._staticSlicesForMenu = (this.resolvedConfig.slices ?? [])
-      .filter(s => !!s.columnKey)
-      .map(s => {
-        const colIcon = (this.resolvedConfig.columns ?? []).find(c => c.key === s.columnKey)?.icon;
-        return { key: s.columnKey!, title: s.title || humanizeKey(s.columnKey!), icon: s.icon ?? colIcon };
-      });
+    this._recomputeShowSlicePanel();
     if (!this._activeSort.active && this.resolvedConfig.defaultSort) {
       this._matSortActive = this.resolvedConfig.defaultSort.active;
       this._matSortDirection = this.resolvedConfig.defaultSort.direction;
     }
-    const staticKeys = new Set(
-      (this.resolvedConfig.slices ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
-    );
-    const activeDynKeys = new Set(this._activeDynamicSliceColumns.map(c => c.key));
-    const seen = new Set<string>();
-    this._availableColumnsForDynamicSlice = (this.resolvedConfig.columns ?? []).filter(c => {
-      if (c.sliceable === false || staticKeys.has(c.key) || activeDynKeys.has(c.key) || seen.has(c.key)) return false;
-      if (!c.header && c.sliceable !== true) return false;
-      seen.add(c.key);
-      return true;
-    });
-    const seen2 = new Set<string>();
-    this._allDynamicSliceColumns = (this.resolvedConfig.columns ?? []).filter(c => {
-      if (c.sliceable === false || staticKeys.has(c.key) || seen2.has(c.key)) return false;
-      if (!c.header && c.sliceable !== true) return false;
-      seen2.add(c.key);
-      return true;
-    });
-    this._computeSliceLabel();
 
     this._scheduleRender();
   }
 
-  private _computeSliceLabel(): void {
-    const visibleStaticCount = this.slicePanelRef?.staticSliceCount
-      ?? this._sliceConfigs.length;
-    const total = visibleStaticCount + this._activeDynamicSliceColumns.length;
-    if (total === 0) { this._activeSliceByLabel = 'Aucun'; return; }
-    if (total === 1) {
-      if (visibleStaticCount === 1) {
-        const first = this._sliceConfigs.find(
-          s => !s.columnKey || this.isStaticSliceVisible(s.columnKey)
-        );
-        this._activeSliceByLabel = first?.title || first?.columnKey || '1';
-        return;
-      }
-      this._activeSliceByLabel = this._activeDynamicSliceColumns[0]?.header || '1';
-      return;
-    }
-    this._activeSliceByLabel = `${total} actifs`;
+  /** Retourne uniquement les slices visibles (non cachées par _staticSliceHiddenKeys).
+   * Le SlicePanelComponent affiche tout ce qu'il reçoit — c'est ici que se fait le filtrage. */
+  private _computeSliceConfigs(): SliceConfig<T>[] {
+    const result = (this.resolvedConfig.slices ?? []).filter(
+      s => !s.columnKey || !this._staticSliceHiddenKeys.has(s.columnKey)
+    );
+    console.log('[TABLE _computeSliceConfigs] resolvedConfig.slices:', (this.resolvedConfig.slices ?? []).map(s => s.title), '| hidden:', [...this._staticSliceHiddenKeys], '| résultat:', result.map(s => s.title));
+    return result;
   }
 
   private _scheduleRender(): void {
@@ -878,9 +847,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this.columnsConfig ||
       this.resolveColumnsFromCompat(rows);
 
+    // Mode HTML : [view] prend le dessus sur config.view si fourni (Phase 3).
+    const view = this.view ?? config.view;
+
     return {
       ...config,
       columns,
+      view,
       slices: config.slices || [],
       enableSliceToggle: config.enableSliceToggle ?? true,
     };

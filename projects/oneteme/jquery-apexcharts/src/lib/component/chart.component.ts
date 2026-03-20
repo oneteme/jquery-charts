@@ -1,11 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
+import { ChartProvider, ChartType, ViewConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { BarChartDirective } from '../directive/bar-chart.directive';
 import { LineChartDirective } from '../directive/line-chart.directive';
 import { PieChartDirective } from '../directive/pie-chart.directive';
 import { RangeChartDirective } from '../directive/range-chart.directive';
 import { TreemapChartDirective } from '../directive/treemap-chart.directive';
+import { ChartViewFacade } from './view/chart-view.facade';
 
 @Component({
   standalone: true,
@@ -13,7 +14,7 @@ import { TreemapChartDirective } from '../directive/treemap-chart.directive';
   selector: 'chart',
   templateUrl: './chart.component.html',
 })
-export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
+export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements OnChanges, OnDestroy {
   protected _charts: {
     [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
@@ -44,6 +45,24 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   @Input({ required: true }) data: any[];
   @Input() isLoading: boolean;
   @Input() debug: boolean;
+  @Input() view?: ViewConfig;
+
+  _effectiveConfig!: ChartProvider<X, Y>;
+
+  readonly _viewFacade = new ChartViewFacade<X, Y>();
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['config'] || changes['view']) {
+      if (this.config) {
+        this._viewFacade.update(this.view ?? {}, this.config);
+      }
+      this._effectiveConfig = this.config ? this._viewFacade.getEffectiveProvider() : this.config;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this._viewFacade.destroy();
+  }
 
   change(event: string) {
     let charts = this._charts[this._type].possibleType;
