@@ -13,7 +13,7 @@
     "@angular/core": ">=16.1.0",
     "@angular/material": "^16.1.0",
     "@angular/cdk": "^16.1.0",
-    "@oneteme/jquery-core": "^0.0.26"
+    "@oneteme/jquery-core": "^0.0.27"
   },
   "dependencies": {
     "tslib": "^2.3.0"
