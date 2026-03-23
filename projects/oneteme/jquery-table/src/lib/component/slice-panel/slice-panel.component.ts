@@ -59,9 +59,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']) {
-      if (changes['sliceConfigs']) {
-        console.log('[PANEL ngOnChanges] sliceConfigs reçu:', this.sliceConfigs?.map(s => s.title));
-      }
       this._refreshDynamicSlices();
       this._rebuildCache();
       this._cdr.markForCheck();

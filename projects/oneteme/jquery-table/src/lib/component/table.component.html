@@ -66,7 +66,7 @@
             <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
               <button type="button" class="view-menu-item" *ngFor="let column of menuBaseColumns"
                 [disabled]="!column.optional && !allowColumnRemoval"
-                (click)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
+                (mousedown)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
                 <span class="view-menu-check">{{ isColumnVisible(column.key) ? '✓' : '' }}</span>
                 <mat-icon *ngIf="column.icon" class="view-menu-col-icon" fontSet="material-icons-outlined">{{ column.icon }}</mat-icon>
                 {{ colLabel(column) }}
@@ -74,7 +74,7 @@
               <ng-container *ngIf="menuOptionalColumns.length > 0">
                 <button type="button" class="view-menu-item" *ngFor="let column of menuOptionalColumns"
                   [disabled]="(isColumnVisible(column.key) && visibleColumns.length === 1) || getLazyColumnStatus(column.key) === 'loading'"
-                  (click)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
+                  (mousedown)="onColumnVisibilityChange(column, !isColumnVisible(column.key))">
                   <span class="view-menu-check">{{ isColumnVisible(column.key) ? '✓' : '' }}</span>
                   <mat-icon *ngIf="column.icon" class="view-menu-col-icon" fontSet="material-icons-outlined">{{ column.icon }}</mat-icon>
                   {{ colLabel(column) }}
@@ -89,7 +89,7 @@
             <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
               <button type="button" class="view-menu-item" *ngFor="let col of groupByColumns"
                 [class.active]="activeGroupByKey === col.key"
-                (click)="onGroupByChange(activeGroupByKey === col.key ? null : col.key)">
+                (mousedown)="onGroupByChange(activeGroupByKey === col.key ? null : col.key)">
                 <span class="view-menu-check">{{ activeGroupByKey === col.key ? '✓' : '' }}</span>
                 <mat-icon *ngIf="col.icon" class="view-menu-col-icon" fontSet="material-icons-outlined">{{ col.icon }}</mat-icon>
                 {{ colLabel(col) }}
@@ -100,7 +100,7 @@
           <mat-menu #sliceBySubMenu="matMenu" [panelClass]="'view-submenu-panel'">
             <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
               <button type="button" class="view-menu-item" *ngFor="let s of staticSlicesForMenu"
-                (click)="toggleStaticSlice(s.key)">
+                (mousedown)="toggleStaticSlice(s.key)">
                 <span class="view-menu-check">{{ isStaticSliceVisible(s.key) ? '✓' : '' }}</span>
                 <mat-icon *ngIf="s.icon" class="view-menu-col-icon" fontSet="material-icons-outlined">{{ s.icon }}</mat-icon>
                 {{ s.title }}
@@ -108,7 +108,7 @@
               <ng-container *ngIf="allDynamicSliceColumns.length > 0">
                 <button type="button" class="view-menu-item" *ngFor="let col of allDynamicSliceColumns"
                   [class.active]="isDynamicSliceActive(col.key)"
-                  (click)="toggleDynamicSlice(col)">
+                  (mousedown)="toggleDynamicSlice(col)">
                   <span class="view-menu-check">{{ isDynamicSliceActive(col.key) ? '✓' : '' }}</span>
                   <mat-icon *ngIf="col.icon" class="view-menu-col-icon" fontSet="material-icons-outlined">{{ col.icon }}</mat-icon>
                   {{ colLabel(col) }}

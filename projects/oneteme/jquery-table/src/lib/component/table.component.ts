@@ -151,9 +151,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   private _groupCacheMap: Map<string, T[]> = new Map();
   private _pendingRender: ReturnType<typeof setTimeout> | null = null;
 
-  // Snapshot stable des clés de slices statiques cachées (évite lecture @ViewChild en binding)
   private _staticSliceHiddenKeys = new Set<string>();
-  private _lastSlicesConfigRef: any = null;
+  private _configHiddenKeys = new Set<string>();
 
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -462,9 +461,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
-    const result = this._view.staticSlicesForMenu;
-    console.log('[TABLE staticSlicesForMenu]', result.map(s => s.key + '(' + s.title + ')'));
-    return result;
+    return this._view.staticSlicesForMenu;
   }
 
   get availableColumnsForDynamicSlice(): TableColumnProvider<T>[] {
@@ -476,7 +473,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   toggleStaticSlice(columnKey: string): void {
-    const before = [...this._staticSliceHiddenKeys];
     const next = new Set(this._staticSliceHiddenKeys);
     if (next.has(columnKey)) next.delete(columnKey);
     else next.add(columnKey);
@@ -489,12 +485,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this.activeSliceFilter = () => true;
     }
     this._recomputeShowSlicePanel();
-    console.log('[TABLE toggleStaticSlice]', columnKey,
-      '| hiddenKeys avant:', before,
-      '| hiddenKeys après:', [...this._staticSliceHiddenKeys],
-      '| _sliceConfigs:', this._sliceConfigs.map(s => s.title),
-      '| _showSlicePanel:', this._showSlicePanel,
-      '| _resolvedData.length:', this._resolvedData.length);
     this._scheduleRender();
     this._cdr.markForCheck();
   }
@@ -507,9 +497,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get allDynamicSliceColumns(): TableColumnProvider<T>[] {
-    const result = this._allDynamicSliceColumns;
-    console.log('[TABLE allDynamicSliceColumns]', result.map(c => c.key));
-    return result;
+    return this._allDynamicSliceColumns;
   }
 
   isDynamicSliceActive(key: string): boolean {
@@ -517,7 +505,6 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   toggleDynamicSlice(col: TableColumnProvider<T>): void {
-    console.log('[TABLE toggleDynamicSlice]', col.key);
     if (this.isDynamicSliceActive(col.key)) {
       this.removeDynamicSliceByKey(col.key);
     } else {
@@ -744,14 +731,14 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this.attachPaginator();
     this.attachSort();
 
-    // Snapshot stable des slices cachées (évite NG0100 via lecure @ViewChild dans isStaticSliceVisible)
-    const currentSlicesRef = this.resolvedConfig.slices;
-    if (currentSlicesRef !== this._lastSlicesConfigRef) {
-      this._lastSlicesConfigRef = currentSlicesRef;
-      this._staticSliceHiddenKeys = new Set(
-        (currentSlicesRef ?? []).filter(s => s.hidden && s.columnKey).map(s => s.columnKey!)
-      );
-      // Notifier la facade pour que le label reflète uniquement les slices visibles
+    // Réinitialise _staticSliceHiddenKeys seulement si les clés hidden de la config ont vraiment changé.
+    // buildEffectiveConfig() retourne un nouvel objet à chaque appel → comparaison par contenu obligatoire.
+    const newConfigHidden = new Set<string>(
+      (this.resolvedConfig.slices ?? []).filter(s => s.hidden && s.columnKey).map(s => s.columnKey!)
+    );
+    if (!TableComponent._setsEqual(newConfigHidden, this._configHiddenKeys)) {
+      this._configHiddenKeys = newConfigHidden;
+      this._staticSliceHiddenKeys = new Set(newConfigHidden);
       this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
     }
 
@@ -775,11 +762,15 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   /** Retourne uniquement les slices visibles (non cachées par _staticSliceHiddenKeys).
    * Le SlicePanelComponent affiche tout ce qu'il reçoit — c'est ici que se fait le filtrage. */
   private _computeSliceConfigs(): SliceConfig<T>[] {
-    const result = (this.resolvedConfig.slices ?? []).filter(
+    return (this.resolvedConfig.slices ?? []).filter(
       s => !s.columnKey || !this._staticSliceHiddenKeys.has(s.columnKey)
     );
-    console.log('[TABLE _computeSliceConfigs] resolvedConfig.slices:', (this.resolvedConfig.slices ?? []).map(s => s.title), '| hidden:', [...this._staticSliceHiddenKeys], '| résultat:', result.map(s => s.title));
-    return result;
+  }
+
+  private static _setsEqual(a: Set<string>, b: Set<string>): boolean {
+    if (a.size !== b.size) return false;
+    for (const v of a) if (!b.has(v)) return false;
+    return true;
   }
 
   private _scheduleRender(): void {
