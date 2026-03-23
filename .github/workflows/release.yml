@@ -11,6 +11,9 @@ on:
       highcharts:
         type: boolean
         description: publish jquery-highcharts library
+      table:
+        type: boolean
+        description: publish jquery-table library
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -52,6 +55,12 @@ jobs:
       if: ${{ inputs.highcharts }}
       with:
         project: 'jquery-highcharts'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+      if: ${{ inputs.table }}
+      with:
+        project: 'jquery-table'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
