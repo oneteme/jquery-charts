@@ -7,6 +7,7 @@ import { TableExempleComponent } from './pages/table/table.component';
 import { TableTestDocumentationComponent } from './pages/table/documentation/table-documentation.component';
 import { TableComparatifComponent } from './pages/table/comparatif/comparatif.component';
 import { SliceChartComponent } from './pages/table/slice-chart/slice-chart.component';
+import { EChartsComponent } from './pages/echarts/echarts.component';
 
 const routes: Routes = [
   { path: '', component: HomeComponent, pathMatch: 'full' },
@@ -18,6 +19,7 @@ const routes: Routes = [
   { path: 'table/comparatif', component: TableComparatifComponent },
   { path: 'table/slice-chart', component: SliceChartComponent },
   { path: 'table/documentation', component: TableTestDocumentationComponent },
+  { path: 'echarts', component: EChartsComponent },
   {
     path: 'documentation',
     loadChildren: () =>

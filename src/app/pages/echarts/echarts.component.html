@@ -1,0 +1,44 @@
+<div class="echarts-page">
+  <header class="page-header">
+    <h1>ECharts — Exemples de graphiques</h1>
+    <p class="subtitle">
+      Démonstration de <code>&#64;oneteme/jquery-echarts</code> — même interface que
+      <code>jquery-highcharts</code> et <code>jquery-apexcharts</code>.
+    </p>
+    <p class="note">
+      Survolez un graphique et cliquez sur
+      <img src="assets/icons/code.svg" alt="code" class="inline-icon" />
+      pour voir le code correspondant.
+    </p>
+  </header>
+
+  <div class="charts-grid">
+    <div
+      *ngFor="let section of sections"
+      class="chart-wrapper"
+      [id]="section.id"
+    >
+      <div class="chart-label">{{ section.label }}</div>
+
+      <chart
+        class="chart-component"
+        [type]="section.type"
+        [config]="examples[section.exampleKey].config"
+        [data]="examples[section.exampleKey].data"
+      ></chart>
+
+      <button
+        class="code-toggle"
+        (click)="toggleCode(section.id, $event)"
+        aria-label="Voir le code"
+      >
+        <img src="assets/icons/code.svg" class="code-icon" alt="code" />
+        <span class="tooltip">Voir le code</span>
+      </button>
+
+      <div class="code-block" [class.open]="isCodeOpen(section.id)">
+        <pre><code [innerHTML]="getHighlightedCode(section.type, section.exampleKey)"></code></pre>
+      </div>
+    </div>
+  </div>
+</div>

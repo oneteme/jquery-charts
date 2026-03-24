@@ -6,6 +6,9 @@
       "@oneteme/jquery-apexcharts": [
         "dist/oneteme/jquery-apexcharts"
       ],
+      "@oneteme/jquery-echarts": [
+        "dist/oneteme/jquery-echarts"
+      ],
       "@oneteme/jquery-core": [
         "dist/oneteme/jquery-core"
       ],
@@ -14,6 +17,9 @@
       ],
       "@oneteme/jquery-table": [
         "dist/oneteme/jquery-table"
+      ],
+      "@oneteme/jquery-echarts": [
+        "dist/oneteme/jquery-echarts"
       ],
     },
     "baseUrl": "./",

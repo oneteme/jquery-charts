@@ -1,0 +1,21 @@
+{
+  "name": "@oneteme/jquery-echarts",
+  "version": "0.0.1",
+  "description": "jquery echarts lib",
+  "homepage": "https://github.com/oneteme/jquery-charts",
+  "bugs": "https://github.com/oneteme/jquery-charts/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oneteme/jquery-charts.git"
+  },
+  "peerDependencies": {
+    "@angular/common": ">=16.1.0",
+    "@angular/core": ">=16.1.0",
+    "echarts": "^5.0.0 || ^6.0.0",
+    "@oneteme/jquery-core": "^0.0.25"
+  },
+  "dependencies": {
+    "tslib": "^2.3.0"
+  },
+  "sideEffects": false
+}

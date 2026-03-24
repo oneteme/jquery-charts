@@ -1,0 +1,13 @@
+<div style="width: 100%; height: 100%;"
+  echarts-chart
+  [type]="type"
+  [config]="config"
+  [data]="data"
+  [isLoading]="isLoading"
+  [debug]="debug"
+  [theme]="theme"
+  [renderer]="renderer"
+  [loadingLabel]="loadingLabel"
+  [noDataLabel]="noDataLabel"
+  (customEvent)="customEvent.emit($event)">
+</div>
