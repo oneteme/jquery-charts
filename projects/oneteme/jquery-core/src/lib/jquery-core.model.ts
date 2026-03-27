@@ -231,6 +231,8 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   series?: SerieProvider<X, Y>[];
   options?: any;
   showToolbar?: boolean;
+  group?: string; // groupe de synchronisation inter-graphiques
+  groupSync?: 'all' | 'datazoom' | 'tooltip' | ('datazoom' | 'tooltip')[]; // ce qui est synchronisé dans le groupe
   mapEndpoint?: string; // Endpoint pour GeoJSON
   mapParam?: string; // Param URL à lire pour la subdiv
   mapDefaultValue?: string; // Subdiv défaut si param absent

@@ -5,11 +5,37 @@ import { EChartsOption } from './types';
  * Construit l'option tooltip avec un style professionnel unifié.
  * Utilisé à la fois dans buildBaseOption et dans le tooltipOverride de la directive.
  */
-export function buildTooltipOption(trigger: 'axis' | 'item'): any {
+export function buildTooltipOption(trigger: 'axis' | 'item', el?: HTMLElement): any {
   return {
     trigger,
-    confine: true,
     appendToBody: true,
+    position: (point: number[], _params: any, dom: HTMLElement) => {
+      const rect = el?.getBoundingClientRect();
+      if (!rect) return undefined;
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+      // Container hors viewport → tooltip masqué (tooltips synchronisés via echarts.connect())
+      if (rect.bottom < 0 || rect.top > vh || rect.right < 0 || rect.left > vw) {
+        return [-9999, -9999];
+      }
+      const tw = dom?.offsetWidth ?? 0;
+      const th = dom?.offsetHeight ?? 0;
+      const gap = 10;
+      // Calcul en coordonnées viewport absolues.
+      // Avec position:fixed sur le tooltip, ces coordonnées == coordonnées CSS finales,
+      // ce qui élimine tout impact sur le scroll de la page.
+      // Note : ECharts ajoute rect + window.pageOffset au retour du callback (pour position:absolute).
+      // On soustrait ce décalage pour que la position CSS finale corresponde au viewport cible.
+      const sx = window.pageXOffset;
+      const sy = window.pageYOffset;
+      let vx = rect.left + point[0] + gap;
+      let vy = rect.top  + point[1] + gap;
+      if (vx + tw > vw) vx = rect.left + point[0] - tw - gap;
+      if (vy + th > vh) vy = rect.top  + point[1] - th - gap;
+      vx = Math.max(gap, Math.min(vw - tw - gap, vx));
+      vy = Math.max(gap, Math.min(vh - th - gap, vy));
+      return [vx - rect.left - sx, vy - rect.top - sy];
+    },
     backgroundColor: '#1a1f2e',
     borderColor: 'rgba(255,255,255,0.08)',
     borderWidth: 1,
@@ -20,7 +46,8 @@ export function buildTooltipOption(trigger: 'axis' | 'item'): any {
       fontSize: 13,
       fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     },
-    extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.4);',
+    // position:fixed retire le tooltip du flux du document → impossible de créer une scrollbar
+    extraCssText: 'box-shadow: 0 8px 24px rgba(0,0,0,0.4); position: fixed !important;',
   };
 }
 
@@ -29,13 +56,12 @@ export function buildTooltipOption(trigger: 'axis' | 'item'): any {
  * Les options spécifiques au type sont fusionnées par-dessus.
  */
 export function buildBaseOption(config: ChartProvider<any, any>): EChartsOption {
+  const hasTitle = !!(config.title || config.subtitle);
   return {
     animation: true,
-    title: {
-      text: config.title ?? '',
-      subtext: config.subtitle ?? '',
-      left: 'auto',
-    },
+    // N'inclure le composant title que s'il y a effectivement un contenu,
+    // sinon ECharts réserve ~60px de padding en haut inutilement.
+    ...(hasTitle ? { title: { text: config.title ?? '', subtext: config.subtitle ?? '', left: 'auto' } } : {}),
     tooltip: buildTooltipOption('axis'),
     legend: {
       show: true,
@@ -43,6 +69,7 @@ export function buildBaseOption(config: ChartProvider<any, any>): EChartsOption 
       bottom: 0,
     },
     grid: {
+      top: 10,
       left: '3%',
       right: '4%',
       bottom: '15%',
@@ -74,22 +101,17 @@ export function applyCommonConfig(
   if (config.ytitle) {
     (patch as any).yAxis = { name: config.ytitle, nameLocation: 'center', nameGap: 40 };
   }
-  if (config.width) {
-    (patch as any).width = config.width;
-  }
-  if (config.height) {
-    (patch as any).height = config.height;
-  }
 
   const { series: seriesPatch, ...restOptions } = (config.options ?? {}) as any;
   const result = mergeDeep({}, option, patch, restOptions) as any;
 
   // Fusion élément-par-élément des séries quand config.options.series est défini,
   // pour permettre la personnalisation par graphique sans écraser les données calculées.
+  // seriesPatch[i] ne doit PAS fallback sur seriesPatch[0] : chaque série a ses propres overrides.
   if (seriesPatch && Array.isArray(seriesPatch) && Array.isArray(result.series)) {
     result.series = result.series.map((s: any, i: number) => ({
       ...s,
-      ...(seriesPatch[i] ?? seriesPatch[0] ?? {}),
+      ...(seriesPatch[i] ?? {}),
     }));
   }
 

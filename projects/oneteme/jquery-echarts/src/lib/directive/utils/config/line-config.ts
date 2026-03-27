@@ -24,7 +24,16 @@ function buildLineOption(
     : undefined;
   const xType = getXAxisType(chart.categories, isContinue, firstX);
 
+  // Séries masquées par défaut via visible: false → légende désélectionnée initialement
+  const legendSelected: Record<string, boolean> = {};
+  chart.series.forEach((s) => {
+    if (s.visible === false && s.name) {
+      legendSelected[s.name] = false;
+    }
+  });
+
   return {
+    ...(Object.keys(legendSelected).length ? { legend: { selected: legendSelected } } : {}),
     xAxis: {
       type: xType as any,
       data: isContinue ? undefined : chart.categories.map(String),
@@ -39,18 +48,28 @@ function buildLineOption(
       nameLocation: 'center',
       nameGap: 40,
     },
-    series: chart.series.map((s) => ({
-      type: 'line',
-      name: s.name,
-      smooth: isSmooth(type),
-      areaStyle: hasArea(type) ? {} : undefined,
-      stack: s.stack,
-      data: (isContinue
-        ? (s.data as Coordinate2D[]).map((d) => [d.x, d.y])
-        : s.data) as any,
-      itemStyle: s.color ? { color: s.color } : undefined,
-      lineStyle: s.color ? { color: s.color } : undefined,
-    })) as any,
+    series: chart.series.map((s) => {
+      // Le type d'une série sans type explicite hérite du type du chart (ex: area, spline...)
+      const serieType: ChartType = (s as any).type ?? type;
+      const serieHasArea = serieType === 'area' || serieType === 'areaspline';
+      const serieSmooth = serieType === 'spline' || serieType === 'areaspline' || isSmooth(type);
+      return {
+        type: 'line',
+        name: s.name,
+        smooth: serieSmooth,
+        showSymbol: false,
+        areaStyle: serieHasArea ? {} : undefined,
+        stack: s.stack,
+        data: (isContinue
+          ? (s.data as Coordinate2D[]).map((d) => [d.x, d.y])
+          : xType === 'category'
+            ? s.data
+            : chart.categories.map((cat, i) => [cat, (s.data as any[])[i]])) as any,
+        itemStyle: s.color ? { color: s.color } : undefined,
+        lineStyle: s.color ? { color: s.color } : undefined,
+        z: serieHasArea ? 1 : 2,
+      };
+    }) as any,
   };
 }
 

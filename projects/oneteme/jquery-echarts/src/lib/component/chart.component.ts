@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { ChartProvider, ChartType, XaxisType, YaxisType } from '@oneteme/jquery-core';
-import { ChartDirective } from '../directive/chart.directive';
+import { ChartDirective, GroupSyncMode } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils/types';
 
 @Component({
@@ -23,6 +23,12 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> {
   @Input() renderer: 'svg' | 'canvas' = 'svg';
   @Input() loadingLabel = 'Chargement des données...';
   @Input() noDataLabel = 'Aucune donnée';
+  @Input() group: string | null = null;
+  @Input() groupSync: GroupSyncMode | null = null;
+
+  @HostBinding('style.height') get hostHeight(): string | null {
+    return this.config?.height ? `${this.config.height}px` : null;
+  }
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 }
