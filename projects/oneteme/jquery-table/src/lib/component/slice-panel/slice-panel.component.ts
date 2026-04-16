@@ -256,6 +256,27 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     this._cdr.markForCheck();
   }
 
+  /** Retourne l'état des filtres actifs sous forme sérialisable (sliceIndex → tableau de clés).
+   * Inclut les slices sans sélection (tableau vide) pour distinguer "aucune tranche sélectionnée"
+   * (= filtre ouvert, rien coché) de "slice absente". */
+  getActiveFilters(): Record<number, string[]> {
+    const result: Record<number, string[]> = {};
+    this._cachedSlices.forEach((_, idx) => {
+      const keys = this.activeKeysBySlice.get(idx);
+      result[idx] = keys ? [...keys] : [];
+    });
+    return result;
+  }
+
+  /** Restaure les filtres actifs depuis un snapshot sérialisé et réémet le filtre. */
+  restoreFilters(filters: Record<number, string[]>): void {
+    this.activeKeysBySlice = new Map(
+      Object.entries(filters).map(([idx, keys]) => [Number(idx), new Set(keys)])
+    );
+    this._emitFilter();
+    this._cdr.markForCheck();
+  }
+
   // ── Dynamic slice management
 
   addDynamicSlice(column: SliceColumnDef<T>): void {

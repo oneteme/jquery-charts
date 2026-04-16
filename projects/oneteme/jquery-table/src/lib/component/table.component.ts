@@ -224,6 +224,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _resizeState: { key: string; startX: number; startWidth: number } | null = null;
   /** Dynamic slice keys à restaurer après ngAfterViewInit (slicePanelRef pas encore dispo). */
   private _pendingDynamicSliceKeys: string[] | null = null;
+  /** Filtres de slice à restaurer après ngAfterViewInit (slicePanelRef pas encore dispo). */
+  private _pendingSliceFilters: Record<number, string[]> | null = null;
 
   private resolvedConfig: TableProvider<T> = { columns: [] };
   private _columnMap: Map<string, TableColumnProvider<T>> = new Map();
@@ -283,13 +285,35 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   private _applyPendingDynamicSliceKeys(): void {
-    if (!this._pendingDynamicSliceKeys) return;
-    const keys = this._pendingDynamicSliceKeys;
-    this._pendingDynamicSliceKeys = null;
+    const hasPendingDynamic = !!this._pendingDynamicSliceKeys;
+    const hasPendingFilters = !!this._pendingSliceFilters;
+    if (!hasPendingDynamic && !hasPendingFilters) return;
+
     const allCols = this.resolvedConfig.columns ?? [];
-    keys.forEach(key => {
-      const col = allCols.find(c => c.key === key);
-      if (col) this.addDynamicSlice(col);
+    const keys = hasPendingDynamic ? [...this._pendingDynamicSliceKeys!] : [];
+    const filters = this._pendingSliceFilters ? { ...this._pendingSliceFilters } : null;
+    this._pendingDynamicSliceKeys = null;
+    this._pendingSliceFilters = null;
+
+    // Tout est différé dans le même setTimeout pour :
+    // 1. Éviter NG0100 (modifications après vérification dans ngAfterViewInit)
+    // 2. Garantir que les dynamic slices sont ajoutées AVANT la restauration des filtres
+    //    (les indices dans sliceFilters dépendent de l'ordre final de _cachedSlices)
+    setTimeout(() => {
+      keys.forEach(key => {
+        const col = allCols.find(c => c.key === key);
+        if (col) this.addDynamicSlice(col);
+      });
+      if (filters) {
+        if (this.slicePanelRef) {
+          this.slicePanelRef.restoreFilters(filters);
+        } else {
+          // slicePanelRef toujours null (données pas encore arrivées) :
+          // remettre en attente pour que _recomputeShowSlicePanel les applique
+          this._pendingSliceFilters = filters;
+        }
+      }
+      this._cdr.markForCheck();
     });
   }
 
@@ -516,7 +540,18 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   private _recomputeShowSlicePanel(): void {
     const hasCfg = this._sliceConfigs.length > 0 || this._view.sliceBy.activeDynamicColumns.length > 0;
+    const wasVisible = this._showSlicePanel;
     this._showSlicePanel = hasCfg && this._resolvedData.length > 0;
+    // Le SlicePanelComponent vient d'être rendu pour la 1ère fois
+    // (données arrivées) → appliquer les filtres en attente
+    if (!wasVisible && this._showSlicePanel && this._pendingSliceFilters) {
+      const filters = this._pendingSliceFilters;
+      this._pendingSliceFilters = null;
+      setTimeout(() => {
+        this.slicePanelRef?.restoreFilters(filters);
+        this._cdr.markForCheck();
+      });
+    }
   }
 
   get showAddSliceButton(): boolean {
@@ -842,8 +877,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       visibleColumns:      this.activeColumns.map(c => c.key),
       columnWidths:        Object.keys(this._columnWidths).length ? { ...this._columnWidths } : undefined,
       slicePanelCollapsed: this._slicePanelCollapsed,
-      hiddenSliceKeys:     this._staticSliceHiddenKeys.size ? [...this._staticSliceHiddenKeys] : undefined,
+      hiddenSliceKeys:     [...this._staticSliceHiddenKeys],
       dynamicSliceKeys:    dynamicSliceKeys.length ? dynamicSliceKeys : undefined,
+      sliceFilters:        this.slicePanelRef ? this.slicePanelRef.getActiveFilters() : undefined,
     };
     this._preferencesManager.save(config);
     this._hasSavedConfig = true;
@@ -879,11 +915,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
     // Filtre de slice actif
     this.activeSliceFilter = () => true;
+    if (this.slicePanelRef) this.slicePanelRef.restoreFilters({});
 
     // Rafraîchit toute la vue
     this.activeColumns = this._view.fields.activeColumns;
     this.renderedColumns = this.activeColumns.map(c => c.key);
     this._pendingDynamicSliceKeys = null;
+    this._pendingSliceFilters = null;
     this.refreshViewModel();
 
     this._showPreferencesMessage(this.i18n.preferencesClearedMessage);
@@ -918,11 +956,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     // État panneau slice
     if (saved.slicePanelCollapsed !== undefined) this._slicePanelCollapsed = saved.slicePanelCollapsed;
-    // Slices statiques cachées
-    if (saved.hiddenSliceKeys?.length) {
-      const next = new Set(this._configHiddenKeys);
-      saved.hiddenSliceKeys.forEach(k => next.add(k));
-      this._staticSliceHiddenKeys = next;
+    // Slices statiques cachées — on utilise la valeur exacte sauvegardée (pas les defaults de config)
+    if (saved.hiddenSliceKeys !== undefined) {
+      this._staticSliceHiddenKeys = new Set(saved.hiddenSliceKeys);
       this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
     }
     // Colonnes visibles + ordre — reconstruit activeColumns en une seule passe.
@@ -944,6 +980,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Dynamic slices — différé : slicePanelRef pas encore disponible au moment de ngOnChanges
     if (saved.dynamicSliceKeys?.length) {
       this._pendingDynamicSliceKeys = saved.dynamicSliceKeys;
+    }
+    // Filtres actifs du slice panel
+    // Filtres actifs du slice panel — toujours stockés en pending :
+    // appliqués par _applyPendingDynamicSliceKeys (si dynamic slices) ou
+    // par _recomputeShowSlicePanel (quand les données arrivent et rendent le panel visible)
+    if (saved.sliceFilters && Object.keys(saved.sliceFilters).length) {
+      this._pendingSliceFilters = saved.sliceFilters;
     }
   }
 
@@ -1002,12 +1045,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       sliceConfigs: this.resolvedConfig.slices ?? [],
     });
 
-    // Applique les préférences ICI, APRÈS _view.update(), quand fields.activeColumns est peuplé.
-    // Si appelé avant, fields.activeColumns est vide → le tri de restauration produit [] → reset.
-    if (pendingPrefs) {
-      this._applyPreferences(pendingPrefs);
-    }
-
     // Synchronise la propriété stable (évite NG0100 — la facade est source de vérité)
     this.activeColumns = this._view.fields.activeColumns;
 
@@ -1023,15 +1060,25 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.attachPaginator();
     this.attachSort();
 
-    // Réinitialise _staticSliceHiddenKeys seulement si les clés hidden de la config ont vraiment changé.
-    // buildEffectiveConfig() retourne un nouvel objet à chaque appel → comparaison par contenu obligatoire.
+    // Réinitialise _staticSliceHiddenKeys seulement si les clés hidden de la config ont vraiment changé
+    // ET qu'il n'y a pas de préférences sauvegardées (qui géreront hiddenSliceKeys elles-mêmes).
     const newConfigHidden = new Set<string>(
       (this.resolvedConfig.slices ?? []).filter(s => s.hidden && s.columnKey).map(s => s.columnKey!)
     );
     if (!TableComponent._setsEqual(newConfigHidden, this._configHiddenKeys)) {
       this._configHiddenKeys = newConfigHidden;
-      this._staticSliceHiddenKeys = new Set(newConfigHidden);
-      this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+      // N'écraser _staticSliceHiddenKeys que si on n'est PAS en train d'appliquer des prefs
+      // (pendingPrefs les gèrera lui-même via _applyPreferences → hiddenSliceKeys)
+      if (!pendingPrefs) {
+        this._staticSliceHiddenKeys = new Set(newConfigHidden);
+        this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+      }
+    }
+
+    // Applique les préférences ICI, APRÈS _view.update() ET après _configHiddenKeys mis à jour,
+    // mais avant _computeSliceConfigs() pour que hiddenSliceKeys soit déjà restauré.
+    if (pendingPrefs) {
+      this._applyPreferences(pendingPrefs);
     }
 
     // Propriétés stables pour les bindings du template
