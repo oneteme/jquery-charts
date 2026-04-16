@@ -133,12 +133,10 @@ $slice-header-total: $slice-header-height + $slice-header-margin-bottom;
   line-height: 1;
 }
 
-.slice-toggle-icon {
-  width: 100%;
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.slice-toggle-mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
   line-height: 1;
 }
 
@@ -161,9 +159,14 @@ $slice-header-total: $slice-header-height + $slice-header-margin-bottom;
   border: 1px solid var(--jqt-border-color);
   background: var(--jqt-surface-color);
   border-radius: 8px;
-  font-size: 16px;
 
   &:hover { border-color: var(--jqt-text-muted); }
+}
+
+.slice-panel.collapsed .slice-toggle .slice-toggle-mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }
 
 .slice-title-row {

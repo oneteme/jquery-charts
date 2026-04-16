@@ -30,8 +30,108 @@
   <!-- 2. TableProvider -->
   <section class="doc-section">
     <h2>2) API &mdash; <code>TableProvider&lt;T&gt;</code></h2>
-    <p>Toute la configuration du tableau se passe via l&apos;entr&eacute;e <code>[config]</code>.</p>
+    <p>
+      Toute la configuration du tableau se passe via l&apos;entr&eacute;e <code>[config]</code>.
+      Les donn&eacute;es s&apos;injectent via <code>[data]</code> (s&eacute;par&eacute; de la config pour faciliter le rechargement),
+      et l&apos;&eacute;tat de chargement via <code>[isLoading]</code>.
+    </p>
 
+    <h3>Inputs du composant</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Input</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>[config]</code></td>
+            <td><code>TableProvider&lt;T&gt;</code></td>
+            <td>&mdash;</td>
+            <td>Configuration principale : colonnes, slices, search, pagination, view, labels&hellip;</td>
+          </tr>
+          <tr>
+            <td><code>[data]</code></td>
+            <td><code>T[]</code></td>
+            <td><code>[]</code></td>
+            <td>Donn&eacute;es &agrave; afficher. Peut changer ind&eacute;pendamment de <code>config</code>.</td>
+          </tr>
+          <tr>
+            <td><code>[isLoading]</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Affiche un overlay &laquo;&nbsp;Chargement&nbsp;&raquo; par-dessus le tableau.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Champs de <code>TableProvider&lt;T&gt;</code></h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>columns</code></td>
+            <td><code>TableColumnProvider&lt;T&gt;[]</code></td>
+            <td>Colonnes affich&eacute;es. Voir section&nbsp;6 pour <code>TableColumnProvider</code> et <code>col()</code>.</td>
+          </tr>
+          <tr>
+            <td><code>title</code></td>
+            <td><code>string</code></td>
+            <td>Titre affich&eacute; dans la barre sup&eacute;rieure du tableau.</td>
+          </tr>
+          <tr>
+            <td><code>slices</code></td>
+            <td><code>SliceConfig&lt;T&gt;[]</code></td>
+            <td>Filtres cat&eacute;goriels lat&eacute;raux (panneau slice). Voir section&nbsp;3.</td>
+          </tr>
+          <tr>
+            <td><code>enableSliceToggle</code></td>
+            <td><code>boolean</code></td>
+            <td>D&eacute;faut&nbsp;: <code>true</code>. Bouton pour replier/d&eacute;plier le panneau slice.</td>
+          </tr>
+          <tr>
+            <td><code>search</code></td>
+            <td><code>TableSearchConfig</code></td>
+            <td>Configure la barre de recherche. Voir sous-section ci-dessous.</td>
+          </tr>
+          <tr>
+            <td><code>pagination</code></td>
+            <td><code>TablePaginationConfig</code></td>
+            <td>Configure la pagination. Voir sous-section ci-dessous.</td>
+          </tr>
+          <tr>
+            <td><code>view</code></td>
+            <td><code>TableViewConfig</code></td>
+            <td>Configure le bouton <strong>View</strong> (Champs / Group&nbsp;by / Slice&nbsp;by). Voir section&nbsp;5.</td>
+          </tr>
+          <tr>
+            <td><code>labels</code></td>
+            <td><code>TableLabelsConfig</code></td>
+            <td>Messages d&apos;&eacute;tat : vide et chargement. Voir sous-section ci-dessous.</td>
+          </tr>
+          <tr>
+            <td><code>defaultSort</code></td>
+            <td><code>&#123; active: string; direction: 'asc' | 'desc' &#125;</code></td>
+            <td>Tri initial appliqu&eacute; au chargement. Non &eacute;cras&eacute; lors des changements de donn&eacute;es.</td>
+          </tr>
+          <tr>
+            <td><code>rowClass</code></td>
+            <td><code>(row: T, index: number) =&gt; string | string[] | Record&lt;string, boolean&gt;</code></td>
+            <td>Classe(s) CSS appliqu&eacute;e(s) dynamiquement sur chaque <code>&lt;tr&gt;</code>. Voir section&nbsp;7.</td>
+          </tr>
+          <tr>
+            <td><code>export</code></td>
+            <td><code>TableExportConfig&lt;T&gt;</code></td>
+            <td>Configure le bouton <strong>Export CSV</strong> dans la toolbar. Voir sous-section ci-dessous.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><code>TableSearchConfig</code></h3>
     <div class="table-wrap">
       <table>
         <thead>
@@ -39,125 +139,210 @@
         </thead>
         <tbody>
           <tr>
-            <td><code>columns</code></td>
-            <td><code>TableColumnProvider&lt;T&gt;[]</code></td>
-            <td>&mdash;</td>
-            <td>Colonnes affich&eacute;es. Utilisez <code>col()</code> pour les cr&eacute;er rapidement. Voir section&nbsp;6.</td>
+            <td><code>enabled</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Active la barre de recherche texte globale.</td>
           </tr>
           <tr>
-            <td><code>data</code></td>
-            <td><code>T[]</code></td>
-            <td>&mdash;</td>
-            <td>Tableau de donn&eacute;es &agrave; afficher.</td>
-          </tr>
-          <tr>
-            <td><code>title</code></td>
+            <td><code>initialQuery</code></td>
             <td><code>string</code></td>
             <td>&mdash;</td>
-            <td>Titre affich&eacute; dans la barre du tableau.</td>
+            <td>Terme de recherche pr&eacute;-rempli &agrave; l&apos;initialisation.</td>
           </tr>
           <tr>
-            <td><code>isLoading</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Affiche des lignes skeleton &agrave; la place des donn&eacute;es.</td>
-          </tr>
-          <tr>
-            <td><code>loadingStateLabel</code></td>
-            <td><code>string</code></td>
-            <td><code>'Chargement...'</code></td>
-            <td>Texte affich&eacute; pendant le chargement.</td>
-          </tr>
-          <tr>
-            <td><code>emptyStateLabel</code></td>
-            <td><code>string</code></td>
-            <td><code>'Aucune donn&eacute;e'</code></td>
-            <td>Message si le tableau est vide ou si aucun filtre actif ne retourne de r&eacute;sultat.</td>
-          </tr>
-          <tr>
-            <td><code>rowClass</code></td>
-            <td><code>(row: T, index: number) =&gt; string | string[] | Record&lt;string, boolean&gt;</code></td>
+            <td><code>searchColumns</code></td>
+            <td><code>string[]</code></td>
             <td>&mdash;</td>
-            <td>Classe(s) CSS appliqu&eacute;e(s) sur chaque <code>&lt;tr&gt;</code>. Voir section&nbsp;7.</td>
+            <td>Restreint la recherche aux colonnes dont la <code>key</code> est dans ce tableau. Si absent, toutes les colonnes sont cherch&eacute;es.</td>
           </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>search: &#123; enabled: true, searchColumns: ['name', 'status'] &#125;</code></pre>
+
+    <h3><code>TablePaginationConfig</code></h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
           <tr>
-            <td><code>enableSearchBar</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Active la barre de recherche texte globale au-dessus du tableau.</td>
-          </tr>
-          <tr>
-            <td><code>enableViewButton</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>
-              Active le bouton <strong>View</strong> (Champs / Group&nbsp;by / Slice&nbsp;by).<br>
-              <strong>Requis</strong> pour <code>enableColumnRemoval</code>, les colonnes <code>optional</code> et le <em>Slice&nbsp;by</em> dynamique.
-            </td>
-          </tr>
-          <tr>
-            <td><code>enableColumnRemoval</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>
-              Autorise &agrave; masquer les colonnes de base via <strong>View &gt; Champs</strong>.<br>
-              <em>Sans effet si <code>enableViewButton</code> est &agrave; <code>false</code>.</em>
-            </td>
-          </tr>
-          <tr>
-            <td><code>optional</code> <small>(sur une colonne)</small></td>
-            <td><code>boolean</code></td>
-            <td>&mdash;</td>
-            <td>
-              Propri&eacute;t&eacute; d&apos;un <code>TableColumnProvider</code>. Si <code>true</code>, la colonne est masqu&eacute;e par d&eacute;faut et activable via <strong>View &gt; Champs</strong>.<br>
-              <em>Sans effet si <code>enableViewButton</code> est &agrave; <code>false</code>.</em>
-            </td>
-          </tr>
-          <tr>
-            <td><code>enableColumnDragDrop</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Poign&eacute;e sur chaque en-t&ecirc;te pour r&eacute;ordonner les colonnes. N&apos;interf&egrave;re pas avec le tri.</td>
-          </tr>
-          <tr>
-            <td><code>slices</code></td>
-            <td><code>SliceConfig&lt;T&gt;[]</code></td>
-            <td>&mdash;</td>
-            <td>Filtres lat&eacute;raux statiques. Voir section&nbsp;3.</td>
-          </tr>
-          <tr>
-            <td><code>showSliceToggle</code></td>
+            <td><code>enabled</code></td>
             <td><code>boolean</code></td>
             <td><code>true</code></td>
-            <td>Bouton pour replier/d&eacute;plier le panneau de slices.</td>
-          </tr>
-          <tr>
-            <td><code>enablePagination</code></td>
-            <td><code>boolean</code></td>
-            <td><code>false</code></td>
-            <td>Active la pagination. Compatible avec le mode groupement.</td>
+            <td>Active la pagination. D&eacute;sactivez pour afficher toutes les lignes (<em>d&eacute;conseill&eacute; sur grands jeux de donn&eacute;es</em>).</td>
           </tr>
           <tr>
             <td><code>pageSize</code></td>
             <td><code>number</code></td>
-            <td><code>10</code></td>
-            <td>Lignes par page. <em>Ignor&eacute; si <code>enablePagination: false</code>.</em></td>
+            <td><code>5</code></td>
+            <td>Nombre de lignes par page.</td>
           </tr>
           <tr>
             <td><code>pageSizeOptions</code></td>
             <td><code>number[]</code></td>
-            <td><code>[5,&nbsp;10,&nbsp;25]</code></td>
-            <td>Options du s&eacute;lecteur de taille de page. <em>Ignor&eacute; si <code>enablePagination: false</code>.</em></td>
+            <td><code>[5, 10, 20]</code></td>
+            <td>Options du s&eacute;lecteur de taille de page.</td>
           </tr>
           <tr>
             <td><code>pageSizeOptionsGroupBy</code></td>
             <td><code>number[]</code></td>
             <td>&mdash;</td>
-            <td>Options de taille de page sp&eacute;cifiques au mode groupement. Si absent, utilise <code>pageSizeOptions</code>.</td>
+            <td>Options sp&eacute;cifiques au mode <em>Group by</em>. Si absent, utilise <code>pageSizeOptions</code>.</td>
           </tr>
         </tbody>
       </table>
     </div>
+    <pre><code>pagination: &#123; enabled: true, pageSize: 10, pageSizeOptions: [5, 10, 25] &#125;</code></pre>
+
+    <h3><code>TableViewConfig</code></h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>enabled</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Affiche le bouton <strong>View</strong>. N&eacute;cessaire pour Champs, Group&nbsp;by et Slice&nbsp;by.</td>
+          </tr>
+          <tr>
+            <td><code>enableColumnRemoval</code></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Autorise &agrave; masquer les colonnes de base via <strong>View &gt; Champs</strong>.</td>
+          </tr>
+          <tr>
+            <td><code>enableColumnDragDrop</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Poign&eacute;e sur chaque en-t&ecirc;te pour r&eacute;ordonner les colonnes par glisser-d&eacute;poser.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>view: &#123; enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true &#125;</code></pre>
+
+    <h3><code>TableLabelsConfig</code></h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>empty</code></td>
+            <td><code>string</code></td>
+            <td><code>'Aucune donn&eacute;e'</code></td>
+            <td>Message affich&eacute; quand le tableau est vide (ou qu&apos;aucun filtre ne retourne de r&eacute;sultat).</td>
+          </tr>
+          <tr>
+            <td><code>loading</code></td>
+            <td><code>string</code></td>
+            <td><code>'Chargement des donn&eacute;es...'</code></td>
+            <td>Message affich&eacute; pendant <code>[isLoading]="true"</code>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>labels: &#123; empty: 'Aucun r&eacute;sultat', loading: 'Chargement...' &#125;</code></pre>
+
+    <h3><code>TableExportConfig&lt;T&gt;</code></h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>enabled</code></td>
+            <td><code>boolean</code></td>
+            <td><code>false</code></td>
+            <td>Affiche le bouton <strong>Exporter</strong> dans la toolbar.</td>
+          </tr>
+          <tr>
+            <td><code>filename</code></td>
+            <td><code>string</code></td>
+            <td><code>'export'</code></td>
+            <td>Nom du fichier g&eacute;n&eacute;r&eacute; (sans extension). L'extension <code>.csv</code> est ajout&eacute;e automatiquement.</td>
+          </tr>
+          <tr>
+            <td><code>transform</code></td>
+            <td><code>(row: T) =&gt; Record&lt;string, string&gt;</code></td>
+            <td>&mdash;</td>
+            <td>Transforme chaque ligne avant export. Si absent, les valeurs affich&eacute;es sont utilis&eacute;es.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      L&apos;export ne porte que sur les <strong>donn&eacute;es filtr&eacute;es</strong> (slice + recherche) et les
+      <strong>colonnes visibles</strong>. Le fichier est encod&eacute; en UTF-8 avec BOM pour une compatibilit&eacute;
+      Excel correcte.
+    </p>
+    <pre><code>export: &#123; enabled: true, filename: 'tickets-2024' &#125;
+
+// Avec transformation personnalis&eacute;e
+export: &#123;
+  enabled: true,
+  filename: 'rapport',
+  transform: (row) =&gt; (&#123; issue: row.issue, statut: row.status === 'Done' ? 'Terminé' : 'En cours' &#125;)
+&#125;</code></pre>
+  </section>
+
+  <!-- 2b. i18n -->
+  <section class="doc-section">
+    <h2>2b) i18n &mdash; Localisation des labels</h2>
+    <p>
+      Tous les textes de l&apos;interface sont configur&eacute;s via un
+      <strong>InjectionToken</strong> <code>JQT_I18N</code>. Les d&eacute;fauts sont en fran&ccedil;ais.
+      Seuls les champs fournis &eacute;crasent les d&eacute;fauts.
+    </p>
+    <pre><code>import &#123; JQT_I18N &#125; from '@oneteme/jquery-table';
+
+// Dans AppModule ou un composant racine
+providers: [
+  &#123;
+    provide: JQT_I18N,
+    useValue: &#123;
+      searchPlaceholder: 'Search…',
+      emptyState:        'No data',
+      loadingState:      'Loading…',
+      viewNoneSelected:  'None',
+      groupRemove:       'Remove grouping',
+      exportButtonLabel: 'Export',
+    &#125;,
+  &#125;,
+]</code></pre>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Cl&eacute;</th><th>D&eacute;faut (FR)</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>searchPlaceholder</code></td><td><code>'Rechercher...'</code></td><td>Placeholder barre de recherche.</td></tr>
+          <tr><td><code>emptyState</code></td><td><code>'Aucune donn&eacute;e'</code></td><td>Message tableau vide.</td></tr>
+          <tr><td><code>loadingState</code></td><td><code>'Chargement des donn&eacute;es...'</code></td><td>Message pendant <code>[isLoading]</code>.</td></tr>
+          <tr><td><code>viewMenuFields</code></td><td><code>'Champs'</code></td><td>Label sous-menu View &gt; Champs.</td></tr>
+          <tr><td><code>viewMenuGroupBy</code></td><td><code>'Group by'</code></td><td>Label sous-menu View &gt; Group by.</td></tr>
+          <tr><td><code>viewMenuSliceBy</code></td><td><code>'Slice by'</code></td><td>Label sous-menu View &gt; Slice by.</td></tr>
+          <tr><td><code>viewNoneSelected</code></td><td><code>'Aucun'</code></td><td>Valeur affich&eacute;e quand aucun groupe/slice n&apos;est actif.</td></tr>
+          <tr><td><code>groupRemove</code></td><td><code>'Retirer le groupe'</code></td><td>Bouton de r&eacute;initialisation du Group by.</td></tr>
+          <tr><td><code>groupSortAsc / Desc</code></td><td><code>'A → Z' / 'Z → A'</code></td><td>Tooltips tri de groupes.</td></tr>
+          <tr><td><code>groupTooMany</code></td><td><code>(n) =&gt; '⚠ Trop de groupes...'</code></td><td>Fonction recevant le nombre de groupes.</td></tr>
+          <tr><td><code>lazyRetry</code></td><td><code>'R&eacute;essayer'</code></td><td>Bouton de r&eacute;essai colonne lazy en erreur.</td></tr>
+          <tr><td><code>cellEmpty</code></td><td><code>'N/A'</code></td><td>Valeur affich&eacute;e pour une cellule vide.</td></tr>
+          <tr><td><code>exportButtonLabel</code></td><td><code>'Exporter'</code></td><td>Label du bouton d&apos;export CSV.</td></tr>
+          <tr><td><code>filterPanelTitle</code></td><td><code>(n) =&gt; n&gt;1 ? 'Filtres' : 'Filtre'</code></td><td>Titre du panneau de filtres lat&eacute;ral.</td></tr>
+          <tr><td><code>filterEmptyState</code></td><td><code>'Aucune donn&eacute;e'</code></td><td>Message dans un bloc de filtre sans cat&eacute;gories.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Voir <code>JqtI18n</code> pour la liste compl&egrave;te des 24 labels.</p>
   </section>
 
   <!-- 3. SliceConfig -->
@@ -258,7 +443,7 @@
   <!-- 5. BOUTON VIEW -->
   <section class="doc-section">
     <h2>5) Le bouton View</h2>
-    <p>Activ&eacute; via <code>enableViewButton:&nbsp;true</code>.</p>
+    <p>Activ&eacute; via <code>view:&nbsp;&#123;&nbsp;enabled:&nbsp;true&nbsp;&#125;</code>.</p>
 
     <div class="table-wrap">
       <table>
@@ -270,24 +455,34 @@
             <td><strong>Champs</strong></td>
             <td>
               Affiche/masque les colonnes.<br>
-              &bull; Colonnes de base : coch&eacute;es par d&eacute;faut, d&eacute;cochables si <code>enableColumnRemoval:&nbsp;true</code>.<br>
+              &bull; Colonnes de base : coch&eacute;es par d&eacute;faut, d&eacute;cochables si <code>view.enableColumnRemoval:&nbsp;true</code>.<br>
               &bull; Colonnes <code>optional:&nbsp;true</code> : d&eacute;coch&eacute;es par d&eacute;faut, toujours activables.
             </td>
-            <td><code>enableViewButton:&nbsp;true</code></td>
+            <td><code>view:&nbsp;&#123;&nbsp;enabled:&nbsp;true&nbsp;&#125;</code></td>
           </tr>
           <tr>
             <td><strong>Group by</strong></td>
-            <td>Regroupe les lignes par valeur de colonne. Clic sur un groupe : replie/d&eacute;plie. Re-clic sur la m&ecirc;me colonne : d&eacute;sactive. Compatible avec <code>enablePagination:&nbsp;false</code>.</td>
-            <td><code>enableViewButton:&nbsp;true</code></td>
+            <td>Regroupe les lignes par valeur de colonne. Clic sur un groupe : replie/d&eacute;plie. Re-clic sur la m&ecirc;me colonne : d&eacute;sactive. Compatible avec <code>pagination:&nbsp;&#123;&nbsp;enabled:&nbsp;false&nbsp;&#125;</code>.</td>
+            <td><code>view:&nbsp;&#123;&nbsp;enabled:&nbsp;true&nbsp;&#125;</code></td>
           </tr>
           <tr>
             <td><strong>Slice by</strong></td>
             <td>Ajoute dynamiquement un filtre lat&eacute;ral bas&eacute; sur une colonne. Apparait dans le panneau avec un bouton &times; pour le retirer.</td>
-            <td><code>enableViewButton:&nbsp;true</code></td>
+            <td><code>view:&nbsp;&#123;&nbsp;enabled:&nbsp;true&nbsp;&#125;</code></td>
           </tr>
         </tbody>
       </table>
     </div>
+
+    <h3>Exemples</h3>
+    <pre><code>// Bouton View minimal (Champs + Group by + Slice by)
+view: &#123; enabled: true &#125;
+
+// Avec suppression de colonnes de base autoris&eacute;e
+view: &#123; enabled: true, enableColumnRemoval: true &#125;
+
+// Avec glisser-d&eacute;poser des colonnes
+view: &#123; enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true &#125;</code></pre>
   </section>
 
   <!-- 6. col() -->
@@ -353,9 +548,52 @@ col&lt;T&gt;(key: string, header: string, sortable = true): TableColumnProvider&
             <td><code>EventEmitter&lt;T&gt;</code></td>
             <td>Emis au clic sur une ligne (pas sur les en-t&ecirc;tes de groupe).</td>
           </tr>
+          <tr>
+            <td><code>(sortChange)</code></td>
+            <td><code>EventEmitter&lt;&#123; active: string; direction: 'asc'|'desc'|'' &#125;&gt;</code></td>
+            <td>Emis &agrave; chaque changement de tri (colonne + direction).</td>
+          </tr>
+          <tr>
+            <td><code>(pageChange)</code></td>
+            <td><code>EventEmitter&lt;&#123; pageIndex: number; pageSize: number &#125;&gt;</code></td>
+            <td>Emis &agrave; chaque changement de page ou de taille de page.</td>
+          </tr>
+          <tr>
+            <td><code>(searchChange)</code></td>
+            <td><code>EventEmitter&lt;string&gt;</code></td>
+            <td>Emis &agrave; chaque frappe dans la barre de recherche.</td>
+          </tr>
+          <tr>
+            <td><code>(groupByChange)</code></td>
+            <td><code>EventEmitter&lt;string | null&gt;</code></td>
+            <td>Emis quand le Group by est activ&eacute; (cl&eacute; colonne) ou d&eacute;sactiv&eacute; (<code>null</code>).</td>
+          </tr>
+          <tr>
+            <td><code>(columnsChange)</code></td>
+            <td><code>EventEmitter&lt;string[]&gt;</code></td>
+            <td>
+              Emis quand la liste des colonnes visibles change (ajout, suppression, r&eacute;ordonnancement).
+              Payload&nbsp;: cl&eacute;s dans leur ordre d&apos;affichage.
+            </td>
+          </tr>
+          <tr>
+            <td><code>(columnAdded)</code></td>
+            <td><code>EventEmitter&lt;TableColumnProvider&lt;T&gt;&gt;</code></td>
+            <td>Colonne ajout&eacute;e aux colonnes actives.</td>
+          </tr>
+          <tr>
+            <td><code>(columnRemoved)</code></td>
+            <td><code>EventEmitter&lt;TableColumnProvider&lt;T&gt;&gt;</code></td>
+            <td>Colonne retir&eacute;e des colonnes actives.</td>
+          </tr>
         </tbody>
       </table>
     </div>
+    <p>
+      Les outputs d&apos;&eacute;tat (<code>sortChange</code>, <code>pageChange</code>, <code>searchChange</code>,
+      <code>groupByChange</code>, <code>columnsChange</code>) sont utiles pour
+      <strong>persister l&apos;&eacute;tat dans l&apos;URL</strong> ou restaurer une session.
+    </p>
   </section>
 
   <!-- 9. slice-panel standalone -->
@@ -498,7 +736,9 @@ jquery-table &#123;
   <!-- 10. EXEMPLE TABLE -->
   <section class="doc-section">
     <h2>10) Exemple complet &mdash; Tableau</h2>
-    <pre><code>interface Row &#123;
+    <pre><code>import &#123; col, TableProvider, JQT_I18N &#125; from '@oneteme/jquery-table';
+
+interface Row &#123;
   issue: string;
   status: 'Backlog' | 'In Progress' | 'Done';
   owner: string;
@@ -506,29 +746,47 @@ jquery-table &#123;
   team: string;
 &#125;
 
+// i18n optionnel (d&eacute;fauts en fran&ccedil;ais)
+providers: [&#123; provide: JQT_I18N, useValue: &#123; emptyState: 'Aucun ticket trouv&eacute;' &#125; &#125;]
+
 readonly cfg: TableProvider&lt;Row&gt; = &#123;
   title: 'Ticket board',
-  enableSearchBar: true,
+
+  // Recherche texte restreinte &agrave; deux colonnes
+  search: &#123; enabled: true, searchColumns: ['issue', 'owner'] &#125;,
+
   // Le bouton View active Champs, Group by et Slice by dynamique
-  enableViewButton: true,
-  // enableColumnRemoval n'a d'effet que si enableViewButton est true
-  enableColumnRemoval: true,
-  enableColumnDragDrop: true,
-  enablePagination: true,
-  pageSize: 10,
-  pageSizeOptions: [5, 10, 25],
+  view: &#123;
+    enabled: true,
+    enableColumnRemoval: true,   // autorise &agrave; masquer les colonnes de base
+    enableColumnDragDrop: true,  // r&eacute;ordonnement par glisser-d&eacute;poser
+  &#125;,
+
+  // Pagination
+  pagination: &#123; enabled: true, pageSize: 10, pageSizeOptions: [5, 10, 25] &#125;,
+
+  // Messages d&apos;&eacute;tat (prend le dessus sur JQT_I18N)
+  labels: &#123; empty: 'Aucun ticket', loading: 'Chargement des tickets...' &#125;,
+
+  // Export CSV des donn&eacute;es filtr&eacute;es
+  export: &#123; enabled: true, filename: 'tickets' &#125;,
+
+  // Tri initial
+  defaultSort: &#123; active: 'priority', direction: 'desc' &#125;,
+
   columns: [
     col&lt;Row&gt;('issue',  'Issue'),
     col&lt;Row&gt;('status', 'Statut'),
     col&lt;Row&gt;('owner',  'Responsable'),
-    // optional: true =&gt; masquee par defaut, activable via View &gt; Champs (enableViewButton requis)
-    &#123; ...col&lt;Row&gt;('priority', 'Priorite'), optional: true &#125;,
-    &#123; ...col&lt;Row&gt;('team',     'Equipe'),   optional: true &#125;,
+    // optional: true =&gt; masqu&eacute;e par d&eacute;faut, activable via View &gt; Champs
+    col&lt;Row&gt;('priority', 'Priorit&eacute;', &#123; optional: true &#125;),
+    col&lt;Row&gt;('team',     '&Eacute;quipe',   &#123; optional: true &#125;),
   ],
+
   slices: [
     &#123; title: 'Statut', columnKey: 'status' &#125;,
     &#123;
-      title: 'Priorite',
+      title: 'Priorit&eacute;',
       categories: [
         &#123; key: 'high',   label: 'Haute',   filter: r =&gt; r.priority === 'High'   &#125;,
         &#123; key: 'medium', label: 'Moyenne', filter: r =&gt; r.priority === 'Medium' &#125;,
@@ -536,14 +794,20 @@ readonly cfg: TableProvider&lt;Row&gt; = &#123;
       ],
     &#125;,
   ],
+
   rowClass: r =&gt; &#123;
     if (r.status === 'Done')        return 'row-done';
     if (r.status === 'In Progress') return 'row-in-progress';
     return '';
   &#125;,
-  data: rows,
 &#125;;</code></pre>
-    <pre><code>&lt;jquery-table [config]="cfg" (rowSelected)="onRow($event)"&gt;&lt;/jquery-table&gt;</code></pre>
+    <pre><code>&lt;!-- data et isLoading sont des Inputs s&eacute;par&eacute;s de config --&gt;
+&lt;jquery-table
+  [config]="cfg"
+  [data]="rows"
+  [isLoading]="loading"
+  (rowSelected)="onRow($event)"&gt;
+&lt;/jquery-table&gt;</code></pre>
   </section>
 
   <!-- 11. PERSONNALISATION VISUELLE -->

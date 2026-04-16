@@ -31,7 +31,7 @@ export function normalizeCellValue(value: any): any {
     return '';
   }
   if (value instanceof Date) {
-    return value.toLocaleString('fr-FR');
+    return value.toLocaleString();
   }
   if (Array.isArray(value)) {
     return value.map((item) => normalizeCellValue(item)).join(', ');

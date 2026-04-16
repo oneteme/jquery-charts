@@ -1,12 +1,11 @@
-
-// ─── Conteneur & mise en page ─────────────────────────────────
+// ─── Conteneur & mise en page
 
 :host {
   display: block;
   max-height: 100%;
   min-height: inherit;
 
-  // ─── Variables de thème ───────────────────────────────────────
+  // ─── Variables de thème
   // Overridables depuis l'extérieur : jquery-table { --jqt-...: valeur; }
 
   // Texte
@@ -106,6 +105,7 @@
 
 .table-body-scroll {
   flex: 1 1 0;
+  overflow-x: auto;
   overflow-y: auto;
   min-height: 0;
   border-top: 1px solid var(--jqt-border-color);
@@ -141,7 +141,7 @@
   color: var(--jqt-text-secondary);
 }
 
-// ─── Toolbar & barre de recherche ─────────────────────────────
+// ─── Toolbar & barre de recherche
 
 .table-toolbar {
   display: flex;
@@ -154,17 +154,24 @@
 .table-toolbar-left {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .table-toolbar-right {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .search-input-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
-  width: 100%;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 34px;
   border: 1px solid var(--jqt-border-color);
   border-radius: 8px;
@@ -226,6 +233,31 @@
   &:hover { color: var(--jqt-text-color); }
 }
 
+.slice-expand-btn {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--jqt-border-color);
+  border-radius: 8px;
+  background: var(--jqt-surface-color);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--jqt-text-color);
+  padding: 0;
+  line-height: 1;
+
+  &:hover { border-color: var(--jqt-text-muted); }
+}
+
+.slice-expand-mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 1;
+}
+
 .view-btn {
   display: inline-flex;
   align-items: center;
@@ -253,7 +285,158 @@
   flex-shrink: 0;
 }
 
-// ─── Lignes groupées & états vides ────────────────────────────
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  border: 1px solid var(--jqt-border-color);
+  border-radius: 8px;
+  background: var(--jqt-surface-color);
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--jqt-text-color);
+  cursor: pointer;
+  white-space: nowrap;
+  box-sizing: border-box;
+
+  &:hover { border-color: var(--jqt-text-muted); }
+}
+
+.export-btn-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+// ─── Export item dans le menu View
+.view-menu-export-divider {
+  margin: 4px 0 !important;
+}
+
+.view-menu-export-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0 16px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--jqt-text-color);
+  text-align: left;
+  box-sizing: border-box;
+
+  &:hover { background: rgba(0, 0, 0, .04); }
+}
+
+.view-menu-export-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+  color: var(--jqt-text-muted);
+}
+
+// ─── Préférences : mode édition
+
+// Bouton flottant de confirmation (coin supérieur droit du tableau)
+.edit-confirm-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #16a34a;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+  transition: background 0.15s;
+
+  mat-icon { color: #fff; font-size: 22px; width: 22px; height: 22px; }
+  &:hover { background: #15803d; }
+}
+
+// Bannière de feedback save/clear
+.preferences-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 8px 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #15803d;
+
+  .preferences-message-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+}
+
+// Header en mode édition : fond subtil + curseur grab
+:host ::ng-deep .edit-mode-header {
+  background: rgba(59, 130, 246, .04) !important;
+  cursor: grab !important;
+  user-select: none;
+  // On laisse pointer-events sur all pour que le resize-handle soit cliquable dans le th
+  overflow: visible !important;
+}
+
+// Poignée de resize : bande fine sur le bord droit du th
+// cursor: col-resize !important pour annuler l'héritage de cursor: grab du th parent
+.col-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize !important;
+  // Indicateur visible dès le mode édition (ligne fine translucide)
+  background: rgba(59, 130, 246, .25);
+  z-index: 20;
+
+  &:hover { background: rgba(59, 130, 246, .7); }
+  &:active { background: rgba(59, 130, 246, .9); }
+}
+
+// Les th doivent être en position relative pour que la poignée s'y positionne
+// overflow visible pour que la poignée ne soit pas rognée
+:host ::ng-deep th.mat-mdc-header-cell {
+  position: relative;
+  overflow: visible !important;
+}
+
+// Lignes non cliquables en mode édition
+:host ::ng-deep .edit-mode-row {
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.8;
+}
+
+// Cellules en mode édition : aucune interaction
+.cell-edit-mode {
+  pointer-events: none;
+  user-select: none;
+  color: var(--jqt-text-muted);
+}
+
+// ─── Lignes groupées & états vides
 
 .group-header-row {
   cursor: pointer;
@@ -396,7 +579,7 @@
   border: none !important;
 }
 
-// ─── Colonnes & entêtes ───────────────────────────────────────
+// ─── Colonnes & entêtes
 
 .jquery-table {
   width: 100%;
@@ -520,7 +703,7 @@
   font-style: italic;
 }
 
-// ─── Pagination ───────────────────────────────────────────────
+// ─── Pagination
 
 .bottom-bar {
   display: flex;
@@ -807,7 +990,7 @@
   }
 }
 
-// ─── Responsive ───────────────────────────────────────────────
+// ─── Responsive
 
 @media (max-width: 960px) {
   .table-layout {
@@ -815,7 +998,7 @@
   }
 }
 
-// ─── Menu contextuel (view) ───────────────────────────────────
+// ─── Menu contextuel (view)
 
 ::ng-deep .view-menu-panel .mat-mdc-menu-panel {
   min-width: 220px !important;
@@ -918,7 +1101,7 @@
   margin: 4px 0;
 }
 
-// ─── Lazy / Skeletons ─────────────────────────────────────────
+// ─── Lazy / Skeletons
 
 .lazy-skeleton {
   display: block;

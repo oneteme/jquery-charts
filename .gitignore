@@ -44,6 +44,9 @@ Thumbs.db
 
 # GitHub Copilot
 .github/copilot-instructions.md
+COPILOT_CONTEXT.md
+projects/oneteme/jquery-echarts/CONTEXT.md
+projects/oneteme/jquery-echarts/PROGRESS.md
 projects/oneteme/jquery-table/CONTEXT.md
 docs/contexte-oneteme-libs.md
 docs/contexte-view-externalisation.md

@@ -4,11 +4,10 @@ import { TableColumnProvider, TableViewConfig } from '../../jquery-table.model';
 import { SliceConfig } from '../slice-panel/slice-panel.model';
 import { humanizeKey } from '../table.utils';
 
-// Ré-exportation du contrat core pour les consommateurs de jquery-table.
 export type { ViewField, ViewConfig, ViewState, ViewEvent } from '@oneteme/jquery-core';
 export { viewField, groupableViewFields, sliceableViewFields, initialViewState } from '@oneteme/jquery-core';
 
-// ── Types internes ────────────────────────────────────────────────────────────
+// ── Types internes
 
 export interface ViewFieldState {
   activeColumns: TableColumnProvider<any>[];
@@ -34,9 +33,11 @@ export interface ViewPanelConfig {
   columns: TableColumnProvider<any>[];
   /** Slices statiques */
   sliceConfigs: SliceConfig<any>[];
+  /** Label utilisé quand aucun groupe / aucune slice n’est actif. Défaut : 'Aucun'. */
+  noneLabel?: string;
 }
 
-// ── Facade ────────────────────────────────────────────────────────────────────
+// ── Facade
 
 /**
  * Centralise l'état et les actions du panneau View (Champs / Group by / Slice by).
@@ -49,7 +50,7 @@ export interface ViewPanelConfig {
  */
 export class ViewFacade<T = any> {
 
-  // ── State ──────────────────────────────────────────────────────────────────
+  // ── State
 
   readonly fields: ViewFieldState = {
     activeColumns: [],
@@ -70,12 +71,12 @@ export class ViewFacade<T = any> {
   private _panelConfig: ViewPanelConfig = { columns: [], sliceConfigs: [] };
   private _hiddenStaticKeys = new Set<string>();
 
-  // ── Events ─────────────────────────────────────────────────────────────────
+  // ── Events
 
   private readonly _events$ = new Subject<ViewEvent>();
   readonly events$ = this._events$.asObservable();
 
-  // ── Computed flags ─────────────────────────────────────────────────────────
+  // ── Computed flags
 
   get enabled(): boolean {
     return this._panelConfig.config?.enabled === true;
@@ -127,7 +128,7 @@ export class ViewFacade<T = any> {
   }
 
   get activeGroupByLabel(): string {
-    if (!this.groupBy.activeKey) return 'Aucun';
+    if (!this.groupBy.activeKey) return this._panelConfig.noneLabel ?? 'Aucun';
     const col = this.groupByColumns.find(c => c.key === this.groupBy.activeKey);
     return col?.header || this.groupBy.activeKey;
   }
@@ -145,7 +146,7 @@ export class ViewFacade<T = any> {
     return col.header || humanizeKey(col.key);
   }
 
-  // ── Mise à jour de la config (appelée depuis refreshViewModel) ─────────────
+  // ── Mise à jour de la config (appelée depuis refreshViewModel)
 
   update(panelConfig: ViewPanelConfig): void {
     this._panelConfig = panelConfig;
@@ -153,14 +154,24 @@ export class ViewFacade<T = any> {
     this._refreshDynamicSliceMeta();
   }
 
-  // ── Actions Fields ─────────────────────────────────────────────────────────
+  // ── Actions Fields
 
   setActiveColumns(columns: TableColumnProvider<T>[]): void {
     this.fields.activeColumns = columns;
+    this.fields.userCustomized = true;
   }
 
   setUserCustomized(value: boolean): void {
     this.fields.userCustomized = value;
+  }
+
+  /** Remet la vue dans son état initial : colonnes par défaut, pas de groupBy, pas de dynamic slices. */
+  resetToDefaults(): void {
+    this.fields.userCustomized = false;
+    this._refreshDefaultColumns();
+    this.groupBy.activeKey = null;
+    this.sliceBy.activeDynamicColumns = [];
+    this._refreshDynamicSliceMeta();
   }
 
   addColumn(column: TableColumnProvider<T>): void {
@@ -222,14 +233,14 @@ export class ViewFacade<T = any> {
     return this.fields.activeColumns.some(c => c.key === key);
   }
 
-  // ── Actions Group by ───────────────────────────────────────────────────────
+  // ── Actions Group by
 
   setGroupBy(key: string | null): void {
     this.groupBy.activeKey = key;
     this._events$.next({ type: 'groupByChanged', key });
   }
 
-  // ── Actions Slice by (dynamique) ───────────────────────────────────────────
+  // ── Actions Slice by (dynamique)
 
   /** Appelée quand le SlicePanelComponent émet dynamicSliceKeysChange */
   onDynamicSliceKeysChange(keys: string[]): void {
@@ -259,7 +270,7 @@ export class ViewFacade<T = any> {
     return this.sliceBy.activeDynamicColumns.some(c => c.key === key);
   }
 
-  // ── Contrat core ───────────────────────────────────────────────────────────
+  // ── Contrat core
 
   /** Retourne un snapshot ViewState (contrat core) de l'état courant. */
   toViewState(): ViewState {
@@ -282,13 +293,13 @@ export class ViewFacade<T = any> {
     };
   }
 
-  // ── Destructor ─────────────────────────────────────────────────────────────
+  // ── Destructor
 
   destroy(): void {
     this._events$.complete();
   }
 
-  // ── Helpers privés ─────────────────────────────────────────────────────────
+  // ── Helpers privés
 
   private _refreshDefaultColumns(): void {
     const defaultCols = (this._panelConfig.columns || []).filter(c => !c.optional);
@@ -339,7 +350,7 @@ export class ViewFacade<T = any> {
     );
     const visibleStaticCount = visibleStatics.length;
     const total = visibleStaticCount + this.sliceBy.activeDynamicColumns.length;
-    if (total === 0) { this.sliceBy.activeLabel = 'Aucun'; return; }
+    if (total === 0) { this.sliceBy.activeLabel = this._panelConfig.noneLabel ?? 'Aucun'; return; }
     if (total === 1) {
       if (visibleStaticCount === 1) {
         const first = visibleStatics[0];

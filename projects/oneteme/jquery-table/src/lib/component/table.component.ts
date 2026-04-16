@@ -1,31 +1,55 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, ElementRef, EventEmitter, inject, Input, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, TemplateRef, ViewChild } from '@angular/core';
+import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { Subject, take, takeUntil } from 'rxjs';
+import { Subject, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableProvider, TableViewConfig } from '../jquery-table.model';
+import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
 import { SliceConfig } from './slice-panel/slice-panel.model';
 import { SlicePanelComponent } from './slice-panel/slice-panel.component';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
 import { ViewFacade } from './view/view.facade';
+import { LazyColumnManager } from './lazy-column-manager';
+import { TablePreferencesManager } from './table-preferences.manager';
+import { GroupByManager } from './group-by.manager';
+import { ExportManager } from './export.manager';
+import {
+  GROUP_ROW_COLUMN, GROUP_HEADER_MARKER,
+  GROUP_KEY_LAZY_LOADING, GROUP_KEY_TOO_MANY,
+  ROW_RAW_KEY, ROW_INDEX_KEY,
+  ROW_GROUP_KEY, ROW_GROUP_COUNT, ROW_GROUP_PAGE, ROW_GROUP_PAGE_COUNT,
+  LAZY_LOADING_VALUE, LAZY_ERROR_VALUE,
+} from './table.constants';
+
+/** Cache interne du groupement — invalidé dès que les données, la clé ou les paramètres de tri changent. */
+interface GroupByCache<T> {
+  rows: T[];
+  key: string;
+  sortOrder: 'asc' | 'desc';
+  sortActive: string;
+  sortDir: string;
+  order: string[];
+  map: Map<string, T[]>;
+}
 
 @Component({
   standalone: true,
   selector: 'jquery-table',
-  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent ],
+  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatDividerModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [{ provide: MatPaginatorIntl, useFactory: getFrenchPaginatorIntl }],
 })
-export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDestroy {
+export class TableComponent<T = any> implements OnChanges, AfterContentInit, AfterViewInit, OnDestroy {
   @Input() config?: TableProvider<T>;
 
   @Input() dataSource?: T[] | { data: T[] };
@@ -49,6 +73,17 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   @Output() categorySelected = new EventEmitter<string>();
   @Output() rowSelected = new EventEmitter<T>();
 
+  /** Émis à chaque changement de tri (y compris le tri initial). */
+  @Output() sortChange    = new EventEmitter<{ active: string; direction: 'asc' | 'desc' | '' }>();
+  /** Émis à chaque changement de page ou de taille de page. */
+  @Output() pageChange    = new EventEmitter<{ pageIndex: number; pageSize: number }>();
+  /** Émis à chaque changement de la recherche texte. */
+  @Output() searchChange  = new EventEmitter<string>();
+  /** Émis quand le Group by change (clé de colonne, ou `null` si désactivé). */
+  @Output() groupByChange = new EventEmitter<string | null>();
+  /** Émis quand la liste des colonnes visibles change (clés dans l’ordre d’affichage). */
+  @Output() columnsChange = new EventEmitter<string[]>();
+
   @ViewChild(MatPaginator)
   set paginator(value: MatPaginator | undefined) {
     this._paginator = value;
@@ -64,9 +99,21 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   @ViewChild(SlicePanelComponent) slicePanelRef?: SlicePanelComponent<T>;
   @ViewChild('viewMenuTrigger') viewMenuTrigger?: MatMenuTrigger;
   @ContentChildren(JqtCellDefDirective) _cellDefs!: QueryList<JqtCellDefDirective>;
+  /** Map clé→TemplateRef pré-calculée depuis _cellDefs. Mise à jour dans ngAfterContentInit et sur _cellDefs.changes. */
+  private _cellDefMap = new Map<string, TemplateRef<{ $implicit: any; index: number }>>();
 
   renderedColumns: string[] = [];
   tableDataSource = new MatTableDataSource<any>([]);
+
+  /** Constante exposée au template pour le matColumnDef de la ligne de groupe. */
+  readonly _GROUP_ROW_COLUMN = GROUP_ROW_COLUMN;
+  /** Clés d'accès aux propriétés des lignes projetées — exposées pour le template. */
+  readonly _ROW_RAW_KEY = ROW_RAW_KEY;
+  readonly _ROW_INDEX_KEY = ROW_INDEX_KEY;
+  readonly _ROW_GROUP_KEY = ROW_GROUP_KEY;
+  readonly _ROW_GROUP_COUNT = ROW_GROUP_COUNT;
+  readonly _ROW_GROUP_PAGE = ROW_GROUP_PAGE;
+  readonly _ROW_GROUP_PAGE_COUNT = ROW_GROUP_PAGE_COUNT;
 
   /** Facade View : état et actions centralisés (Champs / Group by / Slice by) */
   readonly _view = new ViewFacade<T>();
@@ -95,39 +142,89 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._view.sliceBy.availableForDynamic; }
   get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.allDynamicColumns; }
   get _activeSliceByLabel(): string { return this._view.sliceBy.activeLabel; }
+  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
 
   searchQuery = '';
   get activeGroupByKey(): string | null { return this._view.groupBy.activeKey; }
   _matSortActive = '';
   _matSortDirection: 'asc' | 'desc' | '' = '';
-  private _collapsedGroups = new Set<string>();
   private _activeSort: { active: string; direction: 'asc' | 'desc' | '' } = { active: '', direction: '' };
   private _sortSubscribed: MatSort | null = null;
   private _destroy$ = new Subject<void>();
-  private _defaultGroupCollapsed = false;
-  private _groupPages = new Map<string, number>();
   private _totalFilteredCount = 0;
 
-  _lazyColumnStatus = new Map<string, 'idle' | 'loading' | 'loaded' | 'error'>();
-  _lazyColumnData = new Map<string, Map<any, any>>();
-  private _lazyFetchCancels = new Map<string, Subject<void>>();
+  /** Gestionnaire du mode Group By (état collapsed, pagination, tri des groupes). */
+  readonly _groupBy = new GroupByManager(
+    () => { this._projectCurrentPage(); this._cdr.markForCheck(); },
+    () => this.refreshViewModel(),
+  );
+
+  /** Délégués vers GroupByManager pour la compatibilité des templates. */
+  get groupPageSize(): number { return this._groupBy.groupPageSize; }
+  set groupPageSize(v: number) { this._groupBy.groupPageSize = v; }
+  get groupSortOrder(): 'asc' | 'desc' { return this._groupBy.groupSortOrder; }
+  set groupSortOrder(v: 'asc' | 'desc') { this._groupBy.groupSortOrder = v; }
+
+  /** Gestionnaire du cycle de vie des colonnes lazy (fetch, annulation, statuts, données). */
+  private _lazy = new LazyColumnManager<T>();
+  /** Compatibilité template : retourne la map de statuts lazy. */
+  get _lazyColumnStatus() { return this._lazy.status; }
+  /** Compatibilité template : retourne la map de données lazy. */
+  get _lazyColumnData() { return this._lazy.data; }
   private _cdr = inject(ChangeDetectorRef);
   private _el = inject(ElementRef<HTMLElement>);
+  private _ngZone = inject(NgZone);
+  private _i18nRaw = inject(JQT_I18N, { optional: true });
 
-  isGroupHeader = (_: number, row: any): boolean => row.__groupHeader === true;
+  /** Labels de l’interface. Fusionnés depuis JQT_I18N_DEFAULTS et le token JQT_I18N injecté. */
+  readonly i18n: JqtI18n = { ...JQT_I18N_DEFAULTS, ...(this._i18nRaw ?? {}) };
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  isGroupHeader = (_: number, row: any): boolean => row[GROUP_HEADER_MARKER] === true;
+
+  /** Retourne true si la ligne de groupe est une ligne normale (ni lazy, ni too-many). */
+  isNormalGroupRow(row: any): boolean {
+    return row[ROW_GROUP_KEY] !== GROUP_KEY_LAZY_LOADING && row[ROW_GROUP_KEY] !== GROUP_KEY_TOO_MANY;
+  }
+  isGroupRowLoading(row: any): boolean { return row[ROW_GROUP_KEY] === GROUP_KEY_LAZY_LOADING; }
+  isGroupRowTooMany(row: any): boolean { return row[ROW_GROUP_KEY] === GROUP_KEY_TOO_MANY; }
+
+  /** Gère le clic sur une ligne d'en-tête de groupe (no-op pour les états spéciaux). */
+  onGroupHeaderClick(row: any): void {
+    if (!this.isNormalGroupRow(row)) return;
+    this.toggleGroupCollapse(row[ROW_GROUP_KEY]);
+  }
+
+  /** Gestionnaire export CSV. */
+  private readonly _export = new ExportManager<T>(
+    () => this._allFilteredRows,
+    () => this.activeColumns,
+    () => this.resolvedConfig.export,
+    (col, row, idx) => this.resolveCellValue(col, row, idx),
+  );
+
+  // ── Lifecycle
 
   pageSize = 5;
   pageSizeOptions: number[] = [5, 10, 20];
   pageSizeOptionsGroupBy: number[] = [5, 10, 20];
-  groupPageSize = 5;
-  groupSortOrder: 'asc' | 'desc' = 'asc';
 
   draggedColumnKey: string | null = null;
   dragOverColumnKey: string | null = null;
 
-  private userCustomizedColumns: boolean = false; // conservé par rétrocompat — géré via _view.fields.userCustomized
+  // ── Mode édition (Préférences)
+  /** Vrai quand le mode édition est actif (resize + drag colonnes, interactions désactivées). */
+  _editMode = false;
+  /** Largeurs de colonnes personnalisées par l'utilisateur (clé → px). */
+  _columnWidths: Record<string, number> = {};
+  /** Message de feedback après save/clear. `null` = pas de message. */
+  _preferencesMessage: string | null = null;
+  /** Vrai si une configuration est sauvegardée pour ce tableau. */
+  _hasSavedConfig = false;
+  private _preferencesManager: TablePreferencesManager | null = null;
+  private _resizeState: { key: string; startX: number; startWidth: number } | null = null;
+  /** Dynamic slice keys à restaurer après ngAfterViewInit (slicePanelRef pas encore dispo). */
+  private _pendingDynamicSliceKeys: string[] | null = null;
+
   private resolvedConfig: TableProvider<T> = { columns: [] };
   private _columnMap: Map<string, TableColumnProvider<T>> = new Map();
   private _resolvedData: T[] = [];
@@ -137,31 +234,25 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   // Seuil au-delà duquel le rendu groupé est bloqué pour protéger le navigateur
   private static readonly MAX_GROUP_COUNT = 500;
 
-  // ── Optimisation performance ─────────────────────────────────────────────
+  // ── Optimisation performance
   private _allFilteredRows: T[] = [];
   private _paginatorSubscribed: MatPaginator | null = null;
 
-  // Cache groupBy : invalide uniquement quand les données/tri/groupKey changent
-  private _groupCacheRows: T[] | null = null;
-  private _groupCacheKey: string | null = null;
-  private _groupCacheSortOrder: 'asc' | 'desc' = 'asc';
-  private _groupCacheSortActive: string = '';
-  private _groupCacheSortDir: string = '';
-  private _groupCacheOrder: string[] = [];
-  private _groupCacheMap: Map<string, T[]> = new Map();
+  /** Cache groupBy — invalidé dès que rows/key/tri changent. */
+  private _groupCache: GroupByCache<T> | null = null;
   private _pendingRender: ReturnType<typeof setTimeout> | null = null;
 
   private _staticSliceHiddenKeys = new Set<string>();
   private _configHiddenKeys = new Set<string>();
 
 
+  /** Clés des colonnes visibles du dernier émission columnsChange (pour éviter les émissions dupliquement). */
+  private _prevColumnKeys: string[] = [];
+
   ngOnChanges(changes: SimpleChanges): void {
     const dataChanged = !!(changes['config'] || changes['data'] || changes['dataSource']);
     if (dataChanged) {
-      this._lazyFetchCancels.forEach(s => { s.next(); s.complete(); });
-      this._lazyFetchCancels.clear();
-      this._lazyColumnStatus = new Map();
-      this._lazyColumnData = new Map();
+      this._lazy.cancelAll();
     }
     if (changes['config'] && !this._initialSearchApplied) {
       const initial = this.config?.search?.initialQuery;
@@ -176,32 +267,63 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }
   }
 
+  ngAfterContentInit(): void {
+    this._rebuildCellDefMap();
+    this._cellDefs.changes.pipe(takeUntil(this._destroy$)).subscribe(() => {
+      this._rebuildCellDefMap();
+      this._cdr.markForCheck();
+    });
+  }
+
   ngAfterViewInit(): void {
     this.attachPaginator();
     this.attachSort();
     this._measureHeaderHeight();
+    this._applyPendingDynamicSliceKeys();
+  }
+
+  private _applyPendingDynamicSliceKeys(): void {
+    if (!this._pendingDynamicSliceKeys) return;
+    const keys = this._pendingDynamicSliceKeys;
+    this._pendingDynamicSliceKeys = null;
+    const allCols = this.resolvedConfig.columns ?? [];
+    keys.forEach(key => {
+      const col = allCols.find(c => c.key === key);
+      if (col) this.addDynamicSlice(col);
+    });
   }
 
   ngOnDestroy(): void {
     if (this._pendingRender !== null) {
       clearTimeout(this._pendingRender);
     }
+    if (this._preferencesMessageTimer !== null) {
+      clearTimeout(this._preferencesMessageTimer);
+    }
+    // Nettoie un éventuel resize en cours (listeners window non retirés)
+    this._resizeState = null;
     this._destroy$.next();
     this._destroy$.complete();
     this._view.destroy();
   }
 
   private _measureHeaderHeight(): void {
-    const headerRow = this._el.nativeElement.querySelector('tr.mat-mdc-header-row') as HTMLElement;
-    if (headerRow) {
-      const h = headerRow.getBoundingClientRect().height;
-      if (h > 0) {
-        this._el.nativeElement.style.setProperty('--actual-header-height', h + 'px');
+    const measure = () => {
+      const headerRow = this._el.nativeElement.querySelector('tr.mat-mdc-header-row') as HTMLElement;
+      if (headerRow) {
+        const h = headerRow.getBoundingClientRect().height;
+        if (h > 0) {
+          this._el.nativeElement.style.setProperty('--actual-header-height', h + 'px');
+          return;
+        }
       }
-    }
+      // Header pas encore rendu (ex: lazy Angular Material), on réessaie après le prochain frame
+      this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
+    };
+    this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
   }
 
-  // ── Getters d'affichage ────────────────────────────────────────────────────
+  // ── Getters d'affichage
 
   get title(): string {
     return this.resolvedConfig.title ?? '';
@@ -216,8 +338,21 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get showSearchBar(): boolean { return this.resolvedConfig.search?.enabled === true; }
-  get showViewButton(): boolean { return this._view.enabled; }
-  get showToolbar(): boolean { return this.showSearchBar || this.showViewButton; }
+  get showViewButton(): boolean { return this._view.enabled || this.showExportButton || this.showPreferencesMenu; }
+  get showSliceExpandBtn(): boolean { return this._showSlicePanel && this._slicePanelCollapsed && this._sliceShowToggle; }
+  get showExportButton(): boolean {
+    return this.resolvedConfig.export?.enabled === true;
+  }
+  get showPreferencesMenu(): boolean {
+    return this.resolvedConfig.preferences?.enabled === true;
+  }
+  get hasSavedPreferences(): boolean { return this._hasSavedConfig; }
+
+  get showToolbar(): boolean { return this.showSearchBar || this.showViewButton || this.showSliceExpandBtn; }
+
+  expandSlicePanel(): void {
+    this.slicePanelRef?.togglePanel();
+  }
   get showFields(): boolean { return this._view.showFields; }
   get showGroupBySection(): boolean { return this._view.showGroupBySection; }
 
@@ -241,22 +376,23 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   colLabel(col: { key: string; header?: string }): string { return this._view.colLabel(col); }
 
-  // ── Actions utilisateur ────────────────────────────────────────────────────
+  // ── Actions utilisateur
 
   onSearchChange(): void {
     this._preservePageIndex = 0;
     this.refreshViewModel();
     this.paginator?.firstPage();
+    this.searchChange.emit(this.searchQuery);
   }
 
   onGroupByChange(key: string | null): void {
     this._view.setGroupBy(key);
-    this._defaultGroupCollapsed = key !== null;
-    this._collapsedGroups.clear();
-    this._groupPages.clear();
-    this.groupPageSize = this.resolveDefaultGroupPageSize();
+    this._groupBy.setDefaultCollapsed(key !== null);
+    this._groupBy.reset();
+    this._groupBy.groupPageSize = this.resolveDefaultGroupPageSize();
     this.refreshViewModel();
     this.paginator?.firstPage();
+    this.groupByChange.emit(key);
     if (key) {
       this.viewMenuTrigger?.closeMenu();
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
@@ -264,115 +400,53 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
         this.triggerLazyFetch(colDef);
       }
     } else {
-      setTimeout(() => {
+      this._ngZone.runOutsideAngular(() => setTimeout(() => {
         this.tableBodyScrollRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 0);
+      }, 0));
     }
   }
 
   onGroupPageSizeChange(size: number | string): void {
-    this.groupPageSize = Number(size);
-    this._groupPages.clear();
-    this.refreshViewModel();
+    this._groupBy.onGroupPageSizeChange(Number(size));
   }
 
   onGroupSortToggle(dir: 'asc' | 'desc'): void {
-    if (this.groupSortOrder === dir) return;
-    this.groupSortOrder = dir;
-    this._groupPages.clear();
-    this.refreshViewModel();
-    const openGroup = this._defaultGroupCollapsed
-      ? (this._collapsedGroups.size === 1 ? [...this._collapsedGroups][0] : null)
-      : null;
-    if (openGroup) {
-      setTimeout(() => this.scrollToGroupHeader(openGroup), 0);
-    }
-  }
-
-  // ── Lazy loading ─────────────────────────────────────────────────────────
-
-  getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
-    return this._lazyColumnStatus.get(key) ?? 'idle';
-  }
-
-  getLazyRenderType(rowValue: any): 'loading' | 'error' | 'value' {
-    if (rowValue === '__lazy_loading__') return 'loading';
-    if (rowValue === '__lazy_error__') return 'error';
-    return 'value';
-  }
-
-  retryLazyColumn(column: TableColumnProvider<T>): void {
-    const k = column.key;
-    const prev = this._lazyFetchCancels.get(k);
-    if (prev) { prev.next(); prev.complete(); }
-    this._lazyFetchCancels.delete(k);
-    const newStatus = new Map(this._lazyColumnStatus);
-    newStatus.delete(k);
-    this._lazyColumnStatus = newStatus;
-    const newData = new Map(this._lazyColumnData);
-    newData.delete(k);
-    this._lazyColumnData = newData;
-    this.triggerLazyFetch(column);
-  }
-
-  triggerLazyFetch(column: TableColumnProvider<T>): void {
-    if (!column.lazy) return;
-    const k = column.key;
-    if (this._lazyColumnStatus.get(k) === 'loading') return;
-
-    const prev = this._lazyFetchCancels.get(k);
-    if (prev) { prev.next(); prev.complete(); }
-    const cancel$ = new Subject<void>();
-    this._lazyFetchCancels.set(k, cancel$);
-
-    const newStatus1 = new Map(this._lazyColumnStatus);
-    newStatus1.set(k, 'loading');
-    this._lazyColumnStatus = newStatus1;
-    this.refreshViewModel();
-
-    column.lazy.fetchFn().pipe(
-      take(1),
-      takeUntil(cancel$),
-    ).subscribe({
-      next: (values: any[]) => {
-        const rowMap = new Map<any, any>();
-        const data = this._resolvedData;
-        values.forEach((value, i) => {
-          if (i < data.length) rowMap.set(data[i], value);
-        });
-        const newData = new Map(this._lazyColumnData);
-        newData.set(k, rowMap);
-        this._lazyColumnData = newData;
-        const newStatus2 = new Map(this._lazyColumnStatus);
-        newStatus2.set(k, 'loaded');
-        this._lazyColumnStatus = newStatus2;
-        this.refreshViewModel();
-        this._cdr.markForCheck();
-      },
-      error: () => {
-        const newStatusErr = new Map(this._lazyColumnStatus);
-        newStatusErr.set(k, 'error');
-        this._lazyColumnStatus = newStatusErr;
-        this.refreshViewModel();
-        this._cdr.markForCheck();
-      },
+    this._groupBy.onGroupSortToggle(dir, (key) => {
+      this._ngZone.runOutsideAngular(() => setTimeout(() => this.scrollToGroupHeader(key), 0));
     });
   }
 
-  // ── Groupement ────────────────────────────────────────────────────────────
+  // ── Lazy loading
+
+  getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
+    return this._lazy.getStatus(key);
+  }
+
+  getLazyRenderType(rowValue: any): 'loading' | 'error' | 'value' {
+    return this._lazy.getRenderType(rowValue);
+  }
+
+  retryLazyColumn(column: TableColumnProvider<T>): void {
+    this._lazy.retry(column, this._resolvedData, this._lazyCallbacks());
+  }
+
+  triggerLazyFetch(column: TableColumnProvider<T>): void {
+    this._lazy.fetch(column, this._resolvedData, this._lazyCallbacks());
+  }
+
+  private _lazyCallbacks() {
+    return {
+      onRefresh: () => this.refreshViewModel(),
+      onMarkForCheck: () => this._cdr.markForCheck(),
+    };
+  }
+
+  // ── Groupement
 
   toggleGroupCollapse(groupKey: string): void {
-    if (this._collapsedGroups.has(groupKey)) {
-      this._collapsedGroups.delete(groupKey);
-    } else {
-      this._collapsedGroups.clear();
-      this._collapsedGroups.add(groupKey);
-      setTimeout(() => this.scrollToGroupHeader(groupKey), 0);
-    }
-    // Court-circuit de refreshViewModel : la data et les colonnes n'ont pas changé,
-    // seul l'état collapsed change — reprojection directe sans rebuild complet
-    this._projectCurrentPage();
-    this._cdr.markForCheck();
+    this._groupBy.toggleGroupCollapse(groupKey, (key) => {
+      this._ngZone.runOutsideAngular(() => setTimeout(() => this.scrollToGroupHeader(key), 0));
+    });
   }
 
   private scrollToGroupHeader(groupKey: string): void {
@@ -391,29 +465,18 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   isGroupCollapsed(groupKey: string): boolean {
-    return this._defaultGroupCollapsed ? !this._collapsedGroups.has(groupKey) : this._collapsedGroups.has(groupKey);
+    return this._groupBy.isGroupCollapsed(groupKey);
   }
 
   groupPageBack(groupKey: string): void {
-    const current = this._groupPages.get(groupKey) ?? 0;
-    if (current > 0) {
-      this._groupPages.set(groupKey, current - 1);
-      this._projectCurrentPage();
-      this._cdr.markForCheck();
-    }
+    this._groupBy.groupPageBack(groupKey);
   }
 
   groupPageForward(groupKey: string, totalCount: number): void {
-    const maxPage = Math.ceil(totalCount / this.groupPageSize) - 1;
-    const current = this._groupPages.get(groupKey) ?? 0;
-    if (current < maxPage) {
-      this._groupPages.set(groupKey, current + 1);
-      this._projectCurrentPage();
-      this._cdr.markForCheck();
-    }
+    this._groupBy.groupPageForward(groupKey, totalCount);
   }
 
-  // ── Colonnes ──────────────────────────────────────────────────────────────
+  // ── Colonnes
 
   get hasAddableColumns(): boolean {
     return this._view.menuBaseColumns.length > 0 || this._view.menuOptionalColumns.length > 0;
@@ -436,7 +499,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return this._view.allowColumnRemoval;
   }
 
-  // ── Slices ────────────────────────────────────────────────────────────────
+  // ── Slices
 
   get hasSliceConfig(): boolean {
     return (this.resolvedConfig.slices?.length ?? 0) > 0;
@@ -526,11 +589,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   get emptyStateLabel(): string {
-    return this.resolvedConfig.labels?.empty || 'Aucune donnée';
+    return this.resolvedConfig.labels?.empty || this.i18n.emptyState;
   }
 
   get loadingStateLabel(): string {
-    return this.resolvedConfig.labels?.loading || 'Chargement des données...';
+    return this.resolvedConfig.labels?.loading || this.i18n.loadingState;
   }
 
   get effectiveIsLoading(): boolean {
@@ -553,11 +616,11 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
   get totalRows(): number {
     return this.activeGroupByKey
-      ? this.tableDataSource.data.filter((r) => !r.__groupHeader).length
+      ? this.tableDataSource.data.filter((r) => !r[GROUP_HEADER_MARKER]).length
       : this._allFilteredRows.length;
   }
 
-  // ── Gestion des colonnes ─────────────────────────────────────────────────
+  // ── Gestion des colonnes
 
   onAddColumn(column: TableColumnProvider<T>): void {
     this._view.addColumn(column);
@@ -603,41 +666,66 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     this.columnRemoved.emit(column);
   }
 
-  // ── Lignes ────────────────────────────────────────────────────────────────
+  // ── Lignes
+
+  private _rebuildCellDefMap(): void {
+    this._cellDefMap = new Map(
+      (this._cellDefs ?? []).map(d => [d.columnKey, d.template] as [string, TemplateRef<{ $implicit: any; index: number }>])
+    );
+  }
 
   getCellTemplate(key: string): TemplateRef<{ $implicit: any; index: number }> | null {
-    return this._cellDefs?.find((d) => d.columnKey === key)?.template ?? null;
+    return this._cellDefMap.get(key) ?? null;
   }
 
   get hasCustomCellDefs(): boolean {
-    return (this._cellDefs?.length ?? 0) > 0;
+    return this._cellDefMap.size > 0;
   }
 
   get hasRowClickHandler(): boolean {
-    return this.rowSelected.observed || !!this.config?.onRowSelected;
+    return this.rowSelected.observed || !!this.resolvedConfig.onRowSelected;
+  }
+
+  /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives.
+   * Retourne null si aucune colonne n'a de largeur définie (le tableau remplit alors 100% du conteneur).
+   * Seules les valeurs explicitement en `px` sont sommables ; les pourcentages ou autres unités sont ignorés. */
+  get tableMinWidth(): string | null {
+    const hasSomeExplicitWidth = this.activeColumns.some(c => c.width);
+    if (!hasSomeExplicitWidth) return null;
+    let sum = 0;
+    for (const col of this.activeColumns) {
+      if (col.width) {
+        const isPx = col.width.trim().toLowerCase().endsWith('px');
+        const px = Number.parseFloat(col.width);
+        if (isPx && !Number.isNaN(px)) { sum += px; }
+      } else {
+        sum += 120; // largeur minimale estimée pour une colonne sans largeur explicite
+      }
+    }
+    return sum + 'px';
   }
 
   trackRowFn = (_index: number, row: any): any =>
-    row.__groupHeader ? `__group_${row.__groupKey}` : row.__index ?? _index;
+    row[GROUP_HEADER_MARKER] ? `__group_${row[ROW_GROUP_KEY]}` : row[ROW_INDEX_KEY] ?? _index;
 
   getRowClass(row: any): string | string[] | Record<string, boolean> {
     const fn = this.resolvedConfig.rowClass;
-    if (!fn || row?.__groupHeader) return {};
-    return fn(row.__raw ?? row, row.__index ?? 0);
+    if (!fn || row?.[GROUP_HEADER_MARKER]) return {};
+    return fn(row[ROW_RAW_KEY] ?? row, row[ROW_INDEX_KEY] ?? 0);
   }
 
   onRowClick(row: any, event: MouseEvent | null): void {
-    if (row?.__groupHeader) return;
+    if (row?.[GROUP_HEADER_MARKER]) return;
     if (!this.hasRowClickHandler) return;
-    const resolved = (row?.__raw ?? row) as T;
+    const resolved = (row?.[ROW_RAW_KEY] ?? row) as T;
+    this.resolvedConfig.onRowSelected?.(resolved, event);
     this.rowSelected.emit(resolved);
-    this.config?.onRowSelected?.(resolved, event);
   }
 
-  // ── Drag & drop ───────────────────────────────────────────────────────────
+  // ── Drag & drop
 
   onHeaderDragStart(columnKey: string, event: DragEvent): void {
-    if (!this.isColumnDragDropEnabled) {
+    if (!this.isColumnDragDropEnabled && !this._editMode) {
       return;
     }
 
@@ -650,7 +738,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   onHeaderDragOver(columnKey: string, event: DragEvent): void {
-    if (!this.isColumnDragDropEnabled || !this.draggedColumnKey) {
+    if ((!this.isColumnDragDropEnabled && !this._editMode) || !this.draggedColumnKey) {
       return;
     }
 
@@ -659,7 +747,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   }
 
   onHeaderDrop(targetColumnKey: string, event: DragEvent): void {
-    if (!this.isColumnDragDropEnabled || !this.draggedColumnKey) {
+    if ((!this.isColumnDragDropEnabled && !this._editMode) || !this.draggedColumnKey) {
       return;
     }
 
@@ -684,6 +772,181 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return !!this.draggedColumnKey && this.dragOverColumnKey === columnKey && this.draggedColumnKey !== columnKey;
   }
 
+  // ── Préférences : mode édition
+
+  enterEditMode(): void {
+    this._editMode = true;
+    this._preferencesMessage = null;
+    this._cdr.markForCheck();
+  }
+
+  confirmEditMode(): void {
+    this._editMode = false;
+    this._cdr.markForCheck();
+  }
+
+  /** Démarre le resize d'une colonne (mousedown sur la poignée droite). */
+  onResizeStart(columnKey: string, event: MouseEvent): void {
+    if (!this._editMode) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const th = (event.target as HTMLElement).closest('th') as HTMLElement | null;
+    if (!th) return;
+
+    this._resizeState = { key: columnKey, startX: event.clientX, startWidth: th.offsetWidth };
+
+    const onMove = (e: MouseEvent) => {
+      if (!this._resizeState) {
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        return;
+      }
+      const delta = e.clientX - this._resizeState.startX;
+      const newWidth = Math.max(60, this._resizeState.startWidth + delta);
+      this._columnWidths = { ...this._columnWidths, [this._resizeState.key]: newWidth };
+      // detectChanges() pour forcer la mise à jour immédiate en mode OnPush
+      // (les listeners window tournent hors zone Angular avec runOutsideAngular)
+      this._cdr.detectChanges();
+    };
+
+    const onUp = () => {
+      this._resizeState = null;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    // Listeners hors zone Angular pour éviter des cycles CD à chaque mousemove
+    this._ngZone.runOutsideAngular(() => {
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    });
+  }
+
+  /** Retourne la largeur CSS d'une colonne (px si personnalisée, sinon la valeur de config ou auto). */
+  getColumnWidth(key: string): string {
+    if (this._columnWidths[key] != null) return this._columnWidths[key] + 'px';
+    const col = this._columnMap.get(key);
+    return col?.width ?? 'auto';
+  }
+
+  // ── Préférences : save / clear
+
+  savePreferences(): void {
+    if (!this._preferencesManager) return;
+    const dynamicSliceKeys = this._view.sliceBy.activeDynamicColumns.map(c => c.key);
+    const config: import('../jquery-table.model').SavedTableConfig = {
+      search:              this.searchQuery || undefined,
+      groupBy:             this.activeGroupByKey,
+      columnOrder:         this.activeColumns.map(c => c.key),
+      visibleColumns:      this.activeColumns.map(c => c.key),
+      columnWidths:        Object.keys(this._columnWidths).length ? { ...this._columnWidths } : undefined,
+      slicePanelCollapsed: this._slicePanelCollapsed,
+      hiddenSliceKeys:     this._staticSliceHiddenKeys.size ? [...this._staticSliceHiddenKeys] : undefined,
+      dynamicSliceKeys:    dynamicSliceKeys.length ? dynamicSliceKeys : undefined,
+    };
+    this._preferencesManager.save(config);
+    this._hasSavedConfig = true;
+    this._showPreferencesMessage(this.i18n.preferencesSavedMessage);
+  }
+
+  clearPreferences(): void {
+    if (!this._preferencesManager) return;
+    this._preferencesManager.clear();
+    this._hasSavedConfig = false;
+
+    // Capturer les dynamic slices actives AVANT le reset (resetToDefaults() les vide)
+    const dynamicSlicesToRemove = this._view.sliceBy.activeDynamicColumns.slice();
+
+    // Reset complet de l'état vers les valeurs par défaut de la config
+    this.searchQuery = '';
+    this._columnWidths = {};
+    this._slicePanelCollapsed = false;
+    this._groupBy.reset();
+    this._groupBy.setDefaultCollapsed(false);
+
+    // Slices statiques : revenir aux seules celles cachées par la config (pas par l'utilisateur)
+    this._staticSliceHiddenKeys = new Set(this._configHiddenKeys);
+    this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+
+    // Colonnes et groupBy : reset via la facade (retire les optionnelles, remet l'ordre config)
+    this._view.resetToDefaults();
+
+    // Dynamic slices : les retirer du slice panel avec la liste capturée avant le reset
+    dynamicSlicesToRemove.forEach(col => {
+      this.slicePanelRef?.removeDynamicSliceByKey(col.key);
+    });
+
+    // Filtre de slice actif
+    this.activeSliceFilter = () => true;
+
+    // Rafraîchit toute la vue
+    this.activeColumns = this._view.fields.activeColumns;
+    this.renderedColumns = this.activeColumns.map(c => c.key);
+    this._pendingDynamicSliceKeys = null;
+    this.refreshViewModel();
+
+    this._showPreferencesMessage(this.i18n.preferencesClearedMessage);
+  }
+
+  private _preferencesMessageTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private _showPreferencesMessage(msg: string): void {
+    if (this._preferencesMessageTimer !== null) clearTimeout(this._preferencesMessageTimer);
+    this._preferencesMessage = msg;
+    this._cdr.markForCheck();
+    this._preferencesMessageTimer = setTimeout(() => {
+      this._preferencesMessageTimer = null;
+      this._preferencesMessage = null;
+      this._cdr.markForCheck();
+    }, 4000);
+  }
+
+  private _applyPreferences(saved: import('../jquery-table.model').SavedTableConfig | null): void {
+    if (!saved) return;
+    // Recherche
+    if (saved.search) this.searchQuery = saved.search;
+    // Largeurs colonnes
+    if (saved.columnWidths) this._columnWidths = { ...saved.columnWidths };
+    // Group by
+    if (saved.groupBy !== undefined) {
+      this._view.setGroupBy(saved.groupBy);
+      if (saved.groupBy) {
+        this._groupBy.setDefaultCollapsed(true);
+        this._groupBy.reset();
+      }
+    }
+    // État panneau slice
+    if (saved.slicePanelCollapsed !== undefined) this._slicePanelCollapsed = saved.slicePanelCollapsed;
+    // Slices statiques cachées
+    if (saved.hiddenSliceKeys?.length) {
+      const next = new Set(this._configHiddenKeys);
+      saved.hiddenSliceKeys.forEach(k => next.add(k));
+      this._staticSliceHiddenKeys = next;
+      this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+    }
+    // Colonnes visibles + ordre — reconstruit activeColumns en une seule passe.
+    // On part de saved.columnOrder (ordre sauvegardé) si disponible, sinon saved.visibleColumns.
+    // Cela gère à la fois : colonnes optionnelles ajoutées, colonnes retirées, et réordonnancement.
+    const targetKeys = saved.columnOrder ?? saved.visibleColumns;
+    if (targetKeys?.length) {
+      const allByKey = new Map((this.resolvedConfig.columns ?? []).map(c => [c.key, c]));
+      // Colonnes dans l'ordre sauvegardé (on ne garde que celles connues de la config)
+      const ordered = targetKeys
+        .map(key => allByKey.get(key))
+        .filter((c): c is TableColumnProvider<T> => c !== undefined);
+      // Colonnes actives actuelllement non présentes dans targetKeys (non-optional passées sous silence)
+      // → on les exclut : l'utilisateur avait explicitement choisi ce sous-ensemble
+      if (ordered.length > 0) {
+        this._view.setActiveColumns(ordered);
+      }
+    }
+    // Dynamic slices — différé : slicePanelRef pas encore disponible au moment de ngOnChanges
+    if (saved.dynamicSliceKeys?.length) {
+      this._pendingDynamicSliceKeys = saved.dynamicSliceKeys;
+    }
+  }
+
   canRemoveColumn(column: TableColumnProvider<T>): boolean {
     return (
       this._view.allowColumnRemoval &&
@@ -703,12 +966,34 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return String(value);
   }
 
-  // ── Pipeline de données (privé) ──────────────────────────────────────────
+  // ── Export CSV
+
+  onExport(): void {
+    this._export.export();
+  }
+
+  // ── Pipeline de données (privé)
 
   private refreshViewModel(): void {
     this._resolvedData = this.resolveData();
     this.resolvedConfig = this.buildEffectiveConfig();
     this._columnMap = new Map((this.resolvedConfig.columns || []).map(c => [c.key, c]));
+
+    // ── Initialiser le gestionnaire de préférences si l'option est activée
+    const prefsId = this.resolvedConfig.preferences?.enabled
+      ? this.resolvedConfig.preferences.tableId
+      : null;
+    const currentId = prefsId ?? null;
+    // Préférences à appliquer après _view.update() (quand activeColumns est déjà peuplé)
+    let pendingPrefs: import('../jquery-table.model').SavedTableConfig | null = null;
+    if (currentId && this._preferencesManager?.key !== ('jqt_prefs_' + currentId)) {
+      this._preferencesManager = new TablePreferencesManager(currentId);
+      this._hasSavedConfig = this._preferencesManager.hasSaved();
+      pendingPrefs = this._preferencesManager.load();
+    } else if (!currentId) {
+      this._preferencesManager = null;
+      this._hasSavedConfig = false;
+    }
 
     // Délègue à la facade : mise à jour de l'état View (colonnes, groupBy meta, sliceBy meta)
     this._view.update({
@@ -716,6 +1001,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       columns: this.resolvedConfig.columns ?? [],
       sliceConfigs: this.resolvedConfig.slices ?? [],
     });
+
+    // Applique les préférences ICI, APRÈS _view.update(), quand fields.activeColumns est peuplé.
+    // Si appelé avant, fields.activeColumns est vide → le tri de restauration produit [] → reset.
+    if (pendingPrefs) {
+      this._applyPreferences(pendingPrefs);
+    }
+
     // Synchronise la propriété stable (évite NG0100 — la facade est source de vérité)
     this.activeColumns = this._view.fields.activeColumns;
 
@@ -755,6 +1047,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this._matSortActive = this.resolvedConfig.defaultSort.active;
       this._matSortDirection = this.resolvedConfig.defaultSort.direction;
     }
+    this._buildSliceByMenuItems();
 
     this._scheduleRender();
   }
@@ -773,15 +1066,55 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     return true;
   }
 
+  private _buildSliceByMenuItems(): void {
+    const staticSliceMap = new Map(this._staticSlicesForMenu.map(s => [s.key, s]));
+    const dynamicSliceSet = new Set(this._allDynamicSliceColumns.map(c => c.key));
+    const seen = new Set<string>();
+    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
+    for (const col of this.resolvedConfig.columns ?? []) {
+      if (seen.has(col.key)) continue;
+      if (staticSliceMap.has(col.key)) {
+        const s = staticSliceMap.get(col.key)!;
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon });
+        seen.add(col.key);
+      } else if (dynamicSliceSet.has(col.key)) {
+        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, col });
+        seen.add(col.key);
+      }
+    }
+    for (const s of this._staticSlicesForMenu) {
+      if (!seen.has(s.key)) {
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon });
+      }
+    }
+    this._sliceByMenuItems = items;
+  }
+
+  get sliceByMenuItems() { return this._sliceByMenuItems; }
+
+  onSliceMenuItemClick(item: { isStatic: boolean; key: string; col?: TableColumnProvider<T> }): void {
+    if (item.isStatic) {
+      this.toggleStaticSlice(item.key);
+    } else if (item.col) {
+      this.toggleDynamicSlice(item.col);
+    }
+  }
+
+  isSliceMenuItemActive(item: { isStatic: boolean; key: string }): boolean {
+    return item.isStatic ? this.isStaticSliceVisible(item.key) : this.isDynamicSliceActive(item.key);
+  }
+
   private _scheduleRender(): void {
     if (this._pendingRender !== null) {
       clearTimeout(this._pendingRender);
       this._pendingRender = null;
     }
-    this._pendingRender = setTimeout(() => {
-      this._pendingRender = null;
-      this._executeRender();
-    }, 0);
+    this._ngZone.runOutsideAngular(() => {
+      this._pendingRender = setTimeout(() => {
+        this._pendingRender = null;
+        this._ngZone.run(() => this._executeRender());
+      }, 0);
+    });
   }
 
   private _executeRender(): void {
@@ -804,7 +1137,9 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     }
 
     this._projectCurrentPage();
-    this._cdr.markForCheck();
+    // detectChanges() au lieu de markForCheck() : met à jour uniquement CE composant
+    // sans déclencher un cycle CD global qui provoquerait NG0100 dans les parents.
+    this._cdr.detectChanges();
   }
 
   private _projectCurrentPage(): void {
@@ -820,7 +1155,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     const projected: any[] = [];
     pageRows.forEach((row, i) => {
       const idx = start + i;
-      const p: any = { __raw: row, __index: idx };
+      const p: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx };
       this.activeColumns.forEach((col) => {
         p[col.key] = this.resolveCellValue(col, row, idx);
       });
@@ -892,9 +1227,13 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
     const query = this.searchQuery?.trim().toLowerCase();
     if (query) {
+      const restrictedKeys = this.resolvedConfig.search?.searchColumns;
+      const searchCols = restrictedKeys?.length
+        ? [...this._columnMap.values()].filter(col => restrictedKeys.includes(col.key))
+        : [...this._columnMap.values()];
       filtered = filtered.filter((row) =>
-        this.activeColumns.some((col) => {
-          const val = this.getLazyAwareValue(col.key, row);
+        searchCols.some((col) => {
+          const val = this.getDisplayValueForSearch(col, row);
           return val != null && String(val).toLowerCase().includes(query);
         })
       );
@@ -908,7 +1247,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     if (!groupKey) {
       const result: any[] = [];
       rows.forEach((row, index) => {
-        const projected: any = { __raw: row, __index: index };
+        const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: index };
         this.activeColumns.forEach((col) => {
           projected[col.key] = this.resolveCellValue(col, row, index);
         });
@@ -922,7 +1261,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
     if (groupLazyStatus !== 'loaded') {
       this._totalFilteredCount = rows.length;
-      return [{ __groupHeader: true, __groupKey: '__lazy_loading__', __groupCount: rows.length, __groupPage: 0, __groupPageCount: 1 }];
+      return [{ [GROUP_HEADER_MARKER]: true, [ROW_GROUP_KEY]: GROUP_KEY_LAZY_LOADING, [ROW_GROUP_COUNT]: rows.length, [ROW_GROUP_PAGE]: 0, [ROW_GROUP_PAGE_COUNT]: 1 }];
     }
 
     const effectiveSort = this._activeSort.active && this._activeSort.direction
@@ -931,18 +1270,19 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
 
     // Vérifie si le cache est encore valide (même référence de rows + même paramètres de tri/groupe)
     const cacheValid =
-      this._groupCacheRows === rows &&
-      this._groupCacheKey === groupKey &&
-      this._groupCacheSortOrder === this.groupSortOrder &&
-      this._groupCacheSortActive === (effectiveSort.active ?? '') &&
-      this._groupCacheSortDir === (effectiveSort.direction ?? '');
+      this._groupCache !== null &&
+      this._groupCache.rows === rows &&
+      this._groupCache.key === groupKey &&
+      this._groupCache.sortOrder === this._groupBy.groupSortOrder &&
+      this._groupCache.sortActive === (effectiveSort.active ?? '') &&
+      this._groupCache.sortDir === (effectiveSort.direction ?? '');
 
     let groupOrder: string[];
     let groupMap: Map<string, T[]>;
 
     if (cacheValid) {
-      groupOrder = this._groupCacheOrder;
-      groupMap = this._groupCacheMap;
+      groupOrder = this._groupCache!.order;
+      groupMap = this._groupCache!.map;
     } else {
       // Pré-calcul des valeurs de groupe en un seul passage (évite O(n) find() par comparaison)
       const groupValueCache = new Map<T, string>();
@@ -973,7 +1313,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
         const va = groupValueCache.get(a)!;
         const vb = groupValueCache.get(b)!;
         const cmp = va.localeCompare(vb);
-        return this.groupSortOrder === 'desc' ? -cmp : cmp;
+        return this._groupBy.groupSortOrder === 'desc' ? -cmp : cmp;
       });
 
       groupOrder = [];
@@ -996,20 +1336,22 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       }
 
       // Mise en cache
-      this._groupCacheRows = rows;
-      this._groupCacheKey = groupKey;
-      this._groupCacheSortOrder = this.groupSortOrder;
-      this._groupCacheSortActive = effectiveSort.active ?? '';
-      this._groupCacheSortDir = effectiveSort.direction ?? '';
-      this._groupCacheOrder = groupOrder;
-      this._groupCacheMap = groupMap;
+      this._groupCache = {
+        rows,
+        key: groupKey,
+        sortOrder: this._groupBy.groupSortOrder,
+        sortActive: effectiveSort.active ?? '',
+        sortDir: effectiveSort.direction ?? '',
+        order: groupOrder,
+        map: groupMap,
+      };
     }
 
     this._totalFilteredCount = rows.length;
 
     // Protection contre les jeux de données à trop haute cardinalité
     if (groupOrder.length > TableComponent.MAX_GROUP_COUNT) {
-      return [{ __groupHeader: true, __groupKey: '__too_many_groups__', __groupCount: groupOrder.length, __groupPage: 0, __groupPageCount: 1 }];
+      return [{ [GROUP_HEADER_MARKER]: true, [ROW_GROUP_KEY]: GROUP_KEY_TOO_MANY, [ROW_GROUP_COUNT]: groupOrder.length, [ROW_GROUP_PAGE]: 0, [ROW_GROUP_PAGE_COUNT]: 1 }];
     }
 
     const pageSize = this.groupPageSize;
@@ -1018,18 +1360,18 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     groupOrder.forEach((groupValue) => {
       const groupRows = groupMap.get(groupValue)!;
       const totalCount = groupRows.length;
-      const currentPage = pageSize === 0 ? 0 : (this._groupPages.get(groupValue) ?? 0);
+      const currentPage = pageSize === 0 ? 0 : this._groupBy.getPage(groupValue);
       const pageCount = pageSize === 0 ? 1 : Math.max(1, Math.ceil(totalCount / pageSize));
       const collapsed = this.isGroupCollapsed(groupValue);
 
-      result.push({ __groupHeader: true, __groupKey: groupValue, __groupCount: totalCount, __groupPage: currentPage, __groupPageCount: pageCount });
+      result.push({ [GROUP_HEADER_MARKER]: true, [ROW_GROUP_KEY]: groupValue, [ROW_GROUP_COUNT]: totalCount, [ROW_GROUP_PAGE]: currentPage, [ROW_GROUP_PAGE_COUNT]: pageCount });
 
       if (!collapsed) {
         const start = pageSize === 0 ? 0 : currentPage * pageSize;
         const end = pageSize === 0 ? totalCount : Math.min(start + pageSize, totalCount);
         groupRows.slice(start, end).forEach((row, i) => {
           const idx = start + i;
-          const projected: any = { __raw: row, __index: idx };
+          const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx };
           this.activeColumns.forEach((col) => {
             projected[col.key] = this.resolveCellValue(col, row, idx);
           });
@@ -1062,6 +1404,25 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
     };
   }
 
+  /**
+   * Retourne la valeur telle qu'elle est affichée dans la cellule, en suivant exactement
+   * le même chemin que resolveCellValue — utilisée pour la recherche plein-texte.
+   * Ne passe pas par sortValue (valeur brute de tri) contrairement à getLazyAwareValue.
+   */
+  private getDisplayValueForSearch(col: TableColumnProvider<T>, row: T): any {
+    if (col.lazy) {
+      const status = this._lazyColumnStatus.get(col.key) ?? 'idle';
+      if (status !== 'loaded') return null;
+      const rowMap = this._lazyColumnData.get(col.key);
+      return normalizeCellValue(rowMap?.get(row) ?? '');
+    }
+    if (col.searchValue) {
+      return col.searchValue(row, 0);
+    }
+    const rawValue = col.value ? col.value(row, 0) : (row as any)?.[col.key];
+    return normalizeCellValue(rawValue);
+  }
+
   private getLazyAwareValue(columnKey: string, row: T): any {
     const colDef = this._columnMap.get(columnKey);
     if (colDef?.lazy) {
@@ -1079,8 +1440,8 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
   private resolveCellValue(col: TableColumnProvider<T>, row: T, index: number): any {
     if (col.lazy) {
       const status = this._lazyColumnStatus.get(col.key) ?? 'idle';
-      if (status === 'loading') return '__lazy_loading__';
-      if (status === 'error') return '__lazy_error__';
+      if (status === 'loading') return LAZY_LOADING_VALUE;
+      if (status === 'error') return LAZY_ERROR_VALUE;
       if (status === 'loaded') {
         const rowMap = this._lazyColumnData.get(col.key);
         return normalizeCellValue(rowMap?.get(row) ?? '');
@@ -1148,6 +1509,7 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
       this._paginatorSubscribed = this.paginator;
       this.paginator.page.pipe(takeUntil(this._destroy$)).subscribe(() => {
         this.pageSize = this.paginator!.pageSize;
+        this.pageChange.emit({ pageIndex: this.paginator!.pageIndex, pageSize: this.paginator!.pageSize });
         if (this._pendingRender !== null) return;
         this._projectCurrentPage();
         this._cdr.markForCheck();
@@ -1167,10 +1529,9 @@ export class TableComponent<T = any> implements OnChanges, AfterViewInit, OnDest
           active: this.sort.active,
           direction: this.sort.direction,
         };
+        this.sortChange.emit({ active: this.sort.active, direction: this.sort.direction });
         this._scheduleRender();
       });
     }
   }
-
 }
-

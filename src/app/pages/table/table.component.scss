@@ -37,9 +37,78 @@
     height: 462px;
   }
 
+  // ── Header titre du composant
+  jquery-table::ng-deep .table-header h3 {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+  }
+
+  // ── Ligne d'en-tête des colonnes (mat-table header row)
+  jquery-table::ng-deep .mat-mdc-header-row {
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  jquery-table::ng-deep .mat-mdc-header-cell {
+    height: 38px !important;
+    min-height: 38px !important;
+    line-height: 38px !important;
+  }
+
+  // ── Footer paginator : hauteur compacte
+  jquery-table::ng-deep .bottom-bar .mat-mdc-paginator-container {
+    height: 40px !important;
+  }
+
   .row-selected {
     margin-top: 12px;
     color: #1f2937;
+  }
+
+  .outputs-panel {
+    margin-top: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    background: #f9fafb;
+
+    .outputs-title {
+      margin: 0 0 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #374151;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+
+    .outputs-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .output-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 4px 10px;
+      background: #fff;
+      font-size: 13px;
+    }
+
+    .output-label {
+      font-family: monospace;
+      color: #6366f1;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .output-value {
+      color: #1f2937;
+      white-space: nowrap;
+    }
   }
 
   .code-demo {

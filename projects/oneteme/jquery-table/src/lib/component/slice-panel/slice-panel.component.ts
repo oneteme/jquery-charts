@@ -6,6 +6,7 @@ import {
   SimpleChanges, ViewChild, inject
 } from '@angular/core';
 import { SliceColumnDef, SliceConfig } from './slice-panel.model';
+import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../../jqt-i18n.token';
 
 const EMPTY_CATEGORY_KEY = '__empty__';
 const EMPTY_CATEGORY_LABEL = 'Vide';
@@ -38,20 +39,22 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   @ViewChild('slicePanelBody') slicePanelBodyRef?: ElementRef<HTMLElement>;
 
   private _cdr = inject(ChangeDetectorRef);
+  private _i18nRaw = inject(JQT_I18N, { optional: true });
+  readonly i18n: JqtI18n = { ...JQT_I18N_DEFAULTS, ...(this._i18nRaw ?? {}) };
 
   isCollapsed = false;
   activeKeysBySlice: Map<number, Set<string>> = new Map();
   private _expandedSlices = new Set<number>();
   _dynamicSlices: Array<{ key: string; slice: SliceConfig<T> }> = [];
 
-  // ── Cache ─────────────────────────────────────────────────────
+  // ── Cache
   _cachedSlices: SliceConfig<T>[] = [];
   private _countCache = new Map<string, number>();
 
   readonly trackBySliceIndex = (index: number, _: any): number => index;
   readonly trackByCategoryKey = (_: number, cat: any): string => cat.key;
 
-  // ── Lifecycle ─────────────────────────────────────────────────
+  // ── Lifecycle
 
   ngOnInit(): void {
     this.isCollapsed = this.collapsedByDefault;
@@ -65,7 +68,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     }
   }
 
-  // ── Computed ──────────────────────────────────────────────────
+  // ── Computed
 
   get showPanel(): boolean {
     const hasCfg = (this.sliceConfigs || []).length > 0 || this._dynamicSlices.length > 0;
@@ -119,7 +122,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     return `${total} actifs`;
   }
 
-  // ── UI state ──────────────────────────────────────────────────
+  // ── UI state
 
   isSliceCollapsed(sliceIndex: number): boolean {
     if (this._cachedSlices.length === 1) {
@@ -185,7 +188,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     // Délégué à table.component via _staticSliceHiddenKeys — ne rien faire ici.
   }
 
-  // ── Selection ─────────────────────────────────────────────────
+  // ── Selection
   getSliceIcon(slice: SliceConfig<T>): string | undefined {
     if (slice.icon) return slice.icon;
     if (slice.columnKey) {
@@ -253,7 +256,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     this._cdr.markForCheck();
   }
 
-  // ── Dynamic slice management ──────────────────────────────────
+  // ── Dynamic slice management
 
   addDynamicSlice(column: SliceColumnDef<T>): void {
     const distinctValues = this._computeDistinctValues(column.key);
@@ -292,7 +295,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     this.removeDynamicSlice(sliceIndex);
   }
 
-  // ── Private helpers ───────────────────────────────────────────
+  // ── Private helpers
 
   private _emitFilter(): void {
     const slices = this.slices;

@@ -7,8 +7,8 @@
   </div>
 
   <p>
-    Cette page met en avant le wrapper Material table avec gestion dynamique des
-    colonnes, slice catégorie à gauche, et filtrage en temps réel.
+    100 posts JSONPlaceholder joints avec 10 users, colonne lazy Commentaires, export CSV,
+    Group By, recherche, outputs en temps réel.
   </p>
 
   <jquery-table
@@ -16,11 +16,43 @@
     [data]="tableData"
     [isLoading]="isLoading"
     (rowSelected)="onRowSelected($event)"
+    (sortChange)="onSortChange($event)"
+    (pageChange)="onPageChange($event)"
+    (searchChange)="onSearchChange($event)"
+    (groupByChange)="onGroupByChange($event)"
+    (columnsChange)="onColumnsChange($event)"
   ></jquery-table>
 
-  <p class="row-selected" *ngIf="selectedRow">
-    Ligne sélectionnée: <strong>{{ selectedRow.issue }}</strong> · {{ selectedRow.status }} · {{ selectedRow.owner }}
-  </p>
+  <!-- Panneau d'état des outputs -->
+  <div class="outputs-panel">
+    <h3 class="outputs-title">Outputs en temps r&eacute;el</h3>
+    <div class="outputs-grid">
+      <div class="output-item" *ngIf="selectedRow">
+        <span class="output-label">rowSelected</span>
+        <span class="output-value">{{ selectedRow.title | slice:0:40 }}… — {{ selectedRow.authorCompany }}</span>
+      </div>
+      <div class="output-item" *ngIf="lastSort && lastSort.active">
+        <span class="output-label">sortChange</span>
+        <span class="output-value">{{ lastSort.active }} {{ lastSort.direction }}</span>
+      </div>
+      <div class="output-item" *ngIf="lastPage">
+        <span class="output-label">pageChange</span>
+        <span class="output-value">page {{ lastPage.pageIndex + 1 }} &mdash; {{ lastPage.pageSize }} lignes</span>
+      </div>
+      <div class="output-item" *ngIf="lastSearch">
+        <span class="output-label">searchChange</span>
+        <span class="output-value">&laquo; {{ lastSearch }} &raquo;</span>
+      </div>
+      <div class="output-item" *ngIf="lastGroupBy !== null">
+        <span class="output-label">groupByChange</span>
+        <span class="output-value">{{ lastGroupBy || '(retiré)' }}</span>
+      </div>
+      <div class="output-item" *ngIf="visibleColumns.length > 0">
+        <span class="output-label">columnsChange</span>
+        <span class="output-value">{{ visibleColumns.join(', ') }}</span>
+      </div>
+    </div>
+  </div>
 
   <div class="code-demo">
     <button

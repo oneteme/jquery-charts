@@ -31,7 +31,7 @@ npm install @oneteme/jquery-core @oneteme/jquery-table @angular/material @angula
 ## Utilisation rapide
 
 ```ts
-import { TableComponent, TableProvider } from '@oneteme/jquery-table';
+import { TableComponent, TableProvider, col } from '@oneteme/jquery-table';
 
 interface Row {
   id: number;
@@ -42,16 +42,18 @@ interface Row {
 
 @Component({
   imports: [TableComponent],
-  template: `<jquery-table [config]="table" (rowSelected)="onRow($event)"></jquery-table>`,
+  template: `<jquery-table [config]="table" [data]="rows" (rowSelected)="onRow($event)"></jquery-table>`,
 })
 export class DemoComponent {
+  rows: Row[] = [];
+
   table: TableProvider<Row> = {
     title: 'Utilisateurs',
     columns: [
-      { key: 'id',     header: 'ID' },
-      { key: 'name',   header: 'Nom',    sortable: true },
-      { key: 'status', header: 'Statut', sliceable: true },
-      { key: 'team',   header: 'Équipe', groupable: true, optional: true },
+      col('id',     'ID'),
+      col('name',   'Nom',    { sortable: true }),
+      col('status', 'Statut', { sliceable: true }),
+      col('team',   'Équipe', { groupable: true, optional: true }),
     ],
     slices: [
       {
@@ -66,7 +68,7 @@ export class DemoComponent {
     search:     { enabled: true },
     pagination: { enabled: true, pageSize: 20 },
     view:       { enabled: true, enableColumnDragDrop: true },
-    data: [],
+    export:     { enabled: true, filename: 'utilisateurs' },
   };
 
   onRow(row: Row) { console.log(row); }
@@ -119,13 +121,12 @@ Le `config` complet reste disponible pour activer les fonctionnalités avancées
 
 ---
 
-## API  `TableProvider<T>`
+## API — `TableProvider<T>`
 
 ```ts
 interface TableProvider<T = any> {
   columns?:      TableColumnProvider<T>[];
   title?:        string;
-  data?:         T[];
 
   slices?:            SliceConfig<T>[];    // Filtres catégoriels (slice panel)
   enableSliceToggle?: boolean;             // Défaut : true
@@ -134,16 +135,19 @@ interface TableProvider<T = any> {
   pagination?:   TablePaginationConfig;
   view?:         TableViewConfig;
   labels?:       TableLabelsConfig;
+  export?:       TableExportConfig<T>;
 
   defaultSort?:   { active: string; direction: 'asc' | 'desc' };
   rowClass?:      (row: T, index: number) => string | string[] | Record<string, boolean>;
-  onRowSelected?: (row: T, event: MouseEvent | null) => void;
 }
 ```
 
+> **Note** : les données (`data`) et l’état de chargement (`isLoading`) sont des `@Input` séparés
+> sur le composant, pas des champs de `TableProvider`.
+
 ---
 
-## API  `TableColumnProvider<T>`
+## API — `TableColumnProvider<T>`
 
 ```ts
 interface TableColumnProvider<T = any> {
@@ -153,13 +157,15 @@ interface TableColumnProvider<T = any> {
   value?:     DataProvider<any>;       // (row, index) => valeur affichée
   sortValue?: DataProvider<any>;       // Valeur pour le tri si différente de value
   sortable?:  boolean;
-  width?:     string;                  // Largeur CSS (ex: '120px', '10%')
+  width?:     string;                  // Largeur CSS en px uniquement pour le calcul min-width (ex: '120px')
+                                       // Les unités %, em, rem sont ignorées dans le calcul de tableMinWidth
 
   optional?:  boolean;                 // Colonne masquée par défaut, ajoutables via View menu
   removable?: boolean;                 // Peut être retirée manuellement
 
   groupable?: boolean;                 // Disponible comme critère de regroupement dans View menu
   sliceable?: boolean;                 // Disponible comme slice dynamique dans View menu
+  searchValue?: DataProvider<string>;  // Valeur utilisée par la recherche texte (si différente de value)
 
   lazy?: {
     fetchFn: () => Observable<any[]>;  // Retourne un tableau dans le même ordre que les lignes
@@ -169,14 +175,31 @@ interface TableColumnProvider<T = any> {
 
 ---
 
-## API  Sous-configurations
+## Helper `col()`
+
+Raccourci pour déclarer une colonne sans verbosité :
+
+```ts
+import { col } from '@oneteme/jquery-table';
+
+columns: [
+  col('name',   'Nom'),
+  col('status', 'Statut', { sortable: false, groupable: true }),
+  col('team',   'Équipe', { optional: true }),
+]
+```
+
+---
+
+## API — Sous-configurations
 
 ### `TableSearchConfig`
 
 ```ts
 interface TableSearchConfig {
-  enabled?:      boolean;
-  initialQuery?: string;   // Terme de recherche pré-rempli au chargement
+  enabled?:       boolean;
+  initialQuery?:  string;     // Terme de recherche pré-rempli au chargement
+  searchColumns?: string[];   // Restreint la recherche à ces clés de colonnes
 }
 ```
 
@@ -205,14 +228,54 @@ interface TableViewConfig {
 
 ```ts
 interface TableLabelsConfig {
-  empty?:   string;   // Défaut : 'Aucune donnée'
-  loading?: string;   // Défaut : 'Chargement des données...'
+  empty?:   string;   // Défaut : 'Aucune donnée' (ou la valeur i18n injectée)
+  loading?: string;   // Défaut : 'Chargement des données...' (ou la valeur i18n injectée)
 }
 ```
 
+### `TableExportConfig<T>`
+
+```ts
+interface TableExportConfig<T = any> {
+  enabled?:   boolean;                             // Affiche le bouton Export
+  filename?:  string;                              // Nom du fichier sans extension (défaut : 'export')
+  transform?: (row: T) => Record<string, string>;  // Transforme chaque ligne avant export
+}
+```
+
+L’export ne porte que sur les **données filtrées** (slice + recherche) et les **colonnes visibles**.
+Le fichier est généré avec un BOM UTF-8 pour une compatibilité Excel correcte.
+
 ---
 
-## Fonctionnalité  Group by
+## i18n
+
+Tous les labels de l’interface sont personnalisables via un `InjectionToken` :
+
+```ts
+import { JQT_I18N } from '@oneteme/jquery-table';
+
+// Dans AppModule ou un provider racine
+providers: [
+  {
+    provide: JQT_I18N,
+    useValue: {
+      searchPlaceholder: 'Search…',
+      emptyState:        'No data',
+      loadingState:      'Loading…',
+      viewNoneSelected:  'None',
+      groupRemove:       'Remove grouping',
+      exportButtonLabel: 'Export',
+    },
+  },
+]
+```
+
+Seuls les champs fournis écrasent les défauts français. Voir `JqtI18n` pour la liste complète (24 labels).
+
+---
+
+## Fonctionnalité — Group by
 
 Le regroupement s'active en ajoutant `groupable: true` sur une ou plusieurs colonnes. L'utilisateur choisit ensuite la colonne de regroupement depuis le menu View.
 
@@ -237,7 +300,7 @@ Comportements inclus :
 
 ---
 
-## Fonctionnalité  Slice panel
+## Fonctionnalité — Slice panel
 
 Le slice panel est un panneau latéral de filtres catégoriels.
 
@@ -296,7 +359,7 @@ interface SliceCategory<T = any> {
 
 ---
 
-## Fonctionnalité  lazy columns
+## Fonctionnalité — lazy columns
 
 ```ts
 columns: [
@@ -314,7 +377,7 @@ Le composant gère l'état `idle | loading | loaded | error` par colonne, avec p
 
 ---
 
-## Fonctionnalité  Cellules personnalisées (`jqtCellDef`)
+## Fonctionnalité — Cellules personnalisées (`jqtCellDef`)
 
 ```html
 <jquery-table [config]="table">
@@ -336,26 +399,23 @@ Contexte du template :
 
 ---
 
-## Fonctionnalité  Clic sur ligne
-
-Via callback dans `config` :
-
-```ts
-config: TableProvider<Row> = {
-  onRowSelected: (row, event) => this.router.navigate(['/detail', row.id]),
-  rowClass: (row) => row.status === 'error' ? 'row-error' : '',
-};
-```
-
-Ou via l'output Angular :
+## Fonctionnalité — Clic sur ligne
 
 ```html
 <jquery-table [config]="table" (rowSelected)="onRow($event)"></jquery-table>
 ```
 
+La ligne brute `T` est émise via l'Output `(rowSelected)`. Pour appliquer une classe conditionnelle aux lignes, utiliser `rowClass` dans `config` :
+
+```ts
+config: TableProvider<Row> = {
+  rowClass: (row) => row.status === 'error' ? 'row-error' : '',
+};
+```
+
 ---
 
-## Usage standalone  `SlicePanelComponent`
+## Usage standalone — `SlicePanelComponent`
 
 `SlicePanelComponent` est exporté et utilisable indépendamment du tableau, par exemple pour filtrer les données d'un graphique :
 
@@ -394,7 +454,7 @@ Ou via l'output Angular :
 
 ---
 
-## Personnalisation visuelle  CSS variables
+## Personnalisation visuelle — CSS variables
 
 ```scss
 jquery-table {
@@ -435,8 +495,11 @@ import { normalizeCellValue, humanizeKey, getFrenchPaginatorIntl } from '@onetem
 | Fonction | Description |
 |----------|-------------|
 | `normalizeCellValue(value)` | Convertit n'importe quelle valeur de cellule en string affichable (gère `null`, `Date`, `Array`, objet `{label}` / `{name}`) |
-| `humanizeKey(key)` | Transforme `camelCase` / `snake_case` en label lisible (`createdAt`  `"Created at"`) |
+| `humanizeKey(key)` | Transforme `camelCase` / `snake_case` en label lisible (`createdAt` → `"Created at"`) |
+| `col(key, header, overrides?)` | Raccourci pour créer un `TableColumnProvider` en une ligne |
 | `getFrenchPaginatorIntl()` | Retourne un `MatPaginatorIntl` avec les labels en français |
+
+> **`normalizeCellValue`** utilise la locale navigateur (et non fr-FR) pour les dates.
 
 ---
 

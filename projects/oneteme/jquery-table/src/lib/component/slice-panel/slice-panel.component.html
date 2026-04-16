@@ -2,17 +2,17 @@
   <aside class="slice-panel" [class.collapsed]="isCollapsed">
     <div class="slice-panel-header">
       <span *ngIf="!isCollapsed" class="slice-panel-title">
-        <mat-icon class="slice-panel-title-icon" fontSet="material-icons-outlined">filter_list</mat-icon>
-        {{ slices.length > 1 ? 'Filtres' : 'Filtre' }}
+        <mat-icon class="slice-panel-title-icon">filter_list</mat-icon>
+        {{ i18n.filterPanelTitle(slices.length) }}
       </span>
       <button
         *ngIf="showToggle"
         type="button"
         class="slice-toggle"
-        [attr.aria-label]="isCollapsed ? 'Déplier le filtre' : 'Replier le filtre'"
+        [attr.aria-label]="isCollapsed ? i18n.expandFilterTitle : i18n.collapseFilterTitle"
         (click)="togglePanel()"
       >
-        <span class="slice-toggle-icon">{{ isCollapsed ? '›' : '‹' }}</span>
+        <mat-icon class="slice-toggle-mat-icon">{{ isCollapsed ? 'menu' : 'menu_open' }}</mat-icon>
       </button>
     </div>
 
@@ -20,8 +20,8 @@
       <ng-container *ngFor="let slice of slices; let si = index; trackBy: trackBySliceIndex">
         <div class="slice-title-row" [attr.data-slice-index]="si" (click)="toggleSliceCollapse(si)">
           <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
-          <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon" fontSet="material-icons-outlined">{{ getSliceIcon(slice) }}</mat-icon>
-          <p class="slice-title">{{ slice.title || 'Filtrer' }}</p>
+          <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon">{{ getSliceIcon(slice) }}</mat-icon>
+          <p class="slice-title">{{ slice.title || i18n.filterBlockDefaultTitle }}</p>
           <button
             *ngIf="isSliceDynamic(si)"
             type="button"
@@ -53,7 +53,7 @@
                 <span *ngIf="showCounts">{{ sliceCategoryCount(si, category.key) }}</span>
               </button>
             </ng-container>
-            <div *ngIf="isSliceEmpty(si)" class="slice-empty-state">Aucune donnée</div>
+            <div *ngIf="isSliceEmpty(si)" class="slice-empty-state">{{ i18n.filterEmptyState }}</div>
           </ng-template>
         </div>
 
