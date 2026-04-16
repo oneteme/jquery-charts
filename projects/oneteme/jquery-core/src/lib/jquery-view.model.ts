@@ -6,7 +6,7 @@
  */
 import { ChartProvider, SerieProvider, XaxisType, YaxisType } from './jquery-core.model';
 
-// ── Interfaces ────────────────────────────────────────────────────────────────
+// ── Interfaces
 
 /** Descripteur générique d'un champ disponible dans le panneau View. */
 export interface ViewField {
@@ -50,7 +50,7 @@ export type ViewEvent =
   | { type: 'fieldsChanged'; fieldIds: string[] }
   | { type: 'dynamicSlicesChanged'; keys: string[] };
 
-// ── Helpers purs (sans DOM) ───────────────────────────────────────────────────
+// ── Helpers purs (sans DOM)
 
 /** Construit un ViewField à partir d'un id et de propriétés optionnelles. */
 export function viewField(id: string, partial?: Partial<Omit<ViewField, 'id'>>): ViewField {
@@ -76,7 +76,7 @@ export function initialViewState(fields: ViewField[]): ViewState {
   };
 }
 
-// ── Helpers charts ────────────────────────────────────────────────────────────
+// ── Helpers charts
 
 /**
  * Extrait des ViewField depuis les séries d'un ChartProvider.

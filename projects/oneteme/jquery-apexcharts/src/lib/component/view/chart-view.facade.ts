@@ -19,7 +19,7 @@ import {
  */
 export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = any> {
 
-  // ── État ──────────────────────────────────────────────────────────────────
+  // ── État
 
   private _config: ViewConfig = {};
   private _provider: ChartProvider<X, Y> | null = null;
@@ -34,18 +34,18 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     dynamicSliceKeys: [],
   };
 
-  // ── Événements ────────────────────────────────────────────────────────────
+  // ── Événements
 
   private readonly _events$ = new Subject<ViewEvent>();
   readonly events$ = this._events$.asObservable();
 
-  // ── Getters ───────────────────────────────────────────────────────────────
+  // ── Getters
 
   get enabled(): boolean {
     return this._config.enabled === true;
   }
 
-  // ── Mise à jour de la config ──────────────────────────────────────────────
+  // ── Mise à jour de la config
 
   /**
    * Appelée à chaque changement de [config] ou [view] dans le composant parent.
@@ -69,7 +69,7 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     }
   }
 
-  // ── Actions ───────────────────────────────────────────────────────────────
+  // ── Actions
 
   /** Bascule la visibilité d'une série. */
   toggleSerie(id: string, visible: boolean): void {
@@ -85,7 +85,7 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     return this.state.selectedFieldIds.includes(id);
   }
 
-  // ── Provider effectif ─────────────────────────────────────────────────────
+  // ── Provider effectif
 
   /**
    * Retourne le ChartProvider avec les flags `visible` appliqués selon l'état courant.
@@ -97,7 +97,7 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     return applyViewStateToSeries(this._provider, this.state);
   }
 
-  // ── Destructor ─────────────────────────────────────────────────────────────
+  // ── Destructor
 
   destroy(): void {
     this._events$.complete();
