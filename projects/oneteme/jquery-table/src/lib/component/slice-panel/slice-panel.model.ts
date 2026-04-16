@@ -5,7 +5,17 @@ import { Observable } from 'rxjs';
 export interface SliceCategory<T = any> {
   key: string;
   label: string;
-  filter: (row: T) => boolean;
+  /**
+   * Prédicat de filtrage en mémoire — **optionnel**.
+   *
+   * - **Tableau** : requis. Le slice-panel applique ce prédicat sur les lignes locales.
+   * - **Graphique** : omis. Le parent écoute `(activeKeysChange)` pour déclencher
+   *   une nouvelle requête API avec les clés sélectionnées.
+   *
+   * Si `filter` est absent, la sélection n'a aucun effet sur les données locales ;
+   * c'est au composant parent de réagir via `(activeKeysChange)`.
+   */
+  filter?: (row: T) => boolean;
 }
 
 /**

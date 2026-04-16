@@ -335,7 +335,9 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
         if (!activeKeys || activeKeys.size === 0) return true;
         return [...activeKeys].some((key) => {
           const category = (slice.categories || []).find((c) => c.key === key);
-          return category ? category.filter(row) : false;
+          // Si pas de filter défini (usage chart), on ne filtre pas en mémoire
+          if (!category?.filter) return true;
+          return category.filter(row);
         });
       });
     this.filterChange.emit(pred);
