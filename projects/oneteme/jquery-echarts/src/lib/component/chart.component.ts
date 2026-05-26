@@ -39,6 +39,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   }
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
+  @Output() chartClick = new EventEmitter<any>();
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['config'] || changes['view']) {

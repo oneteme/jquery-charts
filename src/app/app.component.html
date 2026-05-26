@@ -1,18 +1,14 @@
 <div class="app-container">
-  <app-header></app-header>
-  <app-sidebar
-    *ngIf="showSidebar"
-    [chartTypes]="chartTypes"
-    [selectedType]="selectedChartType"
-    (selectChartType)="onChartTypeSelected($event)"
-  >
-  </app-sidebar>
+  <app-header (searchOpen)="quickSearch.open()"></app-header>
+  <app-sidebar *ngIf="showSidebar"></app-sidebar>
 
   <main [class.with-sidebar]="showSidebar">
     <router-outlet></router-outlet>
   </main>
 
-  <app-back-to-doc-button></app-back-to-doc-button>
+  <!-- Palette de recherche rapide globale -->
+  <app-quick-search #quickSearch></app-quick-search>
 
+  <app-back-to-doc-button></app-back-to-doc-button>
   <app-footer></app-footer>
 </div>

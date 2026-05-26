@@ -1,207 +1,160 @@
-<p align="center">
-  <img src="src/assets/logo/app-logo.webp" alt="jQuery Charts Logo" width="200" style="border-radius: 12px;"/>
+﻿<p align="center">
+  <img src="src/assets/logo/app-logo.webp" alt="jQuery Charts Logo" width="160"/>
   <h1 align="center">jQuery Charts</h1>
 </p>
 <p align="center">
   <a href="https://angular.io/">
-    <img src="https://img.shields.io/badge/Angular-16.1-dd0031.svg?logo=angular&logoColor=white" alt="Angular 16" style="border-radius: 4px;">
+    <img src="https://img.shields.io/badge/Angular-16.1-dd0031.svg?logo=angular&logoColor=white" alt="Angular 16">
   </a>
-  <a href="https://www.npmjs.com/package/@oneteme/jquery-apexcharts">
-    <img src="https://img.shields.io/badge/npm-v1.0.0-cb3837.svg?logo=npm&logoColor=white" alt="NPM Version" style="border-radius: 4px;">
+  <a href="https://www.npmjs.com/package/@oneteme/jquery-core">
+    <img src="https://img.shields.io/npm/v/@oneteme/jquery-core.svg?label=jquery-core&color=cb3837&logo=npm&logoColor=white" alt="npm jquery-core">
   </a>
   <a href="https://github.com/oneteme/jquery-charts/blob/main/LICENSE">
-    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" style="border-radius: 4px;">
+    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License">
   </a>
 </p>
 <p align="center">
-  <strong style="font-size: 1.2em;">A flexible, modern chart visualization library for Angular applications,<br>
-  offering a wide range of chart types and customization options with a unified syntax<br>
-  for multiple charts libraries</strong>
+  A modular chart and table library for Angular, providing a unified configuration API across multiple rendering engines.
 </p>
-<br/>
 
 ---
 
-<br/>
+## Table of Contents
 
-## ✨ Features
-
-- 📊 Multiple chart types: Pie, Bar, Line, Treemap, Heatmap, Range, Funnel charts and more
-- 🎨 Highly customizable with extensive configuration options
-- 🔄 Interactive demos with source code preview for each chart type
-- 🧩 Modular architecture for easy integration
-
-<br/>
-
----
-
-<br/>
-
-## 📋 Table of Contents
-
-- [Installation](#-installation)
-- [Development Setup](#-development-setup)
-- [Project Structure](#-project-structure)
-- [Available Chart Types](#-available-chart-types)
-- [Documentation](#-documentation)
-- [Contributing](#-contributing)
-- [License](#-license)
-
-<br/>
+- [Packages](#packages)
+- [Installation](#installation)
+- [Development Setup](#development-setup)
+- [Project Structure](#project-structure)
+- [Chart Types](#chart-types)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
-<br/>
+## Packages
 
-## 🚀 Installation
+| Package | Description | Version |
+|---------|-------------|---------|
+| [`@oneteme/jquery-core`](https://www.npmjs.com/package/@oneteme/jquery-core) | Shared data model and utilities | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-core.svg)](https://www.npmjs.com/package/@oneteme/jquery-core) |
+| [`@oneteme/jquery-apexcharts`](https://www.npmjs.com/package/@oneteme/jquery-apexcharts) | Renderer -- [ApexCharts](https://apexcharts.com/) | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-apexcharts.svg)](https://www.npmjs.com/package/@oneteme/jquery-apexcharts) |
+| [`@oneteme/jquery-highcharts`](https://www.npmjs.com/package/@oneteme/jquery-highcharts) | Renderer -- [Highcharts](https://www.highcharts.com/) *(commercial license)* | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-highcharts.svg)](https://www.npmjs.com/package/@oneteme/jquery-highcharts) |
+| [`@oneteme/jquery-echarts`](https://www.npmjs.com/package/@oneteme/jquery-echarts) | Renderer -- [Apache ECharts](https://echarts.apache.org/) *(beta)* | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-echarts/beta.svg)](https://www.npmjs.com/package/@oneteme/jquery-echarts) |
+| [`@oneteme/jquery-table`](https://www.npmjs.com/package/@oneteme/jquery-table) | Declarative table built on Angular Material | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-table.svg)](https://www.npmjs.com/package/@oneteme/jquery-table) |
 
-Using npm:
+All renderers share the same `@oneteme/jquery-core` configuration API. Switching from one renderer to another requires only changing the imported package.
+
+---
+
+## Installation
+
+Install `@oneteme/jquery-core` and one renderer:
 
 ```bash
+# ApexCharts (open source)
 npm install @oneteme/jquery-core @oneteme/jquery-apexcharts
-```
 
-<br/>
+# Apache ECharts (open source, beta)
+npm install @oneteme/jquery-core @oneteme/jquery-echarts@beta
+
+# Highcharts (commercial license required)
+npm install @oneteme/jquery-core @oneteme/jquery-highcharts highcharts
+
+# Table component
+npm install @oneteme/jquery-core @oneteme/jquery-table
+```
 
 ---
 
-<br/>
-
-## 🛠️ Development Setup
-
-1. Clone the repository:
+## Development Setup
 
 ```bash
 git clone https://github.com/oneteme/jquery-charts.git
 cd jquery-charts
-```
-
-2. Install dependencies:
-
-```bash
 npm install
 ```
 
-3. Start the development server:
-
-```bash
-npm run dev
-```
-
-This will concurrently:
-
-- Build the `jquery-core` library in watch mode
-- Build the `jquery-apexcharts` library in watch mode (after core library is built)
-- Start the Angular application in development mode
-
-4. If you just want to work on the demo, you can simply enter this command :
+Start the demo application:
 
 ```bash
 npm run start
 ```
 
-5. If you want, a basic-test page is available to test the integration of the libraries. You can simply uncomment the 'BasicTestComponent' in the following files:
-- `src/app/app-routing.module.ts`
-- `src/app/app.module.ts`
+Build a specific library:
 
-and uncomment the quick access button in the following file:
-- `src/app/components/footer/footer.component.html`
+```bash
+npm run b1   # jquery-core
+npm run b2   # jquery-apexcharts
+npm run b3   # jquery-highcharts
+npm run b4   # jquery-echarts
+npm run b5   # jquery-table
+```
 
-This will allow you to access the basic-test page at `/basic-test`.
+Build all libraries and start the application in watch mode:
 
-<br/>
+```bash
+npm run dev
+```
 
 ---
 
-<br/>
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 jquery-charts/
-├── projects/
-│   └── oneteme/
-│       ├── jquery-core/        # Core library with chart models and utilities
-│       └── jquery-apexcharts/  # ApexCharts integration components
-│
-└── src/                        # Main application demo
-    ├── app/
-    │   ├── core/               # Core services
-    │   ├── data/               # Sample chart data
-    │   ├── pages/              # Application pages
-    │   └── components/         # Shared components
-    └── assets/                 # Static assets
++-- projects/
+|   +-- oneteme/
+|       +-- jquery-core/         # Shared data model and utilities
+|       +-- jquery-apexcharts/   # ApexCharts renderer
+|       +-- jquery-highcharts/   # Highcharts renderer
+|       +-- jquery-echarts/      # Apache ECharts renderer (beta)
+|       +-- jquery-table/        # Angular Material table component
+|
++-- src/                         # Demo application
+    +-- app/
+    |   +-- core/                # Services
+    |   +-- data/                # Sample data
+    |   +-- pages/               # Demo pages
+    |   +-- components/          # Shared components
+    +-- assets/
 ```
 
-<br/>
+---
+
+## Chart Types
+
+| Type | Description |
+|------|-------------|
+| `bar` | Vertical and horizontal bar charts, stacked, grouped |
+| `columnpyramid` | Bar chart with pyramid columns |
+| `line` | Line and step charts |
+| `area` | Filled area charts |
+| `pie` / `donut` | Pie and donut charts |
+| `scatter` | Point distribution charts |
+| `heatmap` | Color-coded matrix charts |
+| `radar` | Multi-variable comparison charts |
+| `treemap` | Hierarchical data visualization |
+| `funnel` | Sequential flow visualization |
+| `range` | Range area and range bar charts |
+
+> Not all types are supported by every renderer. Refer to each package README for details.
 
 ---
 
-<br/>
-
-## 📊 Available Chart Types
-
-- **Pie Charts**: Standard pie, donut, polar area, and radial charts
-- **Bar Charts**: Vertical, horizontal, stacked, and grouped bar charts
-- **Line Charts**: Basic, curved, stepped, and annotated line charts
-- **Treemap Charts**: Hierarchical visualization of data
-- **Heatmap Charts**: Color-coded data visualization
-- **Range Charts**: Range area, range bar charts
-- **Funnel Charts**: Visualization for sequential data
-
-<br/>
-
----
-
-<br/>
-
-## 📖 Documentation
-
-The project includes comprehensive documentation with:
-
-- Configuration options for each chart type
-- Usage examples with code snippets
-- Best practices and customization tips
-
-Visit the documentation section in the application to learn more about using jQuery Charts.
-
-<br/>
-
----
-
-<br/>
-
-## 👥 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+## Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-<br/>
+2. Create a feature branch: `git checkout -b feature/my-feature`
+3. Commit your changes following [Conventional Commits](https://www.conventionalcommits.org/)
+4. Push and open a Pull Request
 
 ---
 
-<br/>
+## License
 
-## 📄 License
+This project is licensed under the [Apache 2.0 License](LICENSE).
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
-<br/><br/><br/>
+### Third-Party Licenses
 
----
-
-<br/>
-
-### ⚠️ Third-Party Licenses
-
-**IMPORTANT LEGAL NOTICE**: This section contains critical licensing information that may have legal implications for users. By using this library, you agree to comply with all applicable third-party licenses.
-
-The library integrates with the following charting libraries. Please be aware of their respective licensing terms:
-
-- [ApexCharts](https://github.com/apexcharts/apexcharts.js/blob/master/LICENSE) - MIT License
-- [Highcharts](https://www.highcharts.com/license) - Commercial License (requires purchase for commercial use)
-
+- [ApexCharts](https://github.com/apexcharts/apexcharts.js/blob/master/LICENSE) -- MIT License
+- [Apache ECharts](https://github.com/apache/echarts/blob/master/LICENSE) -- Apache 2.0 License
+- [Highcharts](https://www.highcharts.com/license) -- Commercial license required for commercial use

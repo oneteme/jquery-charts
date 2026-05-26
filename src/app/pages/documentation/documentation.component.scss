@@ -5,14 +5,15 @@
   min-height: 100vh;
 
   .doc-nav {
-    width: 280px;
+    width: 210px;
     color: #2c3e50;
     padding: 1rem;
     position: fixed;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 64px);
     overflow-y: auto;
     z-index: 98;
     left: 0;
+    top: 64px;
     background: #f8f9fa;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.03);
 

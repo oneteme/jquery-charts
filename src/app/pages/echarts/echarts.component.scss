@@ -139,7 +139,7 @@
       .code-block {
         position: absolute;
         inset: 0;
-        background: rgba(248, 249, 250, 0.98);
+        background: #1e1e1e;
         z-index: 1;
         opacity: 0;
         visibility: hidden;
@@ -166,6 +166,7 @@
             font-size: 0.78rem;
             white-space: pre;
             line-height: 1.5;
+            color: #d4d4d4;
 
             ::ng-deep {
               .comment { color: #6a9955; }
@@ -181,4 +182,52 @@
       }
     }
   }
+}
+
+// ─── Pages de détail ─────────────────────────────────────────────────────
+.detail-nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 0 1.5rem;
+
+  .back-link {
+    font-size: 0.85rem;
+    color: #6366f1;
+    text-decoration: none;
+    font-weight: 500;
+    &:hover { text-decoration: underline; }
+  }
+
+  .detail-title {
+    flex: 1;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #0f172a;
+    text-align: center;
+  }
+
+  .prev-next {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .nav-btn {
+    font-size: 0.8rem;
+    color: #475569;
+    text-decoration: none;
+    padding: 0.35rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    background: #fff;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    &:hover { background: #f8fafc; color: #0f172a; border-color: #cbd5e1; }
+  }
+}
+
+.charts-grid.single-card {
+  grid-template-columns: 1fr;
+  max-width: 700px;
 }

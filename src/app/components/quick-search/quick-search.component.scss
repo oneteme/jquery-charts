@@ -1,0 +1,167 @@
+// Backdrop plein écran
+.qs-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10vh;
+}
+
+.qs-dialog {
+  background: var(--clr-surface, #fff);
+  border: 1px solid var(--clr-border, #e2e8f0);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: 0 24px 64px rgba(15, 23, 42, 0.24);
+  width: 100%;
+  max-width: 580px;
+  overflow: hidden;
+}
+
+// ─── Ligne input ──────────────────────────────────────────────────────────
+.qs-input-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3, 12px);
+  padding: var(--sp-4, 16px) var(--sp-5, 20px);
+  border-bottom: 1px solid var(--clr-border, #e2e8f0);
+}
+
+.qs-search-icon {
+  flex-shrink: 0;
+  color: var(--clr-text-muted, #94a3b8);
+}
+
+.qs-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  font-family: var(--font-sans, sans-serif);
+  color: var(--clr-text-primary, #0f172a);
+  background: transparent;
+
+  &::placeholder { color: var(--clr-text-muted, #94a3b8); }
+}
+
+.qs-esc {
+  font-size: 0.7rem;
+  font-family: var(--font-mono, monospace);
+  background: var(--clr-surface-raised, #f1f5f9);
+  border: 1px solid var(--clr-border, #e2e8f0);
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  color: var(--clr-text-muted, #94a3b8);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+// ─── Liste résultats ──────────────────────────────────────────────────────
+.qs-results {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: var(--sp-2, 8px);
+
+  &::-webkit-scrollbar { width: 4px; }
+  &::-webkit-scrollbar-thumb { background: var(--clr-border-strong, #cbd5e1); border-radius: 4px; }
+}
+
+.qs-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3, 12px);
+  padding: var(--sp-3, 12px) var(--sp-3, 12px);
+  border-radius: var(--radius-md, 8px);
+  cursor: pointer;
+  transition: background 0.1s ease;
+
+  &--active, &:hover {
+    background: var(--clr-accent-subtle, rgba(99, 102, 241, 0.08));
+
+    .qs-item__arrow { opacity: 1; color: var(--clr-accent, #6366f1); }
+    .qs-item__label { color: var(--clr-accent, #6366f1); }
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--clr-text-primary, #0f172a);
+    font-family: var(--font-sans);
+    transition: color 0.1s ease;
+
+    ::ng-deep mark {
+      background: transparent;
+      color: var(--clr-accent, #6366f1);
+      font-weight: 700;
+    }
+  }
+
+  &__sublabel {
+    font-size: 0.78rem;
+    color: var(--clr-text-muted, #94a3b8);
+  }
+
+  &__category {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--clr-text-muted, #94a3b8);
+    background: var(--clr-surface-raised, #f1f5f9);
+    padding: 0.15rem 0.5rem;
+    border-radius: var(--radius-sm, 4px);
+    flex-shrink: 0;
+    border: 1px solid var(--clr-border, #e2e8f0);
+  }
+
+  &__arrow {
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.1s ease;
+    color: var(--clr-text-muted, #94a3b8);
+  }
+}
+
+// ─── État vide ────────────────────────────────────────────────────────────
+.qs-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3, 12px);
+  padding: var(--sp-8, 32px) var(--sp-5, 20px);
+  color: var(--clr-text-muted, #94a3b8);
+  font-size: 0.875rem;
+  justify-content: center;
+  font-family: var(--font-sans);
+}
+
+// ─── Footer ──────────────────────────────────────────────────────────────
+.qs-footer {
+  display: flex;
+  gap: var(--sp-4, 16px);
+  padding: var(--sp-3, 12px) var(--sp-5, 20px);
+  border-top: 1px solid var(--clr-border, #e2e8f0);
+  font-size: 0.72rem;
+  color: var(--clr-text-muted, #94a3b8);
+  font-family: var(--font-sans);
+
+  kbd {
+    background: var(--clr-surface-raised, #f1f5f9);
+    border: 1px solid var(--clr-border, #e2e8f0);
+    border-radius: 4px;
+    padding: 0.1rem 0.4rem;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.72rem;
+    margin-right: 4px;
+  }
+}

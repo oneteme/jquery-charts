@@ -57,6 +57,10 @@ export function buildTooltipOption(trigger: 'axis' | 'item', el?: HTMLElement): 
  */
 export function buildBaseOption(config: ChartProvider<any, any>): EChartsOption {
   const hasTitle = !!(config.title || config.subtitle);
+  const hasSubtitle = !!config.subtitle;
+  // Réserver suffisamment d'espace en haut pour le titre ECharts :
+  // ~60px pour un titre seul, ~80px si sous-titre présent, 10px sinon.
+  const gridTop = hasTitle ? (hasSubtitle ? 80 : 60) : 10;
   return {
     animation: true,
     // N'inclure le composant title que s'il y a effectivement un contenu,
@@ -69,7 +73,7 @@ export function buildBaseOption(config: ChartProvider<any, any>): EChartsOption 
       bottom: 0,
     },
     grid: {
-      top: 10,
+      top: gridTop,
       left: '3%',
       right: '4%',
       bottom: '15%',
@@ -106,14 +110,13 @@ export function applyCommonConfig(
   const { series: seriesPatch, ...restOptions } = (config.options ?? {}) as any;
   const result = mergeDeep({}, option, patch, restOptions) as any;
 
-  // Fusion élément-par-élément des séries quand config.options.series est défini,
-  // pour permettre la personnalisation par graphique sans écraser les données calculées.
-  // seriesPatch[i] ne doit PAS fallback sur seriesPatch[0] : chaque série a ses propres overrides.
+  // Fusion profonde élément-par-élément des séries quand config.options.series est défini.
+  // mergeDeep (au lieu de spread superficiel) préserve les propriétés imbriquées (label, emphasis.label…)
+  // qui seraient écrasées par un spread top-level, notamment position:'center' sur le label de base.
   if (seriesPatch && Array.isArray(seriesPatch) && Array.isArray(result.series)) {
-    result.series = result.series.map((s: any, i: number) => ({
-      ...s,
-      ...(seriesPatch[i] ?? {}),
-    }));
+    result.series = result.series.map((s: any, i: number) =>
+      mergeDeep({}, s, seriesPatch[i] ?? {})
+    );
   }
 
   return result as EChartsOption;

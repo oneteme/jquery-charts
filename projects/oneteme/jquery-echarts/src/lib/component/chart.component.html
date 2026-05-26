@@ -11,5 +11,6 @@
   [noDataLabel]="noDataLabel"
   [group]="group"
   [groupSync]="groupSync"
-  (customEvent)="customEvent.emit($event)">
+  (customEvent)="customEvent.emit($event)"
+  (chartClick)="chartClick.emit($event)">
 </div>

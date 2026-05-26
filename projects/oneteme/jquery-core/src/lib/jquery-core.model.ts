@@ -139,12 +139,17 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         if (visible !== undefined) {
           series[name].visible = visible;
         }
+        const noDataStyle = (m as any).noDataStyle;
+        if (noDataStyle) {
+          series[name].noDataStyle = noDataStyle;
+        }
       }
 
       if (provider.continue) {
         series[name].data.push({
           x: m.data.x(o, i),
           y: requireNonUndefined(m.data.y(o, i), defaultValue),
+          _o: o,
         });
       } else {
         const key = m.data.x(o, i);

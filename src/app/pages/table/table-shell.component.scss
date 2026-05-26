@@ -1,0 +1,136 @@
+// DESIGN: shell qui encapsule les 4 pages /table — header sticky + tab nav
+// Le :host est contraint à la hauteur exacte du viewport hors header global (64px).
+// Le scroll se fait uniquement dans .shell-content — jamais au niveau fenêtre.
+// Cela évite le bug sticky (top:0 sous le header fixe) et les z-index conflicts.
+:host {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  max-height: calc(100vh - 64px);
+}
+
+.table-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+// ─── Header ───────────────────────────────────────────────────────────────
+.shell-header {
+  background: var(--clr-surface, #ffffff);
+  border-bottom: 1px solid var(--clr-border, #e2e8f0);
+  padding: var(--sp-6, 24px) var(--sp-8, 32px) 0;
+  // Plus besoin de sticky : le header est toujours visible car shell-content
+  // est le seul conteneur qui scrolle (overflow: auto + flex: 1).
+
+  &__top {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--sp-4, 16px);
+    margin-bottom: var(--sp-5, 20px);
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3, 12px);
+    flex-shrink: 0;
+  }
+
+  &__badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--clr-accent, #6366f1);
+    background: var(--clr-accent-subtle, rgba(99, 102, 241, 0.1));
+    padding: 0.2rem 0.55rem;
+    border-radius: var(--radius-sm, 4px);
+    flex-shrink: 0;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+  }
+
+  &__title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--clr-text-primary, #0f172a);
+    letter-spacing: -0.025em;
+    font-family: var(--font-sans);
+  }
+
+  &__desc {
+    font-size: 0.85rem;
+    color: var(--clr-text-secondary, #475569);
+    line-height: 1.5;
+    max-width: 60ch;
+  }
+}
+
+// ─── Tab bar ──────────────────────────────────────────────────────────────
+.tab-bar {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  // Masquer la scrollbar sur tous les navigateurs
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+
+  &__item {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2, 8px);
+    padding: var(--sp-3, 12px) var(--sp-4, 16px);
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: var(--font-sans);
+    color: var(--clr-text-secondary, #64748b);
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+    text-decoration: none;
+    position: relative;
+
+    &:hover {
+      color: var(--clr-text-primary, #0f172a);
+    }
+
+    &--active {
+      color: var(--clr-accent, #6366f1);
+      border-bottom-color: var(--clr-accent, #6366f1);
+    }
+  }
+}
+
+.tab-bar__icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+
+.tab-bar__item--active .tab-bar__icon {
+  opacity: 1;
+}
+
+// ─── Contenu routable ─────────────────────────────────────────────────────
+.shell-content {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: var(--clr-bg, #f8fafc);
+}
+
+@media (max-width: 768px) {
+  .shell-header {
+    padding: var(--sp-4, 16px) var(--sp-4, 16px) 0;
+
+    &__top { gap: var(--sp-2, 8px); margin-bottom: var(--sp-3, 12px); }
+    &__desc { display: none; }
+  }
+
+  .tab-bar__item {
+    padding: var(--sp-3, 12px) var(--sp-3, 12px);
+    font-size: 0.8rem;
+  }
+}

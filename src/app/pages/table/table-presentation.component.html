@@ -1,0 +1,379 @@
+<div class="pres-wrap">
+
+  <!-- ════════════════════════════════════════════ SECTION 1 · Tableau complet -->
+  <section class="pres-section">
+    <div class="pres-section__head">
+      <span class="pres-section__num">01</span>
+      <div>
+        <h2 class="pres-section__title">Tableau complet</h2>
+        <p class="pres-section__desc">
+          Toutes les fonctionnalités activées sur 100 interventions réseau Enedis 2024 avec données statiques.
+        </p>
+      </div>
+    </div>
+
+    <div class="feature-chips">
+      <span class="chip chip--blue">search</span>
+      <span class="chip chip--blue">pagination</span>
+      <span class="chip chip--green">view (champs + drag&amp;drop)</span>
+      <span class="chip chip--green">export CSV</span>
+      <span class="chip chip--green">préférences localStorage</span>
+      <span class="chip chip--purple">slices × 4</span>
+      <span class="chip chip--orange">colonne lazy</span>
+      <span class="chip chip--gray">defaultSort</span>
+      <span class="chip chip--gray">labels</span>
+    </div>
+
+    <jquery-table
+      [config]="tableConfig"
+      [data]="interventions"
+      [isLoading]="isLoading"
+      (rowSelected)="onRowSelected($event)"
+      (sortChange)="lastSort = $event"
+      (pageChange)="lastPage = $event"
+      (searchChange)="lastSearch = $event"
+      (groupByChange)="lastGroupBy = $event"
+    ></jquery-table>
+
+    <div class="event-monitor" *ngIf="selectedRow || lastSort || lastPage || lastSearch">
+      <span class="event-monitor__label">Outputs en direct</span>
+      <span class="event-chip" *ngIf="selectedRow">
+        <code>(rowSelected)</code>&nbsp;→&nbsp;<strong>{{ selectedRow.reference }}</strong>
+      </span>
+      <span class="event-chip" *ngIf="lastSort?.active">
+        <code>(sortChange)</code>&nbsp;→&nbsp;<strong>{{ lastSort!.active }} {{ lastSort!.direction }}</strong>
+      </span>
+      <span class="event-chip" *ngIf="lastPage">
+        <code>(pageChange)</code>&nbsp;→&nbsp;<strong>p.{{ lastPage.pageIndex + 1 }} · {{ lastPage.pageSize }}/page</strong>
+      </span>
+      <span class="event-chip" *ngIf="lastSearch">
+        <code>(searchChange)</code>&nbsp;→&nbsp;<strong>"{{ lastSearch }}"</strong>
+      </span>
+    </div>
+
+    <details class="code-details">
+      <summary>TypeScript — tableConfig complet</summary>
+      <pre class="code-pre"><code>{{ CODE_FULL_TS }}</code></pre>
+    </details>
+  </section>
+
+  <!-- ══════════════════════════════════════════════ SECTION 2 · Référence API -->
+  <section class="pres-section">
+    <div class="pres-section__head">
+      <span class="pres-section__num">02</span>
+      <div>
+        <h2 class="pres-section__title">Référence des options</h2>
+        <p class="pres-section__desc">
+          Toutes les propriétés de <code>TableProvider&lt;T&gt;</code> avec type et valeur par défaut.
+        </p>
+      </div>
+    </div>
+
+    <!-- TableProvider<T> -->
+    <p class="ref-plain-intro">
+      <strong>TableProvider&lt;T&gt;</strong> est l'objet de configuration que vous passez au composant.
+      Concrètement, c'est un objet TypeScript dans lequel vous décrivez <em>comment</em> votre tableau doit se comporter :
+      quelles colonnes afficher, si la recherche est active, comment paginer les résultats, quels filtres proposer, etc.
+      Le <code>T</code> représente simplement le type de vos données (ex : <code>Intervention</code>), ce qui permet à l'éditeur de détecter les erreurs au moment où vous écrivez le code.
+    </p>
+    <h3 class="ref-subtitle">TableProvider&lt;T&gt;</h3>
+    <div class="ref-table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Propriété</th><th>Type</th><th>Défaut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>title</code></td><td><code>string</code></td><td>—</td><td>Titre affiché dans la barre du tableau.</td></tr>
+          <tr><td><code>columns</code></td><td><code>TableColumnProvider[]</code></td><td>—</td><td>Définition des colonnes. Utiliser <code>col()</code> pour les cas simples.</td></tr>
+          <tr><td><code>search</code></td><td><code>TableSearchConfig</code></td><td>—</td><td>Barre de recherche texte.</td></tr>
+          <tr><td><code>pagination</code></td><td><code>TablePaginationConfig</code></td><td>—</td><td>Pagination.</td></tr>
+          <tr><td><code>view</code></td><td><code>TableViewConfig</code></td><td>—</td><td>Menu View (Champs / Group by / Slice by).</td></tr>
+          <tr><td><code>slices</code></td><td><code>SliceConfig[]</code></td><td><code>[]</code></td><td>Panneaux de filtre latéraux.</td></tr>
+          <tr><td><code>enableSliceToggle</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Bouton replier/déplier le panneau slice.</td></tr>
+          <tr><td><code>export</code></td><td><code>TableExportConfig</code></td><td>—</td><td>Export CSV depuis la toolbar.</td></tr>
+          <tr><td><code>preferences</code></td><td><code>TablePreferencesConfig</code></td><td>—</td><td>Persistance localStorage (mode édition, save, clear).</td></tr>
+          <tr><td><code>defaultSort</code></td><td><code>&#123; active, direction &#125;</code></td><td>—</td><td>Tri initial (non réinitialisé lors du rechargement des données).</td></tr>
+          <tr><td><code>defaultGroupBy</code></td><td><code>string | null</code></td><td>—</td><td>Group by initial.</td></tr>
+          <tr><td><code>rowClass</code></td><td><code>(row, index?) =&gt; string | string[] | Record&lt;string, boolean&gt;</code></td><td>—</td><td>Classes CSS dynamiques sur les <code>&lt;tr&gt;</code>.</td></tr>
+          <tr><td><code>labels</code></td><td><code>TableLabelsConfig</code></td><td>—</td><td>Messages "vide" et "chargement" personnalisés.</td></tr>
+          <tr><td><code>onRowSelected</code></td><td><code>(row, event) =&gt; void</code></td><td>—</td><td>Callback de clic sur ligne — alternative au <code>(rowSelected)</code> output.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TableColumnProvider<T> -->
+    <h3 class="ref-subtitle">TableColumnProvider&lt;T&gt; — et <code>col(key, header, opts?)</code></h3>
+    <div class="ref-table-wrap">
+      <table class="ref-table">
+        <thead>
+          <tr><th>Propriété</th><th>Type</th><th>Défaut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>key</code></td><td><code>string</code></td><td>requis</td><td>Clé de la colonne.</td></tr>
+          <tr><td><code>header</code></td><td><code>string</code></td><td>—</td><td>Libellé de l'en-tête.</td></tr>
+          <tr><td><code>sortable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Active le tri.</td></tr>
+          <tr><td><code>optional</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Masquable via View → Champs.</td></tr>
+          <tr><td><code>groupable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Visible dans le menu Group by.</td></tr>
+          <tr><td><code>sliceable</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Disponible pour Slice by dynamique.</td></tr>
+          <tr><td><code>width</code></td><td><code>string</code></td><td>—</td><td>Largeur CSS (<code>'120px'</code>, <code>'20%'</code>…).</td></tr>
+          <tr><td><code>value</code></td><td><code>(row) =&gt; any</code></td><td>—</td><td>Valeur affichée. Si absent, utilise <code>row[key]</code>.</td></tr>
+          <tr><td><code>sortValue</code></td><td><code>(row) =&gt; any</code></td><td>—</td><td>Valeur pour le tri. Utile si <code>value</code> renvoie une chaîne formatée.</td></tr>
+          <tr><td><code>searchValue</code></td><td><code>(row) =&gt; string</code></td><td>—</td><td>Valeur pour la recherche (utile avec template custom).</td></tr>
+          <tr><td><code>icon</code></td><td><code>string</code></td><td>—</td><td>Icône Material dans l'en-tête.</td></tr>
+          <tr><td><code>lazy</code></td><td><code>&#123; fetchFn: () =&gt; Observable&lt;any[]&gt; &#125;</code></td><td>—</td><td>Chargement différé. Le tableau retourné doit être dans le même ordre que <code>data</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Configs secondaires -->
+    <div class="ref-grid">
+      <div>
+        <h3 class="ref-subtitle">TableSearchConfig</h3>
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Prop</th><th>Défaut</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>enabled</code></td><td><code>false</code></td><td>Active la barre de recherche.</td></tr>
+              <tr><td><code>initialQuery</code></td><td>—</td><td>Terme pré-rempli au chargement.</td></tr>
+              <tr><td><code>searchColumns</code></td><td>toutes</td><td>Restreint la recherche aux colonnes listées.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="ref-subtitle">TablePaginationConfig</h3>
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Prop</th><th>Défaut</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>enabled</code></td><td><code>true</code></td><td>Active la pagination.</td></tr>
+              <tr><td><code>pageSize</code></td><td><code>5</code></td><td>Lignes par page.</td></tr>
+              <tr><td><code>pageSizeOptions</code></td><td><code>[5,10,20]</code></td><td>Options du sélecteur.</td></tr>
+              <tr><td><code>pageSizeOptionsGroupBy</code></td><td>—</td><td>Options spécifiques au mode Group by.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="ref-subtitle">TableViewConfig</h3>
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Prop</th><th>Défaut</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>enabled</code></td><td><code>false</code></td><td>Affiche le bouton View.</td></tr>
+              <tr><td><code>enableColumnRemoval</code></td><td><code>true</code></td><td>Masquage/affichage des colonnes.</td></tr>
+              <tr><td><code>enableColumnDragDrop</code></td><td><code>false</code></td><td>Réorganisation par glisser-déposer.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="ref-subtitle">TableExportConfig&lt;T&gt;</h3>
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Prop</th><th>Défaut</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>enabled</code></td><td><code>true</code></td><td>Affiche le bouton Export.</td></tr>
+              <tr><td><code>filename</code></td><td><code>'export'</code></td><td>Nom du fichier CSV généré.</td></tr>
+              <tr><td><code>transform</code></td><td>—</td><td>Transforme chaque ligne avant export.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="ref-subtitle">TablePreferencesConfig</h3>
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Prop</th><th>Défaut</th><th>Description</th></tr></thead>
+            <tbody>
+              <tr><td><code>enabled</code></td><td><code>true</code></td><td>Active la persistance.</td></tr>
+              <tr><td><code>tableId</code></td><td>auto</td><td>Clé localStorage. Dérivée automatiquement si absent.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <h3 class="ref-subtitle">@Output disponibles</h3>
+        <div class="ref-table-wrap">
+          <table class="ref-table">
+            <thead><tr><th>Output</th><th>Type émis</th></tr></thead>
+            <tbody>
+              <tr><td><code>(rowSelected)</code></td><td><code>T</code></td></tr>
+              <tr><td><code>(sortChange)</code></td><td><code>&#123; active: string; direction: string &#125;</code></td></tr>
+              <tr><td><code>(pageChange)</code></td><td><code>&#123; pageIndex: number; pageSize: number &#125;</code></td></tr>
+              <tr><td><code>(searchChange)</code></td><td><code>string</code></td></tr>
+              <tr><td><code>(groupByChange)</code></td><td><code>string | null</code></td></tr>
+              <tr><td><code>(columnsChange)</code></td><td><code>string[]</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════════════ SECTION 3 · Templates ng-template -->
+  <section class="pres-section">
+    <div class="pres-section__head">
+      <span class="pres-section__num">03</span>
+      <div>
+        <h2 class="pres-section__title">Templates personnalisés — <code>jqtCellDef</code></h2>
+        <p class="pres-section__desc">
+          La directive <code>[jqtCellDef]="'colKey'"</code> (ou raccourci attribut
+          <code>jqtCellDef="colKey"</code>) délègue le rendu d'une cellule à un
+          <code>&lt;ng-template&gt;</code>. Le contexte expose&nbsp;:
+          <code>$implicit</code> (la ligne brute <code>T</code>) et
+          <code>index</code> (index global de la ligne).
+        </p>
+      </div>
+    </div>
+
+    <div class="feature-chips">
+      <span class="chip chip--purple">badge Type coloré</span>
+      <span class="chip chip--purple">badge Statut coloré</span>
+      <span class="chip chip--orange">chip Priorité avec point</span>
+      <span class="chip chip--blue">colonne Actions inline</span>
+    </div>
+
+    <jquery-table class="tpl-table" [config]="templateConfig" [data]="interventions" [isLoading]="isLoading">
+
+      <!-- ── Statut ──────────────────────────────────────────────────────────── -->
+      <ng-template jqtCellDef="type" let-row>
+        <span class="badge-type" [ngClass]="typeCssClass(row.type)">{{ typeLabel(row.type) }}</span>
+      </ng-template>
+
+      <ng-template jqtCellDef="statut" let-row>
+        <span class="badge-statut" [ngClass]="statutCssClass(row.statut)">{{ statutLabel(row.statut) }}</span>
+      </ng-template>
+
+      <!-- ── Priorité ───────────────────────────────────────────────────────── -->
+      <ng-template jqtCellDef="priorite" let-row>
+        <span class="badge-priorite" [ngClass]="'badge-priorite--' + row.priorite">
+          <span class="badge-priorite__dot"></span>{{ prioriteLabel(row.priorite) }}
+        </span>
+      </ng-template>
+
+      <!-- ── Actions ────────────────────────────────────────────────────────── -->
+      <ng-template jqtCellDef="actions" let-row>
+        <div class="action-cell">
+          <button class="action-btn" (click)="viewIntervention(row, $event)">Voir</button>
+        </div>
+      </ng-template>
+
+    </jquery-table>
+
+    <details class="code-details">
+      <summary>HTML — templates <code>jqtCellDef</code></summary>
+      <pre class="code-pre"><code>{{ CODE_TEMPLATE_HTML }}</code></pre>
+    </details>
+
+    <details class="code-details">
+      <summary>TypeScript — templateConfig + helpers</summary>
+      <pre class="code-pre"><code>{{ CODE_TEMPLATE_TS }}</code></pre>
+    </details>
+  </section>
+
+  <!-- ════════════════════════════════════════════ SECTION 4 · Pourquoi jquery-table -->
+  <section class="pres-section pres-section--advantages">
+    <div class="pres-section__head">
+      <span class="pres-section__num">✦</span>
+      <div>
+        <h2 class="pres-section__title">Pourquoi jquery-table ?</h2>
+        <p class="pres-section__desc">Les points concrets qui font la différence au quotidien.</p>
+      </div>
+    </div>
+
+    <ul class="adv-list">
+
+      <li class="adv-item">
+        <span class="adv-num">01</span>
+        <div>
+          <strong>Slice by et Group by intégrés</strong>
+          <p>
+            Filtres par facettes et regroupement de lignes configurables en quelques lignes de config, sans logique
+            dans le composant parent. Les panneaux de slice et les en-têtes de groupe sont gérés entièrement
+            par le composant — zéro state management externe.
+          </p>
+        </div>
+      </li>
+
+      <li class="adv-item">
+        <span class="adv-num">02</span>
+        <div>
+          <strong>Syntaxe unifiée avec jquery-charts</strong>
+          <p>
+            <code>TableProvider&lt;T&gt;</code> suit exactement le même contrat que <code>ChartProvider&lt;T&gt;</code> :
+            un seul objet de config passé en <code>[config]</code>, les données séparées en <code>[data]</code>.
+            Un développeur qui connaît l'un maîtrise immédiatement l'autre — courbe d'apprentissage quasi nulle.
+          </p>
+        </div>
+      </li>
+
+      <li class="adv-item">
+        <span class="adv-num">03</span>
+        <div>
+          <strong>Très performant sur de grands volumes</strong>
+          <p>
+            Le composant utilise <code>ChangeDetectionStrategy.OnPush</code> et ne recalcule la vue que lorsque
+            les références de données changent. Tri, filtres, group by et pagination sont résolus en un seul
+            passage sur les données — pas de recalcul en cascade à chaque interaction.
+          </p>
+        </div>
+      </li>
+
+      <li class="adv-item">
+        <span class="adv-num">04</span>
+        <div>
+          <strong>Templates sur mesure via <code>jqtCellDef</code></strong>
+          <p>
+            N'importe quelle cellule peut être remplacée par un <code>&lt;ng-template&gt;</code> Angular natif.
+            Le composant reste maître du tri, de la pagination et de la recherche ; le développeur contrôle
+            uniquement le rendu visuel, colonne par colonne.
+          </p>
+        </div>
+      </li>
+
+      <li class="adv-item">
+        <span class="adv-num">05</span>
+        <div>
+          <strong>Typage fort end-to-end</strong>
+          <p>
+            Le générique <code>T</code> traverse tout : définition des colonnes, <code>value()</code>,
+            <code>sortValue()</code>, <code>rowClass()</code>, <code>onRowSelected()</code>.
+            L'éditeur détecte toute incohérence au moment où tu écris, pas à l'exécution.
+          </p>
+        </div>
+      </li>
+
+      <li class="adv-item">
+        <span class="adv-num">06</span>
+        <div>
+          <strong>Préférences utilisateur persistées sans effort</strong>
+          <p>
+            Un seul champ <code>preferences: &#123; tableId: '...' &#125;</code> active la persistance complète :
+            ordre des colonnes, largeurs, group by, filtres slice — tout est restauré au rechargement, sans écrire
+            une ligne de localStorage.
+          </p>
+        </div>
+      </li>
+
+      <li class="adv-item">
+        <span class="adv-num">07</span>
+        <div>
+          <strong>Colonnes lazy out-of-the-box</strong>
+          <p>
+            Le champ <code>lazy.fetchFn</code> suffit pour différer le chargement d'une colonne coûteuse.
+            Le composant gère le spinner, l'état d'erreur et l'intégration dans le tri — sans logique
+            supplémentaire dans le parent.
+          </p>
+        </div>
+      </li>
+
+    </ul>
+  </section>
+
+</div>
