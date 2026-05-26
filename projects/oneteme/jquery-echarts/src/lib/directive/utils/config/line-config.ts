@@ -51,11 +51,27 @@ function buildLineOption(
         type: 'line',
         name: s.name,
         smooth: serieSmooth,
-        showSymbol: false,
+        symbolSize: 0,
         areaStyle: serieHasArea ? {} : undefined,
         stack: s.stack,
         data: (isContinue
-          ? (s.data as Coordinate2D[]).map((d) => [d.x, d.y])
+          ? (s.data as Coordinate2D[]).map((d) => {
+              const src = (d as any)._o;
+              if (src?._noData) {
+                const noDataStyle = (s as any).noDataStyle ?? {};
+                const color = noDataStyle.color ?? '#94a3b8';
+                const symbolSize = noDataStyle.symbolSize ?? 5;
+                const symbol = noDataStyle.symbol ?? 'circle';
+                return {
+                  value: [d.x, d.y],
+                  _noData: true,
+                  symbol,
+                  symbolSize,
+                  itemStyle: { color, borderColor: color, opacity: noDataStyle.opacity ?? 0.85 },
+                };
+              }
+              return [d.x, d.y];
+            })
           : xType === 'category'
             ? s.data
             : chart.categories.map((cat, i) => [cat, (s.data as any[])[i]])) as any,

@@ -1,51 +1,117 @@
-<div class="welcome-container">
-  <h1>Jquery-Charts, La Demo</h1>
+<div class="home">
 
-  <div class="project-description">
-    <p>
-      Une surcouche permettant de simplifier la création de graphiques avec
-      différentes bibliothèques
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero__badge">jquery-charts</div>
+    <h1 class="hero__title">
+      Une API unifiée pour<br>
+      <span class="hero__accent">3 bibliothèques graphiques</span>
+    </h1>
+    <p class="hero__desc">
+      Créez des graphiques interactifs avec <strong>ECharts</strong>,
+      <strong>Highcharts</strong> et <strong>ApexCharts</strong> via une
+      configuration Angular identique — sans changer votre code métier.
     </p>
-  </div>
+    <div class="hero__actions">
+      <button class="btn btn--primary" routerLink="/charts/echarts">Explorer les exemples</button>
+      <button class="btn btn--ghost" routerLink="/table">Composant tableau</button>
+    </div>
+  </section>
 
-  <div class="library-selector">
-    <label>Bibliothèques de graphiques supportées :</label>
-    <div class="badges-container">
-      <span class="badge badge-secondary">ApexCharts</span>
-      <span class="badge badge-primary">HighCharts</span>
-    </div>
-    <p class="library-note">
-      La documentation et les exemples sont basés sur HighCharts.
-    </p>
-  </div>
+  <!-- Libraries -->
+  <section class="libs">
+    <div class="libs__grid">
 
-  <div class="welcome-content">
-    <div class="feature-card">
-      <h3>Surcouche Angular Intuitive</h3>
-      <p>
-        Basée sur HighCharts/ApexCharts pour combiner puissance et simplicité
-      </p>
-    </div>
-    <div class="feature-card">
-      <h3>Configuration Simplifiée</h3>
-      <p>
-        Créez des graphiques personnalisés avec une syntaxe <u>unifiée</u> et
-        intuitive
-      </p>
-    </div>
-    <div class="feature-card">
-      <h3>Documentation Interactive</h3>
-      <p>
-        Exemple de code sous chaque graphique pour une meilleure compréhension
-      </p>
-    </div>
-  </div>
+      <div class="lib-card" (click)="goTo('/charts/echarts')">
+        <div class="lib-card__badge echarts">ECharts</div>
+        <h3 class="lib-card__name">jquery-echarts</h3>
+        <p class="lib-card__desc">Apache ECharts 5 — rendu Canvas ultra-performant, animations fluides, support des grands volumes de données.</p>
+        <div class="lib-card__types">
+          <span>bar</span><span>line</span><span>pie</span><span>scatter</span>
+          <span>heatmap</span><span>treemap</span><span>radar</span><span>+9</span>
+        </div>
+        <div class="lib-card__arrow">Explorer →</div>
+      </div>
 
-  <div class="get-started">
-    <p>
-      Explorez les différents types de graphiques disponibles ainsi que leur
-      configuration depuis la
-      <a routerLink="/documentation" class="doc-link">documentation</a>
-    </p>
-  </div>
+      <div class="lib-card" (click)="goTo('/charts/highcharts')">
+        <div class="lib-card__badge highcharts">Highcharts</div>
+        <h3 class="lib-card__name">jquery-highcharts</h3>
+        <p class="lib-card__desc">Highcharts — la référence en visualisation SVG, options avancées, support des cartes géographiques.</p>
+        <div class="lib-card__types">
+          <span>line</span><span>spline</span><span>area</span><span>bar</span>
+          <span>polar</span><span>bubble</span><span>range</span><span>+14</span>
+        </div>
+        <div class="lib-card__arrow">Explorer →</div>
+      </div>
+
+      <div class="lib-card" (click)="goTo('/charts/apexcharts')">
+        <div class="lib-card__badge apex">ApexCharts</div>
+        <h3 class="lib-card__name">jquery-apexcharts</h3>
+        <p class="lib-card__desc">ApexCharts — moderne, léger, SVG natif avec animations intégrées et tooltips interactifs.</p>
+        <div class="lib-card__types">
+          <span>bar</span><span>line</span><span>pie</span><span>radial</span>
+          <span>heatmap</span><span>funnel</span><span>range</span><span>+9</span>
+        </div>
+        <div class="lib-card__arrow">Explorer →</div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Principle -->
+  <section class="principle">
+    <div class="principle__header">
+      <span class="principle__label">Principe</span>
+      <h2>Une seule API, plusieurs moteurs</h2>
+      <p>Le même composant Angular, les mêmes <code>field()</code> et <code>rangeFields()</code> — seul l'import change.</p>
+    </div>
+
+    <div class="code-compare">
+      <div class="code-compare__col">
+        <div class="code-compare__header">
+          <span class="dot echarts"></span>
+          ECharts
+        </div>
+        <pre class="code-block"><code><span class="kw">import</span> &#123; ChartComponent &#125;
+  <span class="kw">from</span> <span class="str">'&#64;oneteme/jquery-echarts'</span>;
+
+<span class="tag">&lt;chart</span>
+  <span class="attr">type</span>=<span class="str">"bar"</span>
+  <span class="attr">[config]</span>=<span class="str">"config"</span>
+  <span class="attr">[data]</span>=<span class="str">"data"</span>
+<span class="tag">&gt;&lt;/chart&gt;</span></code></pre>
+      </div>
+
+      <div class="code-compare__col">
+        <div class="code-compare__header">
+          <span class="dot highcharts"></span>
+          Highcharts
+        </div>
+        <pre class="code-block"><code><span class="kw">import</span> &#123; ChartComponent &#125;
+  <span class="kw">from</span> <span class="str">'&#64;oneteme/jquery-highcharts'</span>;
+
+<span class="tag">&lt;chart</span>
+  <span class="attr">type</span>=<span class="str">"bar"</span>
+  <span class="attr">[config]</span>=<span class="str">"config"</span>
+  <span class="attr">[data]</span>=<span class="str">"data"</span>
+<span class="tag">&gt;&lt;/chart&gt;</span></code></pre>
+      </div>
+
+      <div class="code-compare__col">
+        <div class="code-compare__header">
+          <span class="dot apex"></span>
+          ApexCharts
+        </div>
+        <pre class="code-block"><code><span class="kw">import</span> &#123; ChartComponent &#125;
+  <span class="kw">from</span> <span class="str">'&#64;oneteme/jquery-apexcharts'</span>;
+
+<span class="tag">&lt;chart</span>
+  <span class="attr">type</span>=<span class="str">"bar"</span>
+  <span class="attr">[config]</span>=<span class="str">"config"</span>
+  <span class="attr">[data]</span>=<span class="str">"data"</span>
+<span class="tag">&gt;&lt;/chart&gt;</span></code></pre>
+      </div>
+    </div>
+  </section>
+
 </div>

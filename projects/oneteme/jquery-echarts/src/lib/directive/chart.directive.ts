@@ -123,6 +123,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
+  @Output() chartClick = new EventEmitter<any>();
 
   // ─── Cycle de vie Angular ────────────────────────────────────────────────
 
@@ -178,6 +179,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     const dom = this.el.nativeElement as HTMLElement;
     this._chartInstance = echarts.init(dom, this.theme ?? undefined, {
       renderer: this.renderer,
+    });
+
+    this._chartInstance.on('click', (params: any) => {
+      this.ngZone.run(() => this.chartClick.emit(params));
     });
 
     if (this._group) {
@@ -290,9 +295,22 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     this._chartInstance.hideLoading();
 
     try {
-      const option = { ...this._buildFullOption(), graphic: [] };
+      const option = this._buildFullOption();
+      // Efface le graphic "aucune donnée" uniquement si l'utilisateur n'a pas défini un graphic custom.
+      // Sans ce guard, graphic:[] écrasait systématiquement les graphics définis via config.options.graphic.
+      if (!(option as any).graphic) {
+        (option as any).graphic = [];
+      }
       if (this.debug) console.log('[jquery-echarts] setOption', option);
-      this._chartInstance.setOption(option, { notMerge: true, lazyUpdate: false });
+      // notMerge: true uniquement lors du 1er rendu (changes absent) ou si le type de chart change.
+      // Pour les mises à jour de données/config on préfère replaceMerge pour une transition animée (morphing).
+      const isInitialRender = !changes;
+      const isTypeChange = !!changes?.['type'];
+      if (isInitialRender || isTypeChange) {
+        this._chartInstance.setOption(option, { notMerge: true, lazyUpdate: false });
+      } else {
+        this._chartInstance.setOption(option, { notMerge: false, replaceMerge: ['series', 'xAxis', 'yAxis'], lazyUpdate: false });
+      }
     } catch (e) {
       console.error('[jquery-echarts] Erreur lors de la construction ou du rendu :', e);
     }

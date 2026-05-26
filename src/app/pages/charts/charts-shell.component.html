@@ -1,0 +1,28 @@
+<div class="charts-shell">
+
+  <header class="shell-header">
+    <div class="shell-header__top">
+      <h1 class="shell-header__title">jquery-charts</h1>
+      <p class="shell-header__desc">
+        Même interface <code>[type]</code> / <code>[config]</code> / <code>[data]</code> pour les trois bibliothèques — les noms de propriétés dans <code>config</code> peuvent varier légèrement selon le moteur.
+      </p>
+    </div>
+
+    <nav class="tab-bar" role="tablist" aria-label="Bibliothèques de graphiques">
+      <a
+        *ngFor="let lib of libraries"
+        class="tab-bar__item"
+        [routerLink]="lib.path"
+        routerLinkActive="tab-bar__item--active"
+        role="tab"
+      >
+        <span class="tab-bar__label">{{ lib.label }}</span>
+      </a>
+    </nav>
+  </header>
+
+  <div class="shell-content">
+    <router-outlet></router-outlet>
+  </div>
+
+</div>

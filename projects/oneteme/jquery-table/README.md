@@ -114,6 +114,11 @@ Le `config` complet reste disponible pour activer les fonctionnalités avancées
 | Événement | Payload | Description |
 |-----------|---------|-------------|
 | `rowSelected` | `T` | Ligne cliquée |
+| `sortChange` | `{ active: string; direction: 'asc'\|'desc'\|'' }` | Changement de tri (colonne + direction) |
+| `pageChange` | `{ pageIndex: number; pageSize: number }` | Changement de page ou de taille de page |
+| `searchChange` | `string` | Frappe dans la barre de recherche |
+| `groupByChange` | `string \| null` | Group by activé (clé) ou désactivé (`null`) |
+| `columnsChange` | `string[]` | Colonnes visibles modifiées (clés dans l'ordre d'affichage) |
 | `columnAdded` | `TableColumnProvider<T>` | Colonne ajoutée aux colonnes actives |
 | `columnRemoved` | `TableColumnProvider<T>` | Colonne retirée des colonnes actives |
 | `categorySelected` | `string` | Catégorie de slice sélectionnée |
@@ -136,9 +141,12 @@ interface TableProvider<T = any> {
   view?:         TableViewConfig;
   labels?:       TableLabelsConfig;
   export?:       TableExportConfig<T>;
+  preferences?:  TablePreferencesConfig;  // Sauvegarde dans localStorage
 
-  defaultSort?:   { active: string; direction: 'asc' | 'desc' };
-  rowClass?:      (row: T, index: number) => string | string[] | Record<string, boolean>;
+  defaultSort?:    { active: string; direction: 'asc' | 'desc' };
+  defaultGroupBy?: string | null;          // Group by initial au chargement
+  rowClass?:       (row: T, index: number) => string | string[] | Record<string, boolean>;
+  onRowSelected?:  (row: T, event: MouseEvent | null) => void; // Alternative au Output (rowSelected)
 }
 ```
 
@@ -182,10 +190,13 @@ Raccourci pour déclarer une colonne sans verbosité :
 ```ts
 import { col } from '@oneteme/jquery-table';
 
+col<T>(key: string, header: string, overrides?: Partial<TableColumnProvider<T>>): TableColumnProvider<T>
+
 columns: [
   col('name',   'Nom'),
   col('status', 'Statut', { sortable: false, groupable: true }),
   col('team',   'Équipe', { optional: true }),
+  col('score',  'Score',  { value: (row) => row.score.toFixed(2), sortable: true }),
 ]
 ```
 
@@ -271,7 +282,7 @@ providers: [
 ]
 ```
 
-Seuls les champs fournis écrasent les défauts français. Voir `JqtI18n` pour la liste complète (24 labels).
+Seuls les champs fournis écrasent les défauts français. Voir `JqtI18n` pour la liste complète (31 labels).
 
 ---
 
@@ -321,7 +332,7 @@ slices: [
     title:       'Priorité',
     columnKey:   'priority',
     multiSelect: true,
-    bucket:      r => r.priority,   // Auto-génère les catégories depuis les valeurs uniques
+    bucket:      r => r.priority,   // Regroupe les valeurs continues en tranches
   },
 ],
 ```
@@ -342,18 +353,31 @@ view: { enabled: true },
 ```ts
 interface SliceConfig<T = any> {
   title?:       string;
+  /** Icône Material affichée dans le titre du slice (ex: 'schedule', 'dns'). */
   icon?:        string;
   columnKey?:   string;
-  multiSelect?: boolean;                     // Défaut : false
-  hidden?:      boolean;                     // Masqué par défaut dans le panel
+  multiSelect?: boolean;     // Défaut : false — true = sélection multiple simultanée
+  /**
+   * Masqué par défaut dans le panneau.
+   * Disponible via le menu "Ajouter un filtre" (Slice by).
+   * Par défaut : false.
+   */
+  hidden?:      boolean;
+  /**
+   * Transforme chaque valeur de ligne en label de tranche.
+   * Utilisé en mode colonne pour des valeurs continues (durées, montants, scores…).
+   * Ignoré si `categories` est défini.
+   * Exemple : bucket: r => r.amount < 100 ? '< 100 €' : '≥ 100 €'
+   */
+  bucket?:      (row: T) => string;
   categories?:  SliceCategory<T>[];
-  bucket?:      (row: T) => string;          // Auto-génère les catégories (ignoré si categories défini)
 }
 
 interface SliceCategory<T = any> {
-  key:    string;
-  label:  string;
-  filter: (row: T) => boolean;
+  key:     string;
+  label:   string;
+  /** Optionnel pour les graphiques — le parent écoute (activeKeysChange) à la place. */
+  filter?: (row: T) => boolean;
 }
 ```
 
@@ -420,13 +444,13 @@ config: TableProvider<Row> = {
 `SlicePanelComponent` est exporté et utilisable indépendamment du tableau, par exemple pour filtrer les données d'un graphique :
 
 ```html
-<jqt-slice-panel
+<slice-panel
   [sliceConfigs]="slices"
   [columns]="columns"
   [data]="rows"
   [showCounts]="true"
   (filterChange)="applyFilter($event)"
-></jqt-slice-panel>
+></slice-panel>
 ```
 
 ### Inputs `SlicePanelComponent`
@@ -450,7 +474,7 @@ config: TableProvider<Row> = {
 | `filterChange` | `(row: T) => boolean` | Prédicat de filtre à appliquer |
 | `activeKeysChange` | `string[][]` | Clés actives par slice |
 | `dynamicSliceKeysChange` | `string[]` | Clés des slices dynamiques actives |
-| `collapsedChange` | `boolean` | État replié/déplié du panel |
+| `collapsedChange` | `boolean` | État replié/déplié du panneau (true = replié) |
 
 ---
 
@@ -500,6 +524,38 @@ import { normalizeCellValue, humanizeKey, getFrenchPaginatorIntl } from '@onetem
 | `getFrenchPaginatorIntl()` | Retourne un `MatPaginatorIntl` avec les labels en français |
 
 > **`normalizeCellValue`** utilise la locale navigateur (et non fr-FR) pour les dates.
+
+---
+
+---
+
+## Fonctionnalité — Préférences (`TablePreferencesConfig`)
+
+Ajoute un sous-menu **Préférences** dans le menu View permettant :
+- **Mode édition** : redimensionner et réordonner les colonnes à la souris
+- **Enregistrer** : persiste la configuration dans le `localStorage` (colonnes visibles, ordre, largeurs, tri, group by, filtres slice)
+- **Effacer** : supprime la configuration sauvegardée
+
+```ts
+preferences: {
+  enabled: true,
+  tableId: 'my-table',   // Clé localStorage unique — stable entre rechargements
+}
+```
+
+```ts
+interface TablePreferencesConfig {
+  /** Active la fonctionnalité. Par défaut : true. */
+  enabled?: boolean;
+  /**
+   * Identifiant unique du tableau, utilisé comme clé localStorage.
+   * Si absent, dérivé automatiquement des clés de colonnes.
+   */
+  tableId?: string;
+}
+```
+
+La configuration est persistée sous la clé `jqt_prefs_<tableId>` et restaurée automatiquement au chargement suivant.
 
 ---
 

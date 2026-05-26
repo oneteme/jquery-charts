@@ -43,6 +43,7 @@ import { SlicePanelComponent } from '@oneteme/jquery-table';
 | `filterChange` | `(row: T) => boolean` | Prédicat combiné. AND entre les slices, OR au sein d'une slice. Pour les tables. |
 | `activeKeysChange` | `string[][]` | Clés actives par slice (index 0 = première slice). Pour les graphiques. |
 | `dynamicSliceKeysChange` | `string[]` | `columnKey` des slices dynamiques dans l'ordre. |
+| `collapsedChange` | `boolean` | État replié/déplié du panneau (`true` = replié). |
 
 ---
 
@@ -51,26 +52,45 @@ import { SlicePanelComponent } from '@oneteme/jquery-table';
 ```typescript
 interface SliceConfig<T = any> {
   title?: string;
+  /** Icône Material (ex: 'schedule', 'dns'). */
+  icon?: string;
   multiSelect?: boolean;   // true par défaut — false = sélection exclusive
   columnKey?: string;      // auto-génère les catégories depuis les valeurs distinctes
+  /**
+   * Masqué par défaut dans le panneau ;
+   * disponible via le menu "Ajouter un filtre" (Slice by). Par défaut : false.
+   */
+  hidden?: boolean;
+  /**
+   * Transforme chaque valeur en label de tranche avant regroupement.
+   * Utile pour des valeurs continues (durées, montants, scores).
+   * Ignoré si `categories` est défini.
+   */
+  bucket?: (row: T) => string;
   categories?: SliceCategory<T>[];
 }
 
 interface SliceCategory<T = any> {
   key: string;
   label: string;
-  filter: (row: T) => boolean;
+  /**
+   * Optionnel pour les graphiques : omettre et écouter `(activeKeysChange)` à la place.
+   * Requis pour les tableaux : prédicat appliqué sur les lignes locales.
+   */
+  filter?: (row: T) => boolean;
 }
 
-interface TableColumnProvider<T = any> {
+interface SliceColumnDef<T = any> {
   key: string;
   header?: string;
-  lazy?: boolean;
-  fetchFn?: () => Observable<any[]>;
+  icon?: string;
+  value?: (row: T, index: number) => any;
+  /** Chargement différé : la présence de cet objet active le mode lazy. */
+  lazy?: {
+    fetchFn: () => Observable<any[]>;
+  };
 }
 ```
-
-> `TableCategorySliceProvider`, `TableCategoryProvider` et `TableColumnProvider` sont des alias de ces interfaces — aucune rétrocompatibilité cassée.
 
 ---
 

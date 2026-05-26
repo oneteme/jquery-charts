@@ -1,4 +1,66 @@
 @import '@angular/material/prebuilt-themes/indigo-pink.css';
+// DESIGN: Space Grotesk — distinctif, tech, moderne sans être générique
+// DESIGN: DM Mono — lisible, adapté code, contraste serif/mono intentionnel
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
+
+// ─── Design tokens ─────────────────────────────────────────────────────────
+:root {
+  // Surfaces
+  --clr-bg:              #f8fafc;
+  --clr-surface:         #ffffff;
+  --clr-surface-raised:  #f1f5f9;
+
+  // Sidebar (dark)
+  --clr-sidebar-bg:           #0f172a;
+  --clr-sidebar-surface:      #1e293b;
+  --clr-sidebar-border:       rgba(255,255,255,0.06);
+  --clr-sidebar-text:         #94a3b8;
+  --clr-sidebar-text-hover:   #e2e8f0;
+  --clr-sidebar-text-section: #475569;
+  --clr-sidebar-active-bg:    rgba(99, 102, 241, 0.12);
+  --clr-sidebar-active-text:  #a5b4fc;
+  --clr-sidebar-active-bar:   #6366f1;
+
+  // Header
+  --clr-header-bg:     #ffffff;
+  --clr-header-border: #e2e8f0;
+
+  // Accent
+  --clr-accent:        #6366f1;
+  --clr-accent-hover:  #4f46e5;
+  --clr-accent-subtle: rgba(99, 102, 241, 0.1);
+  --clr-accent-text:   #a5b4fc;
+
+  // Text
+  --clr-text-primary:   #0f172a;
+  --clr-text-secondary: #475569;
+  --clr-text-muted:     #94a3b8;
+
+  // Borders
+  --clr-border:         #e2e8f0;
+  --clr-border-strong:  #cbd5e1;
+
+  // Typography
+  --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'Cascadia Code', monospace;
+
+  // Spacing scale (multiples of 4px)
+  --sp-1:  4px;
+  --sp-2:  8px;
+  --sp-3:  12px;
+  --sp-4:  16px;
+  --sp-5:  20px;
+  --sp-6:  24px;
+  --sp-8:  32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  // Radius
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
 
 // Reset SCSS
 *,
@@ -13,12 +75,14 @@ html,
 body {
   width: 100%;
   height: 100%;
-  font-family: "Arial", sans-serif;
+  font-family: var(--font-sans);
   line-height: 1.6;
-  background-color: #f8f9fa;
-  color: #333;
+  background-color: var(--clr-bg);
+  color: var(--clr-text-primary);
   overflow-y: auto;
   padding-right: calc(100vw - 100%);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 ul,
@@ -29,10 +93,10 @@ ol {
 a {
   text-decoration: none;
   color: inherit;
-  transition: color 0.3s ease-in-out;
+  transition: color 0.2s ease;
 
   &:hover {
-    color: #007bff;
+    color: var(--clr-accent);
   }
 }
 
@@ -58,121 +122,67 @@ button {
   outline: none;
 }
 
+:focus-visible {
+  outline: 2px solid var(--clr-accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: var(--clr-accent);
+  color: #ffffff;
+}
+
+// ─── Global scrollbar ──────────────────────────────────────────────────────
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--clr-border-strong); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--clr-text-muted); }
+
+// ─── Code blocks ───────────────────────────────────────────────────────────
 .code-block {
-  background: #f8f9fa;
+  background: #0d1117;
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   margin: 1rem 0 0;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #30363d;
 
   pre {
     margin: 0;
     padding: 1rem;
 
     code {
-      font-family: inherit;
-      font-size: 0.9rem;
-      line-height: 1.6;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      line-height: 1.7;
       white-space: pre;
+      color: #e6edf3;
 
-      .strong {
-        font-weight: 600;
-      }
+      .strong { font-weight: 600; }
+      i { color: #8b949e; font-style: italic; }
 
-      i {
-        color: #807f7f;
-        font-style: italic;
-      }
-
-      .red {
-        color: #d53131;
-      }
-
-      .orange {
-        color: #d35400;
-      }
-
-      .yellow {
-        color: #baa100;
-      }
-
-      .purple {
-        color: #b523b5;
-      }
-
-      .green {
-        color: #1e9324;
-      }
-
-      .white {
-        color: #d5d5d5;
-      }
-
-      .blue {
-        color: #1423dc;
-      }
-
-      .comment {
-        color: #6a737d;
-        font-style: italic;
-      }
-
-      .keyword {
-        color: #9c27b0;
-        font-weight: 500;
-      }
-
-      .string {
-        color: #218838;
-      }
-
+      .red     { color: #ff7b72; }
+      .orange  { color: #ffa657; }
+      .yellow  { color: #e3b341; }
+      .purple  { color: #d2a8ff; }
+      .green   { color: #7ee787; }
+      .white   { color: #e6edf3; }
+      .blue    { color: #79c0ff; }
+      .comment { color: #8b949e; font-style: italic; }
+      .keyword { color: #ff7b72; font-weight: 500; }
+      .string  { color: #a5d6ff; }
       .number,
-      .boolean {
-        color: #e67e22;
-      }
-
-      .tag {
-        color: #e91e63;
-      }
-
-      .function {
-        color: #0070ba;
-      }
-
-      .property {
-        color: #d32f2f;
-      }
-
-      .operator {
-        color: #0097a7;
-      }
-
-      .punctuation {
-        color: #5f6368;
-      }
-
-      .attr {
-        color: #e91e63;
-      }
+      .boolean { color: #ffa657; }
+      .tag     { color: #7ee787; }
+      .function{ color: #d2a8ff; }
+      .property{ color: #79c0ff; }
+      .operator{ color: #ff7b72; }
+      .punctuation { color: #8b949e; }
+      .attr    { color: #a5d6ff; }
     }
 
-    &::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: #f1f1f1;
-      border-radius: 4px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background: #c1c1c1;
-      border-radius: 4px;
-    }
-
-    &::-webkit-scrollbar-corner {
-      background: #f8f9fa;
-    }
+    &::-webkit-scrollbar { width: 4px; height: 4px; }
+    &::-webkit-scrollbar-track { background: #161b22; border-radius: 2px; }
+    &::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
   }
 }

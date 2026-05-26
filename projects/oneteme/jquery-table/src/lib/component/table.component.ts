@@ -917,6 +917,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.searchQuery = '';
     this._columnWidths = {};
     this._slicePanelCollapsed = false;
+    // Synchroniser l'état interne du slice-panel : si le composant est en état collapsed
+    // (l'utilisateur l'avait fermé après la sauvegarde), le rouvrir explicitement pour
+    // éviter que display:none soit retiré mais que isCollapsed interne reste à true.
+    if (this.slicePanelRef?.isCollapsed) {
+      this.slicePanelRef.togglePanel();
+    }
     this._groupBy.reset();
     this._groupBy.setDefaultCollapsed(false);
 

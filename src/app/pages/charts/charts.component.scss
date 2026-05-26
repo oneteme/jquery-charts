@@ -113,7 +113,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(248, 249, 250, 0.98);
+        background: #1e1e1e;
         z-index: 1;
         opacity: 0;
         visibility: hidden;
@@ -136,8 +136,25 @@
           background: transparent;
 
           code {
-            font-family: inherit;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.78rem;
             white-space: pre;
+            line-height: 1.5;
+            color: #d4d4d4;
+
+            ::ng-deep {
+              .comment     { color: #6a9955; }
+              .keyword     { color: #569cd6; font-weight: bold; }
+              .string      { color: #ce9178; }
+              .number      { color: #b5cea8; }
+              .tag         { color: #4ec9b0; }
+              .attr        { color: #9cdcfe; }
+              .fn          { color: #dcdcaa; }
+              .function    { color: #dcdcaa; }
+              .boolean     { color: #569cd6; }
+              .operator    { color: #d4d4d4; }
+              .punctuation { color: #808080; }
+            }
           }
         }
       }

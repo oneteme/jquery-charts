@@ -1,10 +1,5 @@
 ﻿<div class="table-doc-container">
   <div class="page-header">
-    <div class="breadcrumb">
-      <a routerLink="/table">jquery-table</a>
-      <span class="sep">&rsaquo;</span>
-      <span>Documentation</span>
-    </div>
     <h1>Documentation jquery-table</h1>
     <p class="subtitle">
       Composant Angular Material encapsulant <code>mat-table</code> avec recherche, tri, groupement,
@@ -126,6 +121,21 @@
             <td><code>export</code></td>
             <td><code>TableExportConfig&lt;T&gt;</code></td>
             <td>Configure le bouton <strong>Export CSV</strong> dans la toolbar. Voir sous-section ci-dessous.</td>
+          </tr>
+          <tr>
+            <td><code>preferences</code></td>
+            <td><code>TablePreferencesConfig</code></td>
+            <td>Active la persistance localStorage (mode &eacute;dition, sauvegarde, effacement de la config). Voir sous-section ci-dessous.</td>
+          </tr>
+          <tr>
+            <td><code>defaultGroupBy</code></td>
+            <td><code>string | null</code></td>
+            <td>Cl&eacute; de colonne utilis&eacute;e comme group&nbsp;by initial au chargement. Non &eacute;cras&eacute; lors des changements de donn&eacute;es.</td>
+          </tr>
+          <tr>
+            <td><code>onRowSelected</code></td>
+            <td><code>(row: T, event: MouseEvent | null) =&gt; void</code></td>
+            <td>Callback de clic sur une ligne &mdash; alternative au Output <code>(rowSelected)</code>.</td>
           </tr>
         </tbody>
       </table>
@@ -292,6 +302,41 @@ export: &#123;
   filename: 'rapport',
   transform: (row) =&gt; (&#123; issue: row.issue, statut: row.status === 'Done' ? 'Terminé' : 'En cours' &#125;)
 &#125;</code></pre>
+
+    <h3><code>TablePreferencesConfig</code></h3>
+    <p>
+      Ajoute un sous-menu <strong>Pr&eacute;f&eacute;rences</strong> dans le menu View permettant&nbsp;:
+      le <em>mode &eacute;dition</em> (redimensionner / r&eacute;ordonner les colonnes &agrave; la souris),
+      l&apos;<em>enregistrement</em> de la configuration dans le <code>localStorage</code>,
+      et l&apos;<em>effacement</em> de cette configuration.
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Champ</th><th>Type</th><th>D&eacute;faut</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>enabled</code></td>
+            <td><code>boolean</code></td>
+            <td><code>true</code></td>
+            <td>Active la fonctionnalit&eacute; Pr&eacute;f&eacute;rences dans le menu View.</td>
+          </tr>
+          <tr>
+            <td><code>tableId</code></td>
+            <td><code>string</code></td>
+            <td>&mdash;</td>
+            <td>
+              Cl&eacute; localStorage unique (pr&eacute;fix&eacute;e <code>jqt_prefs_</code>).
+              Si absent, d&eacute;riv&eacute;e automatiquement des cl&eacute;s de colonnes.
+              <strong>Doit &ecirc;tre stable</strong> entre les rechargements.
+              Exemple&nbsp;: <code>'user-table'</code>, <code>'invoice-list'</code>.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <pre><code>preferences: &#123; enabled: true, tableId: 'my-table' &#125;</code></pre>
   </section>
 
   <!-- 2b. i18n -->
@@ -338,11 +383,26 @@ providers: [
           <tr><td><code>cellEmpty</code></td><td><code>'N/A'</code></td><td>Valeur affich&eacute;e pour une cellule vide.</td></tr>
           <tr><td><code>exportButtonLabel</code></td><td><code>'Exporter'</code></td><td>Label du bouton d&apos;export CSV.</td></tr>
           <tr><td><code>filterPanelTitle</code></td><td><code>(n) =&gt; n&gt;1 ? 'Filtres' : 'Filtre'</code></td><td>Titre du panneau de filtres lat&eacute;ral.</td></tr>
+          <tr><td><code>filterBlockDefaultTitle</code></td><td><code>'Filtre'</code></td><td>Titre par d&eacute;faut d&apos;un bloc sans <code>title</code> configur&eacute;.</td></tr>
           <tr><td><code>filterEmptyState</code></td><td><code>'Aucune donn&eacute;e'</code></td><td>Message dans un bloc de filtre sans cat&eacute;gories.</td></tr>
+          <tr><td><code>expandFilterTitle</code></td><td><code>'D&eacute;plier le filtre'</code></td><td>Tooltip du bouton pour d&eacute;plier le panneau.</td></tr>
+          <tr><td><code>collapseFilterTitle</code></td><td><code>'Replier le filtre'</code></td><td>Tooltip du bouton pour replier le panneau.</td></tr>
+          <tr><td><code>groupSortLabel</code></td><td><code>'Trier&nbsp;:'</code></td><td>Label &laquo;&nbsp;Trier&nbsp;:&raquo; dans la barre de groupe.</td></tr>
+          <tr><td><code>groupRowsPerGroup</code></td><td><code>'Lignes par groupe&nbsp;:'</code></td><td>Label du s&eacute;lecteur de taille de groupe.</td></tr>
+          <tr><td><code>groupShowAll</code></td><td><code>'Toutes'</code></td><td>Option &laquo;&nbsp;Toutes les lignes&nbsp;&raquo; sans pagination de groupe.</td></tr>
+          <tr><td><code>lazyErrorTitle</code></td><td><code>'Erreur de chargement...'</code></td><td>Tooltip du bouton de r&eacute;essai colonne lazy.</td></tr>
+          <tr><td><code>lazyErrorMenuTitle</code></td><td><code>'Erreur...'</code></td><td>Tooltip de l&apos;ic&ocirc;ne d&apos;erreur dans View &gt; Champs.</td></tr>
+          <tr><td><code>preferencesMenuLabel</code></td><td><code>'Pr&eacute;f&eacute;rences'</code></td><td>Label du menu Pr&eacute;f&eacute;rences dans View.</td></tr>
+          <tr><td><code>preferencesEdit</code></td><td><code>'Mode &eacute;dition'</code></td><td>Sous-item&nbsp;: activer le mode &eacute;dition.</td></tr>
+          <tr><td><code>preferencesSave</code></td><td><code>'Enregistrer'</code></td><td>Sous-item&nbsp;: sauvegarder la config.</td></tr>
+          <tr><td><code>preferencesClear</code></td><td><code>'Effacer'</code></td><td>Sous-item&nbsp;: effacer la config sauvegard&eacute;e.</td></tr>
+          <tr><td><code>preferencesSavedMessage</code></td><td><code>'Configuration enregistr&eacute;e'</code></td><td>Message de confirmation apr&egrave;s enregistrement.</td></tr>
+          <tr><td><code>preferencesClearedMessage</code></td><td><code>'Configuration effac&eacute;e'</code></td><td>Message de confirmation apr&egrave;s effacement.</td></tr>
+          <tr><td><code>preferencesConfirmEdit</code></td><td><code>'Valider les modifications'</code></td><td>Tooltip du bouton de validation du mode &eacute;dition.</td></tr>
         </tbody>
       </table>
     </div>
-    <p>Voir <code>JqtI18n</code> pour la liste compl&egrave;te des 24 labels.</p>
+    <p>Voir <code>JqtI18n</code> pour la liste compl&egrave;te des 31 labels.</p>
   </section>
 
   <!-- 3. SliceConfig -->
@@ -384,6 +444,28 @@ providers: [
             <td><code>multiSelect</code></td>
             <td><code>boolean</code></td>
             <td>S&eacute;lection multiple simultan&eacute;e. D&eacute;faut&nbsp;: <code>false</code>.</td>
+          </tr>
+          <tr>
+            <td><code>icon</code></td>
+            <td><code>string</code></td>
+            <td>Ic&ocirc;ne Material affich&eacute;e dans le titre du bloc (ex&nbsp;: <code>'schedule'</code>, <code>'dns'</code>).</td>
+          </tr>
+          <tr>
+            <td><code>hidden</code></td>
+            <td><code>boolean</code></td>
+            <td>
+              Masqu&eacute; par d&eacute;faut dans le panneau. Disponible via <strong>View &gt; Slice by</strong>.
+              D&eacute;faut&nbsp;: <code>false</code>.
+            </td>
+          </tr>
+          <tr>
+            <td><code>bucket</code></td>
+            <td><code>(row: T) =&gt; string</code></td>
+            <td>
+              Transforme chaque valeur de ligne en label de tranche avant regroupement.
+              Utile pour des valeurs continues (dur&eacute;es, montants, scores&hellip;).
+              Ignor&eacute; si <code>categories</code> est d&eacute;fini.
+            </td>
           </tr>
         </tbody>
       </table>
@@ -490,16 +572,17 @@ view: &#123; enabled: true, enableColumnRemoval: true, enableColumnDragDrop: tru
     <h2>6) Fonction utilitaire <code>col()</code></h2>
     <pre><code>import &#123; col &#125; from '@oneteme/jquery-table';
 
-col&lt;T&gt;(key: string, header: string, sortable = true): TableColumnProvider&lt;T&gt;</code></pre>
+col&lt;T&gt;(key: string, header: string, overrides?: Partial&lt;TableColumnProvider&lt;T&gt;&gt;): TableColumnProvider&lt;T&gt;</code></pre>
     <p>
-      Cr&eacute;e un <code>TableColumnProvider</code> avec <code>sortable:&nbsp;true</code> par d&eacute;faut
-      et r&eacute;solution automatique de la valeur via <code>field(key)</code>.
+      Cr&eacute;e un <code>TableColumnProvider</code> minimal. Tout champ de <code>TableColumnProvider</code>
+      peut &ecirc;tre fourni via <code>overrides</code> pour &eacute;viter la verbosit&eacute; de la syntaxe objet.
     </p>
     <pre><code>columns: [
   col&lt;Row&gt;('name',   'Nom'),
-  col&lt;Row&gt;('status', 'Statut'),
-  col&lt;Row&gt;('date',   'Date', false),               // non triable
-  &#123; ...col&lt;Row&gt;('team', 'Equipe'), optional: true &#125;, // masquee par defaut (enableViewButton requis)
+  col&lt;Row&gt;('status', 'Statut', &#123; sortable: false &#125;),
+  col&lt;Row&gt;('team',   'Équipe',  &#123; optional: true, groupable: true &#125;),
+  col&lt;Row&gt;('score',  'Score',   &#123; value: (r) =&gt; r.score.toFixed(2), sortable: true &#125;),
+  col&lt;Row&gt;('tags',   'Tags',    &#123; sliceable: true, removable: true &#125;),
 ]</code></pre>
   </section>
 
@@ -689,6 +772,11 @@ col&lt;T&gt;(key: string, header: string, sortable = true): TableColumnProvider&
             <td><code>(dynamicSliceKeysChange)</code></td>
             <td><code>EventEmitter&lt;string[]&gt;</code></td>
             <td>Cl&eacute;s des colonnes ajout&eacute;es via <em>Slice by</em>.</td>
+          </tr>
+          <tr>
+            <td><code>(collapsedChange)</code></td>
+            <td><code>EventEmitter&lt;boolean&gt;</code></td>
+            <td>Emis quand le panneau est repli&eacute; ou d&eacute;pli&eacute;. <code>true</code>&nbsp;= repli&eacute;.</td>
           </tr>
         </tbody>
       </table>
