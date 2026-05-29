@@ -41,8 +41,8 @@ function buildPieOption(
         data,
         // position:'center' DOIT être sur le label de base (pas seulement sur emphasis/select.label)
         // pour qu'ECharts positionne correctement au centre du donut lors du hover/select.
-        label: isDonut ? { show: false, position: 'center' } : { show: true, formatter: '{b}: {d}%' },
-        labelLine: isDonut ? { show: false } : { show: true },
+        label: isDonut ? { show: false, position: 'center' } : { show: false },
+        labelLine: { show: false },
         labelLayout: { hideOverlap: true },
         ...(isDonut
           ? {
@@ -88,8 +88,8 @@ function buildPieOption(
             data,
             silent: true,
             tooltip: { show: false },
-            label: { show: true, formatter: '{b}' },
-            labelLine: { show: true },
+            label: { show: false },
+            labelLine: { show: false },
             labelLayout: { hideOverlap: true },
             emphasis: { disabled: true }
           }]
