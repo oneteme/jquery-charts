@@ -114,9 +114,17 @@ export function applyCommonConfig(
   // mergeDeep (au lieu de spread superficiel) préserve les propriétés imbriquées (label, emphasis.label…)
   // qui seraient écrasées par un spread top-level, notamment position:'center' sur le label de base.
   if (seriesPatch && Array.isArray(seriesPatch) && Array.isArray(result.series)) {
-    result.series = result.series.map((s: any, i: number) =>
-      mergeDeep({}, s, seriesPatch[i] ?? {})
-    );
+    result.series = result.series.map((s: any, i: number) => {
+      const patch = seriesPatch[i] ?? {};
+      const merged = mergeDeep({}, s, patch);
+      // Si l'utilisateur active les labels (show: true) sans préciser de position,
+      // on supprime le position:'center' hérité du workaround hover donut
+      // pour qu'ECharts utilise sa position par défaut ('outside' pour pie/donut).
+      if (patch.label?.show === true && patch.label?.position === undefined && merged.label?.position === 'center') {
+        delete merged.label.position;
+      }
+      return merged;
+    });
   }
 
   return result as EChartsOption;
