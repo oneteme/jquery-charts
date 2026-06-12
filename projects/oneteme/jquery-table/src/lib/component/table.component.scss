@@ -220,6 +220,37 @@
   line-height: 18px;
 }
 
+.search-count-loader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #d1d5db;
+  border-top-color: #374151;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.search-count-loader .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid #e5e7eb;
+  border-top-color: #A0A5AD;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .search-clear-btn {
   background: none;
   border: none;
@@ -712,6 +743,7 @@
   display: flex;
   align-items: center;
   flex: 0 0 auto;
+  position: relative;
   background: var(--jqt-footer-bg);
   border-top: 1px solid var(--jqt-border-color);
   border-right: 1px solid var(--jqt-border-color);
@@ -809,6 +841,31 @@
 :host ::ng-deep .bottom-bar .mdc-notched-outline__notch,
 :host ::ng-deep .bottom-bar .mdc-notched-outline__trailing {
   border-color: var(--jqt-border-color);
+}
+
+:host ::ng-deep .bottom-bar.is-loading .mat-mdc-paginator-range-label {
+  visibility: hidden;
+}
+
+.paginator-range-loader {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  padding: 0 16px;
+  height: 24px;
+}
+
+.paginator-range-loader .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2.5px solid #e5e7eb;
+  border-top-color: #A0A5AD;
 }
 
 .group-bottom-bar {
