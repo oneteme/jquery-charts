@@ -45,7 +45,10 @@
               autocomplete="off"
             />
             <button *ngIf="searchQuery" type="button" class="search-clear-btn" (click)="searchQuery = ''; onSearchChange()">×</button>
-            <span class="search-count">{{ filteredRowCount }}</span>
+            <span class="search-count" *ngIf="!effectiveIsLoading">{{ filteredRowCount }}</span>
+            <div class="search-count-loader" *ngIf="effectiveIsLoading">
+              <div class="spinner"></div>
+            </div>
           </div>
         </div>
         <div *ngIf="showViewButton" class="table-toolbar-right">
@@ -270,12 +273,15 @@
       </div>
       </div><!-- /table-body-wrapper -->
 
-      <div class="bottom-bar" *ngIf="showPagination">
+      <div class="bottom-bar" [class.is-loading]="effectiveIsLoading" *ngIf="showPagination">
         <mat-paginator
           [length]="totalRows"
           [pageSize]="pageSize"
           [pageSizeOptions]="pageSizeOptions"
         ></mat-paginator>
+        <div class="paginator-range-loader" *ngIf="effectiveIsLoading">
+          <div class="spinner"></div>
+        </div>
       </div>
 
       <div class="group-bottom-bar" *ngIf="activeGroupByKey">
