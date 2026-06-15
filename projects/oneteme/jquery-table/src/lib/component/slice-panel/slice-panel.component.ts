@@ -335,6 +335,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
         if (!activeKeys || activeKeys.size === 0) return true;
         return [...activeKeys].some((key) => {
           const category = (slice.categories || []).find((c) => c.key === key);
+          if (!category) return false;
           // Si pas de filter défini (usage chart), on ne filtre pas en mémoire
           if (!category?.filter) return true;
           return category.filter(row);
@@ -346,6 +347,17 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   private _getDynamicSliceColumnKey(sliceIndex: number): string | null {
     const dynamicIndex = sliceIndex - this.staticSliceCount;
     return this._dynamicSlices[dynamicIndex]?.key ?? null;
+  }
+
+  private _getSliceIdentity(slice: SliceConfig<T>, fallbackIndex: number): string {
+    if (slice.columnKey) {
+      return `column:${slice.columnKey}`;
+    }
+    if (slice.title) {
+      return `title:${slice.title}`;
+    }
+    const categoryKeys = (slice.categories || []).map((category) => category.key).join('|');
+    return `index:${fallbackIndex}|categories:${categoryKeys}`;
   }
 
   private _materializeSlice(slice: SliceConfig<T>): SliceConfig<T> {
@@ -417,8 +429,31 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   private _rebuildCache(): void {
+    const previousSlices = this._cachedSlices;
+    const previousActiveKeys = this.activeKeysBySlice;
     const allSlices = [...(this.sliceConfigs || []), ...this._dynamicSlices.map((d) => d.slice)];
     this._cachedSlices = allSlices.map((slice) => this._materializeSlice(slice));
+
+    const previousKeysByIdentity = new Map<string, Set<string>>();
+    previousSlices.forEach((slice, index) => {
+      const activeKeys = previousActiveKeys.get(index);
+      if (!activeKeys || activeKeys.size === 0) return;
+      previousKeysByIdentity.set(this._getSliceIdentity(slice, index), new Set(activeKeys));
+    });
+
+    const nextActiveKeys = new Map<number, Set<string>>();
+    this._cachedSlices.forEach((slice, index) => {
+      const previousKeys = previousKeysByIdentity.get(this._getSliceIdentity(slice, index));
+      if (!previousKeys || previousKeys.size === 0) return;
+
+      const availableKeys = new Set((slice.categories || []).map((category) => category.key));
+      const matchingKeys = [...previousKeys].filter((key) => availableKeys.has(key));
+      if (matchingKeys.length > 0) {
+        nextActiveKeys.set(index, new Set(matchingKeys));
+      }
+    });
+
+    this.activeKeysBySlice = nextActiveKeys;
     this._countCache.clear();
   }
 
