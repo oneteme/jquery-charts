@@ -17,6 +17,9 @@ on:
       echarts:
         type: boolean
         description: publish jquery-echarts library
+      organizer:
+        type: boolean
+        description: publish jquery-organizer library
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -70,6 +73,12 @@ jobs:
       if: ${{ inputs.echarts }}
       with:
         project: 'jquery-echarts'
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+      if: ${{ inputs.organizer }}
+      with:
+        project: 'jquery-organizer'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main

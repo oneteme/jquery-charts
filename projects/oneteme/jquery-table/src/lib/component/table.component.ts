@@ -13,8 +13,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
-import { SliceConfig } from './slice-panel/slice-panel.model';
-import { SlicePanelComponent } from './slice-panel/slice-panel.component';
+import { SliceConfig, SlicePanelComponent } from '@oneteme/jquery-organizer';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
 import { ViewFacade } from './view/view.facade';
 import { LazyColumnManager } from './lazy-column-manager';
@@ -28,6 +27,7 @@ import {
   ROW_GROUP_KEY, ROW_GROUP_COUNT, ROW_GROUP_PAGE, ROW_GROUP_PAGE_COUNT,
   LAZY_LOADING_VALUE, LAZY_ERROR_VALUE,
 } from './table.constants';
+import { OrganizerButtonComponent, OrganizerConfig, OrganizerEvent, OrganizerState } from '@oneteme/jquery-organizer';
 
 /** Cache interne du groupement — invalidé dès que les données, la clé ou les paramètres de tri changent. */
 interface GroupByCache<T> {
@@ -43,7 +43,7 @@ interface GroupByCache<T> {
 @Component({
   standalone: true,
   selector: 'jquery-table',
-  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatDividerModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent ],
+  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatDividerModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent, OrganizerButtonComponent ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -97,7 +97,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   @ViewChild(MatSort) sort?: MatSort;
   @ViewChild('tableBodyScroll') tableBodyScrollRef?: ElementRef<HTMLElement>;
   @ViewChild(SlicePanelComponent) slicePanelRef?: SlicePanelComponent<T>;
-  @ViewChild('viewMenuTrigger') viewMenuTrigger?: MatMenuTrigger;
   @ContentChildren(JqtCellDefDirective) _cellDefs!: QueryList<JqtCellDefDirective>;
   /** Map clé→TemplateRef pré-calculée depuis _cellDefs. Mise à jour dans ngAfterContentInit et sur _cellDefs.changes. */
   private _cellDefMap = new Map<string, TemplateRef<{ $implicit: any; index: number }>>();
@@ -349,6 +348,71 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
   }
 
+  // ── Intégration OrganizerButton ──────────────────────────────────────────────
+
+  /** Construit l'OrganizerConfig à partir de l'état courant du ViewFacade. */
+  get organizerConfig(): OrganizerConfig {
+    const allCols = [...this._view.menuBaseColumns, ...this._view.menuOptionalColumns];
+    return {
+      fields: this._view.showFields ? allCols.map(c => ({
+        id: c.key,
+        label: this.colLabel(c),
+        state: 'ready' as const,
+      })) : undefined,
+      groups: this._view.showGroupBySection ? this._view.groupByColumns.map(c => ({
+        id: c.key,
+        label: this.colLabel(c),
+      })) : undefined,
+      slices: this._view.showSliceBySection ? this._sliceByMenuItems.map(item => ({
+        id: item.key,
+        label: item.title,
+      })) : undefined,
+      showExport: this.showExportButton,
+      onExport: () => this.onExport(),
+      showPreferences: this.showPreferencesMenu,
+      hasSavedPreferences: this.hasSavedPreferences,
+      onPreferencesEdit: () => this.enterEditMode(),
+      onPreferencesSave: () => this.savePreferences(),
+      onPreferencesClear: () => this.clearPreferences(),
+    };
+  }
+
+  /** Construit l'OrganizerState à partir de l'état courant du ViewFacade. */
+  get organizerState(): OrganizerState {
+    return {
+      visibleFields: this.visibleColumns.map(c => c.key),
+      selectedGroup: this.activeGroupByKey ?? undefined,
+      selectedSlices: this._sliceByMenuItems
+        .filter(i => this.isSliceMenuItemActive(i))
+        .map(i => i.key),
+    };
+  }
+
+  /** Gestionnaire d'événements OrganizerButton → met à jour l'état de la table. */
+  onOrganizerViewChange(event: OrganizerEvent): void {
+    if (event.type === 'fieldToggled') {
+      const allCols = [...this._view.menuBaseColumns, ...this._view.menuOptionalColumns];
+      const newVisible = new Set(event.state.visibleFields ?? []);
+      for (const col of allCols) {
+        const isNowVisible = newVisible.has(col.key);
+        if (this.isColumnVisible(col.key) !== isNowVisible) {
+          this.onColumnVisibilityChange(col, isNowVisible);
+        }
+      }
+    } else if (event.type === 'groupSelected') {
+      const newKey = event.state.selectedGroup ?? null;
+      this.onGroupByChange(newKey === this.activeGroupByKey ? null : newKey);
+    } else if (event.type === 'sliceSelected') {
+      const prevSlices = new Set(this.organizerState.selectedSlices ?? []);
+      const clickedId = (event.state.selectedSlices ?? []).find(id => !prevSlices.has(id));
+      if (clickedId) {
+        const item = this._sliceByMenuItems.find(i => i.key === clickedId);
+        if (item) this.onSliceMenuItemClick(item);
+      }
+    }
+    this._cdr.markForCheck();
+  }
+
   // ── Getters d'affichage
 
   get title(): string {
@@ -420,7 +484,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.paginator?.firstPage();
     this.groupByChange.emit(key);
     if (key) {
-      this.viewMenuTrigger?.closeMenu();
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
       if (colDef?.lazy && this._lazyColumnStatus.get(key) !== 'loaded') {
         this.triggerLazyFetch(colDef);

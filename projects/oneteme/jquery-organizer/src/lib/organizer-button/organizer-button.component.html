@@ -1,0 +1,133 @@
+<button type="button" class="organizer-btn" [matMenuTriggerFor]="viewMenu" #mainMenuTrigger="matMenuTrigger" [attr.aria-label]="'View'">
+  <mat-icon class="organizer-btn-icon">settings</mat-icon>
+</button>
+
+<mat-menu #viewMenu="matMenu" panelClass="organizer-menu-panel">
+
+  <!-- Champs (colonnes) -->
+  <button *ngIf="config.fields?.length" mat-menu-item [matMenuTriggerFor]="fieldsSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Champs</span>
+    <span class="organizer-menu-value">{{ fieldsSummary() }}</span>
+  </button>
+
+  <!-- Indicateurs -->
+  <button *ngIf="config.indicators?.length" mat-menu-item [matMenuTriggerFor]="indicatorsSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Indicateur</span>
+    <span class="organizer-menu-value">{{ activeIndicatorLabel() }}</span>
+  </button>
+
+  <!-- Grouper par -->
+  <button *ngIf="config.groups?.length" mat-menu-item [matMenuTriggerFor]="groupsSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Grouper par</span>
+    <span class="organizer-menu-value">{{ activeGroupLabel() }}</span>
+  </button>
+
+  <!-- Stacks -->
+  <button *ngIf="config.stacks?.length" mat-menu-item [matMenuTriggerFor]="stacksSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Stacks</span>
+    <span class="organizer-menu-value">{{ activeStackLabel() }}</span>
+  </button>
+
+  <!-- Filtres -->
+  <button *ngIf="config.slices?.length" mat-menu-item [matMenuTriggerFor]="slicesSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Filtrer par</span>
+    <span class="organizer-menu-value">{{ activeSlicesLabel() }}</span>
+  </button>
+
+  <!-- Export -->
+  <mat-divider *ngIf="config.showExport" class="organizer-divider"></mat-divider>
+  <button *ngIf="config.showExport" mat-menu-item type="button" class="organizer-menu-export"
+    (click)="onExport()">
+    <mat-icon class="organizer-menu-export-icon">download</mat-icon>
+    <span class="organizer-menu-label">Exporter</span>
+  </button>
+
+  <!-- Préférences -->
+  <mat-divider *ngIf="config.showPreferences" class="organizer-divider"></mat-divider>
+  <button *ngIf="config.showPreferences" mat-menu-item [matMenuTriggerFor]="preferencesSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Préférences</span>
+  </button>
+
+</mat-menu>
+
+<!-- Sous-menu : Champs (colonnes) -->
+<mat-menu #fieldsSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item"
+      *ngFor="let field of config.fields"
+      [class.active]="isFieldVisible(field.id)"
+      (mousedown)="onFieldToggle(field.id, !isFieldVisible(field.id))">
+      <span class="organizer-submenu-check">{{ isFieldVisible(field.id) ? '\u2713' : '' }}</span>
+      {{ field.label }}
+    </button>
+  </div>
+</mat-menu>
+
+<!-- Sous-menu : Indicateurs -->
+<mat-menu #indicatorsSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item"
+      *ngFor="let indicator of config.indicators"
+      [class.active]="state?.selectedIndicator === indicator.id"
+      (mousedown)="onIndicatorSelect(indicator.id)">
+      <span class="organizer-submenu-check">{{ state?.selectedIndicator === indicator.id ? '✓' : '' }}</span>
+      {{ indicator.label }}
+    </button>
+  </div>
+</mat-menu>
+
+<!-- Sous-menu : Grouper par -->
+<mat-menu #groupsSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item"
+      *ngFor="let group of config.groups"
+      [class.active]="state?.selectedGroup === group.id"
+      (mousedown)="onGroupBySelect(group.id)">
+      <span class="organizer-submenu-check">{{ state?.selectedGroup === group.id ? '✓' : '' }}</span>
+      {{ group.label }}
+    </button>
+  </div>
+</mat-menu>
+
+<!-- Sous-menu : Stacks -->
+<mat-menu #stacksSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item"
+      *ngFor="let stack of config.stacks"
+      [class.active]="state?.selectedStacks?.includes(stack.id)"
+      (mousedown)="onStackSelect(stack.id)">
+      <span class="organizer-submenu-check">{{ state?.selectedStacks?.includes(stack.id) ? '✓' : '' }}</span>
+      {{ stack.label }}
+    </button>
+  </div>
+</mat-menu>
+
+<!-- Sous-menu : Filtres/Slices -->
+<mat-menu #slicesSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item"
+      *ngFor="let slice of config.slices"
+      [class.active]="state?.selectedSlices?.includes(slice.id)"
+      (mousedown)="onSliceClick(slice.id)">
+      <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>
+      {{ slice.label }}
+    </button>
+  </div>
+</mat-menu>
+<!-- Sous-menu : Préférences -->
+<mat-menu #preferencesSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item" (mousedown)="onPreferencesEdit()">
+      <span class="organizer-submenu-check"></span>
+      <mat-icon class="organizer-submenu-icon">edit</mat-icon>\u00c9diter
+    </button>
+    <button type="button" class="organizer-submenu-item" (mousedown)="onPreferencesSave()">
+      <span class="organizer-submenu-check"></span>
+      <mat-icon class="organizer-submenu-icon">save</mat-icon>Sauvegarder
+    </button>
+    <button type="button" class="organizer-submenu-item" [disabled]="!config.hasSavedPreferences" (mousedown)="onPreferencesClear()">
+      <span class="organizer-submenu-check"></span>
+      <mat-icon class="organizer-submenu-icon">delete_outline</mat-icon>Réinitialiser
+    </button>
+  </div>
+</mat-menu>

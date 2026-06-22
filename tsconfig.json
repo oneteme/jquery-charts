@@ -21,6 +21,9 @@
       "@oneteme/jquery-echarts": [
         "dist/oneteme/jquery-echarts"
       ],
+      "@oneteme/jquery-organizer": [
+        "dist/oneteme/jquery-organizer"
+      ]
     },
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
