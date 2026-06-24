@@ -2,6 +2,28 @@
 
 Bibliothèque Angular autonome pour la gestion décentralisée des vues dans les pages KPI, les graphiques et les tableaux. Elle fournit deux composants principaux : `OrganizerButtonComponent`, un bouton de configuration contextuel, et `SlicePanelComponent`, un panneau de filtre latéral.
 
+> **Status Update (v0.0.42+)**: jquery-organizer est maintenant **totalement indépendant** et **correctement intégré** dans tous les renderers. Voir [PROJECT_COMPLETION_SUMMARY.md](../../PROJECT_COMPLETION_SUMMARY.md) pour un aperçu complet.
+
+---
+
+## 🚀 Quick Start
+
+### Table
+```typescript
+import { TableComponent, ViewButtonComponent } from '@oneteme/jquery-table';
+
+<view-button [config]="organizerConfig" (viewChange)="onViewChange($event)"></view-button>
+<jquery-table [data]="data"></jquery-table>
+```
+
+### Chart
+```typescript
+import { ChartComponent, OrganizerButtonComponent } from '@oneteme/jquery-organizer';
+
+<organizer-button [config]="organizerConfig" (viewChange)="onViewChange($event)"></organizer-button>
+<chart [data]="transformedData"></chart>
+```
+
 ---
 
 ## Sommaire

@@ -1,19 +1,39 @@
-import { Subject, take, takeUntil } from 'rxjs';
-import { TableColumnProvider } from '../jquery-table.model';
-import { LAZY_LOADING_VALUE, LAZY_ERROR_VALUE } from './table.constants';
+import { Observable, Subject, take, takeUntil } from 'rxjs';
 
-export interface LazyCallbacks {
+/**
+ * Contrat minimal pour un champ supportant le lazy-loading.
+ * TableColumnProvider satisfait ce contrat structurellement.
+ */
+export interface LazyFieldDef {
+  key: string;
+  lazy?: {
+    fetchFn: () => Observable<any[]>;
+  };
+}
+
+/** Callbacks injectés par le composant hôte. */
+export interface LazyFieldCallbacks {
   onRefresh(): void;
   onMarkForCheck(): void;
 }
 
+/** Sentinelles internes utilisées pour marquer les cellules en attente de chargement. */
+export const LAZY_FIELD_LOADING_VALUE = '__lazy_loading__';
+export const LAZY_FIELD_ERROR_VALUE = '__lazy_error__';
+
 /**
- * Gère le cycle de vie des colonnes à chargement différé (lazy) :
+ * LazyFieldManager<TField extends LazyFieldDef>
+ *
+ * Gère le cycle de vie des champs à chargement différé :
  * statuts, données, annulation des requêtes en cours.
  *
- * Pas de dépendance Angular/DOM — peut être instancié manuellement dans le composant.
+ * Pas de dépendance Angular/DOM — peut être instancié manuellement dans tout composant.
+ *
+ * Usage (table) :
+ *   private _lazy = new LazyFieldManager<TableColumnProvider>();
+ *   this._lazy.fetch(column, this._resolvedData, { onRefresh: ..., onMarkForCheck: ... });
  */
-export class LazyColumnManager<T = any> {
+export class LazyFieldManager<TField extends LazyFieldDef = LazyFieldDef> {
 
   private _status = new Map<string, 'idle' | 'loading' | 'loaded' | 'error'>();
   private _data = new Map<string, Map<any, any>>();
@@ -31,13 +51,17 @@ export class LazyColumnManager<T = any> {
     return this._status.get(key) ?? 'idle';
   }
 
+  /**
+   * Interprète une valeur de cellule et retourne le type de rendu.
+   * Utilise les sentinelles LAZY_FIELD_LOADING_VALUE et LAZY_FIELD_ERROR_VALUE.
+   */
   getRenderType(rowValue: any): 'loading' | 'error' | 'value' {
-    if (rowValue === LAZY_LOADING_VALUE) return 'loading';
-    if (rowValue === LAZY_ERROR_VALUE) return 'error';
+    if (rowValue === LAZY_FIELD_LOADING_VALUE) return 'loading';
+    if (rowValue === LAZY_FIELD_ERROR_VALUE) return 'error';
     return 'value';
   }
 
-  /** Annule tous les fetches en cours et réinitialise l'état (appeler lors d'un changement de données). */
+  /** Annule tous les fetches en cours et réinitialise l'état. */
   cancelAll(): void {
     this._cancels.forEach(s => { s.next(); s.complete(); });
     this._cancels.clear();
@@ -45,9 +69,9 @@ export class LazyColumnManager<T = any> {
     this._data = new Map();
   }
 
-  /** Réinitialise une colonne et relance son fetch. */
-  retry(column: TableColumnProvider<T>, resolvedData: T[], callbacks: LazyCallbacks): void {
-    const k = column.key;
+  /** Réinitialise un champ et relance son fetch. */
+  retry<TRow>(field: TField, resolvedData: TRow[], callbacks: LazyFieldCallbacks): void {
+    const k = field.key;
     const prev = this._cancels.get(k);
     if (prev) { prev.next(); prev.complete(); }
     this._cancels.delete(k);
@@ -60,13 +84,13 @@ export class LazyColumnManager<T = any> {
     newData.delete(k);
     this._data = newData;
 
-    this.fetch(column, resolvedData, callbacks);
+    this.fetch(field, resolvedData, callbacks);
   }
 
-  /** Lance le chargement différé d'une colonne. No-op si déjà en cours. */
-  fetch(column: TableColumnProvider<T>, resolvedData: T[], callbacks: LazyCallbacks): void {
-    if (!column.lazy) return;
-    const k = column.key;
+  /** Lance le chargement différé d'un champ. No-op si déjà en cours. */
+  fetch<TRow>(field: TField, resolvedData: TRow[], callbacks: LazyFieldCallbacks): void {
+    if (!field.lazy) return;
+    const k = field.key;
     if (this._status.get(k) === 'loading') return;
 
     const prev = this._cancels.get(k);
@@ -79,7 +103,7 @@ export class LazyColumnManager<T = any> {
     this._status = newStatus;
     callbacks.onRefresh();
 
-    column.lazy.fetchFn().pipe(
+    field.lazy.fetchFn().pipe(
       take(1),
       takeUntil(cancel$),
     ).subscribe({

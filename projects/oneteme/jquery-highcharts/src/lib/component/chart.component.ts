@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
-import { ChartProvider, ChartType, ViewConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartProvider, ChartType, OrganizerConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ChartDirective } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils';
 import { ChartViewFacade } from './view/chart-view.facade';
@@ -92,25 +92,25 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Input() debug: boolean = false;
   @Input() isLoading: boolean = false;
   @Input() enablePivot: boolean = false;
-  @Input() view?: ViewConfig;
+  @Input() organizer?: OrganizerConfig;
 
   _effectiveConfig!: ChartProvider<X, Y>;
 
-  readonly _viewFacade = new ChartViewFacade<X, Y>();
+  readonly _organizerFacade = new ChartViewFacade<X, Y>();
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['config'] || changes['view']) {
+    if (changes['config'] || changes['organizer']) {
       if (this.config) {
-        this._viewFacade.update(this.view ?? {}, this.config);
+        this._organizerFacade.update(this.organizer ?? {}, this.config);
       }
-      this._effectiveConfig = this.config ? this._viewFacade.getEffectiveProvider() : this.config;
+      this._effectiveConfig = this.config ? this._organizerFacade.getEffectiveProvider() : this.config;
     }
   }
 
   ngOnDestroy(): void {
-    this._viewFacade.destroy();
+    this._organizerFacade.destroy();
   }
 
   change(event: ChartCustomEvent) {

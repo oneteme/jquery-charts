@@ -1,7 +1,7 @@
 import { DataProvider } from '@oneteme/jquery-core';
 import { Observable } from 'rxjs';
-import { SliceConfig } from './component/slice-panel/slice-panel.model';
-export { SliceConfig } from './component/slice-panel/slice-panel.model';
+import { SliceConfig } from '@oneteme/jquery-organizer';
+export { SliceConfig } from '@oneteme/jquery-organizer';
 
 export interface TableColumnProvider<T = any> {
   key: string;

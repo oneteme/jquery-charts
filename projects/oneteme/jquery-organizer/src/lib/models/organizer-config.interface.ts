@@ -1,4 +1,4 @@
-import { ViewEvent } from '@oneteme/jquery-core';
+import { OrganizerEvent } from '@oneteme/jquery-core';
 import { Observable } from 'rxjs';
 import { SliceConfig } from '../slice-panel/slice-panel.model';
 
@@ -177,12 +177,12 @@ export interface OrganizerState {
 }
 
 /**
- * OrganizerEvent - Minimal event interface for view changes
+ * OrganizerButtonEvent - Minimal event interface for view changes
  *
  * Emitted when user interacts with the organizer menu.
  * Parent should listen and update both OrganizerState and jquery-core's ViewState.
  */
-export interface OrganizerEvent {
+export interface OrganizerButtonEvent {
   type: 'fieldToggled' | 'indicatorSelected' | 'groupSelected' | 'stackSelected' | 'sliceSelected' | 'reset';
   state: OrganizerState;
   source?: 'user' | 'api';

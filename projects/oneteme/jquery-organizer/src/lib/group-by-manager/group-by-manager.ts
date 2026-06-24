@@ -1,15 +1,20 @@
 /**
  * GroupByManager
  *
- * Encapsule tout l'état et la logique liés au mode Group By :
+ * Gère l'état d'affichage du mode Group By, indépendamment du renderer :
  * - état collapsed / expanded des groupes
  * - pagination interne par groupe
  * - tri des groupes (asc / desc)
  * - scroll vers un groupe
  *
- * Le composant TableComponent l'instancie et lui passe deux callbacks :
- *   - `onNeedProjection` : demande une reprojection légère de la page courante
- *   - `onNeedRender`     : demande un rebuild complet (tri changé etc.)
+ * Pas de dépendance Angular/DOM ni de coupling avec un type de données spécifique.
+ * Utilisé par TableComponent mais peut être réutilisé dans tout contexte groupé.
+ *
+ * Usage :
+ *   this._groupByManager = new GroupByManager(
+ *     () => this.projectPage(),
+ *     () => this.fullRender(),
+ *   );
  */
 export class GroupByManager {
   /** Groupes actuellement ouverts (mode default-collapsed) ou fermés (mode default-expanded). */

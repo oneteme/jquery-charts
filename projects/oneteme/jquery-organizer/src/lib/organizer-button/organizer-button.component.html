@@ -7,31 +7,31 @@
   <!-- Champs (colonnes) -->
   <button *ngIf="config.fields?.length" mat-menu-item [matMenuTriggerFor]="fieldsSubMenu" class="organizer-menu-trigger">
     <span class="organizer-menu-label">Champs</span>
-    <span class="organizer-menu-value">{{ fieldsSummary() }}</span>
+    <span class="organizer-menu-value" *ngIf="!hideMenuValues">{{ fieldsSummary() }}</span>
   </button>
 
   <!-- Indicateurs -->
   <button *ngIf="config.indicators?.length" mat-menu-item [matMenuTriggerFor]="indicatorsSubMenu" class="organizer-menu-trigger">
     <span class="organizer-menu-label">Indicateur</span>
-    <span class="organizer-menu-value">{{ activeIndicatorLabel() }}</span>
+    <span class="organizer-menu-value" *ngIf="!hideMenuValues">{{ activeIndicatorLabel() }}</span>
   </button>
 
   <!-- Grouper par -->
   <button *ngIf="config.groups?.length" mat-menu-item [matMenuTriggerFor]="groupsSubMenu" class="organizer-menu-trigger">
     <span class="organizer-menu-label">Grouper par</span>
-    <span class="organizer-menu-value">{{ activeGroupLabel() }}</span>
+    <span class="organizer-menu-value" *ngIf="!hideMenuValues">{{ activeGroupLabel() }}</span>
   </button>
 
-  <!-- Stacks -->
-  <button *ngIf="config.stacks?.length" mat-menu-item [matMenuTriggerFor]="stacksSubMenu" class="organizer-menu-trigger">
+  <!-- Stacks (hide if only 1 option) -->
+  <button *ngIf="config.stacks?.length && config.stacks.length > 1" mat-menu-item [matMenuTriggerFor]="stacksSubMenu" class="organizer-menu-trigger">
     <span class="organizer-menu-label">Stacks</span>
-    <span class="organizer-menu-value">{{ activeStackLabel() }}</span>
+    <span class="organizer-menu-value" *ngIf="!hideMenuValues">{{ activeStackLabel() }}</span>
   </button>
 
   <!-- Filtres -->
   <button *ngIf="config.slices?.length" mat-menu-item [matMenuTriggerFor]="slicesSubMenu" class="organizer-menu-trigger">
     <span class="organizer-menu-label">Filtrer par</span>
-    <span class="organizer-menu-value">{{ activeSlicesLabel() }}</span>
+    <span class="organizer-menu-value" *ngIf="!hideMenuValues">{{ activeSlicesLabel() }}</span>
   </button>
 
   <!-- Export -->
@@ -119,7 +119,7 @@
   <div class="organizer-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
     <button type="button" class="organizer-submenu-item" (mousedown)="onPreferencesEdit()">
       <span class="organizer-submenu-check"></span>
-      <mat-icon class="organizer-submenu-icon">edit</mat-icon>\u00c9diter
+      <mat-icon class="organizer-submenu-icon">edit</mat-icon>Éditer
     </button>
     <button type="button" class="organizer-submenu-item" (mousedown)="onPreferencesSave()">
       <span class="organizer-submenu-check"></span>

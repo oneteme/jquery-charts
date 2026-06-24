@@ -17,7 +17,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Subject, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { OrganizerConfig, OrganizerEvent, OrganizerSliceState, OrganizerState, FieldState } from '../models';
+import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, FieldState } from '../models';
 
 /**
  * OrganizerButtonComponent
@@ -62,10 +62,17 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   @Input() state?: OrganizerState;
 
   /**
+   * Hide the summary values displayed next to menu labels
+   * Set to true for charts to reduce menu size (values visible on hover anyway)
+   * Default: false (show values for tables)
+   */
+  @Input() hideMenuValues = false;
+
+  /**
    * Event emitted when view configuration changes
    * Parent listens and updates its state accordingly
    */
-  @Output() viewChange = new EventEmitter<OrganizerEvent>();
+  @Output() viewChange = new EventEmitter<OrganizerButtonEvent>();
 
   /**
    * Emitted when a filter slice is selected and data is loaded.
@@ -157,15 +164,22 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle stack selection
+   * Handle stack selection (single-select only, always one required)
+   * Only one stack can be active at a time for a given indicator
+   * At least one stack must always be selected (cannot deselect all)
+   * Selecting the same stack again has no effect (if it's the last one)
    * @param stackId Stack ID to select
    */
   onStackSelect(stackId: string): void {
     const selectedStacks = this.state?.selectedStacks || [];
-    const updated = selectedStacks.includes(stackId)
-      ? selectedStacks.filter(s => s !== stackId)
-      : [...selectedStacks, stackId];
-
+    
+    // Prevent deselecting if this is the last stack
+    if (selectedStacks.includes(stackId) && selectedStacks.length === 1) {
+      return; // Do nothing - keep the current stack selected
+    }
+    
+    // Single-select: toggle the selected stack
+    const updated = selectedStacks.includes(stackId) ? [] : [stackId];
     this.emitChange('stackSelected', { selectedStacks: updated });
   }
 
@@ -361,8 +375,8 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
    * @param type Event type
    * @param state Updated organizer state (partial)
    */
-  private emitChange(type: OrganizerEvent['type'], stateUpdate: Partial<OrganizerState>): void {
-    const event: OrganizerEvent = {
+  private emitChange(type: OrganizerButtonEvent['type'], stateUpdate: Partial<OrganizerState>): void {
+    const event: OrganizerButtonEvent = {
       type,
       state: { ...this.state, ...stateUpdate },
       source: 'user'

@@ -51,12 +51,12 @@
             </div>
           </div>
         </div>
-        <div *ngIf="showViewButton" class="table-toolbar-right">
-          <organizer-button
+        <div *ngIf="showOrganizerButton" class="table-toolbar-right">
+          <table-organizer-button
             [config]="organizerConfig"
             [state]="organizerState"
             (viewChange)="onOrganizerViewChange($event)">
-          </organizer-button>
+          </table-organizer-button>
         </div>
       </div>
 

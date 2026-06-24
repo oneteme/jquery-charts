@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, HostBinding, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
-import { ChartProvider, ChartType, ViewConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartProvider, ChartType, OrganizerConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ChartDirective, GroupSyncMode } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils/types';
 import { ChartViewFacade } from './view/chart-view.facade';
@@ -27,12 +27,12 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Input() group: string | null = null;
   @Input() groupSync: GroupSyncMode | null = null;
 
-  /** Active la gestion de la visibilité des séries via le panneau View. */
-  @Input() view?: ViewConfig;
+  /** Active la gestion de la visibilité des séries via le panneau Organizer. */
+  @Input() organizer?: OrganizerConfig;
 
   _effectiveConfig!: ChartProvider<X, Y>;
 
-  readonly _viewFacade = new ChartViewFacade<X, Y>();
+  readonly _organizerFacade = new ChartViewFacade<X, Y>();
 
   @HostBinding('style.height') get hostHeight(): string | null {
     return this.config?.height ? `${this.config.height}px` : null;
@@ -42,15 +42,15 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Output() chartClick = new EventEmitter<any>();
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['config'] || changes['view']) {
+    if (changes['config'] || changes['organizer']) {
       if (this.config) {
-        this._viewFacade.update(this.view ?? {}, this.config);
+        this._organizerFacade.update(this.organizer ?? {}, this.config);
       }
-      this._effectiveConfig = this.config ? this._viewFacade.getEffectiveProvider() : this.config;
+      this._effectiveConfig = this.config ? this._organizerFacade.getEffectiveProvider() : this.config;
     }
   }
 
   ngOnDestroy(): void {
-    this._viewFacade.destroy();
+    this._organizerFacade.destroy();
   }
 }
