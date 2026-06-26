@@ -45,6 +45,8 @@ export interface TablePaginationConfig {
   enabled?: boolean;
   pageSize?: number;
   pageSizeOptions?: number[];
+  /** Affiche les boutons natifs Angular Material pour aller à la première et à la dernière page. */
+  showFirstLastButtons?: boolean;
   /** Options de taille de page spécifiques au mode Group by. Si absent, utilise `pageSizeOptions`. */
   pageSizeOptionsGroupBy?: number[];
 }
@@ -147,6 +149,11 @@ export interface TableProvider<T = any> {
   slices?: SliceConfig<T>[];
   /** Affiche le bouton toggle pour replier/déplier le panneau de slices. Par défaut : `true`. */
   enableSliceToggle?: boolean;
+  /**
+   * Permet de vider la search bar depuis la config.
+   * Changez cette valeur (ex: route courante, compteur, timestamp) pour déclencher un reset.
+   */
+  clearSearchInput?: string | number | boolean | null;
   search?: TableSearchConfig;
   pagination?: TablePaginationConfig;
   view?: TableViewConfig;
