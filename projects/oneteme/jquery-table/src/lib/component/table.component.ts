@@ -67,7 +67,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   @Input() columnLabels?: Record<string, string>;
   @Input() isLoading = false;
 
-  /** Paramètre de contrôle pour réinitialiser la barre de recherche. Modifiez cette valeur pour vider le search-input-wrapper. */
+  /** Paramètre de contrôle pour réinitialiser barre de recherche. */
   @Input()
   set clearSearchInput(value: boolean | null | undefined) {
     if (value) {
