@@ -84,14 +84,17 @@
           <mat-menu #preferencesSubMenu="matMenu" [panelClass]="'view-submenu-panel'">
             <div class="view-submenu" (mousedown)="$event.stopPropagation()" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
               <button type="button" class="view-menu-item" (mousedown)="enterEditMode(); viewMenuTrigger.closeMenu()">
+                <span class="view-menu-check" aria-hidden="true"></span>
                 <mat-icon class="view-menu-col-icon">edit</mat-icon>
                 {{ i18n.preferencesEdit }}
               </button>
               <button type="button" class="view-menu-item" (mousedown)="savePreferences(); viewMenuTrigger.closeMenu()">
+                <span class="view-menu-check" aria-hidden="true"></span>
                 <mat-icon class="view-menu-col-icon">save</mat-icon>
                 {{ i18n.preferencesSave }}
               </button>
               <button type="button" class="view-menu-item" [disabled]="!hasSavedPreferences" (mousedown)="clearPreferences(); viewMenuTrigger.closeMenu()">
+                <span class="view-menu-check" aria-hidden="true"></span>
                 <mat-icon class="view-menu-col-icon">delete_outline</mat-icon>
                 {{ i18n.preferencesClear }}
               </button>
@@ -278,6 +281,7 @@
           [length]="totalRows"
           [pageSize]="pageSize"
           [pageSizeOptions]="pageSizeOptions"
+          [showFirstLastButtons]="resolvedPaginationShowFirstLastButtons"
         ></mat-paginator>
         <div class="paginator-range-loader" *ngIf="effectiveIsLoading">
           <div class="spinner"></div>
@@ -287,14 +291,14 @@
       <div class="group-bottom-bar" *ngIf="activeGroupByKey">
         <div class="group-bottom-bar-container">
           <div class="group-bottom-bar-left">
-            <button type="button" class="group-reset-btn" (click)="onGroupByChange(null)">
+            <button type="button" class="group-reset-btn" *ngIf="!isDefaultGroupByActive" (click)="onGroupByChange(null)">
               <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-reset-icon">
                 <path d="M3 8a5 5 0 1 0 5-5 5 5 0 0 0-3.54 1.46L3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
                 <path d="M3 3v2.5H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
               {{ i18n.groupRemove }}
             </button>
-            <div class="group-bar-separator"></div>
+            <div class="group-bar-separator" *ngIf="!isDefaultGroupByActive"></div>
             <div class="group-sort-controls">
               <span class="group-sort-label">{{ i18n.groupSortLabel }}</span>
               <button type="button" class="group-sort-btn" [class.active]="groupSortOrder === 'asc'" (click)="onGroupSortToggle('asc')" [title]="i18n.groupSortAsc">

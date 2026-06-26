@@ -67,6 +67,15 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   @Input() columnLabels?: Record<string, string>;
   @Input() isLoading = false;
 
+  /** Paramètre de contrôle pour réinitialiser barre de recherche. */
+  @Input()
+  set clearSearchInput(value: boolean | null | undefined) {
+    if (value) {
+      this.searchQuery = '';
+      this.onSearchChange();
+    }
+  }
+
   @Output() addRequested = new EventEmitter<void>();
   @Output() columnAdded = new EventEmitter<TableColumnProvider<T>>();
   @Output() columnRemoved = new EventEmitter<TableColumnProvider<T>>();
@@ -233,7 +242,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _columnMap: Map<string, TableColumnProvider<T>> = new Map();
   private _resolvedData: T[] = [];
   private _preservePageIndex: number | null = null;
-  private _initialSearchApplied = false;
+  private _lastConfigClearSearchInput: string | number | boolean | null | undefined;
 
   // Seuil au-delà duquel le rendu groupé est bloqué pour protéger le navigateur
   private static readonly MAX_GROUP_COUNT = 500;
@@ -258,14 +267,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (dataChanged) {
       this._lazy.cancelAll();
     }
-    if (changes['config'] && !this._initialSearchApplied) {
-      const initial = this.config?.search?.initialQuery;
-      if (initial != null) {
-        this.searchQuery = initial;
-        this._initialSearchApplied = true;
-      }
-    }
     this.refreshViewModel();
+    if (changes['config']) {
+      this.applyConfigSearchReset();
+      this.applyInitialSearchQuery();
+    }
     if (dataChanged) {
       this.activeColumns.filter(c => c.lazy).forEach(c => this.triggerLazyFetch(c));
     }
@@ -372,6 +378,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   get showPreferencesMenu(): boolean {
     return this.resolvedConfig.preferences?.enabled === true;
   }
+
+  get isDefaultGroupByActive(): boolean {
+    if (!this.activeGroupByKey) return false;
+    return this.activeGroupByKey === this.resolvedConfig.defaultGroupBy;
+  }
+
   get hasSavedPreferences(): boolean { return this._hasSavedConfig; }
 
   get showToolbar(): boolean { return this.showSearchBar || this.showViewButton || this.showSliceExpandBtn; }
@@ -645,6 +657,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   get showPagination(): boolean {
     if (this.activeGroupByKey !== null) return false;
     return this.resolvedConfig.pagination?.enabled !== false;
+  }
+
+  get resolvedPaginationShowFirstLastButtons(): boolean {
+    return this.resolvedConfig.pagination?.showFirstLastButtons === true;
   }
 
   get isColumnDragDropEnabled(): boolean {
@@ -1279,6 +1295,30 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       export: exportConfig,
       preferences: prefsConfig,
     };
+  }
+
+  private applyConfigSearchReset(): void {
+    const clearToken = this.resolvedConfig.clearSearchInput;
+    const shouldClear = !!clearToken && clearToken !== this._lastConfigClearSearchInput;
+
+    this._lastConfigClearSearchInput = clearToken;
+
+    if (!shouldClear) {
+      return;
+    }
+
+    this.searchQuery = '';
+    this.onSearchChange();
+  }
+
+  private applyInitialSearchQuery(): void {
+    const initialQuery = this.resolvedConfig.search?.initialQuery;
+    if (initialQuery == null) {
+      return;
+    }
+
+    this.searchQuery = initialQuery;
+    this.onSearchChange();
   }
 
   private static _hashColumns(keys: string[]): string {
