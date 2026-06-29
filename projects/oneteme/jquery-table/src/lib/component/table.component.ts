@@ -1370,7 +1370,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const data = this._resolvedData;
 
     let filtered = data.filter(this.activeSliceFilter);
-    const afterSliceFilterCount = filtered.length;
 
     const query = this.searchQuery?.trim().toLowerCase();
     if (query) {
@@ -1385,7 +1384,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         })
       );
     }
-
     return filtered;
   }
 
