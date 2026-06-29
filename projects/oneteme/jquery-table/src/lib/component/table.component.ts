@@ -417,7 +417,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   // ── Actions utilisateur
 
   onSearchChange(): void {
-    console.log('[JQT-PAGINATION][onSearchChange] query=', this.searchQuery);
     this._preservePageIndex = 0;
     this.refreshViewModel();
     this.paginator?.firstPage();
@@ -626,7 +625,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   onSliceFilterChange(pred: (row: T) => boolean): void {
-    console.log('[JQT-PAGINATION][onSliceFilterChange] filter updated');
     this.activeSliceFilter = pred;
     this._preservePageIndex = 0;
     this.refreshViewModel();
@@ -1230,21 +1228,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (this.paginator) {
       const savedIndex = this._preservePageIndex ?? this.paginator.pageIndex;
       const maxPage = Math.max(0, Math.ceil(this._allFilteredRows.length / this.pageSize) - 1);
-      console.log('[JQT-PAGINATION][_executeRender:beforePaginatorUpdate]', {
-        allFilteredRows: this._allFilteredRows.length,
-        pageSize: this.pageSize,
-        paginatorPageIndex: this.paginator.pageIndex,
-        preservePageIndex: this._preservePageIndex,
-        savedIndex,
-        maxPage,
-      });
       this.paginator.length = this._allFilteredRows.length;
       this.paginator.pageIndex = Math.min(savedIndex, maxPage);
       this._preservePageIndex = null;
-      console.log('[JQT-PAGINATION][_executeRender:afterPaginatorUpdate]', {
-        paginatorLength: this.paginator.length,
-        paginatorPageIndex: this.paginator.pageIndex,
-      });
     }
 
     this._projectCurrentPage();
@@ -1262,13 +1248,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const pageIndex = this.paginator?.pageIndex ?? 0;
     const start = pageIndex * this.pageSize;
     const pageRows = this._allFilteredRows.slice(start, start + this.pageSize);
-    console.log('[JQT-PAGINATION][_projectCurrentPage]', {
-      pageIndex,
-      pageSize: this.pageSize,
-      start,
-      allFilteredRows: this._allFilteredRows.length,
-      pageRows: pageRows.length,
-    });
 
     const projected: any[] = [];
     pageRows.forEach((row, i) => {
@@ -1407,12 +1386,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       );
     }
 
-    console.log('[JQT-PAGINATION][getCategoryFilteredData]', {
-      totalData: data.length,
-      afterSliceFilter: afterSliceFilterCount,
-      query,
-      afterSearchFilter: filtered.length,
-    });
     return filtered;
   }
 
