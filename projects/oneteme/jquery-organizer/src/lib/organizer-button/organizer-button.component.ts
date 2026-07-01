@@ -7,7 +7,8 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   OnDestroy,
-  ViewChild
+  ViewChild,
+  ViewEncapsulation
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -17,7 +18,12 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Subject, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, FieldState } from '../models';
+import {
+  OrganizerConfig,
+  OrganizerButtonEvent,
+  OrganizerSliceState,
+  OrganizerState,
+} from '../models';
 
 /**
  * OrganizerButtonComponent
@@ -47,6 +53,7 @@ import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerSt
   selector: 'organizer-button',
   templateUrl: './organizer-button.component.html',
   styleUrls: ['./organizer-button.component.scss'],
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrganizerButtonComponent implements OnInit, OnDestroy {
@@ -81,113 +88,94 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
    */
   @Output() sliceStateChange = new EventEmitter<OrganizerSliceState | null>();
 
-  /**
-   * Field currently being loaded (for spinner display)
-   */
+  /** Field currently being loaded (for spinner display) */
   loadingFieldId?: string;
 
-  /**
-   * Cache for fetched field data to avoid re-fetches
-   * Key: fieldId, Value: field data array
-   */
   private fieldDataCache = new Map<string, any[]>();
-
   private destroy$ = new Subject<void>();
 
   @ViewChild('mainMenuTrigger') mainMenuTrigger?: MatMenuTrigger;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
-  ngOnInit(): void {
-    // No special init needed - mat-menu handles everything
-    // Config validation can be added here if needed
-  }
+  ngOnInit(): void {}
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  /** Vrai si le champ est visible selon l'état courant */
+  // ── Mode TABLE ────────────────────────────────────────────────────────────
+
   isFieldVisible(fieldId: string): boolean {
     const visible = this.state?.visibleFields;
     if (!visible) {
-      // Fallback sur field.visible si pas de state
       return this.config.fields?.find(f => f.id === fieldId)?.visible !== false;
     }
     return visible.includes(fieldId);
   }
 
-  /** Résumé visible/total pour la section Champs */
   fieldsSummary(): string {
     const total = this.config.fields?.length ?? 0;
     const visible = this.state?.visibleFields?.length ?? total;
     return `${visible}/${total}`;
   }
 
-  /**
-   * Handle field visibility toggle
-   * @param fieldId Field ID to toggle
-   * @param visible New visibility state
-   */
   onFieldToggle(fieldId: string, visible: boolean): void {
     const visibleFields = this.state?.visibleFields || [];
     const updated = visible
       ? [...visibleFields, fieldId]
       : visibleFields.filter(f => f !== fieldId);
-
     this.emitChange('fieldToggled', { visibleFields: updated });
   }
 
-  /**
-   * Handle indicator selection
-   * @param fieldId Field ID to select as indicator
-   */
-  onIndicatorSelect(fieldId: string): void {
-    const field = this.config.indicators?.find(f => f.id === fieldId);
-    if (!field) return;
+  // ── Mode CHART — Axe X ────────────────────────────────────────────────────
 
-    // If field doesn't have data yet, trigger fetch
-    if (field.state !== 'ready') {
-      this.loadFieldData(fieldId);
-    }
-
-    this.emitChange('indicatorSelected', { selectedIndicator: fieldId });
+  onXFieldSelect(fieldId: string): void {
+    this.emitChange('xSelected', { selectedX: fieldId });
   }
 
-  /**
-   * Handle group by selection
-   * @param groupId Group ID to group by
-   */
+  // ── Mode CHART — Axe Y ────────────────────────────────────────────────────
+
+  /** Sélection directe d'un champ Y sans agrégat (ex: Count, elapsedP50...) */
+  onYFieldSelect(fieldId: string): void {
+    this.emitChange('ySelected', {
+      selectedY: fieldId,
+      selectedYAggregate: undefined
+    });
+  }
+
+  /** Sélection d'un agrégat pour un champ Y numérique (ex: Durée → P50) */
+  onYAggregateSelect(yFieldId: string, aggregateId: string): void {
+    this.emitChange('ySelected', {
+      selectedY: yFieldId,
+      selectedYAggregate: aggregateId
+    });
+  }
+
+  // ── Grouper par ────────────────────────────────────────────────────────────
+
   onGroupBySelect(groupId: string): void {
-    this.emitChange('groupSelected', { selectedGroup: groupId });
+    const current = this.state.selectedGroupBy;
+    this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
 
-  /**
-   * Handle stack selection (single-select only, always one required)
-   * Only one stack can be active at a time for a given indicator
-   * At least one stack must always be selected (cannot deselect all)
-   * Selecting the same stack again has no effect (if it's the last one)
-   * @param stackId Stack ID to select
-   */
-  onStackSelect(stackId: string): void {
-    const selectedStacks = this.state?.selectedStacks || [];
-    
-    // Prevent deselecting if this is the last stack
-    if (selectedStacks.includes(stackId) && selectedStacks.length === 1) {
-      return; // Do nothing - keep the current stack selected
-    }
-    
-    // Single-select: toggle the selected stack
-    const updated = selectedStacks.includes(stackId) ? [] : [stackId];
-    this.emitChange('stackSelected', { selectedStacks: updated });
+  // ── Template ───────────────────────────────────────────────────────────────
+
+  onTemplateSelect(templateId: string): void {
+    const t = this.config.templates?.find(tmpl => tmpl.id === templateId);
+    if (!t) return;
+    this.emitChange('templateSelected', {
+      selectedTemplate: templateId,
+      selectedX: t.xField,
+      selectedY: t.yField,
+      selectedYAggregate: t.yAggregate,
+      selectedGroupBy: t.groupBy
+    });
   }
 
-  /**
-   * Handle slice/filter click
-   * Delegates to parent's callback if provided
-   * @param sliceId Slice ID (optional)
-   */
+  // ── Filtrer par (Slices) ───────────────────────────────────────────────────
+
   onSliceClick(sliceId?: string): void {
     if (this.config.onSliceClick) {
       this.config.onSliceClick();
@@ -196,13 +184,11 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     const selectedSlices = this.state?.selectedSlices || [];
     let updated: string[];
     if (sliceId) {
-      // Single-select toggle: if already selected, deselect; otherwise select exclusively
       updated = selectedSlices.includes(sliceId) ? [] : [sliceId];
     } else {
       updated = selectedSlices;
     }
 
-    // If deselecting or no fetch callback: emit null slice state
     if (updated.length === 0 || !sliceId || !this.config.onFetchSliceData) {
       if (this.config.onFetchSliceData) {
         this.sliceStateChange.emit(null);
@@ -211,7 +197,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Selecting a new filter: fetch data then emit
     const slice = this.config.slices?.find(s => s.id === sliceId);
     const result = this.config.onFetchSliceData(sliceId);
     const handleData = (tasks: any[]) => {
@@ -228,160 +213,157 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Load field data on-demand with caching
-   *
-   * Process:
-   * 1. Check cache first (return immediately if found)
-   * 2. Set loading state on field
-   * 3. Call onFetchFieldData callback
-   * 4. Cache result
-   * 5. Update field state to 'ready'
-   * 6. Detect changes for template
-   *
-   * @param fieldId Field ID to load data for
-   */
+  // ── Lazy-loading champ ─────────────────────────────────────────────────────
+
   async loadFieldData(fieldId: string): Promise<void> {
-    // Check cache first
-    if (this.fieldDataCache.has(fieldId)) {
-      console.log(`Field ${fieldId} already cached, skipping fetch`);
-      return;
-    }
+    if (this.fieldDataCache.has(fieldId)) return;
+    if (!this.config.onFetchFieldData) return;
 
-    // Validate config
-    if (!this.config.onFetchFieldData) {
-      console.warn(`No onFetchFieldData callback configured for field ${fieldId}`);
-      return;
-    }
-
-    // Find field in all sections
-    const field =
-      this.config.fields?.find(f => f.id === fieldId) ||
-      this.config.indicators?.find(f => f.id === fieldId);
-
+    const field = this.config.fields?.find(f => f.id === fieldId);
     if (!field) return;
 
-    // Set loading state
     this.loadingFieldId = fieldId;
-    field.state = 'loading';
     this.cdr.markForCheck();
 
     try {
-      // Fetch data
       const data = await this.config.onFetchFieldData(fieldId);
-
-      // Cache and mark ready
       this.fieldDataCache.set(fieldId, data);
-      field.state = 'ready';
-
-      // Trigger change detection
-      this.cdr.markForCheck();
-    } catch (error) {
-      // Mark error state
-      console.error(`Failed to fetch data for field ${fieldId}:`, error);
-      field.state = 'error';
-      this.cdr.markForCheck();
     } finally {
-      // Clear loading indicator
       this.loadingFieldId = undefined;
       this.cdr.markForCheck();
     }
   }
 
-  /** Appelle le callback export et ferme le menu */
+  // ── Export / Préférences ───────────────────────────────────────────────────
+
   onExport(): void {
-    if (this.config.onExport) {
-      this.config.onExport();
-    }
+    if (this.config.onExport) this.config.onExport();
     this.mainMenuTrigger?.closeMenu();
   }
 
-  /** Préférences : mode édition */
+  onExportVisual(): void {
+    if (this.config.onExportVisual) this.config.onExportVisual();
+    this.mainMenuTrigger?.closeMenu();
+  }
+
+  onExportData(): void {
+    if (this.config.onExportData) this.config.onExportData();
+    this.mainMenuTrigger?.closeMenu();
+  }
+
+  hasExportSubMenu(): boolean {
+    return !!(this.config.onExportVisual || this.config.onExportData);
+  }
+
+  hasSwitchView(): boolean {
+    return !!this.config.switchView;
+  }
+
+  onSwitchView(): void {
+    const sv = this.config.switchView;
+    if (!sv) return;
+    const newView: 'chart' | 'table' = sv.currentView === 'chart' ? 'table' : 'chart';
+    sv.onSwitch(newView);
+    this.emitChange('viewSwitched', { viewMode: newView });
+    this.mainMenuTrigger?.closeMenu();
+  }
+
   onPreferencesEdit(): void {
-    if (this.config.onPreferencesEdit) {
-      this.config.onPreferencesEdit();
-    }
+    if (this.config.onPreferencesEdit) this.config.onPreferencesEdit();
     this.mainMenuTrigger?.closeMenu();
   }
 
-  /** Préférences : sauvegarde */
   onPreferencesSave(): void {
-    if (this.config.onPreferencesSave) {
-      this.config.onPreferencesSave();
-    }
+    if (this.config.onPreferencesSave) this.config.onPreferencesSave();
     this.mainMenuTrigger?.closeMenu();
   }
 
-  /** Préférences : réinitialisation */
   onPreferencesClear(): void {
-    if (this.config.onPreferencesClear) {
-      this.config.onPreferencesClear();
-    }
+    if (this.config.onPreferencesClear) this.config.onPreferencesClear();
     this.mainMenuTrigger?.closeMenu();
   }
 
-  /**
-   * Reset view to default state
-   */
   onReset(): void {
-    const resetState: OrganizerState = {
+    this.emitChange('reset', {
       visibleFields: [],
-      selectedIndicator: undefined,
-      selectedGroup: undefined,
-      selectedStacks: [],
+      selectedX: undefined,
+      selectedY: undefined,
+      selectedYAggregate: undefined,
+      selectedGroupBy: undefined,
       selectedSlices: []
-    };
-
-    this.emitChange('reset', resetState);
+    });
   }
 
-  /** Label de l'indicateur actif (pour le menu principal) */
-  activeIndicatorLabel(): string {
-    const id = this.state?.selectedIndicator;
-    if (!id) return 'Aucun';
-    return this.config.indicators?.find(i => i.id === id)?.label ?? id;
+  // ── Labels résumé (affichage dans le menu principal) ─────────────────────
+
+  activeXLabel(): string {
+    const id = this.state?.selectedX;
+    if (!id) return '';
+    return this.config.xFields?.find(f => f.id === id)?.label ?? id;
   }
 
-  /** Label du groupe actif (pour le menu principal) */
-  activeGroupLabel(): string {
-    const id = this.state?.selectedGroup;
-    if (!id) return 'Aucun';
+  activeYLabel(): string {
+    const yId = this.state?.selectedY;
+    if (!yId) return '';
+    const yField = this.config.yFields?.find(f => f.id === yId);
+    const base = yField?.label ?? yId;
+
+    if (this.state?.selectedYAggregate) {
+      const agg = yField?.aggregates?.find(a => a.id === this.state!.selectedYAggregate);
+      return agg ? `${base} · ${agg.label}` : base;
+    }
+    return base;
+  }
+
+  activeGroupByLabel(): string {
+    const id = this.state?.selectedGroupBy;
+    if (!id) return '';
     return this.config.groups?.find(g => g.id === id)?.label ?? id;
   }
 
-  /** Label du stack actif (pour le menu principal) */
-  activeStackLabel(): string {
-    const ids = this.state?.selectedStacks;
-    if (!ids?.length) return 'Aucun';
-    if (ids.length === 1) {
-      return this.config.stacks?.find(s => s.id === ids[0])?.label ?? ids[0];
-    }
-    return `${ids.length} sélectionnés`;
-  }
-
-  /** Label des filtres actifs (pour le menu principal) */
   activeSlicesLabel(): string {
     const ids = this.state?.selectedSlices;
-    if (!ids?.length) return 'Aucun';
+    if (!ids?.length) return '';
     if (ids.length === 1) {
       return this.config.slices?.find(s => s.id === ids[0])?.label ?? ids[0];
     }
     return `${ids.length} sélectionnés`;
   }
 
-  /**
-   * Emit view change event
-   *
-   * @param type Event type
-   * @param state Updated organizer state (partial)
-   */
+  activeTemplateLabel(): string {
+    const id = this.state?.selectedTemplate;
+    if (!id) return '';
+    return this.config.templates?.find(t => t.id === id)?.label ?? id;
+  }
+
+  // ── Helpers détection mode ────────────────────────────────────────────────
+
+  hasChartFields(): boolean {
+    return (this.config.xFields?.length ?? 0) > 0 || (this.config.yFields?.length ?? 0) > 0;
+  }
+
+  hasTableFields(): boolean {
+    return (this.config.fields?.length ?? 0) > 0;
+  }
+
+  // ── Helpers Y sous-menu ────────────────────────────────────────────────────
+
+  isYActive(yFieldId: string): boolean {
+    return this.state?.selectedY === yFieldId;
+  }
+
+  isYAggregateActive(yFieldId: string, aggregateId: string): boolean {
+    return this.state?.selectedY === yFieldId && this.state?.selectedYAggregate === aggregateId;
+  }
+
+  // ── Emit ──────────────────────────────────────────────────────────────────
+
   private emitChange(type: OrganizerButtonEvent['type'], stateUpdate: Partial<OrganizerState>): void {
     const event: OrganizerButtonEvent = {
       type,
       state: { ...this.state, ...stateUpdate },
       source: 'user'
     };
-
     this.viewChange.emit(event);
   }
 }

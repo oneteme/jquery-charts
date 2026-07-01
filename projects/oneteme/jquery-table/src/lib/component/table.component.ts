@@ -268,6 +268,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (changes['config']) {
       this.applyConfigSearchReset();
       this.applyInitialSearchQuery();
+      this._invalidateOrganizerConfig(); // les colonnes ont pu changer
     }
     if (dataChanged) {
       this.activeFields.filter(c => c.lazy).forEach(c => this.triggerLazyFetch(c));
@@ -360,22 +361,32 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   // ── Intégration OrganizerButton ──────────────────────────────────────────────
 
+  /** Cache de l'OrganizerConfig — invalidé quand les colonnes ou slices changent. */
+  private _organizerConfigCache: OrganizerConfig | null = null;
+
+  /** Invalide le cache (à appeler après tout changement de colonnes/slices). */
+  private _invalidateOrganizerConfig(): void { this._organizerConfigCache = null; }
+
   /** Construit l'OrganizerConfig à partir de l'état courant du ViewFacade. */
   get organizerConfig(): OrganizerConfig {
+    if (this._organizerConfigCache) return this._organizerConfigCache;
     const allCols = [...this._organizer.menuBaseColumns, ...this._organizer.menuOptionalColumns];
-    return {
+    this._organizerConfigCache = {
       fields: this._organizer.showFields ? allCols.map(c => ({
         id: c.key,
         label: this.colLabel(c),
+        icon: c.icon,
         state: 'ready' as const,
       })) : undefined,
       groups: this._organizer.showGroupBySection ? this._organizer.groupByColumns.map(c => ({
         id: c.key,
         label: this.colLabel(c),
+        icon: c.icon,
       })) : undefined,
       slices: this._organizer.showSliceBySection ? this._sliceByMenuItems.map(item => ({
         id: item.key,
         label: item.title,
+        icon: item.icon,
       })) : undefined,
       showExport: this.showExportButton,
       onExport: () => this.onExport(),
@@ -385,13 +396,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       onPreferencesSave: () => this.savePreferences(),
       onPreferencesClear: () => this.clearPreferences(),
     };
+    return this._organizerConfigCache;
   }
 
   /** Construit l'OrganizerState à partir de l'état courant du OrganizerFacade. */
   get organizerState(): OrganizerState {
     return {
       visibleFields: this.visibleColumns.map(c => c.key),
-      selectedGroup: this.activeGroupByKey ?? undefined,
+      selectedGroupBy: this.activeGroupByKey ?? undefined,
       selectedSlices: this._sliceByMenuItems
         .filter(i => this.isSliceMenuItemActive(i))
         .map(i => i.key),
@@ -409,8 +421,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
           this.onColumnVisibilityChange(col, isNowVisible);
         }
       }
-    } else if (event.type === 'groupSelected') {
-      const newKey = event.state.selectedGroup ?? null;
+    } else if (event.type === 'groupBySelected') {
+      const newKey = event.state.selectedGroupBy ?? null;
       this.onGroupByChange(newKey === this.activeGroupByKey ? null : newKey);
     } else if (event.type === 'sliceSelected') {
       const prevSlices = new Set(this.organizerState.selectedSlices ?? []);
@@ -1267,6 +1279,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       }
     }
     this._sliceByMenuItems = items;
+    this._invalidateOrganizerConfig(); // les slices ont changé
   }
 
   get sliceByMenuItems() { return this._sliceByMenuItems; }

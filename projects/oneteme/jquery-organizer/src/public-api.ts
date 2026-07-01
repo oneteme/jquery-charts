@@ -15,6 +15,21 @@ export * from './lib/slice-panel/slice-panel.model';
 export * from './lib/models/organizer-config.interface';
 export * from './lib/models/organizer-menu.model';
 
+// Utilitaires — helpers pour construire les configs (buildYFields, resolveYKey…)
+export { buildYFields, resolveYKey, OrganizerYIndicator } from './lib/models/organizer-utils';
+
+// Chart adapter — bridge générique ChartConfig ↔ OrganizerConfig
+export {
+  chartConfigToOrganizer,
+  chartConfigToState,
+  chartConfigToUnifiedState,
+  applyOrganizerEventToChart,
+  OrganizerChartItem,
+  OrganizerChartSection,
+  OrganizerChartConfig,
+  OrganizerChartBridgeOptions,
+} from './lib/models/organizer-chart-adapter';
+
 // OrganizerFacade — état et logique partagés (table, chart, KPI)
 export { OrganizerFacade, humanizeKey } from './lib/organizer-facade/organizer-facade';
 export {

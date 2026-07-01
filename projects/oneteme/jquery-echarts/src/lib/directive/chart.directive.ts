@@ -362,4 +362,52 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       { notMerge: true }
     );
   }
+
+  // ─── Export ────────────────────────────────────────────────────────
+
+  /**
+   * Exporte le graphique en image et déclenche le téléchargement.
+   *
+   * Utilise `getDataURL()` de l'instance ECharts.
+   * Pour le renderer SVG, le type `'svg'` est recommandé pour conserver la qualité vectorielle.
+   *
+   * @param fileName  Nom du fichier sans extension (défaut : 'chart').
+   * @param type      Format d'image : 'png' | 'jpeg' | 'svg' (défaut : 'png').
+   * @param pixelRatio Ratio de résolution pour PNG/JPEG (défaut : 2).
+   */
+  exportImage(fileName = 'chart', type?: 'png' | 'jpeg' | 'svg', pixelRatio = 2): void {
+    if (!this._chartInstance) return;
+    // Avec le renderer SVG, getDataURL ne peut pas produire un PNG valide.
+    // On choisit automatiquement le bon format selon le renderer actif.
+    const effectiveType = type ?? (this.renderer === 'svg' ? 'svg' : 'png');
+    const url = this._chartInstance.getDataURL({ type: effectiveType, pixelRatio, backgroundColor: '#fff' });
+    const link = document.createElement('a');
+    link.download = `${fileName}.${effectiveType}`;
+    link.href = url;
+    link.click();
+  }
+
+  /**
+   * Exporte les données brutes du graphique en CSV et déclenche le téléchargement.
+   *
+   * @param fileName  Nom du fichier sans extension (défaut : 'data').
+   * @param separator Séparateur CSV (défaut : ';').
+   */
+  exportData(fileName = 'data', separator = ';'): void {
+    if (!this.data?.length) return;
+    const keys = Object.keys(this.data[0]);
+    const rows = this.data.map(row => keys.map(k => {
+      const v = row[k];
+      const s = v == null ? '' : String(v);
+      return s.includes(separator) || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(separator));
+    const csv = [keys.join(separator), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${fileName}.csv`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 }

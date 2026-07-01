@@ -1,10 +1,4 @@
-// Organizer Button — style aligné avec jquery-table
-
-:host {
-  display: inline-block;
-}
-
-.organizer-btn {
+﻿.organizer-btn {
   display: inline-flex;
   align-items: center;
   height: 34px;
@@ -26,33 +20,30 @@
   color: #000000;
 }
 
-// ─── Menu principal
-
-::ng-deep .organizer-menu-panel .mat-mdc-menu-panel {
-  min-width: 220px !important;
+.mat-mdc-menu-panel:has(.organizer-menu-label) {
+  min-width: 170px !important;
+  max-width: 320px !important;
   overflow: visible !important;
+
+  .mat-mdc-menu-content { padding: 4px 0 !important; }
+
+  .organizer-menu-trigger.mat-mdc-menu-item {
+    min-height: 42px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+
+    .mdc-list-item__primary-text {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      overflow: hidden;
+    }
+  }
 }
 
-::ng-deep .organizer-menu-panel .mat-mdc-menu-content {
-  padding: 4px 0 !important;
-}
-
-::ng-deep .organizer-menu-panel .organizer-menu-trigger.mat-mdc-menu-item {
-  min-height: 42px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-}
-
-::ng-deep .organizer-menu-panel .organizer-menu-trigger .mdc-list-item__primary-text {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  overflow: hidden;
-}
-
-::ng-deep .organizer-menu-label {
+.organizer-menu-label {
   font-size: 13px;
   font-weight: 500;
   color: #212121;
@@ -61,7 +52,7 @@
   padding-right: 8px;
 }
 
-::ng-deep .organizer-menu-value {
+.organizer-menu-value {
   font-size: 12px;
   color: #757575;
   flex: 1 1 auto;
@@ -71,23 +62,13 @@
   text-align: right;
 }
 
-// ─── Sous-menus
-
-::ng-deep .organizer-submenu-panel .mat-mdc-menu-panel {
-  min-width: 200px !important;
-}
-
-::ng-deep .organizer-submenu-panel .mat-mdc-menu-content {
-  padding: 0 !important;
-}
-
-::ng-deep .organizer-submenu {
+.organizer-submenu {
   padding: 4px 6px;
   min-width: 180px;
   box-sizing: border-box;
 }
 
-::ng-deep .organizer-submenu .organizer-submenu-item {
+.organizer-submenu .organizer-submenu-item {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -107,7 +88,7 @@
   &.active { font-weight: 600; }
 }
 
-::ng-deep .organizer-submenu-check {
+.organizer-submenu-check {
   flex-shrink: 0;
   width: 16px;
   text-align: center;
@@ -115,22 +96,20 @@
   color: #212121;
 }
 
-::ng-deep .organizer-submenu-icon {
+.organizer-submenu-icon {
   font-size: 14px !important;
   width: 14px !important;
   height: 14px !important;
-  color: #757575;
+  color: #212121;
   margin-right: 4px;
 }
 
-// ─── Export button
-
-::ng-deep .organizer-menu-export.mat-mdc-menu-item {
+.organizer-menu-export.mat-mdc-menu-item {
   min-height: 42px;
   padding: 0 14px;
 }
 
-::ng-deep .organizer-menu-export-icon {
+.organizer-menu-export-icon {
   font-size: 16px !important;
   width: 16px !important;
   height: 16px !important;
@@ -138,178 +117,74 @@
   margin-right: 8px;
 }
 
-::ng-deep .organizer-divider {
+.organizer-divider {
   margin: 4px 0 !important;
 }
 
-
-// Button Container
-.organizer-button-container {
-  display: inline-block;
-}
-
-// Main Button
-.organizer-button {
+.organizer-champs-wrapper {
+  padding: 4px 6px;
+  min-width: 200px;
+  box-sizing: border-box;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  min-height: var(--organizer-button-size);
-  background-color: white;
-  border: 1px solid var(--organizer-border-color);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--organizer-text-color);
-  transition: all 0.2s ease;
-
-  &:hover {
-    background-color: var(--organizer-hover-bg);
-    border-color: var(--organizer-primary);
-  }
-
-  &:active {
-    background-color: var(--organizer-selected-bg);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--organizer-accent);
-    outline-offset: 2px;
-  }
+  flex-direction: column;
 }
 
-// Button Icon
-.organizer-button-icon {
+.organizer-champs-block {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  width: 20px;
-  height: 20px;
-  color: var(--organizer-primary);
+  flex-direction: column;
 }
 
-// Button Label
-.organizer-button-label {
-  white-space: nowrap;
-}
-
-// Menu customizations (mat-menu)
-::ng-deep .organizer-menu {
-  max-height: var(--organizer-menu-max-height) !important;
-  max-width: 300px !important;
-
-  .mat-mdc-menu-content {
-    padding: 8px 0 !important;
-  }
-
-  .mat-mdc-menu-item {
-    font-size: 13px;
-    line-height: 1.5;
-
-    &.organizer-menu-section-title {
-      text-transform: uppercase;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      color: var(--organizer-text-color);
-      opacity: 0.7;
-      padding: 8px 12px !important;
-      cursor: default !important;
-
-      &:hover {
-        background-color: transparent !important;
-      }
-    }
-
-    &:not([disabled]):hover {
-      background-color: var(--organizer-hover-bg);
-    }
-
-    &.selected {
-      background-color: var(--organizer-selected-bg);
-      font-weight: 600;
-      color: var(--organizer-accent);
-    }
-
-    &[disabled] {
-      cursor: not-allowed;
-      opacity: 0.5;
-    }
-  }
-}
-
-// Menu Section Title (non-clickable)
-.organizer-menu-section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
+.organizer-champs-block-title {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  color: var(--organizer-text-color);
-
-  mat-icon {
-    font-size: 16px;
-    width: 16px;
-    height: 16px;
-  }
+  color: #9e9e9e;
+  padding: 6px 2px 2px;
 }
 
-// Menu Loading State
-.organizer-menu-loading {
+.organizer-champs-divider {
+  margin: 4px 0 !important;
+}
+
+.organizer-champs-wrapper .organizer-submenu-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 16px;
+  gap: 6px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #212121;
+  cursor: pointer;
+  text-align: left;
+  box-sizing: border-box;
+  white-space: nowrap;
+
+  &:hover:not([disabled]) { background: #f5f5f5; }
+  &.active { font-weight: 600; }
+  &[disabled] { opacity: 0.38; cursor: default; }
+}
+
+.organizer-champs-wrapper .organizer-submenu-check {
+  flex-shrink: 0;
+  width: 16px;
+  text-align: center;
   font-size: 12px;
-  color: var(--organizer-text-color);
+  color: #212121;
 }
 
-// Icon states for fields
-.loading-icon {
-  color: #FFC107 !important;
-  animation: spin 1s linear infinite;
+.organizer-champs-wrapper .organizer-submenu-item--has-children {
+  padding-right: 8px;
 }
 
-.error-icon {
-  color: #d32f2f !important;
-}
-
-// Checkbox icons for field visibility
-mat-icon {
-  &.hidden {
-    display: none;
-  }
-
-  &.visible {
-    color: var(--organizer-primary);
-  }
-}
-
-// Animations
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-// Responsive Design
-@media (max-width: 768px) {
-  .organizer-button {
-    padding: 6px 12px;
-    font-size: 12px;
-    min-height: 36px;
-  }
-
-  ::ng-deep .organizer-menu {
-    max-width: 240px !important;
-  }
+.organizer-champs-wrapper .organizer-submenu-arrow {
+  font-size: 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  color: rgba(0, 0, 0, 0.38);
+  margin-left: auto;
 }

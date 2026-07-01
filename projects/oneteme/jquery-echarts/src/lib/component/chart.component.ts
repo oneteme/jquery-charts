@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, HostBinding, Input, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
 import { ChartProvider, ChartType, OrganizerConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ChartDirective, GroupSyncMode } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils/types';
@@ -40,6 +40,24 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
   @Output() chartClick = new EventEmitter<any>();
+
+  @ViewChild(ChartDirective) private _directive: ChartDirective<X, Y>;
+
+  /**
+   * Exporte le graphique en image (PNG par défaut).
+   * Délègue à `ChartDirective.exportImage()`.
+   */
+  exportImage(fileName?: string, type?: 'png' | 'jpeg' | 'svg', pixelRatio?: number): void {
+    this._directive?.exportImage(fileName, type, pixelRatio);
+  }
+
+  /**
+   * Exporte les données brutes du graphique en CSV.
+   * Délègue à `ChartDirective.exportData()`.
+   */
+  exportData(fileName?: string, separator?: string): void {
+    this._directive?.exportData(fileName, separator);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['config'] || changes['organizer']) {

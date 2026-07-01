@@ -1,57 +1,87 @@
-import { OrganizerEvent } from '@oneteme/jquery-core';
 import { Observable } from 'rxjs';
 import { SliceConfig } from '../slice-panel/slice-panel.model';
 
-/**
- * FieldState enum - Represents the state of a field in the organizer menu
- *
- * - 'ready': Data is available, field is clickable and active
- * - 'loading': Data is being fetched, spinner should be displayed
- * - 'error': Fetch failed, error state should be displayed
- *
- * undefined: Field is declared but not fetched (grayed out, inert)
- */
+// ─────────────────────────────────────────────────────────────
+// Shared
+// ─────────────────────────────────────────────────────────────
+
+/** État de chargement d'un champ en lazy-loading */
 export type FieldState = 'ready' | 'loading' | 'error';
 
-/**
- * OrganizerViewField - Field definition within OrganizerConfig
- *
- * This is the organizer-specific field model.
- * Separate from jquery-core's ViewField to avoid tight coupling.
- */
+// ─────────────────────────────────────────────────────────────
+// Mode TABLE : toggle visibilité colonnes
+// ─────────────────────────────────────────────────────────────
+
+/** Champ de table : toggle visibilité */
 export interface OrganizerViewField {
   id: string;
   label: string;
+  icon?: string;
   visible?: boolean;
   state?: FieldState;
-  /** Optional: indicator type for this field */
-  indicator?: 'count' | 'sum' | 'min' | 'max' | 'avg' | string;
-  /** Optional: nested sub-fields (for stacks, hierarchies) */
-  subFields?: OrganizerViewField[];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Mode CHART : axes X et Y
+// ─────────────────────────────────────────────────────────────
+
+/** Axe X — champ catégoriel/temporel, single-select */
+export interface OrganizerXField {
+  id: string;
+  label: string;
+  disabled?: boolean;
+}
+
+/** Agrégat applicable à un champ Y numérique (ex: Max, Min, Moyenne, P50…) */
+export interface OrganizerYAggregate {
+  id: string;
+  label: string;
 }
 
 /**
- * OrganizerViewGroup - Group by option
+ * Axe Y — métrique mesurée.
+ * - Si `aggregates` défini → ouvre un sous-menu d'agrégats (Durée, Latence…)
+ * - Sinon → sélection directe (Count, ou métrique déjà calculée côté API)
  */
+export interface OrganizerYField {
+  id: string;
+  label: string;
+  aggregates?: OrganizerYAggregate[];
+  disabled?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Grouper par / Filtrer par
+// ─────────────────────────────────────────────────────────────
+
 export interface OrganizerViewGroup {
   id: string;
   label: string;
+  icon?: string;
 }
 
-/**
- * OrganizerViewStack - Stack/category option
- */
-export interface OrganizerViewStack {
-  id: string;
-  label: string;
-}
-
-/**
- * OrganizerViewSlice - Slice/filter option
- */
 export interface OrganizerViewSlice {
   id: string;
   label: string;
+  icon?: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Template prédéfini
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Template prédéfini par le dev : applique X + Y + groupBy en une action.
+ * Évite à l'utilisateur final de reconfigurer manuellement.
+ */
+export interface OrganizerTemplate {
+  id: string;
+  label: string;
+  icon?: string;
+  xField?: string;
+  yField?: string;
+  yAggregate?: string;
+  groupBy?: string;
 }
 
 /**
@@ -64,49 +94,38 @@ export interface OrganizerViewSlice {
  * OrganizerConfig is the UI component config, ViewConfig is the core business logic config.
  */
 export interface OrganizerConfig {
-  /**
-   * Menu sections and their items
-   * All possible options that should appear in the menu
-   */
+  // ── Mode TABLE : toggle visibilité colonnes
   fields?: OrganizerViewField[];
-  indicators?: OrganizerViewField[];
+
+  // ── Mode CHART : axes X et Y
+  xFields?: OrganizerXField[];
+  yFields?: OrganizerYField[];
+
+  // ── Grouper par (catégoriels, commun table + chart)
   groups?: OrganizerViewGroup[];
-  stacks?: OrganizerViewStack[];
+
+  // ── Filtrer par
   slices?: OrganizerViewSlice[];
 
-  /**
-   * Optional callback to fetch available values/data for a field
-   * Used when field values are not initially loaded (lazy-loading pattern)
-   *
-   * Called when user clicks on a field that needs data fetch.
-   * Should return field values/options to display.
-   *
-   * Example: User clicks "Phone Details" → callback fetches distinct phone values from API
-   *
-   * Returns: Promise resolving to string[] or Record<string, any>[]
-   * - string[]: Simple list of values (e.g., ['status1', 'status2'])
-   * - Record[]: Objects with label/value or other structure
-   */
+  // ── Templates prédéfinis (chart uniquement)
+  templates?: OrganizerTemplate[];
+
+  // ── Callbacks
+  /** Lazy-loading : données d'un champ sur demande */
   onFetchFieldData?: (fieldId: string) => Promise<string[] | Record<string, any>[]>;
-
-  /**
-   * Optional callback to fetch slice/filter data when user selects a filter.
-   * Called with the selected filterKey (OrganizerViewSlice.id).
-   * OrganizerButtonComponent will call this, then emit sliceStateChange with the result.
-   *
-   * Returns: Observable or Promise of raw data rows
-   */
+  /** Lazy-loading : données d'un filtre slice sur demande */
   onFetchSliceData?: (filterKey: string) => Observable<any[]> | Promise<any[]>;
-
-  /**
-   * Optional callback when user clicks on "Slice/Filter" option
-   * Parent is responsible for opening slice panel or filter dialog
-   */
+  /** Callback optionnel au clic sur "Filtrer par" */
   onSliceClick?: () => void;
 
   // ── Export
   showExport?: boolean;
+  /** Export direct (mode table) — si défini seul, bouton sans sous-menu */
   onExport?: () => void;
+  /** Export du visuel du graphique (PNG/SVG) — active le sous-menu d'export */
+  onExportVisual?: () => void;
+  /** Export des données sous-jacentes (CSV/Excel) — active le sous-menu d'export */
+  onExportData?: () => void;
 
   // ── Préférences
   showPreferences?: boolean;
@@ -115,40 +134,17 @@ export interface OrganizerConfig {
   onPreferencesSave?: () => void;
   onPreferencesClear?: () => void;
 
-  /**
-   * Should the "Reset" button be visible?
-   * Default: true
-   */
   showReset?: boolean;
-
-  /**
-   * Menu position relative to button
-   * Default: 'below'
-   */
   menuPosition?: 'above' | 'below';
-
-  /**
-   * Optional CSS class to apply to menu
-   */
   menuClass?: string;
-
-  /**
-   * Optional custom button label
-   * Default: 'View'
-   */
   buttonLabel?: string;
-
-  /**
-   * Optional icon name (Material icon)
-   * Default: 'tune'
-   */
   buttonIcon?: string;
-
-  /**
-   * Whether to show button icon
-   * Default: true
-   */
   showButtonIcon?: boolean;
+
+  switchView?: {
+    currentView: 'chart' | 'table';
+    onSwitch: (newView: 'chart' | 'table') => void;
+  };
 }
 
 /**
@@ -157,33 +153,43 @@ export interface OrganizerConfig {
  * null = no active filter (panel should be hidden).
  */
 export interface OrganizerSliceState {
-  /** SliceConfig to pass to <slice-panel [sliceConfigs]> */
   sliceConfigs: SliceConfig<any>[];
-  /** Raw data rows to pass to <slice-panel [data]> */
   tasks: any[];
 }
 
-/**
- * OrganizerState - Current state of the organizer selections
- *
- * Parallel to jquery-core's ViewState but UI-focused
- */
+/** État courant de l'organizer (sélections de l'utilisateur) */
 export interface OrganizerState {
+  viewMode?: 'chart' | 'table';
+
   visibleFields?: string[];
-  selectedIndicator?: string;
-  selectedGroup?: string;
-  selectedStacks?: string[];
+
+  selectedX?: string;
+  selectedY?: string;
+  selectedYAggregate?: string;
+
+  selectedGroupBy?: string;
   selectedSlices?: string[];
+  selectedTemplate?: string;
+}
+
+/** Événement émis par OrganizerButtonComponent lors d'une interaction */
+export interface OrganizerButtonEvent {
+  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'templateSelected' | 'sliceSelected' | 'reset' | 'viewSwitched';
+  state: OrganizerState;
+  source?: 'user' | 'api';
 }
 
 /**
- * OrganizerButtonEvent - Minimal event interface for view changes
- *
- * Emitted when user interacts with the organizer menu.
- * Parent should listen and update both OrganizerState and jquery-core's ViewState.
+ * État unifié valide pour les deux modes chart et table.
+ * - `dimension`  → axe X en chart, colonne de regroupement en table
+ * - `metric`     → indicateur Y en chart, colonne numérique en table
+ * - `breakdown`  → stack/groupBy en chart, groupBy en table
  */
-export interface OrganizerButtonEvent {
-  type: 'fieldToggled' | 'indicatorSelected' | 'groupSelected' | 'stackSelected' | 'sliceSelected' | 'reset';
-  state: OrganizerState;
-  source?: 'user' | 'api';
+export interface OrganizerUnifiedState {
+  viewMode: 'chart' | 'table';
+  dimension?: string;
+  metric?: string;
+  metricAggregate?: string;
+  breakdown?: string;
+  filters?: string[];
 }
