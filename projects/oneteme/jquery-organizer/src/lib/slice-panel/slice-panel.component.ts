@@ -70,11 +70,9 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']) {
       this._refreshDynamicSlices();
       this._rebuildCache();
-      // Réémettre le filtre si des sélections actives existent :
-      // les catégories viennent d'être reconstruites (nouvelles données), le prédicat
-      // doit être mis à jour pour refléter les filtres visuellement actifs.
+      const shouldReemitFilter = !!(changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']);
       const hasActiveFilters = [...this.activeKeysBySlice.values()].some(s => s.size > 0);
-      if (hasActiveFilters) {
+      if (hasActiveFilters && shouldReemitFilter) {
         this._emitFilter();
       }
       this._cdr.markForCheck();
