@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-echarts",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "jquery echarts lib",
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
@@ -12,7 +12,7 @@
     "@angular/common": ">=16.1.0",
     "@angular/core": ">=16.1.0",
     "echarts": "^6.0.0",
-    "@oneteme/jquery-core": "^0.0.32"
+    "@oneteme/jquery-core": "^0.0.33"
   },
   "dependencies": {
     "tslib": "^2.3.0"

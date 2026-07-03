@@ -107,7 +107,7 @@ export const JQT_I18N_DEFAULTS: JqtI18n = {
   filterEmptyState: 'Aucune donnée',
   exportButtonLabel: 'Exporter',
   preferencesMenuLabel: 'Préférences',
-  preferencesEdit: 'Éditeur',
+  preferencesEdit: 'Éditer',
   preferencesSave: 'Sauvegarder',
   preferencesClear: 'Réinitialiser',
   preferencesSavedMessage: 'Configuration enregistrée. Vous pouvez la réinitialiser à tout moment via Préférences → Réinitialiser.',

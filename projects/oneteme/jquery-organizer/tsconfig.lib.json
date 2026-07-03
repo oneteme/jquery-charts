@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../../../out-tsc/lib",
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSourceMap": true,
+    "types": [],
+    "lib": ["dom", "es2020"]
+  },
+  "exclude": ["src/test.ts", "src/**/*.spec.ts", "jest.config.js"]
+}

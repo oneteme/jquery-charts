@@ -1,7 +1,7 @@
 {
-  "name": "@oneteme/jquery-table",
-  "version": "0.0.9",
-  "description": "jquery table lib",
+  "name": "@oneteme/jquery-organizer",
+  "version": "0.0.1",
+  "description": "Independent Organizer Button component library - decentralized organizer management for charts, tables",
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
   "repository": {
@@ -13,8 +13,7 @@
     "@angular/core": ">=16.1.0",
     "@angular/material": "^16.1.0",
     "@angular/cdk": "^16.1.0",
-    "@oneteme/jquery-core": "^0.0.33",
-    "@oneteme/jquery-organizer": "0.0.1"
+    "@oneteme/jquery-core": "^0.0.33"
   },
   "dependencies": {
     "tslib": "^2.3.0"

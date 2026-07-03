@@ -222,6 +222,22 @@ function isUndefined(o: any): boolean {
   return o === undefined;
 }
 
+// Config dynamique de Y avec auto-scaling intelligent.
+// Détecte automatiquement le meilleur format (µs, ms, s, etc.) basé sur l'ordre de grandeur des données.
+export interface UnitConfig {
+  baseUnit: string;        // Unité source des données ('s', 'o', etc.)
+  scales: ScaleConfig[];   // Liste des formats disponibles (triée par seuil croissant)
+  precision?: number;      // Fixe les décimales (si non spécifié, utilise _smartFormatY adaptatif)
+  formatter?: (v: number, selectedUnit: string) => string; // Formatage personnalisé
+}
+
+// Définit un format d'affichage avec sa plage d'applicabilité.
+export interface ScaleConfig {
+  unit: string;            // Unité affichée ('µs', 'ms', 's', 'KB', 'MB', etc.)
+  scale: number;           // Facteur de conversion (1000 pour s→ms, 1000000 pour s→µs)
+  threshold?: number;      // Utiliser ce format si max(values) > threshold (Infinity = défaut)
+}
+
 export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   title?: string;
   subtitle?: string;
@@ -243,6 +259,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   mapDefaultValue?: string; // Subdiv défaut si param absent
   mapColor?: 'blue' | 'green' | 'purple' | 'orange' | 'grey' | string; // couleur pour les maps
   mapJoinBy?: [string, string]; // JoinBy par défaut pour les maps (ex: ['code', 'code'])
+  yUnit?: string | UnitConfig; // unité du Y : string simple ou config dynamique avec scales
 }
 
 export interface SerieProvider<X extends XaxisType, Y extends YaxisType> {

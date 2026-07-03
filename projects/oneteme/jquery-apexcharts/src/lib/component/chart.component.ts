@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
-import { ChartProvider, ChartType, ViewConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartProvider, ChartType, OrganizerConfig, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { BarChartDirective } from '../directive/bar-chart.directive';
 import { LineChartDirective } from '../directive/line-chart.directive';
 import { PieChartDirective } from '../directive/pie-chart.directive';
@@ -45,7 +45,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Input({ required: true }) data: any[];
   @Input() isLoading: boolean;
   @Input() debug: boolean;
-  @Input() view?: ViewConfig;
+  @Input() view?: OrganizerConfig;
 
   _effectiveConfig!: ChartProvider<X, Y>;
 

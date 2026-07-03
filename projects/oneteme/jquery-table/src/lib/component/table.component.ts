@@ -13,13 +13,9 @@ import { Subject, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
-import { SliceConfig } from './slice-panel/slice-panel.model';
-import { SlicePanelComponent } from './slice-panel/slice-panel.component';
+import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, LazyFieldManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState } from '@oneteme/jquery-organizer';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
-import { ViewFacade } from './view/view.facade';
-import { LazyColumnManager } from './lazy-column-manager';
 import { TablePreferencesManager } from './table-preferences.manager';
-import { GroupByManager } from './group-by.manager';
 import { ExportManager } from './export.manager';
 import {
   GROUP_ROW_COLUMN, GROUP_HEADER_MARKER,
@@ -28,6 +24,7 @@ import {
   ROW_GROUP_KEY, ROW_GROUP_COUNT, ROW_GROUP_PAGE, ROW_GROUP_PAGE_COUNT,
   LAZY_LOADING_VALUE, LAZY_ERROR_VALUE,
 } from './table.constants';
+import { OrganizerButtonWrapperComponent } from './organizer-button/organizer-button.component';
 
 /** Cache interne du groupement — invalidé dès que les données, la clé ou les paramètres de tri changent. */
 interface GroupByCache<T> {
@@ -43,7 +40,7 @@ interface GroupByCache<T> {
 @Component({
   standalone: true,
   selector: 'jquery-table',
-  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatDividerModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent ],
+  imports: [ CommonModule, FormsModule, MatTableModule, MatButtonModule, MatDividerModule, MatPaginatorModule, MatSortModule, MatMenuModule, MatIconModule, MatSelectModule, SlicePanelComponent, OrganizerButtonWrapperComponent ],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -106,7 +103,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   @ViewChild(MatSort) sort?: MatSort;
   @ViewChild('tableBodyScroll') tableBodyScrollRef?: ElementRef<HTMLElement>;
   @ViewChild(SlicePanelComponent) slicePanelRef?: SlicePanelComponent<T>;
-  @ViewChild('viewMenuTrigger') viewMenuTrigger?: MatMenuTrigger;
   @ContentChildren(JqtCellDefDirective) _cellDefs!: QueryList<JqtCellDefDirective>;
   /** Map clé→TemplateRef pré-calculée depuis _cellDefs. Mise à jour dans ngAfterContentInit et sur _cellDefs.changes. */
   private _cellDefMap = new Map<string, TemplateRef<{ $implicit: any; index: number }>>();
@@ -125,13 +121,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   readonly _ROW_GROUP_PAGE_COUNT = ROW_GROUP_PAGE_COUNT;
 
   /** Facade View : état et actions centralisés (Champs / Group by / Slice by) */
-  readonly _view = new ViewFacade<T>();
+  readonly _organizer = new OrganizerFacade<TableColumnProvider<T>>();
 
   /**
-   * Snapshot stable synchronisé depuis _view.fields.activeColumns dans refreshViewModel().
+   * Snapshot stable synchronisé depuis _organizer.fields.activeFields dans refreshViewModel().
    * Propriété (non getter) pour qu'Angular puisse la suivre sans NG0100.
    */
-  activeColumns: TableColumnProvider<T>[] = [];
+  activeFields: TableColumnProvider<T>[] = [];
 
   activeSliceFilter: (row: T) => boolean = () => true;
 
@@ -146,15 +142,15 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   _slicePanelCollapsed = false;
 
   // Délégués vers _view (conservés pour compatibilité template sans refactoring HTML)
-  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> { return this._view.staticSlicesForMenu; }
-  get _activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.activeDynamicColumns; }
-  get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._view.sliceBy.availableForDynamic; }
-  get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.allDynamicColumns; }
-  get _activeSliceByLabel(): string { return this._view.sliceBy.activeLabel; }
+  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> { return this._organizer.staticSlicesForMenu; }
+  get _activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.activeDynamicFields; }
+  get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._organizer.sliceBy.availableForDynamic; }
+  get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.allDynamicFields; }
+  get _activeSliceByLabel(): string { return this._organizer.sliceBy.activeLabel; }
   _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
 
   searchQuery = '';
-  get activeGroupByKey(): string | null { return this._view.groupBy.activeKey; }
+  get activeGroupByKey(): string | null { return this._organizer.groupBy.activeKey; }
   _matSortActive = '';
   _matSortDirection: 'asc' | 'desc' | '' = '';
   private _activeSort: { active: string; direction: 'asc' | 'desc' | '' } = { active: '', direction: '' };
@@ -175,7 +171,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   set groupSortOrder(v: 'asc' | 'desc') { this._groupBy.groupSortOrder = v; }
 
   /** Gestionnaire du cycle de vie des colonnes lazy (fetch, annulation, statuts, données). */
-  private _lazy = new LazyColumnManager<T>();
+  private _lazy = new LazyFieldManager<TableColumnProvider<T>>();
   /** Compatibilité template : retourne la map de statuts lazy. */
   get _lazyColumnStatus() { return this._lazy.status; }
   /** Compatibilité template : retourne la map de données lazy. */
@@ -206,7 +202,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Gestionnaire export CSV. */
   private readonly _export = new ExportManager<T>(
     () => this._allFilteredRows,
-    () => this.activeColumns,
+    () => this.activeFields,
     () => this.resolvedConfig.export,
     (col, row, idx) => this.resolveCellValue(col, row, idx),
   );
@@ -271,9 +267,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (changes['config']) {
       this.applyConfigSearchReset();
       this.applyInitialSearchQuery();
+      this._invalidateOrganizerConfig(); // les colonnes ont pu changer
     }
     if (dataChanged) {
-      this.activeColumns.filter(c => c.lazy).forEach(c => this.triggerLazyFetch(c));
+      this.activeFields.filter(c => c.lazy).forEach(c => this.triggerLazyFetch(c));
     }
   }
 
@@ -303,23 +300,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._pendingDynamicSliceKeys = null;
     this._pendingSliceFilters = null;
 
-    // Tout est différé dans le même setTimeout pour :
-    // 1. Éviter NG0100 (modifications après vérification dans ngAfterViewInit)
-    // 2. Garantir que les dynamic slices sont ajoutées AVANT la restauration des filtres
-    //    (les indices dans sliceFilters dépendent de l'ordre final de _cachedSlices)
     setTimeout(() => {
+      if (this._resolvedData.length === 0) {
+        console.log('[SliceRestore] ngAfterViewInit: données absentes, restauration différée à _recomputeShowSlicePanel', { keys, filters });
+        if (filters) this._pendingSliceFilters = filters;
+        if (keys.length > 0) this._pendingDynamicSliceKeys = [...keys];
+        return;
+      }
+      console.log('[SliceRestore] ngAfterViewInit: données présentes, application immédiate', { keys, filters });
       keys.forEach(key => {
         const col = allCols.find(c => c.key === key);
         if (col) this.addDynamicSlice(col);
       });
-      if (filters) {
-        if (this.slicePanelRef) {
-          this.slicePanelRef.restoreFilters(filters);
-        } else {
-          // slicePanelRef toujours null (données pas encore arrivées) :
-          // remettre en attente pour que _recomputeShowSlicePanel les applique
-          this._pendingSliceFilters = filters;
-        }
+      if (filters && this.slicePanelRef) {
+        console.log('[SliceRestore] restoreFilters depuis ngAfterViewInit', filters);
+        this.slicePanelRef.restoreFilters(filters);
       }
       this._cdr.markForCheck();
     });
@@ -336,7 +331,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._resizeState = null;
     this._destroy$.next();
     this._destroy$.complete();
-    this._view.destroy();
+    this._organizer.destroy();
   }
 
   private _measureHeaderHeight(): void {
@@ -355,7 +350,72 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
   }
 
-  // ── Getters d'affichage
+  private _organizerConfigCache: OrganizerConfig | null = null;
+  private _invalidateOrganizerConfig(): void { this._organizerConfigCache = null; }
+  get organizerConfig(): OrganizerConfig {
+    if (this._organizerConfigCache) return this._organizerConfigCache;
+    const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
+    this._organizerConfigCache = {
+      fields: this._organizer.showFields ? allCols.map(c => ({
+        id: c.key,
+        label: this.colLabel(c),
+        icon: c.icon,
+        state: 'ready' as const,
+      })) : undefined,
+      groups: this._organizer.showGroupBySection ? this._organizer.groupByFields.map(c => ({
+        id: c.key,
+        label: this.colLabel(c),
+        icon: c.icon,
+      })) : undefined,
+      slices: this._organizer.showSliceBySection ? this._sliceByMenuItems.map(item => ({
+        id: item.key,
+        label: item.title,
+        icon: item.icon,
+      })) : undefined,
+      showExport: this.showExportButton,
+      onExport: () => this.onExport(),
+      showPreferences: this.showPreferencesMenu,
+      hasSavedPreferences: this.hasSavedPreferences,
+      onPreferencesEdit: () => this.enterEditMode(),
+      onPreferencesSave: () => this.savePreferences(),
+      onPreferencesClear: () => this.clearPreferences(),
+    };
+    return this._organizerConfigCache;
+  }
+
+  get organizerState(): OrganizerState {
+    return {
+      visibleFields: this.visibleColumns.map(c => c.key),
+      selectedGroupBy: this.activeGroupByKey ?? undefined,
+      selectedSlices: this._sliceByMenuItems
+        .filter(i => this.isSliceMenuItemActive(i))
+        .map(i => i.key),
+    };
+  }
+
+  onOrganizerViewChange(event: OrganizerButtonEvent): void {
+    if (event.type === 'fieldToggled') {
+      const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
+      const newVisible = new Set(event.state.visibleFields ?? []);
+      for (const col of allCols) {
+        const isNowVisible = newVisible.has(col.key);
+        if (this.isColumnVisible(col.key) !== isNowVisible) {
+          this.onColumnVisibilityChange(col, isNowVisible);
+        }
+      }
+    } else if (event.type === 'groupBySelected') {
+      const newKey = event.state.selectedGroupBy ?? null;
+      this.onGroupByChange(newKey === this.activeGroupByKey ? null : newKey);
+    } else if (event.type === 'sliceSelected') {
+      const prevSlices = new Set(this.organizerState.selectedSlices ?? []);
+      const clickedId = (event.state.selectedSlices ?? []).find(id => !prevSlices.has(id));
+      if (clickedId) {
+        const item = this._sliceByMenuItems.find(i => i.key === clickedId);
+        if (item) this.onSliceMenuItemClick(item);
+      }
+    }
+    this._cdr.markForCheck();
+  }
 
   get title(): string {
     return this.resolvedConfig.title ?? '';
@@ -366,11 +426,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get visibleColumns(): TableColumnProvider<T>[] {
-    return this.activeColumns;
+    return this.activeFields;
   }
 
   get showSearchBar(): boolean { return this.resolvedConfig.search?.enabled === true; }
-  get showViewButton(): boolean { return this._view.enabled || this.showExportButton || this.showPreferencesMenu; }
+  get showViewButton(): boolean { return this._organizer.enabled || this.showExportButton || this.showPreferencesMenu; }
+  get showOrganizerButton(): boolean { return this._organizer.enabled || this.showExportButton || this.showPreferencesMenu; }
   get showSliceExpandBtn(): boolean { return this._showSlicePanel && this._slicePanelCollapsed && this._sliceShowToggle; }
   get showExportButton(): boolean {
     return this.resolvedConfig.export?.enabled === true;
@@ -391,30 +452,28 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   expandSlicePanel(): void {
     this.slicePanelRef?.togglePanel();
   }
-  get showFields(): boolean { return this._view.showFields; }
-  get showGroupBySection(): boolean { return this._view.showGroupBySection; }
+  get showFields(): boolean { return this._organizer.showFields; }
+  get showGroupBySection(): boolean { return this._organizer.showGroupBySection; }
 
   get filteredRowCount(): number {
     return this.activeGroupByKey ? this._totalFilteredCount : this._allFilteredRows.length;
   }
 
-  get activeGroupByLabel(): string { return this._view.activeGroupByLabel; }
+  get activeGroupByLabel(): string { return this._organizer.activeGroupByLabel; }
 
-  get totalColumnCount(): number { return this._view.totalColumnCount; }
+  get totalColumnCount(): number { return this._organizer.totalFieldCount; }
 
-  get activeSliceByLabel(): string { return this._view.sliceBy.activeLabel; }
+  get activeSliceByLabel(): string { return this._organizer.sliceBy.activeLabel; }
 
-  get activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._view.sliceBy.activeDynamicColumns; }
+  get activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.activeDynamicFields; }
 
   removeDynamicSliceByKey(key: string): void {
     this.slicePanelRef?.removeDynamicSliceByKey(key);
   }
 
-  get groupByColumns(): TableColumnProvider<T>[] { return this._view.groupByColumns; }
+  get groupByColumns(): TableColumnProvider<T>[] { return this._organizer.groupByFields; }
 
-  colLabel(col: { key: string; header?: string }): string { return this._view.colLabel(col); }
-
-  // ── Actions utilisateur
+  colLabel(col: { key: string; header?: string }): string { return this._organizer.fieldLabel(col); }
 
   onSearchChange(): void {
     this._preservePageIndex = 0;
@@ -424,7 +483,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   onGroupByChange(key: string | null): void {
-    this._view.setGroupBy(key);
+    this._organizer.setGroupBy(key);
     this._groupBy.setDefaultCollapsed(key !== null);
     this._groupBy.reset();
     this._groupBy.groupPageSize = this.resolveDefaultGroupPageSize();
@@ -432,7 +491,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.paginator?.firstPage();
     this.groupByChange.emit(key);
     if (key) {
-      this.viewMenuTrigger?.closeMenu();
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
       if (colDef?.lazy && this._lazyColumnStatus.get(key) !== 'loaded') {
         this.triggerLazyFetch(colDef);
@@ -453,8 +511,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this._ngZone.runOutsideAngular(() => setTimeout(() => this.scrollToGroupHeader(key), 0));
     });
   }
-
-  // ── Lazy loading
 
   getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
     return this._lazy.getStatus(key);
@@ -478,8 +534,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       onMarkForCheck: () => this._cdr.markForCheck(),
     };
   }
-
-  // ── Groupement
 
   toggleGroupCollapse(groupKey: string): void {
     this._groupBy.toggleGroupCollapse(groupKey, (key) => {
@@ -514,30 +568,26 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._groupBy.groupPageForward(groupKey, totalCount);
   }
 
-  // ── Colonnes
-
   get hasAddableColumns(): boolean {
-    return this._view.menuBaseColumns.length > 0 || this._view.menuOptionalColumns.length > 0;
+    return this._organizer.menuBaseFields.length > 0 || this._organizer.menuOptionalFields.length > 0;
   }
 
   get menuBaseColumns(): TableColumnProvider<T>[] {
-    return this._view.menuBaseColumns;
+    return this._organizer.menuBaseFields;
   }
 
   get menuOptionalColumns(): TableColumnProvider<T>[] {
-    return this._view.menuOptionalColumns;
+    return this._organizer.menuOptionalFields;
   }
 
   get availableColumnsToAdd(): TableColumnProvider<T>[] {
-    const activeKeys = new Set(this.activeColumns.map((column) => column.key));
+    const activeKeys = new Set(this.activeFields.map((column) => column.key));
     return (this.resolvedConfig.columns || []).filter((c) => c.optional && !activeKeys.has(c.key));
   }
 
   get allowColumnRemoval(): boolean {
-    return this._view.allowColumnRemoval;
+    return this._organizer.allowFieldRemoval;
   }
-
-  // ── Slices
 
   get hasSliceConfig(): boolean {
     return (this.resolvedConfig.slices?.length ?? 0) > 0;
@@ -553,31 +603,45 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   private _recomputeShowSlicePanel(): void {
-    const hasCfg = this._sliceConfigs.length > 0 || this._view.sliceBy.activeDynamicColumns.length > 0;
+    const hasCfg = this._sliceConfigs.length > 0 || this._organizer.sliceBy.activeDynamicFields.length > 0;
     const wasVisible = this._showSlicePanel;
     this._showSlicePanel = hasCfg && this._resolvedData.length > 0;
-    // Le SlicePanelComponent vient d'être rendu pour la 1ère fois
-    // (données arrivées) → appliquer les filtres en attente
-    if (!wasVisible && this._showSlicePanel && this._pendingSliceFilters) {
+    // Les données viennent d'arriver : appliquer les dynamic slices ET les filtres en attente.
+    // Les dynamic slices doivent être ajoutées AVANT restoreFilters car les indices de
+    // sliceFilters dépendent de l'ordre final de _cachedSlices.
+    if (!wasVisible && this._showSlicePanel && (this._pendingSliceFilters || this._pendingDynamicSliceKeys)) {
       const filters = this._pendingSliceFilters;
+      const dynamicKeys = this._pendingDynamicSliceKeys;
       this._pendingSliceFilters = null;
+      this._pendingDynamicSliceKeys = null;
+      const allCols = this.resolvedConfig.columns ?? [];
+      console.log('[SliceRestore] _recomputeShowSlicePanel: données arrivées', { dynamicKeys, filters });
       setTimeout(() => {
-        this.slicePanelRef?.restoreFilters(filters);
+        if (dynamicKeys) {
+          dynamicKeys.forEach(key => {
+            const col = allCols.find(c => c.key === key);
+            if (col) this.addDynamicSlice(col);
+          });
+        }
+        if (filters && this.slicePanelRef) {
+          console.log('[SliceRestore] restoreFilters depuis _recomputeShowSlicePanel', filters);
+          this.slicePanelRef.restoreFilters(filters);
+        }
         this._cdr.markForCheck();
       });
     }
   }
 
   get showAddSliceButton(): boolean {
-    return this._view.showSliceBySection;
+    return this._organizer.showSliceBySection;
   }
 
   get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
-    return this._view.staticSlicesForMenu;
+    return this._organizer.staticSlicesForMenu;
   }
 
   get availableColumnsForDynamicSlice(): TableColumnProvider<T>[] {
-    return this._view.sliceBy.availableForDynamic;
+    return this._organizer.sliceBy.availableForDynamic;
   }
 
   isStaticSliceVisible(columnKey: string): boolean {
@@ -589,7 +653,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (next.has(columnKey)) next.delete(columnKey);
     else next.add(columnKey);
     this._staticSliceHiddenKeys = next;
-    this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+    this._organizer.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
     this._sliceConfigs = this._computeSliceConfigs();
     // Si une slice vient d'être cachée, réinitialise le filtre actif pour éviter
     // un filtre orphelin (la slice n'est plus visible mais son filtre resterait actif)
@@ -613,7 +677,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   isDynamicSliceActive(key: string): boolean {
-    return this._view.isDynamicSliceActive(key);
+    return this._organizer.isDynamicSliceActive(key);
   }
 
   toggleDynamicSlice(col: TableColumnProvider<T>): void {
@@ -632,7 +696,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   onDynamicSliceKeysChange(keys: string[]): void {
-    this._view.onDynamicSliceKeysChange(keys);
+    this._organizer.onDynamicSliceKeysChange(keys);
     this._recomputeShowSlicePanel();
     this._cdr.markForCheck();
   }
@@ -664,7 +728,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get isColumnDragDropEnabled(): boolean {
-    return this._view.isColumnDragDropEnabled;
+    return this._organizer.isFieldDragDropEnabled;
   }
 
   get totalRows(): number {
@@ -676,7 +740,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   // ── Gestion des colonnes
 
   onAddColumn(column: TableColumnProvider<T>): void {
-    this._view.addColumn(column);
+    this._organizer.addField(column);
     this._preservePageIndex = this.paginator?.pageIndex ?? null;
     this.refreshViewModel();
 
@@ -689,7 +753,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   onColumnVisibilityChange(column: TableColumnProvider<T>, checked: boolean): void {
-    const isVisible = this._view.isColumnVisible(column.key);
+    const isVisible = this._organizer.isFieldVisible(column.key);
 
     if (checked && !isVisible) {
       this.onAddColumn(column);
@@ -697,7 +761,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
 
     if (!checked && isVisible) {
-      const removed = this._view.removeColumn(column.key);
+      const removed = this._organizer.removeField(column.key);
       if (!removed) return;
       this._preservePageIndex = this.paginator?.pageIndex ?? null;
       this.refreshViewModel();
@@ -706,14 +770,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   isColumnVisible(columnKey: string): boolean {
-    return this.activeColumns.some(c => c.key === columnKey);
+    return this.activeFields.some(c => c.key === columnKey);
   }
 
   onRemoveColumn(columnKey: string, event?: Event): void {
     event?.stopPropagation();
-    const column = this.activeColumns.find(item => item.key === columnKey);
+    const column = this.activeFields.find(item => item.key === columnKey);
     if (!column) return;
-    const removed = this._view.removeColumn(columnKey);
+    const removed = this._organizer.removeField(columnKey);
     if (!removed) return;
     this.refreshViewModel();
     this.columnRemoved.emit(column);
@@ -744,10 +808,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
    * Seules les valeurs explicitement en `px` sont sommables ; les pourcentages ou autres unités sont ignorés. */
   get tableMinWidth(): string | null {
     const hasResized = Object.keys(this._columnWidths).length > 0;
-    const hasSomeExplicitWidth = hasResized || this.activeColumns.some(c => c.width);
+    const hasSomeExplicitWidth = hasResized || this.activeFields.some(c => c.width);
     if (!hasSomeExplicitWidth) return null;
     let sum = 0;
-    for (const col of this.activeColumns) {
+    for (const col of this.activeFields) {
       if (this._columnWidths[col.key] != null) {
         sum += this._columnWidths[col.key];
       } else if (col.width) {
@@ -810,7 +874,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
     event.preventDefault();
 
-    const moved = this._view.reorderColumns(this.draggedColumnKey, targetColumnKey);
+    const moved = this._organizer.reorderFields(this.draggedColumnKey, targetColumnKey);
     if (!moved) {
       this.onHeaderDragEnd();
       return;
@@ -904,12 +968,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   savePreferences(): void {
     if (!this._preferencesManager) return;
-    const dynamicSliceKeys = this._view.sliceBy.activeDynamicColumns.map(c => c.key);
+    const dynamicSliceKeys = this._organizer.sliceBy.activeDynamicFields.map(c => c.key);
     const config: import('../jquery-table.model').SavedTableConfig = {
       search:              this.searchQuery || undefined,
       groupBy:             this.activeGroupByKey,
-      columnOrder:         this.activeColumns.map(c => c.key),
-      visibleColumns:      this.activeColumns.map(c => c.key),
+      columnOrder:         this.activeFields.map(c => c.key),
+      visibleColumns:      this.activeFields.map(c => c.key),
       columnWidths:        Object.keys(this._columnWidths).length ? { ...this._columnWidths } : undefined,
       slicePanelCollapsed: this._slicePanelCollapsed,
       hiddenSliceKeys:     [...this._staticSliceHiddenKeys],
@@ -927,7 +991,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._hasSavedConfig = false;
 
     // Capturer les dynamic slices actives AVANT le reset (resetToDefaults() les vide)
-    const dynamicSlicesToRemove = this._view.sliceBy.activeDynamicColumns.slice();
+    const dynamicSlicesToRemove = this._organizer.sliceBy.activeDynamicFields.slice();
 
     // Reset complet de l'état vers les valeurs par défaut de la config
     this.searchQuery = '';
@@ -944,10 +1008,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
     // Slices statiques : revenir aux seules celles cachées par la config (pas par l'utilisateur)
     this._staticSliceHiddenKeys = new Set(this._configHiddenKeys);
-    this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+    this._organizer.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
 
     // Colonnes et groupBy : reset via la facade (retire les optionnelles, remet l'ordre config)
-    this._view.resetToDefaults();
+    this._organizer.resetToDefaults();
     this._defaultGroupByApplied = false;
 
     // Dynamic slices : les retirer du slice panel avec la liste capturée avant le reset
@@ -960,8 +1024,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (this.slicePanelRef) this.slicePanelRef.restoreFilters({});
 
     // Rafraîchit toute la vue
-    this.activeColumns = this._view.fields.activeColumns;
-    this.renderedColumns = this.activeColumns.map(c => c.key);
+    this.activeFields = this._organizer.fields.activeFields;
+    this.renderedColumns = this.activeFields.map(c => c.key);
     this._pendingDynamicSliceKeys = null;
     this._pendingSliceFilters = null;
     this.refreshViewModel();
@@ -990,7 +1054,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (saved.columnWidths) this._columnWidths = { ...saved.columnWidths };
     // Group by
     if (saved.groupBy !== undefined) {
-      this._view.setGroupBy(saved.groupBy);
+      this._organizer.setGroupBy(saved.groupBy);
       if (saved.groupBy) {
         this._groupBy.setDefaultCollapsed(true);
         this._groupBy.reset();
@@ -1001,9 +1065,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Slices statiques cachées — on utilise la valeur exacte sauvegardée (pas les defaults de config)
     if (saved.hiddenSliceKeys !== undefined) {
       this._staticSliceHiddenKeys = new Set(saved.hiddenSliceKeys);
-      this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+      this._organizer.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
     }
-    // Colonnes visibles + ordre — reconstruit activeColumns en une seule passe.
+    // Colonnes visibles + ordre — reconstruit activeFields en une seule passe.
     // On part de saved.columnOrder (ordre sauvegardé) si disponible, sinon saved.visibleColumns.
     // Cela gère à la fois : colonnes optionnelles ajoutées, colonnes retirées, et réordonnancement.
     const targetKeys = saved.columnOrder ?? saved.visibleColumns;
@@ -1016,7 +1080,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       // Colonnes actives actuelllement non présentes dans targetKeys (non-optional passées sous silence)
       // → on les exclut : l'utilisateur avait explicitement choisi ce sous-ensemble
       if (ordered.length > 0) {
-        this._view.setActiveColumns(ordered);
+        this._organizer.setActiveFields(ordered);
       }
     }
     // Dynamic slices — différé : slicePanelRef pas encore disponible au moment de ngOnChanges
@@ -1034,9 +1098,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   canRemoveColumn(column: TableColumnProvider<T>): boolean {
     return (
-      this._view.allowColumnRemoval &&
+      this._organizer.allowFieldRemoval &&
       column.removable !== false &&
-      this.activeColumns.length > 1
+      this.activeFields.length > 1
     );
   }
 
@@ -1069,7 +1133,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       ? this.resolvedConfig.preferences.tableId
       : null;
     const currentId = prefsId ?? null;
-    // Préférences à appliquer après _view.update() (quand activeColumns est déjà peuplé)
+    // Préférences à appliquer après _organizer.update() (quand activeFields est déjà peuplé)
     let pendingPrefs: import('../jquery-table.model').SavedTableConfig | null = null;
     if (currentId && this._preferencesManager?.key !== ('jqt_prefs_' + currentId)) {
       this._preferencesManager = new TablePreferencesManager(currentId);
@@ -1081,14 +1145,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
 
     // Délègue à la facade : mise à jour de l'état View (colonnes, groupBy meta, sliceBy meta)
-    this._view.update({
+    this._organizer.update({
       config: this.resolvedConfig.view,
-      columns: this.resolvedConfig.columns ?? [],
+      fields: this.resolvedConfig.columns ?? [],
       sliceConfigs: this.resolvedConfig.slices ?? [],
       defaultGroupBy: this.resolvedConfig.defaultGroupBy,
     });
 
-    if (!pendingPrefs && !this._defaultGroupByApplied && !this._view.groupBy.userCustomized && this._view.groupBy.activeKey != null) {
+    if (!pendingPrefs && !this._defaultGroupByApplied && !this._organizer.groupBy.userCustomized && this._organizer.groupBy.activeKey != null) {
       this._defaultGroupByApplied = true;
       this._groupBy.setDefaultCollapsed(true);
       this._groupBy.reset();
@@ -1096,9 +1160,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
 
     // Synchronise la propriété stable (évite NG0100 — la facade est source de vérité)
-    this.activeColumns = this._view.fields.activeColumns;
+    this.activeFields = this._organizer.fields.activeFields;
 
-    this.renderedColumns = this.activeColumns.map(c => c.key);
+    this.renderedColumns = this.activeFields.map(c => c.key);
 
     this.pageSize = this.paginator?.pageSize || this.resolvePageSize();
     this.pageSizeOptions = this.resolvePageSizeOptions();
@@ -1121,11 +1185,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       // (pendingPrefs les gèrera lui-même via _applyPreferences → hiddenSliceKeys)
       if (!pendingPrefs) {
         this._staticSliceHiddenKeys = new Set(newConfigHidden);
-        this._view.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
+        this._organizer.updateHiddenStaticKeys(this._staticSliceHiddenKeys);
       }
     }
 
-    // Applique les préférences ICI, APRÈS _view.update() ET après _configHiddenKeys mis à jour,
+    // Applique les préférences ICI, APRÈS _organizer.update() ET après _configHiddenKeys mis à jour,
     // mais avant _computeSliceConfigs() pour que hiddenSliceKeys soit déjà restauré.
     if (pendingPrefs) {
       this._applyPreferences(pendingPrefs);
@@ -1185,6 +1249,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       }
     }
     this._sliceByMenuItems = items;
+    this._invalidateOrganizerConfig(); // les slices ont changé
   }
 
   get sliceByMenuItems() { return this._sliceByMenuItems; }
@@ -1253,7 +1318,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     pageRows.forEach((row, i) => {
       const idx = start + i;
       const p: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx };
-      this.activeColumns.forEach((col) => {
+      this.activeFields.forEach((col) => {
         p[col.key] = this.resolveCellValue(col, row, idx);
       });
       projected.push(p);
@@ -1394,7 +1459,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       const result: any[] = [];
       rows.forEach((row, index) => {
         const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: index };
-        this.activeColumns.forEach((col) => {
+        this.activeFields.forEach((col) => {
           projected[col.key] = this.resolveCellValue(col, row, index);
         });
         result.push(projected);
@@ -1518,7 +1583,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         groupRows.slice(start, end).forEach((row, i) => {
           const idx = start + i;
           const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx };
-          this.activeColumns.forEach((col) => {
+          this.activeFields.forEach((col) => {
             projected[col.key] = this.resolveCellValue(col, row, idx);
           });
           result.push(projected);
