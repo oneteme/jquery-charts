@@ -1,15 +1,4 @@
-import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  OnInit,
-  ChangeDetectionStrategy,
-  ChangeDetectorRef,
-  OnDestroy,
-  ViewChild,
-  ViewEncapsulation
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,35 +7,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Subject, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import {
-  OrganizerConfig,
-  OrganizerButtonEvent,
-  OrganizerSliceState,
-  OrganizerState,
-} from '../models';
+import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState } from '../models';
 
-/**
- * OrganizerButtonComponent
- *
- * Context-agnostic button component for managing view state across any context.
- *
- * Key Features:
- * - Zero dependency on renderers (table, chart, KPI, etc.)
- * - Configuration via @Input (explicit, no auto-discovery)
- * - mat-menu for accessibility and UX
- * - Lazy-loading with FieldState tracking
- * - Intelligent caching to avoid re-fetches
- * - Events-only interface (@Output)
- *
- * Usage:
- * ```html
- * <organizer-button
- *   [config]="config"
- *   [state]="currentState"
- *   (viewChange)="handleViewChange($event)">
- * </organizer-button>
- * ```
- */
 @Component({
   standalone: true,
   imports: [ CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatDividerModule ],
@@ -57,38 +19,12 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OrganizerButtonComponent implements OnInit, OnDestroy {
-  /**
-   * Configuration object containing menu structure and callbacks
-   */
   @Input() config!: OrganizerConfig;
-
-  /**
-   * Current organizer state (optional - for display purposes)
-   * Used to show which options are currently selected
-   */
   @Input() state?: OrganizerState;
-
-  /**
-   * Hide the summary values displayed next to menu labels
-   * Set to true for charts to reduce menu size (values visible on hover anyway)
-   * Default: false (show values for tables)
-   */
   @Input() hideMenuValues = false;
-
-  /**
-   * Event emitted when view configuration changes
-   * Parent listens and updates its state accordingly
-   */
   @Output() viewChange = new EventEmitter<OrganizerButtonEvent>();
-
-  /**
-   * Emitted when a filter slice is selected and data is loaded.
-   * Emits null when the filter is deselected (slice-panel should be hidden).
-   * Only emitted when config.onFetchSliceData is provided.
-   */
   @Output() sliceStateChange = new EventEmitter<OrganizerSliceState | null>();
 
-  /** Field currently being loaded (for spinner display) */
   loadingFieldId?: string;
 
   private fieldDataCache = new Map<string, any[]>();
@@ -104,8 +40,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-
-  // ── Mode TABLE ────────────────────────────────────────────────────────────
 
   isFieldVisible(fieldId: string): boolean {
     const visible = this.state?.visibleFields;
@@ -129,15 +63,10 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     this.emitChange('fieldToggled', { visibleFields: updated });
   }
 
-  // ── Mode CHART — Axe X ────────────────────────────────────────────────────
-
   onXFieldSelect(fieldId: string): void {
     this.emitChange('xSelected', { selectedX: fieldId });
   }
 
-  // ── Mode CHART — Axe Y ────────────────────────────────────────────────────
-
-  /** Sélection directe d'un champ Y sans agrégat (ex: Count, elapsedP50...) */
   onYFieldSelect(fieldId: string): void {
     this.emitChange('ySelected', {
       selectedY: fieldId,
@@ -145,7 +74,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     });
   }
 
-  /** Sélection d'un agrégat pour un champ Y numérique (ex: Durée → P50) */
   onYAggregateSelect(yFieldId: string, aggregateId: string): void {
     this.emitChange('ySelected', {
       selectedY: yFieldId,
@@ -153,14 +81,10 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Grouper par ────────────────────────────────────────────────────────────
-
   onGroupBySelect(groupId: string): void {
     const current = this.state.selectedGroupBy;
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
-
-  // ── Template ───────────────────────────────────────────────────────────────
 
   onTemplateSelect(templateId: string): void {
     const t = this.config.templates?.find(tmpl => tmpl.id === templateId);
@@ -173,8 +97,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
       selectedGroupBy: t.groupBy
     });
   }
-
-  // ── Filtrer par (Slices) ───────────────────────────────────────────────────
 
   onSliceClick(sliceId?: string): void {
     if (this.config.onSliceClick) {
@@ -213,8 +135,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── Lazy-loading champ ─────────────────────────────────────────────────────
-
   async loadFieldData(fieldId: string): Promise<void> {
     if (this.fieldDataCache.has(fieldId)) return;
     if (!this.config.onFetchFieldData) return;
@@ -233,8 +153,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
       this.cdr.markForCheck();
     }
   }
-
-  // ── Export / Préférences ───────────────────────────────────────────────────
 
   onExport(): void {
     if (this.config.onExport) this.config.onExport();
@@ -294,8 +212,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Labels résumé (affichage dans le menu principal) ─────────────────────
-
   activeXLabel(): string {
     const id = this.state?.selectedX;
     if (!id) return '';
@@ -336,8 +252,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     return this.config.templates?.find(t => t.id === id)?.label ?? id;
   }
 
-  // ── Helpers détection mode ────────────────────────────────────────────────
-
   hasChartFields(): boolean {
     return (this.config.xFields?.length ?? 0) > 0 || (this.config.yFields?.length ?? 0) > 0;
   }
@@ -346,8 +260,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     return (this.config.fields?.length ?? 0) > 0;
   }
 
-  // ── Helpers Y sous-menu ────────────────────────────────────────────────────
-
   isYActive(yFieldId: string): boolean {
     return this.state?.selectedY === yFieldId;
   }
@@ -355,8 +267,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   isYAggregateActive(yFieldId: string, aggregateId: string): boolean {
     return this.state?.selectedY === yFieldId && this.state?.selectedYAggregate === aggregateId;
   }
-
-  // ── Emit ──────────────────────────────────────────────────────────────────
 
   private emitChange(type: OrganizerButtonEvent['type'], stateUpdate: Partial<OrganizerState>): void {
     const event: OrganizerButtonEvent = {

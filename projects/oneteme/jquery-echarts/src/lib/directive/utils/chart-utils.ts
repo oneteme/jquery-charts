@@ -1,4 +1,4 @@
-import { ChartProvider, mergeDeep } from '@oneteme/jquery-core';
+import { ChartProvider, mergeDeep, UnitConfig, ScaleConfig } from '@oneteme/jquery-core';
 import { EChartsOption } from './types';
 
 /**
@@ -127,7 +127,147 @@ export function applyCommonConfig(
     });
   }
 
+  // ── Unité Y ── appliqué après mergeDeep pour préserver les fonctions (mergeDeep ne clone pas les fonctions)
+  // Le dev peut toujours surcharger via config.options.tooltip.formatter / config.options.tooltip.valueFormatter
+  if (config.yUnit) {
+    const yUnitConfig = config.yUnit;
+
+    // Déterminer le label d'unité à afficher (string ou auto-détection via UnitConfig)
+    let displayUnit: string;
+    let scaleInfo: { scale: number; unit: string; formatter?: (v: number, unit: string) => string } | undefined;
+
+    if (typeof yUnitConfig === 'string') {
+      // Cas simple : unité statique
+      displayUnit = yUnitConfig;
+    } else {
+      // Cas UnitConfig : auto-détection du meilleur format
+      const unitConfig = yUnitConfig as UnitConfig;
+      const dataValues = _extractYValues(result.series);
+      scaleInfo = selectBestScale(unitConfig, dataValues);
+      displayUnit = scaleInfo.unit;
+    }
+
+    // Unité dans les noms de séries → affichée dans la légende et dans les tooltips
+    if (Array.isArray(result.series)) {
+      result.series = result.series.map((s: any) => ({
+        ...s,
+        name: s.name ? `${s.name}\u00a0[${displayUnit}]` : s.name,
+      }));
+    }
+
+    // Formatter des ticks Y — précision adaptative, sans unité (l'unité est déjà dans la légende)
+    if (!result.yAxis) result.yAxis = {};
+    if (!result.yAxis.axisLabel) result.yAxis.axisLabel = {};
+
+    if (scaleInfo?.formatter) {
+      // Formatage personnalisé si fourni dans UnitConfig
+      result.yAxis.axisLabel.formatter = (v: number) => scaleInfo!.formatter!(v * scaleInfo!.scale, displayUnit);
+    } else {
+      // Formatage adaptatif avec scaling automatique
+      result.yAxis.axisLabel.formatter = (v: number) => {
+        const scaled = scaleInfo ? v * scaleInfo.scale : v;
+        return _smartFormatY(scaled);
+      };
+    }
+
+    // valueFormatter du tooltip — cohérent avec l'axe, sans unité redondante
+    const devTooltip = (config.options as any)?.tooltip;
+    if (!devTooltip?.formatter && !devTooltip?.valueFormatter) {
+      if (!result.tooltip) result.tooltip = {};
+      result.tooltip.valueFormatter = (v: number | string) => {
+        if (v == null) return '–';
+        const num = typeof v === 'number' ? v : parseFloat(String(v));
+        if (isNaN(num)) return String(v);
+        const scaled = scaleInfo ? num * scaleInfo.scale : num;
+        if (scaleInfo?.formatter) {
+          return scaleInfo.formatter(scaled, displayUnit);
+        }
+        return _smartFormatY(scaled);
+      };
+    }
+  }
+
   return result as EChartsOption;
+}
+
+/**
+ * Extrait toutes les valeurs Y d'une liste de séries ECharts pour calcul d'auto-scaling.
+ * Retourne un tableau de nombres (valeurs brutes, non scalées).
+ */
+function _extractYValues(series: any[]): number[] {
+  const values: number[] = [];
+  if (!Array.isArray(series)) return values;
+
+  for (const s of series) {
+    if (Array.isArray(s.data)) {
+      for (const point of s.data) {
+        if (typeof point === 'number') {
+          values.push(point);
+        } else if (point && typeof point === 'object' && typeof point.value === 'number') {
+          values.push(point.value);
+        } else if (point && Array.isArray(point) && typeof point[1] === 'number') {
+          // Format [x, y]
+          values.push(point[1]);
+        }
+      }
+    }
+  }
+  return values;
+}
+
+/**
+ * Sélectionne le meilleur scale pour une UnitConfig basé sur l'ordre de grandeur des données.
+ * @param unitConfig Configuration des scales disponibles
+ * @param dataValues Valeurs Y brutes (dans l'unité de base)
+ * @returns L'objet scale à appliquer
+ */
+export function selectBestScale(
+  unitConfig: UnitConfig,
+  dataValues: number[]
+): { scale: number; unit: string; formatter?: (v: number, unit: string) => string } {
+  if (!Array.isArray(unitConfig.scales) || unitConfig.scales.length === 0) {
+    // Fallback : retourner première scale ou scale 1x
+    return { scale: 1, unit: unitConfig.baseUnit };
+  }
+
+  // Trier les scales par threshold croissant
+  const sortedScales = [...unitConfig.scales].sort((a, b) => (a.threshold ?? Infinity) - (b.threshold ?? Infinity));
+
+  // Trouver le max des données
+  const maxValue = Math.max(...dataValues.filter(v => isFinite(v) && v !== 0), 0);
+
+  // Trouver la première scale dont le threshold est >= maxValue
+  for (const scale of sortedScales) {
+    const threshold = scale.threshold ?? Infinity;
+    if (maxValue <= threshold) {
+      return {
+        scale: scale.scale,
+        unit: scale.unit,
+        formatter: unitConfig.formatter,
+      };
+    }
+  }
+
+  // Si aucune ne correspond, retourner la dernière (fallback)
+  const lastScale = sortedScales[sortedScales.length - 1];
+  return {
+    scale: lastScale.scale,
+    unit: lastScale.unit,
+    formatter: unitConfig.formatter,
+  };
+}
+
+/**
+ * Formate un nombre pour l'affichage sur un axe Y ou en tooltip.
+ * Adapte automatiquement la précision à l'ordre de grandeur de la valeur.
+ * @example 0 → "0" | 0,000 123 → "0,000 123" | 7,318 → "7,32" | 1 234 → "1 234"
+ */
+function _smartFormatY(v: number): string {
+  if (!isFinite(v) || v === 0) return '0';
+  const abs = Math.abs(v);
+  const magnitude = Math.floor(Math.log10(abs));
+  const decimals = Math.max(0, Math.min(-magnitude + 2, 6));
+  return v.toLocaleString('fr-FR', { maximumFractionDigits: decimals });
 }
 
 /**

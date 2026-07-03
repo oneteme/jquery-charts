@@ -1,38 +1,10 @@
-/**
- * GroupByManager
- *
- * Gère l'état d'affichage du mode Group By, indépendamment du renderer :
- * - état collapsed / expanded des groupes
- * - pagination interne par groupe
- * - tri des groupes (asc / desc)
- * - scroll vers un groupe
- *
- * Pas de dépendance Angular/DOM ni de coupling avec un type de données spécifique.
- * Utilisé par TableComponent mais peut être réutilisé dans tout contexte groupé.
- *
- * Usage :
- *   this._groupByManager = new GroupByManager(
- *     () => this.projectPage(),
- *     () => this.fullRender(),
- *   );
- */
 export class GroupByManager {
-  /** Groupes actuellement ouverts (mode default-collapsed) ou fermés (mode default-expanded). */
   private readonly _collapsedGroups = new Set<string>();
-
-  /** Page courante par clé de groupe. */
   private readonly _groupPages = new Map<string, number>();
 
-  /** Taille de page pour la pagination interne des groupes. */
   groupPageSize = 5;
-
-  /** Ordre de tri des groupes ('asc' | 'desc'). */
   groupSortOrder: 'asc' | 'desc' = 'asc';
 
-  /**
-   * Quand `true`, tous les groupes sont collapsés par défaut.
-   * `_collapsedGroups` contient alors le seul groupe ouvert.
-   */
   private _defaultGroupCollapsed = false;
 
   constructor(
@@ -40,14 +12,10 @@ export class GroupByManager {
     private readonly onNeedRender: () => void,
   ) {}
 
-  // ── API publique
-
-  /** Initialise le mode par défaut selon qu'un groupBy vient d'être activé. */
   setDefaultCollapsed(collapsed: boolean): void {
     this._defaultGroupCollapsed = collapsed;
   }
 
-  /** Réinitialise l'état (à appeler quand le groupBy change de colonne). */
   reset(): void {
     this._collapsedGroups.clear();
     this._groupPages.clear();
@@ -70,14 +38,11 @@ export class GroupByManager {
     this.onNeedProjection();
   }
 
-  /** Retourne le groupe actuellement ouvert (seulement en mode default-collapsed avec exactement 1 ouvert). */
   getSingleOpenGroup(): string | null {
     return this._defaultGroupCollapsed && this._collapsedGroups.size === 1
       ? [...this._collapsedGroups][0]
       : null;
   }
-
-  // ── Pagination par groupe
 
   getPage(groupKey: string): number {
     return this._groupPages.get(groupKey) ?? 0;

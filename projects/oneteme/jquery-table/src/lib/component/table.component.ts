@@ -24,7 +24,6 @@ import {
   ROW_GROUP_KEY, ROW_GROUP_COUNT, ROW_GROUP_PAGE, ROW_GROUP_PAGE_COUNT,
   LAZY_LOADING_VALUE, LAZY_ERROR_VALUE,
 } from './table.constants';
-import {  } from '@oneteme/jquery-organizer';
 import { OrganizerButtonWrapperComponent } from './organizer-button/organizer-button.component';
 
 /** Cache interne du groupement — invalidé dès que les données, la clé ou les paramètres de tri changent. */
@@ -370,7 +369,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Construit l'OrganizerConfig à partir de l'état courant du ViewFacade. */
   get organizerConfig(): OrganizerConfig {
     if (this._organizerConfigCache) return this._organizerConfigCache;
-    const allCols = [...this._organizer.menuBaseColumns, ...this._organizer.menuOptionalColumns];
+    const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
     this._organizerConfigCache = {
       fields: this._organizer.showFields ? allCols.map(c => ({
         id: c.key,
@@ -378,7 +377,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         icon: c.icon,
         state: 'ready' as const,
       })) : undefined,
-      groups: this._organizer.showGroupBySection ? this._organizer.groupByColumns.map(c => ({
+      groups: this._organizer.showGroupBySection ? this._organizer.groupByFields.map(c => ({
         id: c.key,
         label: this.colLabel(c),
         icon: c.icon,
@@ -413,7 +412,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Gestionnaire d'événements OrganizerButton → met à jour l'état de la table. */
   onOrganizerViewChange(event: OrganizerButtonEvent): void {
     if (event.type === 'fieldToggled') {
-      const allCols = [...this._organizer.menuBaseColumns, ...this._organizer.menuOptionalColumns];
+      const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
       const newVisible = new Set(event.state.visibleFields ?? []);
       for (const col of allCols) {
         const isNowVisible = newVisible.has(col.key);
@@ -481,7 +480,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   get activeGroupByLabel(): string { return this._organizer.activeGroupByLabel; }
 
-  get totalColumnCount(): number { return this._organizer.totalColumnCount; }
+  get totalColumnCount(): number { return this._organizer.totalFieldCount; }
 
   get activeSliceByLabel(): string { return this._organizer.sliceBy.activeLabel; }
 
@@ -491,9 +490,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.slicePanelRef?.removeDynamicSliceByKey(key);
   }
 
-  get groupByColumns(): TableColumnProvider<T>[] { return this._organizer.groupByColumns; }
+  get groupByColumns(): TableColumnProvider<T>[] { return this._organizer.groupByFields; }
 
-  colLabel(col: { key: string; header?: string }): string { return this._organizer.colLabel(col); }
+  colLabel(col: { key: string; header?: string }): string { return this._organizer.fieldLabel(col); }
 
   // ── Actions utilisateur
 
@@ -597,15 +596,15 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   // ── Colonnes
 
   get hasAddableColumns(): boolean {
-    return this._organizer.menuBaseColumns.length > 0 || this._organizer.menuOptionalColumns.length > 0;
+    return this._organizer.menuBaseFields.length > 0 || this._organizer.menuOptionalFields.length > 0;
   }
 
   get menuBaseColumns(): TableColumnProvider<T>[] {
-    return this._organizer.menuBaseColumns;
+    return this._organizer.menuBaseFields;
   }
 
   get menuOptionalColumns(): TableColumnProvider<T>[] {
-    return this._organizer.menuOptionalColumns;
+    return this._organizer.menuOptionalFields;
   }
 
   get availableColumnsToAdd(): TableColumnProvider<T>[] {
@@ -614,7 +613,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get allowColumnRemoval(): boolean {
-    return this._organizer.allowColumnRemoval;
+    return this._organizer.allowFieldRemoval;
   }
 
   // ── Slices
@@ -758,7 +757,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get isColumnDragDropEnabled(): boolean {
-    return this._organizer.isColumnDragDropEnabled;
+    return this._organizer.isFieldDragDropEnabled;
   }
 
   get totalRows(): number {
@@ -770,7 +769,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   // ── Gestion des colonnes
 
   onAddColumn(column: TableColumnProvider<T>): void {
-    this._organizer.addColumn(column);
+    this._organizer.addField(column);
     this._preservePageIndex = this.paginator?.pageIndex ?? null;
     this.refreshViewModel();
 
@@ -783,7 +782,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   onColumnVisibilityChange(column: TableColumnProvider<T>, checked: boolean): void {
-    const isVisible = this._organizer.isColumnVisible(column.key);
+    const isVisible = this._organizer.isFieldVisible(column.key);
 
     if (checked && !isVisible) {
       this.onAddColumn(column);
@@ -791,7 +790,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
 
     if (!checked && isVisible) {
-      const removed = this._organizer.removeColumn(column.key);
+      const removed = this._organizer.removeField(column.key);
       if (!removed) return;
       this._preservePageIndex = this.paginator?.pageIndex ?? null;
       this.refreshViewModel();
@@ -807,7 +806,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     event?.stopPropagation();
     const column = this.activeFields.find(item => item.key === columnKey);
     if (!column) return;
-    const removed = this._organizer.removeColumn(columnKey);
+    const removed = this._organizer.removeField(columnKey);
     if (!removed) return;
     this.refreshViewModel();
     this.columnRemoved.emit(column);
@@ -904,7 +903,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
     event.preventDefault();
 
-    const moved = this._organizer.reorderColumns(this.draggedColumnKey, targetColumnKey);
+    const moved = this._organizer.reorderFields(this.draggedColumnKey, targetColumnKey);
     if (!moved) {
       this.onHeaderDragEnd();
       return;
@@ -1110,7 +1109,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       // Colonnes actives actuelllement non présentes dans targetKeys (non-optional passées sous silence)
       // → on les exclut : l'utilisateur avait explicitement choisi ce sous-ensemble
       if (ordered.length > 0) {
-        this._organizer.setActiveColumns(ordered);
+        this._organizer.setActiveFields(ordered);
       }
     }
     // Dynamic slices — différé : slicePanelRef pas encore disponible au moment de ngOnChanges
@@ -1128,7 +1127,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   canRemoveColumn(column: TableColumnProvider<T>): boolean {
     return (
-      this._organizer.allowColumnRemoval &&
+      this._organizer.allowFieldRemoval &&
       column.removable !== false &&
       this.activeFields.length > 1
     );

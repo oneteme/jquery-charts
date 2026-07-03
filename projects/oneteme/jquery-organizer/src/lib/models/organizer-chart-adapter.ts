@@ -1,10 +1,12 @@
 ﻿import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField } from './organizer-config.interface';
 import { buildYFields, resolveYKey } from './organizer-utils';
+import { UnitConfig } from '@oneteme/jquery-core';
 
 export interface OrganizerChartItem {
   key: string;
   selected: boolean;
   menu: { label: string };
+  unit?: string | UnitConfig;
   jquery?: {
     value: (s?: string) => string;
     buildAlias: (s?: string) => string;
@@ -37,7 +39,7 @@ export interface OrganizerChartBridgeOptions {
 }
 
 export function chartConfigToOrganizer(
-  chartConfig: OrganizerChartConfig | null | undefined,
+  chartConfig: any,
   options: OrganizerChartBridgeOptions = {}
 ): OrganizerConfig {
   if (!chartConfig) return {};
@@ -77,7 +79,7 @@ export function chartConfigToOrganizer(
   };
 }
 
-export function chartConfigToState(chartConfig: OrganizerChartConfig | null | undefined): OrganizerState {
+export function chartConfigToState(chartConfig: any): OrganizerState {
   if (!chartConfig) return {};
   const activeIndicator = chartConfig.indicators?.items?.find(i => i.selected);
   const activeStack = (activeIndicator?.extra?.stacks?.items || []).find((s: OrganizerChartItem) => s.selected);
@@ -94,7 +96,7 @@ export function chartConfigToState(chartConfig: OrganizerChartConfig | null | un
 }
 
 export function chartConfigToUnifiedState(
-  chartConfig: OrganizerChartConfig | null | undefined,
+  chartConfig: any,
   viewMode: 'chart' | 'table' = 'chart'
 ): OrganizerUnifiedState {
   const state = chartConfigToState(chartConfig);
@@ -110,7 +112,7 @@ export function chartConfigToUnifiedState(
 
 export function applyOrganizerEventToChart(
   event: OrganizerButtonEvent,
-  chartConfig: OrganizerChartConfig | null | undefined
+  chartConfig: any
 ): void {
   if (!chartConfig) return;
   const state = event.state;
@@ -120,6 +122,17 @@ export function applyOrganizerEventToChart(
   const effectiveGroupBy = state.selectedGroupBy !== state.selectedX ? state.selectedGroupBy : undefined;
   _applyGroupBySelection(effectiveGroupBy, chartConfig);
   if (state.selectedSlices !== undefined) _applySliceSelection(state.selectedSlices, chartConfig);
+  event.resolvedYUnit = resolveYUnit(chartConfig, event.state.selectedY, event.state.selectedYAggregate);
+}
+
+export function resolveYUnit(
+  chartConfig: any,
+  selectedY: string | undefined,
+  selectedYAggregate: string | undefined
+): string | UnitConfig | undefined {
+  if (!chartConfig || !selectedY) return undefined;
+  const actualKey = resolveYKey(selectedY, selectedYAggregate);
+  return chartConfig.indicators?.items?.find(i => i.key === actualKey)?.unit;
 }
 
 const _syntheticItems = new WeakSet<OrganizerChartItem>();

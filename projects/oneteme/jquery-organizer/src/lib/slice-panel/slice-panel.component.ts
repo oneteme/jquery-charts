@@ -1,10 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
-import {
-  ChangeDetectionStrategy, ChangeDetectorRef, Component,
-  ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output,
-  SimpleChanges, ViewChild, inject
-} from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { SliceColumnDef, SliceConfig } from './slice-panel.model';
 
 const EMPTY_CATEGORY_KEY = '__empty__';
@@ -316,7 +312,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       slices.every((slice, sliceIndex) => {
         const activeKeys = activeKeysBySlice.get(sliceIndex);
         if (!activeKeys || activeKeys.size === 0) return true;
-        // Slice non encore peuplé (données pas encore chargées) → ne pas filtrer
         if (!slice.categories || slice.categories.length === 0) return true;
         return [...activeKeys].some((key) => {
           const category = (slice.categories || []).find((c) => c.key === key);

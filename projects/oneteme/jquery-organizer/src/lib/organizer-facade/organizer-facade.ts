@@ -1,14 +1,7 @@
 import { Subject } from 'rxjs';
 import { OrganizerEvent, OrganizerState } from '@oneteme/jquery-core';
-import {
-  OrganizerFieldDef,
-  OrganizerFieldsState,
-  OrganizerGroupByState,
-  OrganizerPanelConfig,
-  OrganizerSliceByState,
-} from './organizer-facade.types';
+import { OrganizerFieldDef, OrganizerFieldsState, OrganizerGroupByState, OrganizerPanelConfig, OrganizerSliceByState } from './organizer-facade.types';
 
-/** Transforme une clé programmatique en label lisible. Ex: 'createdAt' → 'Created at'. */
 export function humanizeKey(key: string): string {
   return key
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
@@ -16,23 +9,7 @@ export function humanizeKey(key: string): string {
     .replace(/^./, (v) => v.toUpperCase());
 }
 
-/**
- * OrganizerFacade<TField>
- *
- * Centralise l'état et les actions du panneau Organizer (Champs / Group by / Slice by).
- * Générique sur TField extends OrganizerFieldDef : compatible tables (TableColumnProvider),
- * charts (IndicatorDef), KPI, etc.
- *
- * Pas de dépendance Angular/DOM — instanciable en dehors d'un composant.
- *
- * Usage :
- *   this._organizer = new OrganizerFacade();
- *   this._organizer.events$.subscribe(e => { ... });
- *   this._organizer.update({ config, fields, sliceConfigs });
- */
 export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDef> {
-
-  // ── State
 
   readonly fields: OrganizerFieldsState<TField> = {
     activeFields: [],
@@ -54,12 +31,8 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
   private _panelConfig: OrganizerPanelConfig<TField> = { fields: [], sliceConfigs: [] };
   private _hiddenStaticKeys = new Set<string>();
 
-  // ── Events
-
   private readonly _events$ = new Subject<OrganizerEvent>();
   readonly events$ = this._events$.asObservable();
-
-  // ── Computed flags
 
   get enabled(): boolean {
     return this._panelConfig.config?.enabled === true;
@@ -84,45 +57,20 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return this._panelConfig.config?.enableFieldRemoval !== false;
   }
 
-  /** @deprecated Use allowFieldRemoval */
-  get allowColumnRemoval(): boolean {
-    return this.allowFieldRemoval;
-  }
-
   get isFieldDragDropEnabled(): boolean {
     return this._panelConfig.config?.enableFieldDragDrop === true;
-  }
-
-  /** @deprecated Use isFieldDragDropEnabled */
-  get isColumnDragDropEnabled(): boolean {
-    return this.isFieldDragDropEnabled;
   }
 
   get menuBaseFields(): TField[] {
     return this._uniqueByKey((this._panelConfig.fields || []).filter(c => !c.optional));
   }
 
-  /** @deprecated Use menuBaseFields */
-  get menuBaseColumns(): TField[] {
-    return this.menuBaseFields;
-  }
-
   get menuOptionalFields(): TField[] {
     return this._uniqueByKey((this._panelConfig.fields || []).filter(c => c.optional));
   }
 
-  /** @deprecated Use menuOptionalFields */
-  get menuOptionalColumns(): TField[] {
-    return this.menuOptionalFields;
-  }
-
   get totalFieldCount(): number {
     return new Set((this._panelConfig.fields || []).map(c => c.key)).size;
-  }
-
-  /** @deprecated Use totalFieldCount */
-  get totalColumnCount(): number {
-    return this.totalFieldCount;
   }
 
   get groupByFields(): TField[] {
@@ -133,11 +81,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
       seen.add(c.key);
       return true;
     });
-  }
-
-  /** @deprecated Use groupByFields */
-  get groupByColumns(): TField[] {
-    return this.groupByFields;
   }
 
   get activeGroupByLabel(): string {
@@ -159,13 +102,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return field.header || humanizeKey(field.key);
   }
 
-  /** @deprecated Use fieldLabel */
-  colLabel(col: { key: string; header?: string }): string {
-    return this.fieldLabel(col);
-  }
-
-  // ── Mise à jour de la config
-
   update(panelConfig: OrganizerPanelConfig<TField>): void {
     this._panelConfig = panelConfig;
     this._refreshDefaultFields();
@@ -175,23 +111,15 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     }
   }
 
-  // ── Actions Fields
-
   setActiveFields(fields: TField[]): void {
     this.fields.activeFields = fields;
     this.fields.userCustomized = true;
-  }
-
-  /** @deprecated Use setActiveFields */
-  setActiveColumns(columns: TField[]): void {
-    this.setActiveFields(columns);
   }
 
   setUserCustomized(value: boolean): void {
     this.fields.userCustomized = value;
   }
 
-  /** Remet la vue dans son état initial : champs par défaut, groupBy par défaut, pas de dynamic slices. */
   resetToDefaults(): void {
     this.fields.userCustomized = false;
     this.groupBy.userCustomized = false;
@@ -223,11 +151,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     this._events$.next({ type: 'fieldsChanged', fieldIds: this.fields.activeFields.map(c => c.key) });
   }
 
-  /** @deprecated Use addField */
-  addColumn(column: TField): void {
-    this.addField(column);
-  }
-
   removeField(fieldKey: string): boolean {
     const field = this.fields.activeFields.find(c => c.key === fieldKey);
     if (!field) return false;
@@ -237,11 +160,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     this.fields.userCustomized = true;
     this._events$.next({ type: 'fieldsChanged', fieldIds: this.fields.activeFields.map(c => c.key) });
     return true;
-  }
-
-  /** @deprecated Use removeField */
-  removeColumn(columnKey: string): boolean {
-    return this.removeField(columnKey);
   }
 
   toggleFieldVisibility(field: TField, visible: boolean): void {
@@ -266,21 +184,9 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return true;
   }
 
-  /** @deprecated Use reorderFields */
-  reorderColumns(fromKey: string, toKey: string): boolean {
-    return this.reorderFields(fromKey, toKey);
-  }
-
   isFieldVisible(key: string): boolean {
     return this.fields.activeFields.some(c => c.key === key);
   }
-
-  /** @deprecated Use isFieldVisible */
-  isColumnVisible(key: string): boolean {
-    return this.isFieldVisible(key);
-  }
-
-  // ── Actions Group by
 
   setGroupBy(key: string | null): void {
     this.groupBy.activeKey = key;
@@ -288,9 +194,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     this._events$.next({ type: 'groupByChanged', key });
   }
 
-  // ── Actions Slice by (dynamique)
-
-  /** Appelée quand le SlicePanelComponent émet dynamicSliceKeysChange */
   onDynamicSliceKeysChange(keys: string[]): void {
     const allFields = this._panelConfig.fields ?? [];
     const staticKeys = new Set(
@@ -318,8 +221,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return this.sliceBy.activeDynamicFields.some(c => c.key === key);
   }
 
-  // ── Contrat core (OrganizerState)
-
   toOrganizerState(): OrganizerState {
     return {
       selectedFieldIds: this.fields.activeFields.map(c => c.key),
@@ -327,21 +228,12 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
       dynamicSliceKeys: this.sliceBy.activeDynamicFields.map(c => c.key),
     };
   }
-
-  // ── Destructor
-
-  destroy(): void {
-    this._events$.complete();
-  }
-
-  // ── Notification des slices statiques cachées
+  destroy(): void { this._events$.complete() }
 
   updateHiddenStaticKeys(keys: Set<string>): void {
     this._hiddenStaticKeys = keys;
     this._computeSliceLabel();
   }
-
-  // ── Helpers privés
 
   private _refreshDefaultFields(): void {
     const defaultFields = (this._panelConfig.fields || []).filter(c => !c.optional);
@@ -375,7 +267,6 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
       seen2.add(c.key);
       return true;
     });
-
     this._computeSliceLabel();
   }
 

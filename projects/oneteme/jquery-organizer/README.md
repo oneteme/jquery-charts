@@ -1,63 +1,63 @@
 # @oneteme/jquery-organizer
 
-Bibliothèque Angular autonome pour la gestion décentralisée des vues dans les pages KPI, les graphiques et les tableaux. Elle fournit deux composants principaux : `OrganizerButtonComponent`, un bouton de configuration contextuel, et `SlicePanelComponent`, un panneau de filtre latéral.
+Bibliothèque Angular autonome pour la gestion décentralisée des configurations de graphiques et tableaux. Elle fournit :
 
-> **Status Update (v0.0.42+)**: jquery-organizer est maintenant **totalement indépendant** et **correctement intégré** dans tous les renderers. Voir [PROJECT_COMPLETION_SUMMARY.md](../../PROJECT_COMPLETION_SUMMARY.md) pour un aperçu complet.
+- **OrganizerButtonComponent** — Bouton configurable pour sélectionner indicateurs, regroupements et filtres
+- **SlicePanelComponent** — Panneau latéral collapsible pour le filtrage par catégories
+- **Adapters** — Fonctions de conversion ChartConfig ↔ OrganizerConfig avec auto-détection d'unités
+- **Facade** — Gestion centralisée d'état pour les champs visibles, regroupements, filtres
+
+> **v0.0.43+**: Support complet pour **UnitConfig avec auto-scaling intelligent** des unités Y (ms → µs → s, etc.)
 
 ---
 
 ## 🚀 Quick Start
 
-### Table
-```typescript
-import { TableComponent, ViewButtonComponent } from '@oneteme/jquery-table';
+### Import
 
-<view-button [config]="organizerConfig" (viewChange)="onViewChange($event)"></view-button>
-<jquery-table [data]="data"></jquery-table>
+```typescript
+import { OrganizerButtonModule } from '@oneteme/jquery-organizer';
+import { OrganizerConfig, OrganizerState, OrganizerButtonEvent } from '@oneteme/jquery-organizer';
+
+@NgModule({
+  imports: [OrganizerButtonModule]
+})
+export class MyModule {}
 ```
 
-### Chart
-```typescript
-import { ChartComponent, OrganizerButtonComponent } from '@oneteme/jquery-organizer';
+### Template
 
-<organizer-button [config]="organizerConfig" (viewChange)="onViewChange($event)"></organizer-button>
-<chart [data]="transformedData"></chart>
+```html
+<organizer-button 
+  [config]="organizerConfig"
+  [state]="organizerState"
+  (viewChange)="onOrganizerChange($event)"
+  (sliceStateChange)="onSliceStateChange($event)">
+</organizer-button>
+
+<slice-panel
+  *ngIf="sliceState"
+  [sliceConfigs]="sliceState.sliceConfigs"
+  [data]="sliceState.tasks"
+  (filterChange)="onFilterChange($event)">
+</slice-panel>
 ```
 
 ---
 
-## Sommaire
+## 📋 Sommaire
 
-- [Contexte et problème résolu](#contexte-et-problème-résolu)
 - [Architecture](#architecture)
 - [Dépendances](#dépendances)
-- [Installation](#installation)
 - [OrganizerButtonComponent](#organizerbuttoncomponent)
   - [Inputs / Outputs](#inputs--outputs)
   - [OrganizerConfig](#organizerconfig)
   - [OrganizerState et OrganizerEvent](#organizerstate-et-organizerevent)
 - [SlicePanelComponent](#slicepanelcomponent)
-  - [Inputs / Outputs](#inputs--outputs-1)
-  - [SliceConfig](#sliceconfig)
-- [Intégration avec un graphique ECharts](#intégration-avec-un-graphique-echarts)
-- [Intégration avec un tableau (jquery-table)](#intégration-avec-un-tableau-jquery-table)
-- [Gestion automatique du slice-panel via onFetchSliceData](#gestion-automatique-du-slice-panel-via-onfetchslicedata)
-- [Référence complète des interfaces](#référence-complète-des-interfaces)
-
----
-
-## Contexte et problème résolu
-
-Avant l'introduction de `jquery-organizer`, chaque composant graphique ou tableau devait gérer lui-même :
-
-- la liste des indicateurs, groupes, catégories et filtres disponibles,
-- l'état courant des sélections (indicateur actif, groupe actif, filtre actif),
-- l'affichage d'un bouton de configuration et d'un menu déroulant,
-- le cycle de vie du panneau de filtre latéral (fetch des données, affichage, réinitialisation).
-
-Ce travail répétitif produisait du code dupliqué difficile à maintenir et des comportements incohérents d'un composant à l'autre.
-
-`jquery-organizer` centralise cette logique dans deux composants réutilisables, totalement agnostiques du renderer (ECharts, Highcharts, ApexCharts, tableau HTML). Le composant parent se contente de fournir une configuration déclarative et de réagir aux événements.
+- [Système d'Unités avec Auto-Scaling](#système-dunités-avec-auto-scaling)
+- [Chart Adapter](#chart-adapter)
+- [Intégration avec jquery-echarts](#intégration-avec-jquery-echarts)
+- [Intégration avec jquery-table](#intégration-avec-jquery-table)
 
 ---
 
@@ -65,24 +65,21 @@ Ce travail répétitif produisait du code dupliqué difficile à maintenir et de
 
 ```
 @oneteme/jquery-organizer
-├── OrganizerButtonComponent   (standalone)  — bouton + menu de configuration
-├── OrganizerButtonModule                    — module NgModule pour import facile
-├── SlicePanelComponent        (standalone)  — panneau latéral de filtrage
-└── Interfaces
-    ├── OrganizerConfig        — configuration du bouton
-    ├── OrganizerState         — état courant des sélections
-    ├── OrganizerEvent         — événement émis lors d'une interaction
-    ├── OrganizerSliceState    — état émis lors d'un fetch de filtre
-    ├── OrganizerViewField     — définition d'un indicateur ou champ
-    ├── OrganizerViewGroup     — option de regroupement
-    ├── OrganizerViewStack     — option de catégorisation (stack)
-    ├── OrganizerViewSlice     — option de filtre
-    ├── SliceConfig            — configuration d'un groupe de filtres
-    ├── SliceColumnDef         — définition d'une colonne pour le slice
-    └── SliceCategory          — catégorie individuelle dans un slice
+├── organizer-button/
+│   ├── organizer-button.component.ts    (standalone)
+│   └── organizer-button.module.ts
+├── slice-panel/
+│   ├── slice-panel.component.ts         (standalone)
+│   └── slice-panel.model.ts
+├── models/
+│   ├── organizer-config.interface.ts    (OrganizerConfig, OrganizerState, OrganizerEvent)
+│   ├── organizer-chart-adapter.ts       (chartConfigToOrganizer, resolveYUnit, etc.)
+│   ├── organizer-utils.ts               (buildYFields, resolveYKey)
+│   └── organizer-menu.model.ts
+├── organizer-facade/
+│   └── organizer-facade.ts              (Gestion centralisée d'état)
+└── public-api.ts                        (Exports publics)
 ```
-
-`SlicePanelComponent` et ses modèles (`SliceConfig`, `SliceColumnDef`, `SliceCategory`) sont désormais hébergés dans `jquery-organizer` et **re-exportés** depuis `@oneteme/jquery-table` pour garantir la rétrocompatibilité.
 
 ---
 
@@ -91,847 +88,347 @@ Ce travail répétitif produisait du code dupliqué difficile à maintenir et de
 | Dépendance | Version | Rôle |
 |---|---|---|
 | `@angular/core` | >= 16.1.0 | Framework Angular |
-| `@angular/common` | >= 16.1.0 | Directives communes |
-| `@angular/material` | ^16.1.0 | MatMenu, MatButton, MatIcon |
-| `@angular/cdk` | ^16.1.0 | Overlay (requis par Material) |
-| `@oneteme/jquery-core` | ^0.0.32 | `DataProvider` utilisé dans `SliceColumnDef` |
-
----
-
-## Installation
-
-```bash
-npm install @oneteme/jquery-organizer
-```
-
-Dans un contexte de développement en monorepo, pointez directement vers le dossier de build :
-
-```json
-{
-  "dependencies": {
-    "@oneteme/jquery-organizer": "file:../jquery-charts/dist/oneteme/jquery-organizer"
-  }
-}
-```
+| `@angular/material` | ^16.1.0 | MatMenu, MatIcon (optionnel) |
+| `@oneteme/jquery-core` | ^0.0.32+ | UnitConfig, ScaleConfig, DataProvider |
 
 ---
 
 ## OrganizerButtonComponent
 
-`OrganizerButtonComponent` est un composant standalone qui affiche un bouton ouvrant un menu Material. Ce menu expose les options de configuration : indicateur actif, regroupement, catégorisation, filtres. Il gère également le lazy-loading des données de champ et le cycle de vie du slice-panel.
-
-### Import
-
-```typescript
-// Via NgModule
-import { OrganizerButtonModule } from '@oneteme/jquery-organizer';
-
-@NgModule({
-  imports: [OrganizerButtonModule]
-})
-export class ViewsModule {}
-```
-
-```typescript
-// Via standalone
-import { OrganizerButtonComponent } from '@oneteme/jquery-organizer';
-
-@Component({
-  standalone: true,
-  imports: [OrganizerButtonComponent]
-})
-export class MyComponent {}
-```
+Composant standalone qui affiche un bouton ouvrant un menu Material. Le menu expose les options de configuration et gère le lazy-loading des données.
 
 ### Inputs / Outputs
 
-| Nom | Type | Description |
+| Prop | Type | Description |
 |---|---|---|
-| `[config]` | `OrganizerConfig` | Configuration complète du bouton et du menu |
-| `[state]` | `OrganizerState` | État courant des sélections (indicateur, groupe, filtres…) |
+| `[config]` | `OrganizerConfig` | Configuration du bouton et menu |
+| `[state]` | `OrganizerState` | État courant des sélections |
 | `(viewChange)` | `EventEmitter<OrganizerEvent>` | Émis à chaque interaction utilisateur |
-| `(sliceStateChange)` | `EventEmitter<OrganizerSliceState \| null>` | Émis après un fetch de données de filtre, ou `null` à la désélection |
+| `(sliceStateChange)` | `EventEmitter<OrganizerSliceState \| null>` | Données de filtre après fetch |
 
 ### OrganizerConfig
 
 ```typescript
 export interface OrganizerConfig {
-  // Options disponibles dans le menu
-  indicators?: OrganizerViewField[];   // Indicateurs (ex: Nombre d'appels, Temps moyen)
-  groups?: OrganizerViewGroup[];       // Regroupements (ex: Par heure, Par jour)
-  stacks?: OrganizerViewStack[];       // Catégories (ex: Par statut, Par taille)
-  slices?: OrganizerViewSlice[];       // Filtres (ex: Par media, Par host)
-  fields?: OrganizerViewField[];       // Champs visibles (usage tableau)
+  // Champs/Indicateurs/Groupements disponibles
+  xFields?: OrganizerXField[];           // Dimensions (ex: date, host)
+  yFields?: OrganizerYField[];           // Indicateurs (ex: count, elapsed_avg)
+  groups?: OrganizerViewGroup[];         // Options de regroupement
+  slices?: OrganizerViewSlice[];         // Options de filtre
 
-  // Callbacks optionnels
-  onFetchFieldData?: (fieldId: string) => Promise<string[] | Record<string, any>[]>;
-  // Chargement lazy des valeurs d'un champ — résultat mis en cache automatiquement
-
+  // Callbacks
+  onFetchFieldData?: (fieldId: string) => Promise<any[]>;
   onFetchSliceData?: (filterKey: string) => Observable<any[]> | Promise<any[]>;
-  // Appelé quand l'utilisateur sélectionne un filtre.
-  // Le composant fetche les données et émet (sliceStateChange) avec le résultat.
-
   onSliceClick?: () => void;
-  // Callback alternatif si la gestion du panneau est assurée manuellement par le parent
 
-  // Export
+  // Export & Préférences
   showExport?: boolean;
   onExport?: () => void;
-
-  // Préférences utilisateur
   showPreferences?: boolean;
-  hasSavedPreferences?: boolean;
   onPreferencesEdit?: () => void;
   onPreferencesSave?: () => void;
   onPreferencesClear?: () => void;
 
-  // Affichage du bouton
-  showReset?: boolean;         // Affiche le bouton "Réinitialiser" (défaut: true)
-  buttonLabel?: string;        // Label du bouton (défaut: vide)
-  buttonIcon?: string;         // Icône Material (défaut: 'tune')
-  showButtonIcon?: boolean;    // Affiche l'icône (défaut: true)
+  // UI
+  showReset?: boolean;                   // Défaut: true
+  buttonLabel?: string;
+  buttonIcon?: string;                   // Icône Material
+  showButtonIcon?: boolean;
   menuPosition?: 'above' | 'below';
   menuClass?: string;
+
+  switchView?: {
+    currentView: 'chart' | 'table';
+    onSwitch: (newView: 'chart' | 'table') => void;
+  };
 }
 ```
 
 ### OrganizerState et OrganizerEvent
 
-`OrganizerState` représente l'état courant des sélections. Il est passé en `[state]` au composant pour qu'il puisse afficher les options actives dans le menu.
-
 ```typescript
 export interface OrganizerState {
-  visibleFields?: string[];       // IDs des champs visibles (usage tableau)
-  selectedIndicator?: string;     // ID de l'indicateur actif
-  selectedGroup?: string;         // ID du regroupement actif
-  selectedStacks?: string[];      // IDs des catégories actives
-  selectedSlices?: string[];      // IDs des filtres actifs
+  viewMode?: 'chart' | 'table';
+  visibleFields?: string[];             // Champs visibles en table
+  selectedX?: string;                   // Dimension X (ex: 'date')
+  selectedY?: string;                   // Indicateur Y (ex: 'count')
+  selectedYAggregate?: string;           // Agrégat si applicable
+  selectedGroupBy?: string;              // Regroupement actif
+  selectedSlices?: string[];             // Filtres actifs
 }
-```
 
-`OrganizerEvent` est émis par `(viewChange)` à chaque action utilisateur :
-
-```typescript
-export interface OrganizerEvent {
-  type: 'fieldToggled' | 'indicatorSelected' | 'groupSelected'
-      | 'stackSelected' | 'sliceSelected' | 'reset';
-  state: OrganizerState;  // Nouvel état complet après l'interaction
+export interface OrganizerButtonEvent {
+  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' 
+      | 'sliceSelected' | 'reset' | 'viewSwitched';
+  state: OrganizerState;                 // État complet après action
   source?: 'user' | 'api';
+  resolvedYUnit?: string | UnitConfig;   // Unité auto-détectée (voir Auto-Scaling)
 }
 ```
-
-Le parent doit appliquer `event.state` à sa propre logique (mise à jour de la config du graphique, refetch des données, etc.).
 
 ---
 
 ## SlicePanelComponent
 
-`SlicePanelComponent` est un panneau latéral collapsible qui permet à l'utilisateur de filtrer les données affichées en cliquant sur des catégories. Il peut être utilisé indépendamment ou piloté automatiquement via `onFetchSliceData`.
-
-### Import
-
-```typescript
-import { SlicePanelComponent } from '@oneteme/jquery-organizer';
-// ou, pour la rétrocompatibilité :
-import { SlicePanelComponent } from '@oneteme/jquery-table';
-```
+Panneau latéral collapsible pour filtrer les données par catégories.
 
 ### Inputs / Outputs
 
-| Nom | Type | Défaut | Description |
+| Prop | Type | Défaut | Description |
 |---|---|---|---|
 | `[sliceConfigs]` | `SliceConfig<T>[]` | `[]` | Définition des groupes de filtres |
 | `[data]` | `T[]` | `[]` | Données brutes à filtrer |
-| `[columns]` | `SliceColumnDef<T>[]` | `[]` | Colonnes pour le mode dynamique |
-| `[showCounts]` | `boolean` | `true` | Affiche le nombre d'éléments par catégorie |
-| `[showToggle]` | `boolean` | `true` | Affiche le bouton replier/déplier |
-| `[collapsedByDefault]` | `boolean` | `false` | Panneau replié à l'initialisation |
-| `[alwaysShow]` | `boolean` | `false` | Affiche même sans filtre actif |
-| `(filterChange)` | `EventEmitter<(row: T) => boolean>` | — | Prédicat de filtre émis à chaque sélection |
-| `(activeKeysChange)` | `EventEmitter<string[][]>` | — | Clés actives par groupe de filtre |
-| `(collapsedChange)` | `EventEmitter<boolean>` | — | État replié/déplié |
-
-Quand le panneau est replié, la classe CSS `collapsed` est automatiquement ajoutée sur l'élément hôte via `@HostBinding`, ce qui permet au parent de réduire sa largeur en CSS.
-
-### SliceConfig
-
-```typescript
-export interface SliceConfig<T = any> {
-  title?: string;         // Titre du groupe de filtres
-  icon?: string;          // Icône Material optionnelle
-  multiSelect?: boolean;  // Sélection multiple (défaut: false)
-  columnKey?: string;     // Nom de la colonne — les catégories sont générées automatiquement
-  hidden?: boolean;       // Masque ce groupe
-  bucket?: (row: T) => string;  // Fonction de regroupement personnalisée
-  categories?: SliceCategory<T>[];  // Catégories explicites (mode manuel)
-}
-
-export interface SliceCategory<T = any> {
-  key: string;
-  label: string;
-  filter?: (row: T) => boolean;  // Prédicat de filtrage local
-}
-```
+| `[showCounts]` | `boolean` | `true` | Affiche comptage par catégorie |
+| `[showToggle]` | `boolean` | `true` | Affiche bouton replier/déplier |
+| `[alwaysShow]` | `boolean` | `false` | Affiche même sans données |
+| `(filterChange)` | `EventEmitter<(row: T) => boolean>` | — | Prédicat de filtre |
+| `(collapsedChange)` | `EventEmitter<boolean>` | — | État replié |
 
 ---
 
-## Intégration avec un graphique ECharts
+## Système d'Unités avec Auto-Scaling
 
-L'intégration suit un pattern en trois étapes : configuration initiale, réaction aux événements, refetch des données.
+### UnitConfig — Configuration Intelligente
 
-### Template
-
-```html
-<div class="kpi-chart-card">
-  <div class="kpi-chart-header">
-    <span class="kpi-chart-title">Statut</span>
-    <organizer-button
-      [config]="$statusOrganizer.config"
-      [state]="$statusOrganizer.state"
-      (viewChange)="onStatusViewChange($event)"
-      (sliceStateChange)="onStatusSliceChange($event)">
-    </organizer-button>
-  </div>
-
-  <div class="kpi-chart-body chart-with-slice">
-    <slice-panel
-      *ngIf="$statusSlice"
-      [sliceConfigs]="$statusSlice.sliceConfigs"
-      [data]="$statusSlice.tasks"
-      [showCounts]="false"
-      [alwaysShow]="true"
-      (filterChange)="onStatusFilterChange($event)">
-    </slice-panel>
-    <chart type="column"
-           [config]="$statusChartProvider"
-           [data]="$statusData"
-           [isLoading]="$statusLoading">
-    </chart>
-  </div>
-</div>
-```
-
-### CSS (composant parent)
-
-```scss
-.chart-with-slice {
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-
-  chart {
-    flex: 1 1 0;
-    min-width: 0;
-  }
-
-  slice-panel {
-    flex: 0 0 260px;
-    transition: flex-basis 200ms ease, width 200ms ease;
-
-    &.collapsed {
-      flex: 0 0 42px;  // Largeur réduite à l'icône seule
-    }
-  }
-}
-```
-
-### Composant TypeScript
+Au lieu d'une simple string `unit: 'ms'`, `UnitConfig` permet l'auto-détection du meilleur format selon l'ordre de grandeur des données :
 
 ```typescript
-import { OrganizerConfig, OrganizerEvent, OrganizerSliceState, OrganizerState } from '@oneteme/jquery-organizer';
-
-// État
-$statusOrganizer: { config: OrganizerConfig; state: OrganizerState } = { config: {}, state: {} };
-$statusSlice: OrganizerSliceState | null = null;
-$statusFilteredValues: any[] = [];
-
-// Initialisation (à appeler après réception des queryParams)
-private _initOrganizerConfig(): void {
-  this.$statusOrganizer = {
-    config: {
-      indicators: [
-        { id: 'count', label: 'Nombre d\'appels', state: 'ready' },
-        { id: 'elapsed', label: 'Temps de réponse', state: 'ready' },
-      ],
-      groups: [
-        { id: 'byHour', label: 'Par heure' },
-        { id: 'byDay', label: 'Par jour' },
-      ],
-      stacks: [
-        { id: 'status', label: 'Par statut' },
-      ],
-      slices: [
-        { id: 'media', label: 'Media' },
-        { id: 'host', label: 'Host' },
-      ],
-      onFetchSliceData: (filterKey) =>
-        this._myService.getFilterValues(filterKey, this.params) as Observable<any[]>,
-      showReset: false,
-      buttonIcon: 'tune',
-      showButtonIcon: true,
-    },
-    state: {
-      selectedIndicator: 'count',
-      selectedGroup: 'byDay',
-    }
-  };
+interface UnitConfig {
+  baseUnit: string;              // Unité source ('s', 'o', etc.)
+  scales: ScaleConfig[];         // Formats disponibles (µs, ms, s)
+  precision?: number;
+  formatter?: (v: number, selectedUnit: string) => string;
 }
 
-// Réaction à un changement de vue
-onStatusViewChange(event: OrganizerEvent): void {
-  // Appliquer l'événement à la config métier
-  this._applyOrganizerEvent(event, this.$statusChartConfig);
-  // Mettre à jour l'état affiché dans le bouton
-  this.$statusOrganizer = { config: this.$statusOrganizer.config, state: event.state };
-  // Refetch seulement si ce n'est pas une sélection de filtre (le slice gère son propre fetch)
-  if (event.type !== 'sliceSelected') {
-    this._fetchStatus();
-  }
-}
-
-// Réception des données de filtre (émis automatiquement par organizer-button)
-onStatusSliceChange(sliceState: OrganizerSliceState | null): void {
-  this.$statusSlice = sliceState;
-  if (!sliceState) {
-    this.$statusFilteredValues = [];
-  }
-  this._fetchStatus();
-}
-
-// Réaction à la sélection d'une catégorie dans le slice-panel
-onStatusFilterChange(filterFn: (row: any) => boolean): void {
-  if (!this.$statusSlice) return;
-  const columnKey = this.$statusSlice.sliceConfigs[0]?.columnKey;
-  this.$statusFilteredValues = this.$statusSlice.tasks
-    .filter(filterFn)
-    .map(t => t[columnKey]);
-  this._fetchStatus();
-}
-
-// Fetch avec les valeurs filtrées
-private _fetchStatus(): void {
-  this._myService.getData({
-    filters: this.$statusFilteredValues.length ? this.$statusFilteredValues : undefined
-  }).subscribe(data => {
-    // Mettre à jour les données du graphique
-  });
+interface ScaleConfig {
+  unit: string;                  // Unité affichée ('µs', 'ms', 's')
+  scale: number;                 // Facteur de conversion (1000 pour s→ms)
+  threshold?: number;            // Utiliser si max(données) > threshold
 }
 ```
 
----
-
-## Intégration avec un tableau (jquery-table)
-
-`SlicePanelComponent` étant désormais exporté depuis `@oneteme/jquery-table` par rétrocompatibilité, le code existant des composants tableau n'a pas à changer.
+### Exemple: Latence avec Auto-Scaling
 
 ```typescript
-// Avant (toujours fonctionnel)
-import { SlicePanelComponent, SliceConfig } from '@oneteme/jquery-table';
-
-// Ou directement depuis la source
-import { SlicePanelComponent, SliceConfig } from '@oneteme/jquery-organizer';
-```
-
-L'`OrganizerButtonComponent` peut également être ajouté dans l'en-tête d'un tableau pour permettre à l'utilisateur de changer les colonnes visibles, le regroupement ou le tri :
-
-```html
-<div class="table-toolbar">
-  <organizer-button
-    [config]="tableOrganizerConfig"
-    [state]="tableOrganizerState"
-    (viewChange)="onTableViewChange($event)">
-  </organizer-button>
-</div>
-
-<jqt-table [columns]="visibleColumns" [data]="tableData"></jqt-table>
-```
-
-```typescript
-onTableViewChange(event: OrganizerEvent): void {
-  // event.state.visibleFields contient les IDs des colonnes à afficher
-  this.visibleColumns = this.allColumns.filter(c =>
-    event.state.visibleFields?.includes(c.key)
-  );
-}
-```
-
----
-
-## Gestion automatique du slice-panel via onFetchSliceData
-
-La propriété `onFetchSliceData` de `OrganizerConfig` permet à `OrganizerButtonComponent` de gérer **automatiquement** le cycle de vie du panneau de filtre :
-
-1. L'utilisateur clique sur un filtre dans le menu (ex: "Media").
-2. `OrganizerButtonComponent` appelle `onFetchSliceData('media')`.
-3. Le résultat (Observable ou Promise) est souscrit en interne.
-4. `(sliceStateChange)` est émis avec `{ sliceConfigs, tasks }` — prêt à être passé à `<slice-panel>`.
-5. Si l'utilisateur désélectionne le filtre, `(sliceStateChange)` émet `null`.
-
-Sans `onFetchSliceData`, `(sliceStateChange)` n'est jamais émis. Le parent peut alors gérer manuellement le panneau via `onSliceClick`.
-
-```typescript
-// Gestion automatique (recommandée)
-config: {
-  slices: [{ id: 'media', label: 'Media' }],
-  onFetchSliceData: (filterKey) => this._service.getFilterValues(filterKey, this.params)
-}
-
-// Gestion manuelle (cas avancés)
-config: {
-  slices: [{ id: 'media', label: 'Media' }],
-  onSliceClick: () => this._openCustomFilterDialog()
-}
-```
-
----
-
-## Référence complète des interfaces
-
-### OrganizerViewField
-
-```typescript
-export interface OrganizerViewField {
-  id: string;
-  label: string;
-  visible?: boolean;
-  state?: 'ready' | 'loading' | 'error';  // FieldState
-  indicator?: 'count' | 'sum' | 'min' | 'max' | 'avg' | string;
-  subFields?: OrganizerViewField[];
-}
-```
-
-`state` contrôle l'affichage dans le menu :
-- `undefined` : champ déclaré mais non chargé (grisé, inactif)
-- `'loading'` : spinner affiché
-- `'ready'` : cliquable et actif
-- `'error'` : état d'erreur affiché
-
-### OrganizerSliceState
-
-```typescript
-export interface OrganizerSliceState {
-  sliceConfigs: SliceConfig<any>[];  // À passer à [sliceConfigs] de slice-panel
-  tasks: any[];                       // À passer à [data] de slice-panel
-}
-```
-
-### SliceColumnDef
-
-```typescript
-export interface SliceColumnDef<T = any> {
-  key: string;
-  header?: string;
-  icon?: string;
-  value?: DataProvider<any>;        // DataProvider de @oneteme/jquery-core
-  lazy?: {
-    fetchFn: () => Observable<any[]>;
-  };
-}
-```
-
-
-## Overview
-
-`jquery-organizer` is a standalone Angular library that provides a flexible, reusable Organizer Button component for managing view state across **any context**: tables, charts (ECharts, Highcharts, ApexCharts), KPI dashboards, or custom pages.
-
-### Key Features
-
-- ✅ **Zero Dependencies on Renderers** — Works with any chart library, table, or custom context
-- ✅ **Configuration via @Input** — Explicit, declarative configuration (no auto-discovery magic)
-- ✅ **Events via @Output** — Pure RxJS observables for loose coupling
-- ✅ **Support for Dynamic Series** — Async callbacks for runtime data discovery
-- ✅ **Fully Customizable UI** — CSS tokens for theming, optional Material Design
-- ✅ **TypeScript-First** — Full type safety with interfaces from `@oneteme/jquery-core`
-
-## Installation
-
-Since this is part of the jquery-charts monorepo, reference it via the workspace package resolution:
-
-```bash
-npm install @oneteme/jquery-organizer
-```
-
-Or in your `package.json` during development:
-
-```json
 {
-  "dependencies": {
-    "@oneteme/jquery-organizer": "file:../jquery-charts/dist/oneteme/jquery-organizer"
+  key: 'avg',
+  selected: true,
+  unit: {
+    baseUnit: 's',
+    scales: [
+      { unit: 'µs', scale: 1000000, threshold: 0.001 },  // < 1ms
+      { unit: 'ms', scale: 1000,    threshold: 1 },      // < 1s  (DEFAULT)
+      { unit: 's',  scale: 1,       threshold: Infinity } // >= 1s
+    ]
   }
 }
 ```
 
-## Quick Start
+**Résultat :**
+- Données `[0.0001, 0.0005]` → Affiche en **µs** (`100 µs`, `500 µs`)
+- Données `[0.05, 0.2, 0.8]` → Affiche en **ms** (`50 ms`, `200 ms`, `800 ms`)
+- Données `[1.5, 3.2, 5.1]` → Affiche en **s** (`1,5 s`, `3,2 s`, `5,1 s`)
 
-### 1. Import Module
+### Affichage Adaptatif de la Précision
+
+Les nombres sont formatés avec une précision qui s'ajuste à l'ordre de grandeur :
+
+```
+Valeur        Format         Raison
+0.000123   → "0,000123"     6 décimales (très petit)
+0.05       → "0,05"        2 décimales
+1234       → "1 234"       0 décimale (entier avec séparateur)
+50000      → "50 000"      0 décimale
+```
+
+---
+
+## Chart Adapter
+
+Les fonctions `organizer-chart-adapter.ts` convertissent entre `ChartConfig` (métier) et `OrganizerConfig` (UI) :
 
 ```typescript
-import { OrganizerButtonModule } from '@oneteme/jquery-organizer';
+// ChartConfig → OrganizerConfig
+export function chartConfigToOrganizer(
+  chartConfig: any,
+  options?: OrganizerChartBridgeOptions
+): OrganizerConfig
 
-@NgModule({
-  imports: [
-    OrganizerButtonModule,
-    // ... other imports
-  ]
-})
-export class AppModule {}
+// ChartConfig → OrganizerState
+export function chartConfigToState(chartConfig: any): OrganizerState
+
+// ChartConfig → Événement + État unifié
+export function chartConfigToUnifiedState(
+  chartConfig: any,
+  viewMode?: 'chart' | 'table'
+): OrganizerUnifiedState
+
+// Applique un OrganizerEvent à ChartConfig
+export function applyOrganizerEventToChart(
+  event: OrganizerButtonEvent,
+  chartConfig: any
+): void
+
+// Résout l'unité Y pour l'événement
+export function resolveYUnit(
+  chartConfig: any,
+  selectedY?: string,
+  selectedYAggregate?: string
+): string | UnitConfig | undefined
 ```
 
-### 2. Use in Template
+---
 
-```html
-<organizer-button 
-  [config]="organizerConfig"
-  [viewState]="currentViewState"
-  (viewChange)="onViewChange($event)">
-</organizer-button>
-```
+## Intégration avec jquery-echarts
 
-### 3. Handle View Changes
+### Pattern 3-étapes
+
+1. **Initialisation** : Construire OrganizerConfig depuis ChartConfig
+2. **Réaction aux événements** : Appliquer OrganizerEvent à ChartConfig
+3. **Refetch** : Recharger les données avec la nouvelle config
+
+### Exemple Complet
 
 ```typescript
-export class MyComponent {
-  organizerConfig: OrganizerConfig = {
-    viewConfig: {
-      fields: [
-        { id: 'name', label: 'Name', visible: true },
-        { id: 'age', label: 'Age', visible: true }
-      ],
-      groups: [
-        { id: 'byDept', label: 'By Department' },
-        { id: 'byTeam', label: 'By Team' }
-      ]
-    }
-  };
-
-  currentViewState: ViewState;
-
-  onViewChange(event: OrganizerEvent): void {
-    // Apply the new view state to your data/rendering
-    this.currentViewState = event.viewState;
-    this.applyFiltersAndGrouping();
-  }
-}
-```
-
-## Usage Patterns
-
-### Table Integration
-
-```html
-<!-- In a table component template -->
-<organizer-button 
-  [config]="tableOrganizerConfig"
-  (viewChange)="onTableViewChange($event)">
-</organizer-button>
-
-<table>
-  <thead>
-    <tr>
-      <th *ngFor="let field of visibleFields">{{ field.label }}</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- table body -->
-  </tbody>
-</table>
-```
-
-### Chart Integration (ECharts, Highcharts, ApexCharts)
-
-```html
-<!-- In a chart component template -->
-<organizer-button 
-  [config]="chartOrganizerConfig"
-  (viewChange)="onChartViewChange($event)">
-</organizer-button>
-
-<div echarts [options]="chartOptions"></div>
-```
-
-### KPI Dashboard
-
-```html
-<!-- In a KPI page -->
-<organizer-button 
-  [config]="kpiOrganizerConfig"
-  [viewState]="currentViewState"
-  (viewChange)="onKpiViewChange($event)">
-</organizer-button>
-
-<div class="kpi-metrics">
-  <div *ngFor="let metric of visibleMetrics">
-    <h3>{{ metric.label }}</h3>
-    <p>{{ metric.value }}</p>
-  </div>
-</div>
-```
-
-## Configuration
-
-### OrganizerConfig Interface
-
-```typescript
-interface OrganizerConfig {
-  // ViewConfig from jquery-core (required)
-  viewConfig: ViewConfig;
-
-  // Optional callback for dynamic series loading
-  onSeriesNeeded?: (fieldId: string) => Promise<any[]>;
-
-  // Optional callback when user clicks "Slice/Filter"
-  onSliceClick?: () => void;
-
-  // UI options
-  showReset?: boolean;              // Default: true
-  menuPosition?: 'above' | 'below'; // Default: 'below'
-  menuClass?: string;               // Custom CSS class for menu
-  buttonLabel?: string;             // Default: 'View'
-  buttonIcon?: string;              // Material icon name, default: 'tune'
-  showButtonIcon?: boolean;         // Default: true
-}
-```
-
-### ViewConfig Interface (from jquery-core)
-
-```typescript
-interface ViewConfig {
-  fields?: ViewField[];           // Available fields/columns
-  indicators?: ViewField[];       // Available indicators (count, sum, etc.)
-  groups?: ViewField[];           // Available grouping options
-  stacks?: ViewField[];           // Available stacking options
-  slices?: ViewField[];           // Available filters
-}
-
-interface ViewField {
-  id: string;
-  label: string;
-  visible?: boolean;
-  indicator?: 'count' | 'sum' | 'min' | 'max' | 'avg' | string;
-  subCategories?: ViewField[];    // For hierarchical menus
-}
-```
-
-## Events
-
-### viewChange Output
-
-Emitted when user interacts with the menu:
-
-```typescript
-@Output() viewChange = new EventEmitter<OrganizerEvent>();
-
-interface OrganizerEvent extends ViewEvent {
-  type: string;
-  viewState: ViewState;
-  metadata?: {
-    fieldChanged?: boolean;
-    indicatorChanged?: boolean;
-    groupByChanged?: boolean;
-    stackChanged?: boolean;
-    filterChanged?: boolean;
-    resetTriggered?: boolean;
-  };
-  source?: 'user' | 'api' | 'programmatic';
-  timestamp?: Date;
-}
-```
-
-### menuToggle Output
-
-Emitted when menu opens/closes:
-
-```typescript
-@Output() menuToggle = new EventEmitter<boolean>();
-
-// Usage
-(menuToggle)="onMenuToggle($event)"
-```
-
-## Theming
-
-### CSS Tokens
-
-Customize the appearance via CSS variables:
-
-```scss
-// In your global styles or component
-:host {
-  --organizer-primary: #007bff;           // Main color
-  --organizer-accent: #ff6b35;            // Accent color
-  --organizer-hover-bg: #f5f5f5;          // Hover background
-  --organizer-selected-bg: #e0e0e0;       // Selected background
-  --organizer-border-color: #e0e0e0;      // Border color
-  --organizer-text-color: #333333;        // Text color
-  --organizer-button-size: 40px;          // Button height
-  --organizer-menu-max-height: 400px;     // Menu max height
-  --organizer-z-index: 1000;              // Z-index for dropdown
-}
-```
-
-### Material Design Dependencies
-
-This component uses Angular Material for icons and styling. Make sure `@angular/material` is installed:
-
-```bash
-npm install @angular/material @angular/cdk
-```
-
-## Architecture Constraints
-
-For successful decentralization, the following constraints **must** be maintained:
-
-### 1. Zero Dependencies on Renderers
-- ❌ `jquery-organizer` must NEVER import from `jquery-table`, `jquery-highcharts`, `jquery-apexcharts`, or `jquery-echarts`
-- ✅ Dependencies go ONLY to `@angular/core`, `@angular/material` (optional), and `jquery-core`
-
-### 2. Configuration by Injection, Not Auto-Discovery
-- ❌ Component never auto-detects available fields or values
-- ✅ Parent ALWAYS passes explicit `OrganizerConfig`
-
-### 3. Events, Not Imperative Callbacks
-- ❌ No direct method calls to parent component
-- ✅ All interaction via `@Output()` events with proper typing
-
-### 4. No Service Injection from Context
-- ❌ Never inject `ViewFacade` or context-specific services
-- ✅ All logic parameterized via `@Input()` and callbacks
-
-## Integration Examples
-
-### With jquery-echarts
-
-```typescript
-import { OrganizerButtonModule } from '@oneteme/jquery-organizer';
+import { OrganizerButtonEvent, OrganizerSliceState } from '@oneteme/jquery-organizer';
+import { chartConfigToOrganizer, chartConfigToState, applyOrganizerEventToChart } from '@oneteme/jquery-organizer';
 
 @Component({
-  selector: 'app-echarts-with-organizer',
+  selector: 'app-kpi',
   template: `
-    <organizer-button 
-      [config]="organizerConfig"
-      (viewChange)="onViewChange($event)">
+    <organizer-button
+      [config]="$latency.config"
+      [state]="$latency.state"
+      (viewChange)="onLatencyViewChange($event)"
+      (sliceStateChange)="onLatencySliceChange($event)">
     </organizer-button>
-    <div echarts [options]="chartOptions"></div>
-  `,
-  standalone: true,
-  imports: [OrganizerButtonModule]
-})
-export class EchartsWithOrganizerComponent {
-  organizerConfig: OrganizerConfig = { /* ... */ };
-  chartOptions: any;
-
-  onViewChange(event: OrganizerEvent): void {
-    // Rebuild chart options based on new viewState
-    this.chartOptions = this.buildChartOptions(event.viewState);
-  }
-
-  private buildChartOptions(viewState: ViewState): any {
-    // Transform viewState to ECharts options
-    return { /* ... */ };
-  }
-}
-```
-
-### With KPI Dashboards
-
-```typescript
-@Component({
-  selector: 'app-kpi-dashboard',
-  template: `
-    <organizer-button 
-      [config]="kpiOrganizerConfig"
-      [viewState]="viewState"
-      (viewChange)="onKpiViewChange($event)">
-    </organizer-button>
-    
-    <div class="kpi-grid">
-      <kpi-card *ngFor="let card of visibleCards" [data]="card"></kpi-card>
-    </div>
+    <chart [config]="$latency.chartProvider" [data]="$latency.data"></chart>
   `
 })
-export class KpiDashboardComponent {
-  kpiOrganizerConfig: OrganizerConfig;
-  viewState: ViewState;
-  visibleCards: any[];
+export class KpiComponent {
+  $latency = {
+    config: {},
+    state: {},
+    chartConfig: REST_LATENCY_CHART_CONFIG('day'),
+    chartProvider: {},
+    data: []
+  };
 
-  onKpiViewChange(event: OrganizerEvent): void {
-    this.viewState = event.viewState;
-    this.applyViewToKpis();
+  ngOnInit() {
+    // Initialisation
+    this.$latency.config = chartConfigToOrganizer(this.$latency.chartConfig);
+    this.$latency.state = chartConfigToState(this.$latency.chartConfig);
+    this._fetchLatency();
   }
 
-  private applyViewToKpis(): void {
-    // Filter, group, and reorganize KPI cards
+  onLatencyViewChange(event: OrganizerButtonEvent): void {
+    // Appliquer l'événement → met à jour ChartConfig
+    applyOrganizerEventToChart(event, this.$latency.chartConfig);
+    
+    // Mettre à jour la UI du button
+    this.$latency.state = event.state;
+    
+    // Refetch
+    this._fetchLatency();
+  }
+
+  private _fetchLatency(): void {
+    const cfg = this.$latency.chartConfig;
+    const ind = cfg.indicators.items.find(i => i.selected);
+    
+    this._httpService.getLatency({ indicator: ind, ... }).subscribe(data => {
+      const series = buildSeries(cfg.series.items, ind, cfg.groups.items[0], null, data);
+      
+      // Injection de l'unité (simple string ou UnitConfig)
+      this.$latency.chartProvider = {
+        ...this.BASE_CHART_PROVIDER,
+        series,
+        yUnit: ind?.unit  // ← string | UnitConfig
+      };
+      
+      this.$latency.data = data;
+    });
   }
 }
 ```
 
-## Dependencies
+---
 
-### Peer Dependencies (Provided by Application)
-
-- `@angular/core` (>=16.1.0)
-- `@angular/common` (>=16.1.0)
-- `@angular/material` (^16.1.0) — Optional, for Material Design
-- `@angular/cdk` (^16.1.0) — Optional, for CDK utilities
-
-### Direct Dependencies
-
-- `@oneteme/jquery-core` (^0.0.32) — For ViewState, ViewField, ViewEvent interfaces
-- `tslib` (^2.3.0) — Utility library
-
-## Testing
-
-### Unit Tests
+## Intégration avec jquery-table
 
 ```typescript
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { OrganizerButtonComponent, OrganizerButtonModule } from '@oneteme/jquery-organizer';
+import { TableComponent } from '@oneteme/jquery-table';
+import { OrganizerButtonModule } from '@oneteme/jquery-organizer';
 
-describe('OrganizerButtonComponent', () => {
-  let component: OrganizerButtonComponent;
-  let fixture: ComponentFixture<OrganizerButtonComponent>;
+@Component({
+  imports: [TableComponent, OrganizerButtonModule]
+})
+export class TableWithOrganizerComponent {
+  @ViewChild(TableComponent) table: TableComponent;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [OrganizerButtonModule]
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(OrganizerButtonComponent);
-    component = fixture.componentInstance;
-  });
-
-  it('should emit viewChange on field toggle', (done) => {
-    component.config = {
-      viewConfig: {
-        fields: [{ id: 'field1', label: 'Field 1', visible: true }]
-      }
-    };
-
-    component.viewChange.subscribe((event) => {
-      expect(event.metadata?.fieldChanged).toBe(true);
-      done();
-    });
-
-    component.onFieldToggle('field1', false);
-  });
-});
+  onOrganizerViewChange(event: OrganizerButtonEvent): void {
+    // Le tableau gère automatiquement les colonnes visibles
+    if (event.type === 'fieldToggled') {
+      this.table.applyVisibleColumns(event.state.visibleFields);
+    }
+    if (event.type === 'groupBySelected') {
+      this.table.applyGroupBy(event.state.selectedGroupBy);
+    }
+  }
+}
 ```
 
-## Documentation
+---
 
-For complete documentation on ViewState, ViewField, ViewEvent, and ViewConfig, refer to:
-- `@oneteme/jquery-core` documentation
-- `docs/contexte-organizer-externalization.md` — Architecture context
-- `docs/pilotage-organizer-externalization.md` — Implementation roadmap
+## API Exports
 
-## License
+Depuis `@oneteme/jquery-organizer` :
 
-Part of the jquery-charts monorepo. See LICENSE in the repository root.
+```typescript
+// Composants
+export { OrganizerButtonComponent } from './organizer-button.component';
+export { OrganizerButtonModule } from './organizer-button.module';
+export { SlicePanelComponent } from './slice-panel.component';
 
-## Contributing
+// Interfaces
+export { OrganizerConfig, OrganizerState, OrganizerButtonEvent, OrganizerSliceState } from './organizer-config.interface';
+export { SliceConfig, SliceColumnDef, SliceCategory } from './slice-panel.model';
 
-Contributions are welcome! Please follow the contribution guidelines in the main repository.
+// Adapters
+export {
+  chartConfigToOrganizer,
+  chartConfigToState,
+  chartConfigToUnifiedState,
+  applyOrganizerEventToChart,
+  resolveYUnit
+} from './organizer-chart-adapter';
+
+// Utilitaires
+export { buildYFields, resolveYKey } from './organizer-utils';
+
+// Facade
+export { OrganizerFacade } from './organizer-facade/organizer-facade';
+```
+
+---
+
+## Changelog
+
+### v0.0.43+
+- ✅ Ajout du support **UnitConfig** avec auto-scaling intelligent
+- ✅ Exportes les adapters (chartConfigToOrganizer, resolveYUnit, etc.)
+- ✅ Renommage des propriétés OrganizerFacade (Column → Field)
+- ✅ Support des `ScaleConfig` pour conversion dynamique d'unités
+- ✅ Formatage adaptatif de la précision (smartFormatY)
+
+### v0.0.42
+- Refactoring des exports publics
+- Consolidation de SlicePanelComponent
+
+---
 
 ## Support
 
-For issues, questions, or feature requests, use the GitHub Issues in the jquery-charts repository.
+Pour des questions ou des bugs, ouvrir une issue dans le repository jquery-charts.
+
+License: Voir LICENSE in the root.
