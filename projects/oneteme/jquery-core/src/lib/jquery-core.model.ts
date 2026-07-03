@@ -222,10 +222,8 @@ function isUndefined(o: any): boolean {
   return o === undefined;
 }
 
-/**
- * Configuration dynamique d'une unité Y avec auto-scaling intelligent.
- * Détecte automatiquement le meilleur format (µs, ms, s, etc.) basé sur l'ordre de grandeur des données.
- */
+// Config dynamique de Y avec auto-scaling intelligent.
+// Détecte automatiquement le meilleur format (µs, ms, s, etc.) basé sur l'ordre de grandeur des données.
 export interface UnitConfig {
   baseUnit: string;        // Unité source des données ('s', 'o', etc.)
   scales: ScaleConfig[];   // Liste des formats disponibles (triée par seuil croissant)
@@ -233,9 +231,7 @@ export interface UnitConfig {
   formatter?: (v: number, selectedUnit: string) => string; // Formatage personnalisé
 }
 
-/**
- * Définit un format d'affichage avec sa plage d'applicabilité.
- */
+// Définit un format d'affichage avec sa plage d'applicabilité.
 export interface ScaleConfig {
   unit: string;            // Unité affichée ('µs', 'ms', 's', 'KB', 'MB', etc.)
   scale: number;           // Facteur de conversion (1000 pour s→ms, 1000000 pour s→µs)

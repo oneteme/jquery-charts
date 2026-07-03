@@ -43,18 +43,10 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
 
   @ViewChild(ChartDirective) private _directive: ChartDirective<X, Y>;
 
-  /**
-   * Exporte le graphique en image (PNG par défaut).
-   * Délègue à `ChartDirective.exportImage()`.
-   */
   exportImage(fileName?: string, type?: 'png' | 'jpeg' | 'svg', pixelRatio?: number): void {
     this._directive?.exportImage(fileName, type, pixelRatio);
   }
 
-  /**
-   * Exporte les données brutes du graphique en CSV.
-   * Délègue à `ChartDirective.exportData()`.
-   */
   exportData(fileName?: string, separator?: string): void {
     this._directive?.exportData(fileName, separator);
   }

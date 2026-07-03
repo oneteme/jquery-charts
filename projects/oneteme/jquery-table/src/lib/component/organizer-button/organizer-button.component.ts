@@ -1,30 +1,6 @@
-import {
-  Component,
-  Input,
-  Output,
-  EventEmitter,
-  ChangeDetectionStrategy
-} from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { OrganizerButtonComponent, OrganizerConfig, OrganizerButtonEvent, OrganizerState, OrganizerSliceState } from '@oneteme/jquery-organizer';
 
-/**
- * OrganizerButtonWrapperComponent
- *
- * Thin wrapper around OrganizerButtonComponent for jquery-table.
- * Exposé publiquement depuis @oneteme/jquery-table pour les consommateurs
- * qui souhaitent utiliser le bouton organizer sans dépendre directement
- * de @oneteme/jquery-organizer.
- *
- * Usage :
- * ```html
- * <table-organizer-button
- *   [config]="organizerConfig"
- *   [state]="organizerState"
- *   (viewChange)="onOrganizerViewChange($event)"
- *   (sliceStateChange)="onOrganizerSliceStateChange($event)">
- * </table-organizer-button>
- * ```
- */
 @Component({
   standalone: true,
   selector: 'table-organizer-button',

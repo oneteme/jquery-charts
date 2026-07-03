@@ -300,14 +300,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._pendingDynamicSliceKeys = null;
     this._pendingSliceFilters = null;
 
-    // Différé dans un setTimeout pour éviter NG0100 (modification après vérification dans ngAfterViewInit).
-    // IMPORTANT : la slice-panel est dans le DOM via [style.display] (pas *ngIf),
-    // donc slicePanelRef est TOUJOURS disponible après ngAfterViewInit.
-    // En revanche, si les données ne sont pas encore arrivées, les catégories des
-    // dynamic slices seraient vides -> _rebuildCache() ne pourrait pas retrouver
-    // les clés sauvegardées et les filtres seraient silencieusement perdus.
-    // On remet donc tout en attente et laisse _recomputeShowSlicePanel() appliquer
-    // la restauration dès que les données arrivent.
     setTimeout(() => {
       if (this._resolvedData.length === 0) {
         console.log('[SliceRestore] ngAfterViewInit: données absentes, restauration différée à _recomputeShowSlicePanel', { keys, filters });
@@ -358,15 +350,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
   }
 
-  // ── Intégration OrganizerButton ──────────────────────────────────────────────
-
-  /** Cache de l'OrganizerConfig — invalidé quand les colonnes ou slices changent. */
   private _organizerConfigCache: OrganizerConfig | null = null;
-
-  /** Invalide le cache (à appeler après tout changement de colonnes/slices). */
   private _invalidateOrganizerConfig(): void { this._organizerConfigCache = null; }
-
-  /** Construit l'OrganizerConfig à partir de l'état courant du ViewFacade. */
   get organizerConfig(): OrganizerConfig {
     if (this._organizerConfigCache) return this._organizerConfigCache;
     const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
@@ -398,7 +383,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return this._organizerConfigCache;
   }
 
-  /** Construit l'OrganizerState à partir de l'état courant du OrganizerFacade. */
   get organizerState(): OrganizerState {
     return {
       visibleFields: this.visibleColumns.map(c => c.key),
@@ -409,7 +393,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     };
   }
 
-  /** Gestionnaire d'événements OrganizerButton → met à jour l'état de la table. */
   onOrganizerViewChange(event: OrganizerButtonEvent): void {
     if (event.type === 'fieldToggled') {
       const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
@@ -433,8 +416,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     this._cdr.markForCheck();
   }
-
-  // ── Getters d'affichage
 
   get title(): string {
     return this.resolvedConfig.title ?? '';
@@ -494,8 +475,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   colLabel(col: { key: string; header?: string }): string { return this._organizer.fieldLabel(col); }
 
-  // ── Actions utilisateur
-
   onSearchChange(): void {
     this._preservePageIndex = 0;
     this.refreshViewModel();
@@ -533,8 +512,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     });
   }
 
-  // ── Lazy loading
-
   getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
     return this._lazy.getStatus(key);
   }
@@ -557,8 +534,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       onMarkForCheck: () => this._cdr.markForCheck(),
     };
   }
-
-  // ── Groupement
 
   toggleGroupCollapse(groupKey: string): void {
     this._groupBy.toggleGroupCollapse(groupKey, (key) => {
@@ -593,8 +568,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._groupBy.groupPageForward(groupKey, totalCount);
   }
 
-  // ── Colonnes
-
   get hasAddableColumns(): boolean {
     return this._organizer.menuBaseFields.length > 0 || this._organizer.menuOptionalFields.length > 0;
   }
@@ -615,8 +588,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   get allowColumnRemoval(): boolean {
     return this._organizer.allowFieldRemoval;
   }
-
-  // ── Slices
 
   get hasSliceConfig(): boolean {
     return (this.resolvedConfig.slices?.length ?? 0) > 0;

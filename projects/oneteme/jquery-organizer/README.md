@@ -7,11 +7,11 @@ Bibliothèque Angular autonome pour la gestion décentralisée des configuration
 - **Adapters** — Fonctions de conversion ChartConfig ↔ OrganizerConfig avec auto-détection d'unités
 - **Facade** — Gestion centralisée d'état pour les champs visibles, regroupements, filtres
 
-> **v0.0.43+**: Support complet pour **UnitConfig avec auto-scaling intelligent** des unités Y (ms → µs → s, etc.)
+**v0.0.43+**: Support complet pour **UnitConfig avec auto-scaling intelligent** des unités Y (ms → µs → s, etc.)
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Import
 
@@ -45,7 +45,7 @@ export class MyModule {}
 
 ---
 
-## 📋 Sommaire
+## Sommaire
 
 - [Architecture](#architecture)
 - [Dépendances](#dépendances)
@@ -62,6 +62,8 @@ export class MyModule {}
 ---
 
 ## Architecture
+
+Structure des fichiers et dépendances :
 
 ```
 @oneteme/jquery-organizer
@@ -84,6 +86,8 @@ export class MyModule {}
 ---
 
 ## Dépendances
+
+Version minimale requise :
 
 | Dépendance | Version | Rôle |
 |---|---|---|
@@ -187,6 +191,8 @@ Panneau latéral collapsible pour filtrer les données par catégories.
 ---
 
 ## Système d'Unités avec Auto-Scaling
+
+Formatage intelligent et conversion dynamique des unités Y
 
 ### UnitConfig — Configuration Intelligente
 
@@ -382,7 +388,7 @@ export class TableWithOrganizerComponent {
 
 ## API Exports
 
-Depuis `@oneteme/jquery-organizer` :
+Exports publics de la bibliothèque :
 
 ```typescript
 // Composants
@@ -414,12 +420,13 @@ export { OrganizerFacade } from './organizer-facade/organizer-facade';
 
 ## Changelog
 
-### v0.0.43+
-- ✅ Ajout du support **UnitConfig** avec auto-scaling intelligent
-- ✅ Exportes les adapters (chartConfigToOrganizer, resolveYUnit, etc.)
-- ✅ Renommage des propriétés OrganizerFacade (Column → Field)
-- ✅ Support des `ScaleConfig` pour conversion dynamique d'unités
-- ✅ Formatage adaptatif de la précision (smartFormatY)
+### v0.0.43+ (2026-07-03)
+- Ajout du support **UnitConfig** avec auto-scaling intelligent
+- Exports des adapters (chartConfigToOrganizer, resolveYUnit, etc.)
+- Renommage des propriétés OrganizerFacade (Column → Field) dans jquery-table
+- Support des `ScaleConfig` pour conversion dynamique d'unités
+- Formatage adaptatif de la précision (smartFormatY) en chart-utils
+- Intégration complète avec REST_LATENCY_CHART_CONFIG
 
 ### v0.0.42
 - Refactoring des exports publics

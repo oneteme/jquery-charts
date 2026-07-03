@@ -1,12 +1,4 @@
-/**
- * Contrat View partagé — renderer-agnostic.
- * Aucune dépendance Angular/DOM.
- *
- * Consommé par : jquery-table, jquery-highcharts, jquery-apexcharts.
- */
 import { ChartProvider, SerieProvider, XaxisType, YaxisType } from './jquery-core.model';
-
-// ── Interfaces
 
 /** Descripteur générique d'un champ disponible dans le panneau Organizer. */
 export interface OrganizerFieldDef {
