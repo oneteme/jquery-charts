@@ -1,10 +1,6 @@
-import { ChartProvider, mergeDeep } from '@oneteme/jquery-core';
+import { ChartProvider, mergeDeep, UnitConfig } from '@oneteme/jquery-core';
 import { EChartsOption } from './types';
 
-/**
- * Construit l'option tooltip avec un style professionnel unifié.
- * Utilisé à la fois dans buildBaseOption et dans le tooltipOverride de la directive.
- */
 export function buildTooltipOption(trigger: 'axis' | 'item', el?: HTMLElement): any {
   return {
     trigger,
@@ -21,11 +17,6 @@ export function buildTooltipOption(trigger: 'axis' | 'item', el?: HTMLElement): 
       const tw = dom?.offsetWidth ?? 0;
       const th = dom?.offsetHeight ?? 0;
       const gap = 10;
-      // Calcul en coordonnées viewport absolues.
-      // Avec position:fixed sur le tooltip, ces coordonnées == coordonnées CSS finales,
-      // ce qui élimine tout impact sur le scroll de la page.
-      // Note : ECharts ajoute rect + window.pageOffset au retour du callback (pour position:absolute).
-      // On soustrait ce décalage pour que la position CSS finale corresponde au viewport cible.
       const sx = window.scrollX;
       const sy = window.scrollY;
       let vx = rect.left + point[0] + gap;
@@ -110,9 +101,6 @@ export function applyCommonConfig(
   const { series: seriesPatch, ...restOptions } = (config.options ?? {}) as any;
   const result = mergeDeep({}, option, patch, restOptions) as any;
 
-  // Fusion profonde élément-par-élément des séries quand config.options.series est défini.
-  // mergeDeep (au lieu de spread superficiel) préserve les propriétés imbriquées (label, emphasis.label…)
-  // qui seraient écrasées par un spread top-level, notamment position:'center' sur le label de base.
   if (seriesPatch && Array.isArray(seriesPatch) && Array.isArray(result.series)) {
     result.series = result.series.map((s: any, i: number) => {
       const patch = seriesPatch[i] ?? {};
@@ -127,13 +115,118 @@ export function applyCommonConfig(
     });
   }
 
+  if (config.yUnit) {
+    const yUnitConfig = config.yUnit;
+    let displayUnit: string;
+    let scaleInfo: { scale: number; unit: string; formatter?: (v: number, unit: string) => string } | undefined;
+
+    if (typeof yUnitConfig === 'string') {
+      // Cas simple : unité statique
+      displayUnit = yUnitConfig;
+    } else {
+      // Cas UnitConfig : auto-détection du meilleur format
+      const unitConfig = yUnitConfig as UnitConfig;
+      const dataValues = _extractYValues(result.series);
+      scaleInfo = selectBestScale(unitConfig, dataValues);
+      displayUnit = scaleInfo.unit;
+    }
+
+    if (Array.isArray(result.series)) {
+      result.series = result.series.map((s: any) => ({
+        ...s,
+        name: s.name ? `${s.name}\u00a0[${displayUnit}]` : s.name,
+      }));
+    }
+
+    if (!result.yAxis) result.yAxis = {};
+    if (!result.yAxis.axisLabel) result.yAxis.axisLabel = {};
+
+    if (scaleInfo?.formatter) {
+      result.yAxis.axisLabel.formatter = (v: number) => scaleInfo!.formatter!(v * scaleInfo!.scale, displayUnit);
+    } else {
+      result.yAxis.axisLabel.formatter = (v: number) => {
+        const scaled = scaleInfo ? v * scaleInfo.scale : v;
+        return _smartFormatY(scaled);
+      };
+    }
+
+    const devTooltip = (config.options as any)?.tooltip;
+    if (!devTooltip?.formatter && !devTooltip?.valueFormatter) {
+      if (!result.tooltip) result.tooltip = {};
+      result.tooltip.valueFormatter = (v: number | string) => {
+        if (v == null) return '–';
+        const num = typeof v === 'number' ? v : parseFloat(String(v));
+        if (isNaN(num)) return String(v);
+        const scaled = scaleInfo ? num * scaleInfo.scale : num;
+        if (scaleInfo?.formatter) {
+          return scaleInfo.formatter(scaled, displayUnit);
+        }
+        return _smartFormatY(scaled);
+      };
+    }
+  }
+
   return result as EChartsOption;
 }
 
-/**
- * Construit l'option "graphic" pour afficher un message "Aucune donnée".
- * Utilisé nativement via la propriété `graphic` d'ECharts.
- */
+function _extractYValues(series: any[]): number[] {
+  const values: number[] = [];
+  if (!Array.isArray(series)) return values;
+
+  for (const s of series) {
+    if (Array.isArray(s.data)) {
+      for (const point of s.data) {
+        if (typeof point === 'number') {
+          values.push(point);
+        } else if (point && typeof point === 'object' && typeof point.value === 'number') {
+          values.push(point.value);
+        } else if (point && Array.isArray(point) && typeof point[1] === 'number') {
+          // Format [x, y]
+          values.push(point[1]);
+        }
+      }
+    }
+  }
+  return values;
+}
+
+export function selectBestScale(
+  unitConfig: UnitConfig,
+  dataValues: number[]
+): { scale: number; unit: string; formatter?: (v: number, unit: string) => string } {
+  if (!Array.isArray(unitConfig.scales) || unitConfig.scales.length === 0) {
+    return { scale: 1, unit: unitConfig.baseUnit };
+  }
+
+  const sortedScales = [...unitConfig.scales].sort((a, b) => (a.threshold ?? Infinity) - (b.threshold ?? Infinity));
+
+  const maxValue = Math.max(...dataValues.filter(v => isFinite(v) && v !== 0), 0);
+  for (const scale of sortedScales) {
+    const threshold = scale.threshold ?? Infinity;
+    if (maxValue <= threshold) {
+      return {
+        scale: scale.scale,
+        unit: scale.unit,
+        formatter: unitConfig.formatter,
+      };
+    }
+  }
+  const lastScale = sortedScales[sortedScales.length - 1];
+  return {
+    scale: lastScale.scale,
+    unit: lastScale.unit,
+    formatter: unitConfig.formatter,
+  };
+}
+
+function _smartFormatY(v: number): string {
+  if (!isFinite(v) || v === 0) return '0';
+  const abs = Math.abs(v);
+  const magnitude = Math.floor(Math.log10(abs));
+  const decimals = Math.max(0, Math.min(-magnitude + 2, 6));
+  return v.toLocaleString('fr-FR', { maximumFractionDigits: decimals });
+}
+
 export function buildNoDataGraphic(message = 'Aucune donnée'): any {
   return [
     {
@@ -150,19 +243,12 @@ export function buildNoDataGraphic(message = 'Aucune donnée'): any {
   ];
 }
 
-/**
- * Détermine le type d'axe X ECharts en fonction des données.
- */
 export function resolveXAxisType(value: any): 'time' | 'value' | 'category' {
   if (value instanceof Date) return 'time';
   if (typeof value === 'number') return 'value';
   return 'category';
 }
 
-/**
- * Retourne le type d'axe X à partir du premier point disponible
- * (catégorie ou valeur x si mode continue).
- */
 export function getXAxisType(
   categories: any[],
   isContinue: boolean,

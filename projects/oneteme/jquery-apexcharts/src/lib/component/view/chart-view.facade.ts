@@ -1,34 +1,34 @@
 import { Subject } from 'rxjs';
 import {
   ChartProvider, XaxisType, YaxisType,
-  ViewConfig, ViewField, ViewState, ViewEvent,
-  viewFieldsFromChartSeries, applyViewStateToSeries,
+  OrganizerConfig, OrganizerFieldDef, OrganizerState, OrganizerEvent,
+  organizerFieldDefsFromChartSeries, applyOrganizerStateToSeries,
 } from '@oneteme/jquery-core';
 
 /**
- * Façade View pour les charts ApexCharts.
- * Gère la visibilité des séries (champs) via le contrat ViewState/ViewEvent.
+ * Façade Organizer pour les charts ApexCharts.
+ * Gère la visibilité des séries (champs) via le contrat OrganizerState/OrganizerEvent.
  *
  * Pas de dépendance Angular/DOM : peut être instanciée dans un composant ou un service.
  *
  * Usage :
- *   readonly _viewFacade = new ChartViewFacade();
- *   _viewFacade.events$.subscribe(e => { computeEffectiveConfig(); });
- *   _viewFacade.update(view ?? {}, config);
+ *   readonly _organizerFacade = new ChartViewFacade();
+ *   _organizerFacade.events$.subscribe(e => { computeEffectiveConfig(); });
+ *   _organizerFacade.update(organizer ?? {}, config);
  *   getEffectiveProvider() → ChartProvider avec les flags visible appliqués.
  */
 export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = any> {
 
   // ── État
 
-  private _config: ViewConfig = {};
+  private _config: OrganizerConfig = {};
   private _provider: ChartProvider<X, Y> | null = null;
 
   /** Champs (séries) disponibles, déduits des noms statiques du provider. */
-  viewFields: ViewField[] = [];
+  viewFields: OrganizerFieldDef[] = [];
 
   /** Snapshot d'état courant : séries sélectionnées = visibles. */
-  readonly state: ViewState = {
+  readonly state: OrganizerState = {
     selectedFieldIds: [],
     groupByKey: null,
     dynamicSliceKeys: [],
@@ -36,7 +36,7 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
 
   // ── Événements
 
-  private readonly _events$ = new Subject<ViewEvent>();
+  private readonly _events$ = new Subject<OrganizerEvent>();
   readonly events$ = this._events$.asObservable();
 
   // ── Getters
@@ -48,13 +48,13 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
   // ── Mise à jour de la config
 
   /**
-   * Appelée à chaque changement de [config] ou [view] dans le composant parent.
+   * Appelée à chaque changement de [config] ou [organizer] dans le composant parent.
    * Synchronise les champs disponibles et préserve la visibilité courante.
    */
-  update(viewConfig: ViewConfig, provider: ChartProvider<X, Y>): void {
-    this._config = viewConfig ?? {};
+  update(organizerConfig: OrganizerConfig, provider: ChartProvider<X, Y>): void {
+    this._config = organizerConfig ?? {};
     this._provider = provider;
-    this.viewFields = viewFieldsFromChartSeries(provider?.series ?? []);
+    this.viewFields = organizerFieldDefsFromChartSeries(provider?.series ?? []);
 
     const existingIds = new Set(this.viewFields.map(f => f.id));
 
@@ -89,12 +89,12 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
 
   /**
    * Retourne le ChartProvider avec les flags `visible` appliqués selon l'état courant.
-   * Si View n'est pas activé, retourne le provider inchangé.
+   * Si Organizer n'est pas activé, retourne le provider inchangé.
    */
   getEffectiveProvider(): ChartProvider<X, Y> {
     if (!this._provider) return null as any;
     if (!this.enabled) return this._provider;
-    return applyViewStateToSeries(this._provider, this.state);
+    return applyOrganizerStateToSeries(this._provider, this.state);
   }
 
   // ── Destructor

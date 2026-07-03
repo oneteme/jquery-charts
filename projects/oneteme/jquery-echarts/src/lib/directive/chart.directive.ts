@@ -1,16 +1,4 @@
-import {
-  AfterViewInit,
-  Directive,
-  ElementRef,
-  EventEmitter,
-  inject,
-  Input,
-  NgZone,
-  OnChanges,
-  OnDestroy,
-  Output,
-  SimpleChanges,
-} from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, SimpleChanges } from '@angular/core';
 import { ChartProvider, ChartType, ChartView, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { asapScheduler } from 'rxjs';
 
@@ -19,25 +7,7 @@ import { EChartsOption, ChartCustomEvent, DEFAULT_LOADING_OPTION } from './utils
 import { applyCommonConfig, buildBaseOption, buildNoDataGraphic, buildTooltipOption } from './utils/chart-utils';
 import { resolveConfigurator } from './utils/config/chart-config-registry';
 
-/**
- * Directive principale du renderer ECharts.
- *
- * Orchestre le cycle de vie complet :
- *  1. Initialisation de l'instance ECharts après affichage DOM
- *  2. Mise à jour via `setOption` lors des changements Angular
- *  3. Gestion native loading / no-data via l'API ECharts
- *  4. Redimensionnement automatique via ResizeObserver
- *  5. Dispatch vers le bon configurateur via le registry
- */
-/** Actions synchronisables entre graphiques d'un même groupe. */
 export type GroupSyncAction = 'datazoom' | 'tooltip';
-
-/**
- * Mode de synchronisation du groupe :
- * - `'all'` : synchronisation complète via `echarts.connect()` (zoom + tooltip + légende)
- * - `'datazoom'` | `'tooltip'` | `Array<...>` : synchronisation manuelle ciblée,
- *   sans impact sur la sélection de légende des autres graphiques.
- */
 export type GroupSyncMode = 'all' | GroupSyncAction | GroupSyncAction[];
 
 @Directive({
@@ -65,53 +35,20 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   @Input({ required: true }) set type(type: ChartType) {
     this._type = type;
   }
-
   @Input({ required: true }) set config(config: ChartProvider<X, Y>) {
     this._config = config;
   }
-
   @Input({ required: true }) data: any[];
-
   @Input() set isLoading(loading: boolean) {
     this._isLoading = loading;
     this._applyLoadingState();
   }
-
   @Input() debug = false;
-
   @Input() theme: string | null = null;
-
-  /**
-   * Moteur de rendu ECharts.
-   * - `'svg'` (défaut) : rendu vectoriel, meilleure qualité visuelle, export SVG natif
-   * - `'canvas'` : rendu raster, meilleures performances sur grands volumes de données
-   *
-   * Note : le renderer ne peut pas être changé à chaud après initialisation.
-   * Un changement de valeur après le premier rendu n'aura aucun effet.
-   */
   @Input() renderer: 'svg' | 'canvas' = 'svg';
-
-  /** Message affiché pendant le chargement. Peut être surchargé par l'utilisateur. */
   @Input() loadingLabel = 'Chargement des données...';
-
-  /** Message affiché quand aucune donnée n'est disponible. Peut être surchargé. */
   @Input() noDataLabel = 'Aucune donnée';
-
-  /**
-   * Groupe de synchronisation.
-   * Peut aussi être défini via `config.group`.
-   * L'input HTML a priorité sur la config.
-   */
   @Input() group: string | null = null;
-
-  /**
-   * Définit ce qui est synchronisé entre les graphiques du groupe.
-   * Peut aussi être défini via `config.groupSync`.
-   * - `'all'` (défaut) : synchronisation complète via `echarts.connect()` — zoom, tooltip ET légende.
-   * - `'datazoom'` : seul le zoom est synchronisé (légende indépendante par graphique).
-   * - `'tooltip'` : seul le crosshair/tooltip est synchronisé.
-   * - `['datazoom', 'tooltip']` : zoom + tooltip synchronisés, légende indépendante.
-   */
   @Input() groupSync: GroupSyncMode | null = null;
 
   private get _group(): string | null {
@@ -124,8 +61,6 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
   @Output() chartClick = new EventEmitter<any>();
-
-  // ─── Cycle de vie Angular ────────────────────────────────────────────────
 
   ngAfterViewInit(): void {
     this.ngZone.runOutsideAngular(() => {
@@ -171,7 +106,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     }
   }
 
-  // ─── Initialisation ECharts ───────────────────────────────────────────────
+  // Init
 
   private _initChart(): void {
     if (this._chartInstance) return;
@@ -277,7 +212,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     this._resizeObserver.observe(dom);
   }
 
-  // ─── Rendu ────────────────────────────────────────────────────────────────
+  // Rendu
 
   private _render(changes?: SimpleChanges): void {
     if (!this._chartInstance || !this._config || !this._type) return;
@@ -296,14 +231,10 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
     try {
       const option = this._buildFullOption();
-      // Efface le graphic "aucune donnée" uniquement si l'utilisateur n'a pas défini un graphic custom.
-      // Sans ce guard, graphic:[] écrasait systématiquement les graphics définis via config.options.graphic.
       if (!(option as any).graphic) {
         (option as any).graphic = [];
       }
       if (this.debug) console.log('[jquery-echarts] setOption', option);
-      // notMerge: true uniquement lors du 1er rendu (changes absent) ou si le type de chart change.
-      // Pour les mises à jour de données/config on préfère replaceMerge pour une transition animée (morphing).
       const isInitialRender = !changes;
       const isTypeChange = !!changes?.['type'];
       if (isInitialRender || isTypeChange) {
@@ -318,31 +249,20 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   private _buildFullOption(): EChartsOption {
     const configurator = resolveConfigurator(this._type);
-
-    // 1. Construit le CommonChart via le configurateur (buildChart ou buildSingleSerieChart)
     const commonChart = configurator.buildChartData(this.data, this._config, this._type);
-
-    // 2. Option de base : title, legend, grid, toolbox
     const base = buildBaseOption(this._config);
-
-    // 3. Option spécifique au type
     const typeSpecific = configurator.buildOption(commonChart, this._type, this._config);
-
-    // 4. Surcharge tooltip : trigger correct + style professionnel conservé
     const tooltipOverride: EChartsOption = {
       tooltip: buildTooltipOption(configurator.tooltipTrigger, this.el.nativeElement),
     };
-
-    // 5. Fusion dans l'ordre : base ← typeSpecific ← tooltipOverride ← options user
     const merged = applyCommonConfig(
       { ...base, ...typeSpecific, ...tooltipOverride },
       this._config
     );
-
     return merged;
   }
 
-  // ─── Loading / No-data ───────────────────────────────────────────────────
+  // Loading / No-data
 
   private _applyLoadingState(): void {
     if (!this._chartInstance) return;
@@ -361,5 +281,37 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       { graphic: buildNoDataGraphic(this.noDataLabel), series: [] },
       { notMerge: true }
     );
+  }
+
+  // Export
+
+  exportImage(fileName = 'chart', type?: 'png' | 'jpeg' | 'svg', pixelRatio = 2): void {
+    if (!this._chartInstance) return;
+    // Avec le renderer SVG, getDataURL ne peut pas produire un PNG valide.
+    // On choisit automatiquement le bon format selon le renderer actif.
+    const effectiveType = type ?? (this.renderer === 'svg' ? 'svg' : 'png');
+    const url = this._chartInstance.getDataURL({ type: effectiveType, pixelRatio, backgroundColor: '#fff' });
+    const link = document.createElement('a');
+    link.download = `${fileName}.${effectiveType}`;
+    link.href = url;
+    link.click();
+  }
+
+  exportData(fileName = 'data', separator = ';'): void {
+    if (!this.data?.length) return;
+    const keys = Object.keys(this.data[0]);
+    const rows = this.data.map(row => keys.map(k => {
+      const v = row[k];
+      const s = v == null ? '' : String(v);
+      return s.includes(separator) || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g, '""')}"` : s;
+    }).join(separator));
+    const csv = [keys.join(separator), ...rows].join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `${fileName}.csv`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 }
