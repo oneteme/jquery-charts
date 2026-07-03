@@ -30,7 +30,7 @@
     "cb4": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-echarts\"",
     "b5": "ng build @oneteme/jquery-organizer",
     "cb5": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-organizer\"",
-    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build \"@oneteme/jquery-highcharts\" && ng build \"@oneteme/jquery-table\" && ng build \"@oneteme/jquery-echarts\" && ng build \"@oneteme/jquery-organizer\"",
+    "build": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-apexcharts\" && ng build \"@oneteme/jquery-highcharts\" && ng build \"@oneteme/jquery-organizer\" && ng build \"@oneteme/jquery-table\" && ng build \"@oneteme/jquery-echarts\"",
     "watch-core": "ng build \"@oneteme/jquery-core\" --watch --configuration development",
     "watch-b1": "ng build \"@oneteme/jquery-highcharts\" --watch --configuration development",
     "watch-b2": "ng build \"@oneteme/jquery-apexcharts\" --watch --configuration development",
