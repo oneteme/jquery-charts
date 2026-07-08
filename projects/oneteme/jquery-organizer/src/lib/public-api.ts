@@ -22,15 +22,19 @@ export {
 export { OrganizerMenuModel } from './models/organizer-menu.model';
 
 export {
+  buildOrganizerChartBinding,
   chartConfigToOrganizer,
   chartConfigToState,
   chartConfigToUnifiedState,
   applyOrganizerEventToChart,
+  handleOrganizerChartEvent,
   resolveYUnit,
   OrganizerChartItem,
   OrganizerChartSection,
   OrganizerChartConfig,
   OrganizerChartBridgeOptions,
+  OrganizerChartBinding,
+  OrganizerChartEventResult,
 } from './models/organizer-chart-adapter';
 
 export { buildYFields, resolveYKey, OrganizerYIndicator } from './models/organizer-utils';
