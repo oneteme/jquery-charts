@@ -7,7 +7,11 @@ Bibliothèque Angular autonome pour la gestion décentralisée des configuration
 - **Adapters** — Fonctions de conversion ChartConfig ↔ OrganizerConfig avec auto-détection d'unités
 - **Facade** — Gestion centralisée d'état pour les champs visibles, regroupements, filtres
 
-**v0.0.43+**: Support complet pour **UnitConfig avec auto-scaling intelligent** des unités Y (ms → µs → s, etc.)
+**Fonctionnalités principales** :
+- **UnitConfig avec auto-scaling intelligent** des unités Y (ms → µs → s, etc.)
+- **Template normalization** avec validation permissive des états et auto-détection de templates
+- **Slice loading unification** dans le composant organizer (Promise/Observable dual-support)
+- **Chart binding facade** pour simplifier l'intégration ChartConfig ↔ Organizer (50% réduction de boilerplate)
 
 ---
 
@@ -251,31 +255,87 @@ Valeur        Format         Raison
 
 ## Chart Adapter
 
-Les fonctions `organizer-chart-adapter.ts` convertissent entre `ChartConfig` (métier) et `OrganizerConfig` (UI) :
+Les fonctions `organizer-chart-adapter.ts` fournissent une façade complète pour l'intégration ChartConfig ↔ OrganizerConfig :
+
+### Normalisation d'État (Étape 1)
 
 ```typescript
-// ChartConfig → OrganizerConfig
+// Valide permissivement un état contre une config
+export function normalizeOrganizerState(
+  state: OrganizerState,
+  config: OrganizerConfig
+): OrganizerState
+// - Filtre les références invalides (selectedY, selectedGroupBy, selectedSlices)
+// - Maintient les fallbacks si nécessaire
+// - Auto-détecte le template matching l'état final
+
+// Applique un template et recalcule le template actif
+export function normalizeTemplateToState(
+  template: OrganizerTemplate,
+  currentState: OrganizerState,
+  config: OrganizerConfig
+): OrganizerState
+// - Applique les champs du template (xField, yField, groupBy, etc.)
+// - Recalcule selectedTemplate en matchant l'état final contre tous les templates
+// - Gère les fallbacks si le template n'est pas complet
+
+// Trouve le template matching l'état courant
+export function resolveMatchingTemplateId(
+  templates: OrganizerTemplate[],
+  state: OrganizerState,
+  config: OrganizerConfig
+): string | undefined
+// - Itère sur tous les templates et retourne le premier match
+// - Utilisé pour auto-set selectedTemplate lors de changements d'état
+```
+
+### Façade de Binding (Étape 3)
+
+```typescript
+// Interface pour les callbacks
+export interface OrganizerChartBridgeOptions {
+  onFetchSliceData?: (filterKey: string) => Observable<any[]> | Promise<any[]>;
+  onExportVisual?: () => void;
+  onExportData?: () => void;
+  switchView?: {
+    currentView: 'chart' | 'table';
+    onSwitch: (newView: 'chart' | 'table') => void;
+  };
+}
+
+// Construit un binding prêt à utiliser
+export function buildOrganizerChartBinding(
+  chartConfig: any,
+  options: OrganizerChartBridgeOptions
+): OrganizerChartBinding
+// Retourne: { config: OrganizerConfig, state: OrganizerState }
+// - Appelle chartConfigToOrganizer + normalizeOrganizerState
+// - Injecte les options (callbacks, export, etc.)
+
+// Gestion unifiée des événements organizer
+export function handleOrganizerChartEvent(
+  event: OrganizerButtonEvent,
+  chartConfig: any,
+  currentBinding: OrganizerChartBinding,
+  options: OrganizerChartBridgeOptions
+): { binding: OrganizerChartBinding, shouldRefetch: boolean }
+// - Applique l'événement au ChartConfig
+// - Reconstruit le binding
+// - Retourne shouldRefetch = true si ySelected ou templateSelected
+
+// Utilitaires (existants, maintenant intégrés à la façade)
 export function chartConfigToOrganizer(
   chartConfig: any,
   options?: OrganizerChartBridgeOptions
 ): OrganizerConfig
 
-// ChartConfig → OrganizerState
 export function chartConfigToState(chartConfig: any): OrganizerState
 
-// ChartConfig → Événement + État unifié
-export function chartConfigToUnifiedState(
-  chartConfig: any,
-  viewMode?: 'chart' | 'table'
-): OrganizerUnifiedState
-
-// Applique un OrganizerEvent à ChartConfig
 export function applyOrganizerEventToChart(
   event: OrganizerButtonEvent,
   chartConfig: any
 ): void
 
-// Résout l'unité Y pour l'événement
 export function resolveYUnit(
   chartConfig: any,
   selectedY?: string,
@@ -287,17 +347,12 @@ export function resolveYUnit(
 
 ## Intégration avec jquery-echarts
 
-### Pattern 3-étapes
+### Pattern Simplifié avec Binding Facade (v0.0.44+) ⭐ **Recommandé**
 
-1. **Initialisation** : Construire OrganizerConfig depuis ChartConfig
-2. **Réaction aux événements** : Appliquer OrganizerEvent à ChartConfig
-3. **Refetch** : Recharger les données avec la nouvelle config
-
-### Exemple Complet
+La **façade de binding** unifie les 3 étapes et réduit le boilerplate de ~50% :
 
 ```typescript
-import { OrganizerButtonEvent, OrganizerSliceState } from '@oneteme/jquery-organizer';
-import { chartConfigToOrganizer, chartConfigToState, applyOrganizerEventToChart } from '@oneteme/jquery-organizer';
+import { buildOrganizerChartBinding, handleOrganizerChartEvent, OrganizerChartBridgeOptions } from '@oneteme/jquery-organizer';
 
 @Component({
   selector: 'app-kpi',
@@ -312,49 +367,98 @@ import { chartConfigToOrganizer, chartConfigToState, applyOrganizerEventToChart 
   `
 })
 export class KpiComponent {
-  $latency = {
-    config: {},
-    state: {},
-    chartConfig: REST_LATENCY_CHART_CONFIG('day'),
-    chartProvider: {},
-    data: []
-  };
+  $latency: any; // { config, state, chartProvider, data }
+  private $latencyChartConfig = REST_LATENCY_CHART_CONFIG('day');
+  @ViewChild('latencyChart') private _latencyChart: ChartComponent<any, any>;
 
   ngOnInit() {
-    // Initialisation
-    this.$latency.config = chartConfigToOrganizer(this.$latency.chartConfig);
-    this.$latency.state = chartConfigToState(this.$latency.chartConfig);
+    // Initialisation unifiée via façade
+    this.$latency = buildOrganizerChartBinding(
+      this.$latencyChartConfig,
+      this._latencyOrganizerOptions()
+    );
     this._fetchLatency();
   }
 
   onLatencyViewChange(event: OrganizerButtonEvent): void {
-    // Appliquer l'événement → met à jour ChartConfig
-    applyOrganizerEventToChart(event, this.$latency.chartConfig);
+    // Traitement événement + calcul intelligent du refetch
+    const result = handleOrganizerChartEvent(
+      event,
+      this.$latencyChartConfig,
+      this.$latency,
+      this._latencyOrganizerOptions()
+    );
+    this.$latency = result.binding;
     
-    // Mettre à jour la UI du button
-    this.$latency.state = event.state;
-    
-    // Refetch
-    this._fetchLatency();
+    // Refetch uniquement si nécessaire (ySelected, templateSelected, etc.)
+    if (result.shouldRefetch) {
+      this._fetchLatency();
+    }
+  }
+
+  private _latencyOrganizerOptions(): OrganizerChartBridgeOptions {
+    return {
+      onFetchSliceData: (filterKey: string) => this._fetchSliceData(filterKey),
+      onExportVisual: () => this._latencyChart?.exportImage('latence'),
+      onExportData: () => this._latencyChart?.exportData('latence')
+    };
   }
 
   private _fetchLatency(): void {
-    const cfg = this.$latency.chartConfig;
+    const cfg = this.$latencyChartConfig;
     const ind = cfg.indicators.items.find(i => i.selected);
+    const grp = cfg.groups.items.find(g => g.selected);
     
-    this._httpService.getLatency({ indicator: ind, ... }).subscribe(data => {
-      const series = buildSeries(cfg.series.items, ind, cfg.groups.items[0], null, data);
+    this._httpService.getLatency({ indicator: ind, group: grp }).subscribe(data => {
+      const series = buildSeries(cfg.series.items, ind, grp, null, data);
       
-      // Injection de l'unité (simple string ou UnitConfig)
       this.$latency.chartProvider = {
         ...this.BASE_CHART_PROVIDER,
         series,
-        yUnit: ind?.unit  // ← string | UnitConfig
+        xtitle: grp?.menu?.label || 'Date',  // Titre X dynamique
+        yUnit: ind?.unit  // ← string | UnitConfig (auto-scaling)
       };
       
       this.$latency.data = data;
     });
   }
+}
+```
+
+### Architecture des 3 Étapes
+
+**Étape 1: Normalisation d'État**
+- `normalizeOrganizerState()` valide les références et auto-détecte le template
+- Utilisée automatiquement par `buildOrganizerChartBinding()`
+- Stratégie permissive : filtre les références invalides sans levée d'exception
+
+**Étape 2: Chargement des Slices (organizer-button.component.ts)**
+- Méthode `syncSliceState()` gère Promise et Observable uniformément
+- Unifie les chemins manuels (onSliceClick) et template-driven (onTemplateSelect)
+- Émet sliceStateChange pour mise à jour du binding côté app
+
+**Étape 3: Façade de Binding**
+- `buildOrganizerChartBinding()` : Construction du binding initial
+- `handleOrganizerChartEvent()` : Traitement unifié avec retour du shouldRefetch
+- Encapsule applyOrganizerEventToChart + normalisation + refetch logic
+
+### Pattern Détaillé (Utilitaires bas-niveau)
+
+Pour des besoins avancés ou migration progressive :
+
+```typescript
+import { chartConfigToOrganizer, chartConfigToState, applyOrganizerEventToChart } from '@oneteme/jquery-organizer';
+
+onLatencyViewChange(event: OrganizerButtonEvent): void {
+  // Étape 1: Appliquer l'événement au ChartConfig
+  applyOrganizerEventToChart(event, this.$latencyChartConfig);
+  
+  // Étape 2: Recalculer l'état (avec normalisation)
+  this.$latency.config = chartConfigToOrganizer(this.$latencyChartConfig);
+  this.$latency.state = chartConfigToState(this.$latencyChartConfig);
+  
+  // Étape 3: Refetch
+  this._fetchLatency();
 }
 ```
 
@@ -397,11 +501,22 @@ export { OrganizerButtonModule } from './organizer-button.module';
 export { SlicePanelComponent } from './slice-panel.component';
 
 // Interfaces
-export { OrganizerConfig, OrganizerState, OrganizerButtonEvent, OrganizerSliceState } from './organizer-config.interface';
+export { OrganizerConfig, OrganizerState, OrganizerButtonEvent, OrganizerSliceState, OrganizerChartBinding } from './organizer-config.interface';
+export { OrganizerChartBridgeOptions, OrganizerTemplate } from './organizer-chart-adapter';
 export { SliceConfig, SliceColumnDef, SliceCategory } from './slice-panel.model';
 
-// Adapters
+// Adapters & Façade (v0.0.44+)
 export {
+  // Binding Facade (recommandé)
+  buildOrganizerChartBinding,
+  handleOrganizerChartEvent,
+  
+  // Normalisation d'état
+  normalizeOrganizerState,
+  normalizeTemplateToState,
+  resolveMatchingTemplateId,
+  
+  // Utilitaires bas-niveau
   chartConfigToOrganizer,
   chartConfigToState,
   chartConfigToUnifiedState,
@@ -415,22 +530,6 @@ export { buildYFields, resolveYKey } from './organizer-utils';
 // Facade
 export { OrganizerFacade } from './organizer-facade/organizer-facade';
 ```
-
----
-
-## Changelog
-
-### v0.0.43+ (2026-07-03)
-- Ajout du support **UnitConfig** avec auto-scaling intelligent
-- Exports des adapters (chartConfigToOrganizer, resolveYUnit, etc.)
-- Renommage des propriétés OrganizerFacade (Column → Field) dans jquery-table
-- Support des `ScaleConfig` pour conversion dynamique d'unités
-- Formatage adaptatif de la précision (smartFormatY) en chart-utils
-- Intégration complète avec REST_LATENCY_CHART_CONFIG
-
-### v0.0.42
-- Refactoring des exports publics
-- Consolidation de SlicePanelComponent
 
 ---
 

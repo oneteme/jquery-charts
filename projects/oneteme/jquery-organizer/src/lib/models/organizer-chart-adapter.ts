@@ -1,5 +1,5 @@
 ﻿import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField } from './organizer-config.interface';
-import { buildYFields, resolveYKey } from './organizer-utils';
+import { buildYFields, normalizeOrganizerState, resolveMatchingTemplateId, resolveYKey } from './organizer-utils';
 import { UnitConfig } from '@oneteme/jquery-core';
 
 export interface OrganizerChartItem {
@@ -38,6 +38,16 @@ export interface OrganizerChartBridgeOptions {
   switchView?: OrganizerConfig['switchView'];
 }
 
+export interface OrganizerChartBinding {
+  config: OrganizerConfig;
+  state: OrganizerState;
+}
+
+export interface OrganizerChartEventResult {
+  binding: OrganizerChartBinding;
+  shouldRefetch: boolean;
+}
+
 export function chartConfigToOrganizer(
   chartConfig: any,
   options: OrganizerChartBridgeOptions = {}
@@ -70,6 +80,7 @@ export function chartConfigToOrganizer(
     yFields,
     groups: mergedGroupFields,
     slices: (chartConfig.filters?.items || []).map(f => ({ id: f.key, label: f.menu.label || f.key }) as OrganizerViewSlice),
+    templates: chartConfig.templates,
     showReset: false,
     onFetchSliceData,
     showExport: !!(onExportVisual || onExportData),
@@ -86,12 +97,24 @@ export function chartConfigToState(chartConfig: any): OrganizerState {
   const activeGroup = chartConfig.groups?.items?.find(g => g.selected);
   const activeSlices = (chartConfig.filters?.items || []).filter(f => f.selected);
   const indicatorGroup = activeIndicator?.group;
-  return {
+  const state = {
     selectedX: activeGroup?.key,
     selectedY: indicatorGroup ?? activeIndicator?.key,
     selectedYAggregate: indicatorGroup ? activeIndicator?.key : undefined,
     selectedGroupBy: activeStack?.key,
     selectedSlices: activeSlices.map(f => f.key),
+  };
+  const organizerConfig = chartConfigToOrganizer(chartConfig);
+  return normalizeOrganizerState(state, organizerConfig);
+}
+
+export function buildOrganizerChartBinding(
+  chartConfig: any,
+  options: OrganizerChartBridgeOptions = {}
+): OrganizerChartBinding {
+  return {
+    config: chartConfigToOrganizer(chartConfig, options),
+    state: chartConfigToState(chartConfig)
   };
 }
 
@@ -123,6 +146,40 @@ export function applyOrganizerEventToChart(
   _applyGroupBySelection(effectiveGroupBy, chartConfig);
   if (state.selectedSlices !== undefined) _applySliceSelection(state.selectedSlices, chartConfig);
   event.resolvedYUnit = resolveYUnit(chartConfig, event.state.selectedY, event.state.selectedYAggregate);
+}
+
+export function handleOrganizerChartEvent(
+  event: OrganizerButtonEvent,
+  chartConfig: any,
+  currentBinding: OrganizerChartBinding | undefined,
+  options: OrganizerChartBridgeOptions = {}
+): OrganizerChartEventResult {
+  if (event.type === 'viewSwitched') {
+    return {
+      binding: {
+        config: chartConfigToOrganizer(chartConfig, options),
+        state: { ...event.state }
+      },
+      shouldRefetch: false
+    };
+  }
+
+  applyOrganizerEventToChart(event, chartConfig);
+
+  if (event.type === 'ySelected' || event.type === 'templateSelected') {
+    return {
+      binding: buildOrganizerChartBinding(chartConfig, options),
+      shouldRefetch: true
+    };
+  }
+
+  return {
+    binding: {
+      config: currentBinding?.config ?? chartConfigToOrganizer(chartConfig, options),
+      state: event.state
+    },
+    shouldRefetch: event.type !== 'sliceSelected'
+  };
 }
 
 export function resolveYUnit(
@@ -222,3 +279,4 @@ function _applyGroupBySelection(effectiveGroupBy: string | undefined, chartConfi
 function _applySliceSelection(selectedSlices: string[], chartConfig: OrganizerChartConfig): void {
   chartConfig.filters?.items?.forEach(f => { f.selected = selectedSlices.includes(f.key); });
 }
+

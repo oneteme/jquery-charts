@@ -94,7 +94,7 @@
 
     <!-- Bloc X -->
     <div class="organizer-champs-block" *ngIf="config.xFields?.length">
-      <span class="organizer-champs-block-title">X — Axe horizontal</span>
+      <span class="organizer-champs-block-title">Axe horizontal — X</span>
       <button type="button" class="organizer-submenu-item"
         *ngFor="let xField of config.xFields"
         [class.active]="state?.selectedX === xField.id"
@@ -109,7 +109,7 @@
 
     <!-- Bloc Y -->
     <div class="organizer-champs-block" *ngIf="config.yFields?.length">
-      <span class="organizer-champs-block-title">Y — Axe vertical</span>
+      <span class="organizer-champs-block-title">Axe vertical — Y</span>
       <ng-container *ngFor="let yField of config.yFields">
 
         <!-- Y simple (Count sans agrégat ni stack) -->
@@ -214,6 +214,7 @@
     <button type="button" class="organizer-submenu-item"
       *ngFor="let tmpl of config.templates"
       [class.active]="state?.selectedTemplate === tmpl.id"
+      [title]="tmpl.description || ''"
       (mousedown)="onTemplateSelect(tmpl.id)">
       <span class="organizer-submenu-check">{{ state?.selectedTemplate === tmpl.id ? '✓' : '' }}</span>
       <mat-icon *ngIf="tmpl.icon" class="organizer-submenu-icon">{{ tmpl.icon }}</mat-icon>

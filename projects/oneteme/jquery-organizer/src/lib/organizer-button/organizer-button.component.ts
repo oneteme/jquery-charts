@@ -8,6 +8,8 @@ import { Subject, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState } from '../models';
+import { normalizeOrganizerState, resolveMatchingTemplateId } from '../models/organizer-utils';
+import { TemplateManager } from './template-manager.utility';
 
 @Component({
   standalone: true,
@@ -87,15 +89,14 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onTemplateSelect(templateId: string): void {
-    const t = this.config.templates?.find(tmpl => tmpl.id === templateId);
-    if (!t) return;
-    this.emitChange('templateSelected', {
-      selectedTemplate: templateId,
-      selectedX: t.xField,
-      selectedY: t.yField,
-      selectedYAggregate: t.yAggregate,
-      selectedGroupBy: t.groupBy
-    });
+    if (!this.config.templates?.length) return;
+
+    const template = this.config.templates?.find(t => t.id === templateId);
+    if (!template) return;
+
+    const newState = TemplateManager.applyTemplate(template, this.state, this.config);
+    this.emitChange('templateSelected', newState);
+    this.syncSliceState(newState.selectedSlices);
   }
 
   onSliceClick(sliceId?: string): void {
@@ -112,22 +113,40 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     }
 
     if (updated.length === 0 || !sliceId || !this.config.onFetchSliceData) {
-      if (this.config.onFetchSliceData) {
-        this.sliceStateChange.emit(null);
-      }
+      this.sliceStateChange.emit(null);
       this.emitChange('sliceSelected', { selectedSlices: updated });
       return;
     }
 
+    this.syncSliceState(updated, () => {
+      this.emitChange('sliceSelected', { selectedSlices: updated });
+    });
+  }
+
+  private syncSliceState(selectedSlices: string[] | undefined, onLoaded?: () => void): void {
+    const sliceId = selectedSlices?.[0];
+    if (!sliceId || !this.config.onFetchSliceData) {
+      this.sliceStateChange.emit(null);
+      onLoaded?.();
+      return;
+    }
+
     const slice = this.config.slices?.find(s => s.id === sliceId);
+    if (!slice) {
+      this.sliceStateChange.emit(null);
+      onLoaded?.();
+      return;
+    }
+
     const result = this.config.onFetchSliceData(sliceId);
     const handleData = (tasks: any[]) => {
       this.sliceStateChange.emit({
-        sliceConfigs: [{ title: slice?.label ?? sliceId, columnKey: sliceId }],
+        sliceConfigs: [{ title: slice.label ?? sliceId, columnKey: sliceId }],
         tasks
       });
-      this.emitChange('sliceSelected', { selectedSlices: updated });
+      onLoaded?.();
     };
+
     if (isObservable(result)) {
       result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData });
     } else {
@@ -268,10 +287,16 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     return this.state?.selectedY === yFieldId && this.state?.selectedYAggregate === aggregateId;
   }
 
-  private emitChange(type: OrganizerButtonEvent['type'], stateUpdate: Partial<OrganizerState>): void {
+  private emitChange(type: OrganizerButtonEvent['type'], stateUpdate: Partial<OrganizerState> | OrganizerState): void {
+    const isFullState = 'selectedX' in stateUpdate && 'selectedTemplate' in stateUpdate;
+    const rawState = isFullState ? (stateUpdate as OrganizerState) : { ...this.state, ...stateUpdate };
+    const normalizedState = normalizeOrganizerState(rawState, this.config);
     const event: OrganizerButtonEvent = {
       type,
-      state: { ...this.state, ...stateUpdate },
+      state: {
+        ...normalizedState,
+        selectedTemplate: resolveMatchingTemplateId(this.config.templates, normalizedState, this.config)
+      },
       source: 'user'
     };
     this.viewChange.emit(event);

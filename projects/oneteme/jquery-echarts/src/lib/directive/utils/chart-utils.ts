@@ -131,13 +131,6 @@ export function applyCommonConfig(
       displayUnit = scaleInfo.unit;
     }
 
-    if (Array.isArray(result.series)) {
-      result.series = result.series.map((s: any) => ({
-        ...s,
-        name: s.name ? `${s.name}\u00a0[${displayUnit}]` : s.name,
-      }));
-    }
-
     if (!result.yAxis) result.yAxis = {};
     if (!result.yAxis.axisLabel) result.yAxis.axisLabel = {};
 
@@ -161,7 +154,7 @@ export function applyCommonConfig(
         if (scaleInfo?.formatter) {
           return scaleInfo.formatter(scaled, displayUnit);
         }
-        return _smartFormatY(scaled);
+        return `${_smartFormatY(scaled)}\u00a0${displayUnit}`;
       };
     }
   }

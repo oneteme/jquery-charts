@@ -49,6 +49,7 @@ export interface OrganizerTemplate {
   yField?: string;
   yAggregate?: string;
   groupBy?: string;
+  selectedSlices?: string[];
 }
 
 export interface OrganizerConfig {
