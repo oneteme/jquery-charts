@@ -14,7 +14,7 @@
   </a>
 </p>
 <p align="center">
-  A modular chart and table library for Angular, providing a unified configuration API across multiple rendering engines.
+  A modular chart and table library for Angular, providing a unified configuration API across multiple rendering engines, with advanced UI controls for data exploration and filtering.
 </p>
 
 ---
@@ -40,8 +40,35 @@
 | [`@oneteme/jquery-highcharts`](https://www.npmjs.com/package/@oneteme/jquery-highcharts) | Renderer -- [Highcharts](https://www.highcharts.com/) *(commercial license)* | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-highcharts.svg)](https://www.npmjs.com/package/@oneteme/jquery-highcharts) |
 | [`@oneteme/jquery-echarts`](https://www.npmjs.com/package/@oneteme/jquery-echarts) | Renderer -- [Apache ECharts](https://echarts.apache.org/) *(beta)* | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-echarts/beta.svg)](https://www.npmjs.com/package/@oneteme/jquery-echarts) |
 | [`@oneteme/jquery-table`](https://www.npmjs.com/package/@oneteme/jquery-table) | Declarative table built on Angular Material | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-table.svg)](https://www.npmjs.com/package/@oneteme/jquery-table) |
+| [`@oneteme/jquery-organizer`](projects/oneteme/jquery-organizer) | UI controls for data exploration: indicator/group/filter selection with auto-scaling units | [![npm](https://img.shields.io/npm/v/@oneteme/jquery-organizer.svg)](https://www.npmjs.com/package/@oneteme/jquery-organizer) |
 
 All renderers share the same `@oneteme/jquery-core` configuration API. Switching from one renderer to another requires only changing the imported package.
+
+---
+
+## Key Features
+
+### Unified Configuration API
+- Single configuration model works across all chart renderers
+- Easily switch between ApexCharts, Highcharts, or ECharts without code changes
+
+### Advanced Data Exploration
+The **jquery-organizer** library provides:
+- **OrganizerButtonComponent** — Configurable UI controls for selecting indicators, groupings, and filters
+- **SlicePanelComponent** — Collapsible sidebar for category-based filtering
+- **Binding Facade** — Simplified integration pattern that reduces boilerplate by ~50%
+- **Template Normalization** — Automatic state validation and template auto-detection
+- **Slice Loading Unification** — Unified Promise/Observable support for filter data loading
+
+### Smart Unit Auto-Scaling
+- Automatic unit conversion and formatting for time and size metrics
+- Intelligent precision handling based on data magnitude
+- Example: latency data automatically formats as µs → ms → s based on values
+
+### Declarative Table Component
+- Built on Angular Material with jquery-table
+- Seamless integration with organizer controls
+- Support for grouping, filtering, and sorting
 
 ---
 
@@ -61,6 +88,9 @@ npm install @oneteme/jquery-core @oneteme/jquery-highcharts highcharts
 
 # Table component
 npm install @oneteme/jquery-core @oneteme/jquery-table
+
+# UI controls for data exploration (organizer)
+npm install @oneteme/jquery-core @oneteme/jquery-organizer
 ```
 
 ---
@@ -82,11 +112,11 @@ npm run start
 Build a specific library:
 
 ```bash
-npm run b1   # jquery-core
+npm run b1   # jquery-highcharts
 npm run b2   # jquery-apexcharts
-npm run b3   # jquery-highcharts
+npm run b3   # jquery-table
 npm run b4   # jquery-echarts
-npm run b5   # jquery-table
+npm run b5   # jquery-organizer
 ```
 
 Build all libraries and start the application in watch mode:
@@ -108,6 +138,7 @@ jquery-charts/
 |       +-- jquery-highcharts/   # Highcharts renderer
 |       +-- jquery-echarts/      # Apache ECharts renderer (beta)
 |       +-- jquery-table/        # Angular Material table component
+|       +-- jquery-organizer/    # UI controls for data exploration & filtering
 |
 +-- src/                         # Demo application
     +-- app/

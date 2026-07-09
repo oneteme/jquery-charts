@@ -131,8 +131,6 @@ export function applyCommonConfig(
       displayUnit = scaleInfo.unit;
     }
 
-    // unit NOT added to series name (legend) — only shown in tooltip value
-
     if (!result.yAxis) result.yAxis = {};
     if (!result.yAxis.axisLabel) result.yAxis.axisLabel = {};
 
