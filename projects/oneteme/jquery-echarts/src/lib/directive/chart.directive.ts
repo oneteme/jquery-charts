@@ -234,6 +234,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       if (!(option as any).graphic) {
         (option as any).graphic = [];
       }
+
       if (this.debug) console.log('[jquery-echarts] setOption', option);
       const isInitialRender = !changes;
       const isTypeChange = !!changes?.['type'];

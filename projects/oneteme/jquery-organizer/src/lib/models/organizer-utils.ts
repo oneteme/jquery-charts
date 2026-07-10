@@ -104,23 +104,39 @@ export function resolveMatchingTemplateId(
   })?.id;
 }
 
+function normalizeStateCore(
+  selectedX: string | undefined,
+  selectedY: string | undefined,
+  selectedYAggregate: string | undefined,
+  selectedGroupBy: string | undefined,
+  selectedSlices: string[] | undefined,
+  config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices'>,
+  originalState?: OrganizerState
+): OrganizerState {
+  const normalizedY = normalizeYSelection(selectedY, selectedYAggregate, config.yFields, originalState);
+  return {
+    selectedX: hasOption(config.xFields, selectedX) ? selectedX : undefined,
+    selectedY: normalizedY.selectedY,
+    selectedYAggregate: normalizedY.selectedYAggregate,
+    selectedGroupBy: hasOption(config.groups, selectedGroupBy) ? selectedGroupBy : undefined,
+    selectedSlices: (selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId)),
+  };
+}
+
 function normalizeTemplateToComparableState(
   template: OrganizerTemplate,
   baseState: OrganizerState,
   config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
 ): OrganizerState {
-  const normalizedY = normalizeYSelection(template.yField, template.yAggregate, config.yFields, baseState);
-  return {
-    ...baseState,
-    selectedX: hasOption(config.xFields, template.xField) ? template.xField : baseState.selectedX,
-    selectedY: normalizedY.selectedY,
-    selectedYAggregate: normalizedY.selectedYAggregate,
-    selectedGroupBy: hasOption(config.groups, template.groupBy) ? template.groupBy : baseState.selectedGroupBy,
-    selectedSlices: template.selectedSlices
-      ? template.selectedSlices.filter(sliceId => hasOption(config.slices, sliceId))
-      : (baseState.selectedSlices || []),
-    selectedTemplate: undefined,
-  };
+  return normalizeStateCore(
+    template.xField,
+    template.yField,
+    template.yAggregate,
+    template.groupBy,
+    template.selectedSlices,
+    config,
+    baseState
+  );
 }
 
 function normalizeStateWithoutTemplate(
@@ -128,16 +144,15 @@ function normalizeStateWithoutTemplate(
   config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
 ): OrganizerState {
   const base = state || {};
-  const normalizedY = normalizeYSelection(base.selectedY, base.selectedYAggregate, config.yFields);
-  return {
-    ...base,
-    selectedX: hasOption(config.xFields, base.selectedX) ? base.selectedX : undefined,
-    selectedY: normalizedY.selectedY,
-    selectedYAggregate: normalizedY.selectedYAggregate,
-    selectedGroupBy: hasOption(config.groups, base.selectedGroupBy) ? base.selectedGroupBy : undefined,
-    selectedSlices: (base.selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId)),
-    selectedTemplate: undefined,
-  };
+  return normalizeStateCore(
+    base.selectedX,
+    base.selectedY,
+    base.selectedYAggregate,
+    base.selectedGroupBy,
+    base.selectedSlices,
+    config,
+    base
+  );
 }
 
 function normalizeYSelection(

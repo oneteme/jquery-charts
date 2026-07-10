@@ -1,6 +1,9 @@
 ﻿import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField } from './organizer-config.interface';
 import { buildYFields, normalizeOrganizerState, resolveMatchingTemplateId, resolveYKey } from './organizer-utils';
 import { UnitConfig } from '@oneteme/jquery-core';
+import { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
+
+export { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
 
 export interface OrganizerChartItem {
   key: string;
@@ -25,12 +28,6 @@ export interface OrganizerChartSection {
   items: OrganizerChartItem[];
 }
 
-export interface OrganizerChartConfig {
-  groups: OrganizerChartSection;
-  indicators: OrganizerChartSection;
-  filters?: OrganizerChartSection;
-}
-
 export interface OrganizerChartBridgeOptions {
   onFetchSliceData?: OrganizerConfig['onFetchSliceData'];
   onExportVisual?: () => void;
@@ -49,22 +46,33 @@ export interface OrganizerChartEventResult {
 }
 
 export function chartConfigToOrganizer(
-  chartConfig: any,
+  chartConfig: OrganizerChartConfig | null | undefined,
   options: OrganizerChartBridgeOptions = {}
 ): OrganizerConfig {
-  if (!chartConfig) return {};
-  const { onFetchSliceData, onExportVisual, onExportData, switchView } = options;
-  const activeIndicator = chartConfig.indicators?.items?.find(i => i.selected);
+  if (!chartConfig) {
+    console.debug('[OrganizerChartAdapter] Empty chart config, returning empty organizer config');
+    return {};
+  }
 
-  const baseXFields: OrganizerXField[] = (chartConfig.groups?.items || [])
+  console.debug('[OrganizerChartAdapter] Converting chart config to organizer', {
+    hasGroups: !!chartConfig.groups,
+    indicatorCount: chartConfig.indicators?.items?.length ?? 0,
+    filterCount: chartConfig.filters?.items?.length ?? 0
+  });
+
+  const { onFetchSliceData, onExportVisual, onExportData, switchView } = options;
+  const indicators = getIndicatorItems(chartConfig);
+  const activeIndicator = indicators.find(i => i.selected);
+
+  const baseXFields: OrganizerXField[] = getGroupItems(chartConfig)
     .filter(g => !_isSynthetic(g))
     .map(g => ({ id: g.key, label: g.menu.label || g.key }));
 
   const yFields = buildYFields(
-    (chartConfig.indicators?.items || []).map(i => ({ id: i.key, label: i.menu.label || i.key, group: i.group }))
+    indicators.map(i => ({ id: i.key, label: i.menu.label || i.key, group: i.group }))
   );
 
-  const stackFields = (activeIndicator?.extra?.stacks?.items || [])
+  const stackFields = getStackItems(activeIndicator)
     .filter((s: OrganizerChartItem) => !_isSynthetic(s))
     .map((s: OrganizerChartItem) => ({ id: s.key, label: s.menu.label || s.key }));
 
@@ -79,7 +87,7 @@ export function chartConfigToOrganizer(
     xFields: mergedGroupFields,
     yFields,
     groups: mergedGroupFields,
-    slices: (chartConfig.filters?.items || []).map(f => ({ id: f.key, label: f.menu.label || f.key }) as OrganizerViewSlice),
+    slices: getFilterItems(chartConfig).map(f => ({ id: f.key, label: f.menu.label || f.key }) as OrganizerViewSlice),
     templates: chartConfig.templates,
     showReset: false,
     onFetchSliceData,
@@ -90,13 +98,26 @@ export function chartConfigToOrganizer(
   };
 }
 
-export function chartConfigToState(chartConfig: any): OrganizerState {
-  if (!chartConfig) return {};
-  const activeIndicator = chartConfig.indicators?.items?.find(i => i.selected);
-  const activeStack = (activeIndicator?.extra?.stacks?.items || []).find((s: OrganizerChartItem) => s.selected);
-  const activeGroup = chartConfig.groups?.items?.find(g => g.selected);
-  const activeSlices = (chartConfig.filters?.items || []).filter(f => f.selected);
+export function chartConfigToState(chartConfig: OrganizerChartConfig | null | undefined): OrganizerState {
+  if (!chartConfig) {
+    console.debug('[OrganizerChartAdapter] Empty chart config for state conversion');
+    return {};
+  }
+
+  const indicators = getIndicatorItems(chartConfig);
+  const activeIndicator = indicators.find(i => i.selected);
+  const activeStack = getStackItems(activeIndicator).find((s: OrganizerChartItem) => s.selected);
+  const activeGroup = getGroupItems(chartConfig).find(g => g.selected);
+  const activeSlices = getFilterItems(chartConfig).filter(f => f.selected);
   const indicatorGroup = activeIndicator?.group;
+
+  console.debug('[OrganizerChartAdapter] Current chart state', {
+    activeGroup: activeGroup?.key,
+    activeIndicator: activeIndicator?.key,
+    activeStack: activeStack?.key,
+    sliceCount: activeSlices.length
+  });
+
   const state = {
     selectedX: activeGroup?.key,
     selectedY: indicatorGroup ?? activeIndicator?.key,
@@ -109,7 +130,7 @@ export function chartConfigToState(chartConfig: any): OrganizerState {
 }
 
 export function buildOrganizerChartBinding(
-  chartConfig: any,
+  chartConfig: OrganizerChartConfig | null | undefined,
   options: OrganizerChartBridgeOptions = {}
 ): OrganizerChartBinding {
   return {
@@ -119,7 +140,7 @@ export function buildOrganizerChartBinding(
 }
 
 export function chartConfigToUnifiedState(
-  chartConfig: any,
+  chartConfig: OrganizerChartConfig | null | undefined,
   viewMode: 'chart' | 'table' = 'chart'
 ): OrganizerUnifiedState {
   const state = chartConfigToState(chartConfig);
@@ -135,9 +156,15 @@ export function chartConfigToUnifiedState(
 
 export function applyOrganizerEventToChart(
   event: OrganizerButtonEvent,
-  chartConfig: any
+  chartConfig: OrganizerChartConfig | null | undefined
 ): void {
-  if (!chartConfig) return;
+  if (!chartConfig) {
+    console.debug('[OrganizerChartAdapter] Cannot apply event to empty chart config');
+    return;
+  }
+
+  console.debug('[OrganizerChartAdapter] Applying organizer event', { eventType: event.type, state: event.state });
+
   const state = event.state;
   _cleanSynthetics(chartConfig);
   if (state.selectedX !== undefined) _applyXSelection(state.selectedX, chartConfig);
@@ -150,10 +177,12 @@ export function applyOrganizerEventToChart(
 
 export function handleOrganizerChartEvent(
   event: OrganizerButtonEvent,
-  chartConfig: any,
+  chartConfig: OrganizerChartConfig | null | undefined,
   currentBinding: OrganizerChartBinding | undefined,
   options: OrganizerChartBridgeOptions = {}
 ): OrganizerChartEventResult {
+  console.debug('[OrganizerChartAdapter] Handling organizer event', { eventType: event.type });
+
   if (event.type === 'viewSwitched') {
     return {
       binding: {
@@ -183,13 +212,13 @@ export function handleOrganizerChartEvent(
 }
 
 export function resolveYUnit(
-  chartConfig: any,
+  chartConfig: OrganizerChartConfig | null | undefined,
   selectedY: string | undefined,
   selectedYAggregate: string | undefined
 ): string | UnitConfig | undefined {
   if (!chartConfig || !selectedY) return undefined;
   const actualKey = resolveYKey(selectedY, selectedYAggregate);
-  return chartConfig.indicators?.items?.find(i => i.key === actualKey)?.unit;
+  return getIndicatorItems(chartConfig).find(i => i.key === actualKey)?.unit;
 }
 
 const _syntheticItems = new WeakSet<OrganizerChartItem>();
@@ -204,25 +233,31 @@ function _isSynthetic(item: OrganizerChartItem): boolean {
 }
 
 function _cleanSynthetics(chartConfig: OrganizerChartConfig): void {
-  chartConfig.groups.items = chartConfig.groups.items.filter(g => !_isSynthetic(g));
-  chartConfig.indicators.items.forEach(ind => {
-    if (ind.extra?.stacks?.items) {
-      ind.extra.stacks.items = ind.extra.stacks.items.filter((s: OrganizerChartItem) => !_isSynthetic(s));
-    }
-  });
+  if (chartConfig.groups?.items) {
+    chartConfig.groups.items = chartConfig.groups.items.filter(g => !_isSynthetic(g));
+  }
+  if (chartConfig.indicators?.items) {
+    chartConfig.indicators.items.forEach(ind => {
+      if (ind.extra?.stacks?.items) {
+        ind.extra.stacks.items = ind.extra.stacks.items.filter((s: OrganizerChartItem) => !_isSynthetic(s));
+      }
+    });
+  }
 }
 
 function _applyXSelection(selectedX: string, chartConfig: OrganizerChartConfig): void {
-  const isGroupItem = chartConfig.groups.items.some(g => g.key === selectedX);
+  const groupItems = getGroupItems(chartConfig);
+  const isGroupItem = groupItems.some(g => g.key === selectedX);
   if (isGroupItem) {
-    chartConfig.groups.items.forEach(g => { g.selected = g.key === selectedX; });
+    groupItems.forEach(g => { g.selected = g.key === selectedX; });
     return;
   }
-  const allStacks: OrganizerChartItem[] = chartConfig.indicators.items.flatMap(i => i.extra?.stacks?.items ?? []);
+  const indicators = getIndicatorItems(chartConfig);
+  const allStacks: OrganizerChartItem[] = indicators.flatMap(i => getStackItems(i));
   const stackItem = allStacks.find(s => s.key === selectedX);
   if (stackItem) {
-    chartConfig.groups.items.forEach(g => { g.selected = false; });
-    chartConfig.groups.items.push(_makeSynthetic({
+    groupItems.forEach(g => { g.selected = false; });
+    groupItems.push(_makeSynthetic({
       key: stackItem.key,
       selected: true,
       menu: stackItem.menu,
@@ -235,15 +270,16 @@ function _applyXSelection(selectedX: string, chartConfig: OrganizerChartConfig):
 
 function _applyYSelection(selectedY: string, selectedYAggregate: string | undefined, chartConfig: OrganizerChartConfig): void {
   const actualKey = resolveYKey(selectedY, selectedYAggregate);
-  chartConfig.indicators.items.forEach(i => { i.selected = i.key === actualKey; });
-  chartConfig.indicators.items.forEach(i => {
-    i.extra?.stacks?.items?.forEach((s: OrganizerChartItem) => { s.selected = false; });
+  const indicators = getIndicatorItems(chartConfig);
+  indicators.forEach(i => { i.selected = i.key === actualKey; });
+  indicators.forEach(i => {
+    getStackItems(i).forEach((s: OrganizerChartItem) => { s.selected = false; });
   });
 }
 
 function _applyGroupBySelection(effectiveGroupBy: string | undefined, chartConfig: OrganizerChartConfig): void {
-  const activeIndicator = chartConfig.indicators.items.find(i => i.selected);
-  const stackItems: OrganizerChartItem[] = activeIndicator?.extra?.stacks?.items ?? [];
+  const activeIndicator = getIndicatorItems(chartConfig).find(i => i.selected);
+  const stackItems: OrganizerChartItem[] = getStackItems(activeIndicator);
   if (effectiveGroupBy === undefined) {
     stackItems.forEach(s => { s.selected = false; });
     return;
@@ -253,7 +289,7 @@ function _applyGroupBySelection(effectiveGroupBy: string | undefined, chartConfi
     stackItems.forEach(s => { s.selected = s.key === effectiveGroupBy; });
     return;
   }
-  const groupItem = chartConfig.groups.items.find(g => g.key === effectiveGroupBy);
+  const groupItem = getGroupItems(chartConfig).find(g => g.key === effectiveGroupBy);
   if (groupItem && activeIndicator) {
     stackItems.forEach(s => { s.selected = false; });
     if (!activeIndicator.extra) {
@@ -277,6 +313,6 @@ function _applyGroupBySelection(effectiveGroupBy: string | undefined, chartConfi
 }
 
 function _applySliceSelection(selectedSlices: string[], chartConfig: OrganizerChartConfig): void {
-  chartConfig.filters?.items?.forEach(f => { f.selected = selectedSlices.includes(f.key); });
+  getFilterItems(chartConfig).forEach(f => { f.selected = selectedSlices.includes(f.key); });
 }
 

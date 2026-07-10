@@ -5,26 +5,46 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches: main
+
+env:
+  NODE_VERSION: 20
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+        fetch-depth: 0
+
     - uses: actions/setup-node@v4
       with:
-        node-version: 20
-    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
-    - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main #see package.json: scripts.build
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - run: npm ci
+
+    - run: npm run build
+
+    - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
     - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
       id: prj_ver
+
+    # Cache les artifacts pour release draft
+    - uses: actions/upload-artifact@v4
+      if: github.ref_name == 'main'
+      with:
+        name: dist-build-main
+        path: dist/
+        retention-days: 1
+
     outputs:
       version: ${{ steps.prj_ver.outputs.version }}
-# deploy: cannot override package
-  release: #!PR
+
+  release:
     if: github.ref_name == 'main'
     needs: build
     runs-on: ubuntu-latest
@@ -35,4 +55,3 @@ jobs:
         draft: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-# page:
