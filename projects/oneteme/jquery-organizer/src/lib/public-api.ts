@@ -31,11 +31,21 @@ export {
   resolveYUnit,
   OrganizerChartItem,
   OrganizerChartSection,
-  OrganizerChartConfig,
   OrganizerChartBridgeOptions,
   OrganizerChartBinding,
   OrganizerChartEventResult,
 } from './models/organizer-chart-adapter';
+
+export {
+  OrganizerChartConfig,
+  SyntheticItemKeys,
+  SlicePanelI18nKeys,
+  OrganizerButtonEventType,
+  getGroupItems,
+  getIndicatorItems,
+  getFilterItems,
+  getStackItems,
+} from './models/organizer-chart-config';
 
 export { buildYFields, resolveYKey, OrganizerYIndicator } from './models/organizer-utils';
 

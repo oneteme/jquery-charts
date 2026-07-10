@@ -91,6 +91,7 @@ export interface OrganizerConfig {
 export interface OrganizerSliceState {
   sliceConfigs: SliceConfig<any>[];
   tasks: any[];
+  filterApplied?: boolean;
 }
 
 export interface OrganizerState {

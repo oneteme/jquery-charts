@@ -36,7 +36,13 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
 
   constructor(private cdr: ChangeDetectorRef) {}
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    console.debug('[OrganizerButton] Initialized', {
+      configFields: this.config?.fields?.length ?? 0,
+      hasState: !!this.state,
+      hideMenuValues: this.hideMenuValues
+    });
+  }
 
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -58,6 +64,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onFieldToggle(fieldId: string, visible: boolean): void {
+    console.debug('[OrganizerButton] Field toggled', { fieldId, visible });
     const visibleFields = this.state?.visibleFields || [];
     const updated = visible
       ? [...visibleFields, fieldId]
@@ -66,10 +73,22 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onXFieldSelect(fieldId: string): void {
+    console.debug('[OrganizerButton] X field selected', { fieldId, current: this.state?.selectedX });
+    // Évite une requête inutile si le X est déjà sélectionné
+    if (this.state?.selectedX === fieldId) {
+      console.debug('[OrganizerButton] X field already selected, skipping emit');
+      return;
+    }
     this.emitChange('xSelected', { selectedX: fieldId });
   }
 
   onYFieldSelect(fieldId: string): void {
+    console.debug('[OrganizerButton] Y field selected', { fieldId, current: this.state?.selectedY });
+    // Évite une requête inutile si le Y est déjà sélectionné
+    if (this.state?.selectedY === fieldId) {
+      console.debug('[OrganizerButton] Y field already selected, skipping emit');
+      return;
+    }
     this.emitChange('ySelected', {
       selectedY: fieldId,
       selectedYAggregate: undefined
@@ -77,6 +96,12 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onYAggregateSelect(yFieldId: string, aggregateId: string): void {
+    console.debug('[OrganizerButton] Y aggregate selected', { yFieldId, aggregateId, current: this.state?.selectedYAggregate });
+    // Évite une requête inutile si l'aggregate est déjà sélectionné
+    if (this.state?.selectedYAggregate === aggregateId && this.state?.selectedY === yFieldId) {
+      console.debug('[OrganizerButton] Y aggregate already selected, skipping emit');
+      return;
+    }
     this.emitChange('ySelected', {
       selectedY: yFieldId,
       selectedYAggregate: aggregateId
@@ -84,11 +109,13 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onGroupBySelect(groupId: string): void {
+    console.debug('[OrganizerButton] Group by selected', { groupId });
     const current = this.state.selectedGroupBy;
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
 
   onTemplateSelect(templateId: string): void {
+    console.debug('[OrganizerButton] Template selected', { templateId });
     if (!this.config.templates?.length) return;
 
     const template = this.config.templates?.find(t => t.id === templateId);
@@ -100,6 +127,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onSliceClick(sliceId?: string): void {
+    console.debug('[OrganizerButton] Slice clicked', { sliceId });
     if (this.config.onSliceClick) {
       this.config.onSliceClick();
     }
@@ -142,7 +170,8 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     const handleData = (tasks: any[]) => {
       this.sliceStateChange.emit({
         sliceConfigs: [{ title: slice.label ?? sliceId, columnKey: sliceId }],
-        tasks
+        tasks,
+        filterApplied: false  // Panel vient d'être ouvert, pas de filtre sélectionné encore
       });
       onLoaded?.();
     };

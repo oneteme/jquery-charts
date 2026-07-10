@@ -18,7 +18,7 @@ function buildPieOption(
       .filter((d) => d.value != null)
   );
 
-  return {
+  const option: EChartsOption = {
     // Pas de grid pour les pie charts
     grid: undefined,
     xAxis: undefined,
@@ -38,40 +38,21 @@ function buildPieOption(
         name: chart.series[0]?.name ?? '',
         radius: isDonut ? ['40%', '70%'] : '70%',
         center: ['50%', '50%'],
+        avoidLabelOverlap: !isDonut,
         data,
-        // position:'center' DOIT être sur le label de base (pas seulement sur emphasis/select.label)
-        // pour qu'ECharts positionne correctement au centre du donut lors du hover/select.
         label: isDonut ? { show: false, position: 'center' } : { show: false },
         labelLine: { show: false },
         labelLayout: { hideOverlap: true },
         ...(isDonut
           ? {
-              selectedMode: 'single',
               emphasis: {
                 itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.5)' },
                 label: {
                   show: true,
-                  position: 'center',
                   formatter: '{d}%',
                   fontSize: 22,
                   fontWeight: 700,
                   color: '#111827',
-                  backgroundColor: '#ffffff',
-                  padding: [4, 8],
-                  borderRadius: 4
-                }
-              },
-              select: {
-                label: {
-                  show: true,
-                  position: 'center',
-                  formatter: '{d}%',
-                  fontSize: 22,
-                  fontWeight: 700,
-                  color: '#111827',
-                  backgroundColor: '#ffffff',
-                  padding: [4, 8],
-                  borderRadius: 4
                 }
               }
             }
@@ -91,11 +72,14 @@ function buildPieOption(
             label: { show: false },
             labelLine: { show: false },
             labelLayout: { hideOverlap: true },
-            emphasis: { disabled: true }
+            emphasis: { disabled: true },
+            select: { label: { show: false } }
           }]
         : []),
     ],
   };
+
+  return option;
 }
 
 export const pieConfigurator: EChartTypeConfigurator = {

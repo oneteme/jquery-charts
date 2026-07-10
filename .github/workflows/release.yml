@@ -20,71 +20,115 @@ on:
       organizer:
         type: boolean
         description: publish jquery-organizer library
+
+env:
+  NODE_VERSION: 20
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+        fetch-depth: 0
+
     - uses: actions/setup-node@v4
       with:
-        node-version: 20
-    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
-    - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main #see package.json: scripts.build
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - run: npm ci
+
+    - run: npm run build
+
+    - uses: oneteme/automation-scripts/.github/actions/npm-scan-project@main
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
+      id: prj_ver
+
+    # Upload COMPLET : dist/ + node_modules + sources (pour pages et deploy)
+    - uses: actions/upload-artifact@v4
+      with:
+        name: build-complete
+        path: |
+          dist/
+          node_modules/
+          package.json
+          package-lock.json
+        retention-days: 1
+        compression-level: 6
+
+    outputs:
+      version: ${{ steps.prj_ver.outputs.version }}
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: ${{ env.NODE_VERSION }}
         registry-url: 'https://registry.npmjs.org'
         scope: '@oneteme'
-    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+
+    # Récupère les artifacts complets
+    - uses: actions/download-artifact@v4
+      with:
+        name: build-complete
+
+    # Déploie les libs sélectionnées
+    - name: Deploy jquery-core
       if: ${{ inputs.core }}
+      uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       with:
         project: 'jquery-core'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+
+    - name: Deploy jquery-apexcharts
       if: ${{ inputs.apexcharts }}
+      uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       with:
         project: 'jquery-apexcharts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+
+    - name: Deploy jquery-highcharts
       if: ${{ inputs.highcharts }}
+      uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       with:
         project: 'jquery-highcharts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+
+    - name: Deploy jquery-table
       if: ${{ inputs.table }}
+      uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       with:
         project: 'jquery-table'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+
+    - name: Deploy jquery-echarts
       if: ${{ inputs.echarts }}
+      uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       with:
         project: 'jquery-echarts'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
+
+    - name: Deploy jquery-organizer
       if: ${{ inputs.organizer }}
+      uses: oneteme/automation-scripts/.github/actions/npm-deploy-project@main
       with:
         project: 'jquery-organizer'
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-    - uses: oneteme/automation-scripts/.github/actions/npm-project-version@main
-      id: prj_ver
-    outputs:  # take global project version
-      version: ${{ steps.prj_ver.outputs.version }}
+
   release:
     needs: deploy
     runs-on: ubuntu-latest
@@ -94,20 +138,28 @@ jobs:
         version: ${{ needs.deploy.outputs.version }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   pages:
-    needs: release
+    needs: build
     runs-on: ubuntu-latest
-    permissions: # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+    permissions:
       pages: write
       id-token: write
     steps:
     - uses: actions/checkout@v4
+
     - uses: actions/setup-node@v4
       with:
-        node-version: 20
-    - uses: oneteme/automation-scripts/.github/actions/npm-build-project@main
+        node-version: ${{ env.NODE_VERSION }}
+
+    # Récupère les artifacts complets (dist + node_modules)
+    - uses: actions/download-artifact@v4
       with:
-        base-href: '/jquery-charts/'
+        name: build-complete
+
+    # Build l'app avec base-href (réutilise node_modules du cache)
+    - run: ng build jquery-charts --base-href=/jquery-charts/
+
     - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
       with:
         project: 'jquery-charts'
