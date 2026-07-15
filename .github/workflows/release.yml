@@ -157,7 +157,7 @@ jobs:
         name: build-complete
 
     # Build l'app avec base-href (réutilise node_modules du cache)
-    - run: ng build jquery-charts --base-href=/jquery-charts/
+    - run: npx ng build jquery-charts --base-href=/jquery-charts/
 
     - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
       with:

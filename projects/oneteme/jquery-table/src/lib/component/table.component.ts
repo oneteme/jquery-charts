@@ -724,7 +724,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get resolvedPaginationShowFirstLastButtons(): boolean {
-    return this.resolvedConfig.pagination?.showFirstLastButtons === true;
+    return this.resolvedConfig.pagination?.showFirstLastButtons !== false;
   }
 
   get isColumnDragDropEnabled(): boolean {

@@ -191,8 +191,11 @@
           [length]="totalRows"
           [pageSize]="pageSize"
           [pageSizeOptions]="pageSizeOptions"
+          [showFirstLastButtons]="resolvedPaginationShowFirstLastButtons"
         ></mat-paginator>
-        <div class="paginator-range-loader" *ngIf="effectiveIsLoading">
+        <div class="paginator-range-loader" 
+             [class.paginator-range-loader--no-first-last]="!resolvedPaginationShowFirstLastButtons"
+             *ngIf="effectiveIsLoading">
           <div class="spinner"></div>
         </div>
       </div>
