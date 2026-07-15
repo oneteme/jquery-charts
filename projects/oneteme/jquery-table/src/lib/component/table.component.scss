@@ -859,6 +859,10 @@
   width: auto;
   padding: 0 16px;
   height: 24px;
+
+  &--no-first-last {
+    margin-right: 80px;
+  }
 }
 
 .paginator-range-loader .spinner {
