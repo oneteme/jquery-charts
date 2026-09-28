@@ -65,7 +65,7 @@
             <span><small>Dimension</small>{{ productOrganizerState.selectedX === 'region' ? 'Région' : productOrganizerState.selectedX === 'channel' ? 'Canal' : 'Mois' }}</span>
             <span><small>Indicateur</small>{{ productOrganizerState.selectedY === 'orders' ? 'Commandes' : productOrganizerState.selectedY === 'margin' ? 'Marge' : 'Chiffre d’affaires' }}</span>
             <span><small>Calcul</small>{{ productOrganizerState.selectedYAggregate === 'average' ? 'Moyenne' : productOrganizerState.selectedYAggregate === 'min' ? 'Minimum' : productOrganizerState.selectedYAggregate === 'max' ? 'Maximum' : 'Somme' }}</span>
-            <span><small>Découpage</small>{{ productOrganizerState.selectedGroupBy === 'channel' ? 'Canal' : 'Région' }}</span>
+            <span><small>Découpage</small>{{ productOrganizerState.selectedGroupBy === 'region' ? 'Région' : productOrganizerState.selectedGroupBy === 'channel' ? 'Canal' : 'Aucun' }}</span>
             <span><small>Filtre actif</small>{{ productOrganizerState.selectedSlices?.length || 0 }}</span>
           </div>
           <organizer-button
