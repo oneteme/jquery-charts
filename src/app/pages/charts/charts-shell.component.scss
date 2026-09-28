@@ -1,14 +1,9 @@
 :host {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: calc(100vh - 64px);
+  display: block;
+  min-height: calc(100vh - var(--header-height, 64px));
 }
 
 .charts-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
   min-height: inherit;
 }
 
@@ -17,9 +12,6 @@
   background: var(--clr-surface, #fff);
   border-bottom: 1px solid var(--clr-border, #e2e8f0);
   padding: var(--sp-6, 24px) var(--sp-8, 32px) 0;
-  position: sticky;
-  top: 0;
-  z-index: 10;
 
   &__top {
     display: flex;
@@ -109,9 +101,6 @@
 
 // ─── Contenu ─────────────────────────────────────────────────────────────
 .shell-content {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
   background: var(--clr-bg, #f8fafc);
 }
 

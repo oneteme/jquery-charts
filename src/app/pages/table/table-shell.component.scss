@@ -1,18 +1,10 @@
-// DESIGN: shell qui encapsule les 4 pages /table — header sticky + tab nav
-// Le :host est contraint à la hauteur exacte du viewport hors header global (64px).
-// Le scroll se fait uniquement dans .shell-content — jamais au niveau fenêtre.
-// Cela évite le bug sticky (top:0 sous le header fixe) et les z-index conflicts.
 :host {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 64px);
-  max-height: calc(100vh - 64px);
+  display: block;
+  min-height: calc(100vh - var(--header-height, 64px));
 }
 
 .table-shell {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
+  min-height: inherit;
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────
@@ -20,8 +12,6 @@
   background: var(--clr-surface, #ffffff);
   border-bottom: 1px solid var(--clr-border, #e2e8f0);
   padding: var(--sp-6, 24px) var(--sp-8, 32px) 0;
-  // Plus besoin de sticky : le header est toujours visible car shell-content
-  // est le seul conteneur qui scrolle (overflow: auto + flex: 1).
 
   &__top {
     display: flex;
@@ -66,6 +56,16 @@
     font-size: 0.85rem;
     color: var(--clr-text-secondary, #475569);
     line-height: 1.5;
+  }
+
+  &__api {
+    flex: 0 0 auto;
+    color: var(--clr-accent, #176b72);
+    font-size: 0.8rem;
+    font-weight: 650;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
   }
 }
 
@@ -118,9 +118,6 @@
 
 // ─── Contenu routable ─────────────────────────────────────────────────────
 .shell-content {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
   background: var(--clr-bg, #f8fafc);
 }
 

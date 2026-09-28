@@ -31,6 +31,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
 
   private fieldDataCache = new Map<string, any[]>();
   private destroy$ = new Subject<void>();
+  private destroyed = false;
 
   @ViewChild('mainMenuTrigger') mainMenuTrigger?: MatMenuTrigger;
 
@@ -45,6 +46,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -110,8 +112,14 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
 
   onGroupBySelect(groupId: string): void {
     console.debug('[OrganizerButton] Group by selected', { groupId });
-    const current = this.state.selectedGroupBy;
+    const current = this.state?.selectedGroupBy;
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
+  }
+
+  onChartTypeSelect(chartType: string): void {
+    const option = this.config.chartTypes?.find(type => type.id === chartType);
+    if (!option || option.disabled || this.state?.selectedChartType === chartType) return;
+    this.emitChange('chartTypeSelected', { selectedChartType: chartType });
   }
 
   onTemplateSelect(templateId: string): void {
@@ -170,6 +178,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
 
     const result = this.config.onFetchSliceData(sliceId);
     const handleData = (tasks: any[]) => {
+      if (this.destroyed) return;
       this.sliceStateChange.emit({
         sliceConfigs: [{ title: slice.label ?? sliceId, columnKey: sliceId }],
         tasks,
@@ -177,11 +186,17 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
       });
       onLoaded?.();
     };
+    const handleError = (error: unknown) => {
+      if (this.destroyed) return;
+      console.error('[OrganizerButton] Slice data loading failed', error);
+      this.sliceStateChange.emit(null);
+      onLoaded?.();
+    };
 
     if (isObservable(result)) {
-      result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData });
+      result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData, error: handleError });
     } else {
-      result.then(handleData);
+      void result.then(handleData, handleError);
     }
   }
 
@@ -198,6 +213,8 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     try {
       const data = await this.config.onFetchFieldData(fieldId);
       this.fieldDataCache.set(fieldId, data);
+    } catch (error) {
+      console.error('[OrganizerButton] Field data loading failed', error);
     } finally {
       this.loadingFieldId = undefined;
       this.cdr.markForCheck();
@@ -238,6 +255,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   hasMenuItemsBeforeActions(): boolean {
     return this.hasChartFields()
       || this.hasTableFields()
+      || (this.config.chartTypes?.length ?? 0) > 0
       || (this.config.groups?.length ?? 0) > 0
       || (this.config.slices?.length ?? 0) > 0
       || (this.config.templates?.length ?? 0) > 0;
@@ -294,14 +312,18 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onReset(): void {
+    const visibleFields = this.config.fields
+      ?.filter(field => field.visible !== false)
+      .map(field => field.id);
     this.emitChange('reset', {
-      visibleFields: [],
+      visibleFields,
       selectedX: undefined,
       selectedY: undefined,
       selectedYAggregate: undefined,
       selectedGroupBy: undefined,
       selectedSlices: []
     });
+    this.mainMenuTrigger?.closeMenu();
   }
 
   activeXLabel(): string {
@@ -329,6 +351,12 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     return this.config.groups?.find(g => g.id === id)?.label ?? id;
   }
 
+  activeChartTypeLabel(): string {
+    const id = this.state?.selectedChartType;
+    if (!id) return '';
+    return this.config.chartTypes?.find(type => type.id === id)?.label ?? id;
+  }
+
   activeSlicesLabel(): string {
     const ids = this.state?.selectedSlices;
     if (!ids?.length) return '';
@@ -348,6 +376,10 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
     return (this.config.xFields?.length ?? 0) > 0 || (this.config.yFields?.length ?? 0) > 0;
   }
 
+  hasChartTypes(): boolean {
+    return (this.config.chartTypes?.length ?? 0) > 0;
+  }
+
   hasTableFields(): boolean {
     return (this.config.fields?.length ?? 0) > 0;
   }
@@ -358,6 +390,10 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
 
   isYAggregateActive(yFieldId: string, aggregateId: string): boolean {
     return this.state?.selectedY === yFieldId && this.state?.selectedYAggregate === aggregateId;
+  }
+
+  isChartTypeActive(chartType: string): boolean {
+    return this.state?.selectedChartType === chartType;
   }
 
   private emitChange(type: OrganizerButtonEvent['type'], stateUpdate: Partial<OrganizerState> | OrganizerState): void {

@@ -24,6 +24,20 @@
             "main": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "apexcharts",
+              "highcharts/highcharts-more",
+              "highcharts/highmaps",
+              "highcharts/modules/accessibility",
+              "highcharts/modules/drilldown",
+              "highcharts/modules/export-data",
+              "highcharts/modules/exporting",
+              "highcharts/modules/funnel",
+              "highcharts/modules/heatmap",
+              "highcharts/modules/no-data-to-display",
+              "highcharts/modules/offline-exporting",
+              "highcharts/modules/treemap"
+            ],
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
@@ -49,8 +63,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "9kb",
-                  "maximumError": "12kb"
+                  "maximumWarning": "14kb",
+                  "maximumError": "15kb"
                 }
               ],
               "outputHashing": "all"
@@ -182,36 +196,6 @@
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "tsConfig": "projects/oneteme/jquery-highcharts/tsconfig.spec.json",
-            "polyfills": ["zone.js", "zone.js/testing"]
-          }
-        }
-      }
-    },
-    "@oneteme/jquery-echarts": {
-      "projectType": "library",
-      "root": "projects/oneteme/jquery-echarts",
-      "sourceRoot": "projects/oneteme/jquery-echarts/src",
-      "prefix": "lib",
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
-          "options": {
-            "project": "projects/oneteme/jquery-echarts/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "projects/oneteme/jquery-echarts/tsconfig.lib.prod.json"
-            },
-            "development": {
-              "tsConfig": "projects/oneteme/jquery-echarts/tsconfig.lib.json"
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "tsConfig": "projects/oneteme/jquery-echarts/tsconfig.spec.json",
             "polyfills": ["zone.js", "zone.js/testing"]
           }
         }

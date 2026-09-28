@@ -1,0 +1,333 @@
+<main class="api-page core-api-page">
+  <header class="api-hero">
+    <div>
+      <a class="back-link" routerLink="/">← Retour à jquery-charts</a>
+      <p class="eyebrow">@oneteme/jquery-core / référence et ateliers</p>
+      <h1>Le socle commun des données graphiques.</h1>
+      <p class="intro">
+        Comprenez et testez les fonctions qui préparent vos données avant
+        ECharts, Highcharts, ApexCharts ou jquery-table : providers, formats,
+        unités, intervalles, pivot et contrats d’état.
+      </p>
+      <div class="hero-tags">
+        <span>Sans moteur de rendu</span>
+        <span>Sans DOM pour les données</span>
+        <span>TypeScript-first</span>
+      </div>
+    </div>
+    <aside class="hero-aside" aria-label="Repères jquery-core">
+      <span class="hero-aside__label">Lecture rapide</span>
+      <strong>Une ligne métier</strong>
+      <span class="hero-aside__arrow">↓</span>
+      <strong>Un contrat commun</strong>
+      <span class="hero-aside__arrow">↓</span>
+      <strong>Plusieurs moteurs</strong>
+    </aside>
+  </header>
+
+  <section class="reference-section" id="reference" aria-labelledby="reference-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Référence</p>
+      <h2 id="reference-title">Une API découpée par intention</h2>
+      <p>
+        Le Core ne rend rien à l’écran : il normalise des données, construit
+        des contrats et fournit des helpers réutilisables par les autres packages.
+      </p>
+    </div>
+
+    <article *ngFor="let section of sections" class="reference-block" [id]="section.id">
+      <div class="section-heading section-heading--small">
+        <p class="section-kicker">API Core</p>
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </div>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <colgroup>
+            <col class="api-column api-column--property">
+            <col class="api-column api-column--type">
+            <col class="api-column api-column--source">
+            <col class="api-column api-column--description">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Fonction ou type</th>
+              <th>Retour / forme</th>
+              <th>Origine</th>
+              <th>À quoi ça sert</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of section.entries">
+              <td><code>{{ entry.name }}</code></td>
+              <td><code>{{ entry.type }}</code></td>
+              <td><span class="source-badge">{{ entry.source }}</span></td>
+              <td>{{ entry.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-example">
+        <div class="section-example-heading">
+          <span>Exemples de la section</span>
+          <small>Les snippets restent indépendants du moteur de rendu</small>
+        </div>
+        <pre><code>{{ getSectionExample(section) }}</code></pre>
+      </div>
+    </article>
+  </section>
+
+  <section class="capabilities-section" aria-labelledby="demos-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Ateliers exécutables</p>
+      <h2 id="demos-title">Voir le contrat produire un résultat</h2>
+      <p>
+        Chaque carte utilise directement une fonction de <code>@oneteme/jquery-core</code>.
+        Les extraits sous les résultats montrent la forme minimale à reprendre dans votre application.
+      </p>
+    </div>
+
+    <article *ngFor="let demo of demos; let demoIndex = index" class="capability-card" [id]="demo.id">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">ATELIER {{ (demoIndex + 1).toString().padStart(2, '0') }}</p>
+          <h3>{{ demo.title }}</h3>
+          <p>{{ demo.description }}</p>
+        </div>
+        <span class="capability-kind">{{ demo.kind }}</span>
+      </header>
+
+      <div class="demo-surface" [ngSwitch]="demo.kind">
+        <ng-container *ngSwitchCase="'providers'">
+          <div class="demo-columns">
+            <div>
+              <div class="mini-heading">Ligne échantillon</div>
+              <pre class="compact-output"><code>{{ formatJson(providerRows[0]) }}</code></pre>
+            </div>
+            <div>
+              <div class="mini-heading">Providers résolus</div>
+              <pre class="compact-output"><code>{{ formatJson(providerOutput) }}</code></pre>
+            </div>
+          </div>
+          <div class="result-band">
+            <div>
+              <span>catégories de buildChart</span>
+              <strong>{{ providerChartSummary.categories.join(' · ') }}</strong>
+            </div>
+            <div>
+              <span>séries construites</span>
+              <strong>{{ providerChartSummary.series.length }} + variante single-serie</strong>
+            </div>
+          </div>
+          <details class="inline-details">
+            <summary>Voir le CommonChart produit</summary>
+            <pre class="compact-output"><code>{{ formatJson(providerChartSummary) }}</code></pre>
+          </details>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'transformations'">
+          <div class="control-bar">
+            <label>Locale
+              <select [(ngModel)]="selectedLocale">
+                <option *ngFor="let locale of locales" [value]="locale">{{ locale }}</option>
+              </select>
+            </label>
+            <label>Fuseau
+              <select [(ngModel)]="selectedTimeZone">
+                <option *ngFor="let timeZone of timeZones" [value]="timeZone">{{ timeZone }}</option>
+              </select>
+            </label>
+            <label>Décimales
+              <input type="number" min="0" max="10" step="1" [(ngModel)]="precision">
+            </label>
+          </div>
+          <div class="result-band result-band--three">
+            <div><span>instant normalisé</span><strong>{{ normalizedInstant }}</strong></div>
+            <div><span>date affichée</span><strong>{{ formattedInstant }}</strong></div>
+            <div><span>source</span><strong>{{ sourceIsUnchanged ? 'inchangée' : 'modifiée' }}</strong></div>
+          </div>
+          <div class="demo-columns">
+            <div>
+              <div class="mini-heading">formatChartDataDates</div>
+              <pre class="compact-output"><code>{{ formatJson(formattedDateRows) }}</code></pre>
+            </div>
+            <div>
+              <div class="mini-heading">formatChartDataValues</div>
+              <pre class="compact-output"><code>{{ formatJson(formattedAmountRows) }}</code></pre>
+            </div>
+          </div>
+          <details class="inline-details">
+            <summary>Voir mapChartDataFields</summary>
+            <pre class="compact-output"><code>{{ formatJson(mappedAmountRows) }}</code></pre>
+          </details>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'units'">
+          <div class="result-band result-band--three">
+            <div><span>2 500 m</span><strong>{{ distanceConversion }}</strong></div>
+            <div><span>20 °C</span><strong>{{ temperatureConversion }}</strong></div>
+            <div><span>unité inconnue</span><strong class="error-text">{{ unitError }}</strong></div>
+          </div>
+          <div class="scale-reference" aria-label="Exemples de sélection d'échelle">
+            <div *ngFor="let example of unitExamples">
+              <span>{{ example.source }}</span>
+              <strong>{{ example.output }}</strong>
+              <small>échelle {{ example.unit }}</small>
+            </div>
+          </div>
+          <p class="demo-note">La sélection de la série complète choisit <code>{{ selectedUnitScale.unit }}</code> à partir de son maximum absolu.</p>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'intervals'">
+          <div class="control-bar">
+            <label>Stratégie
+              <select [(ngModel)]="intervalType">
+                <option value="quartile">Quartile</option>
+                <option value="quantile">Quantile</option>
+                <option value="equal-width">Largeur égale</option>
+                <option value="mean-stddev">Moyenne ± écart-type</option>
+                <option value="jenks">Jenks</option>
+              </select>
+            </label>
+            <label>Classes
+              <input type="number" min="2" max="8" step="1" [(ngModel)]="intervalCount">
+            </label>
+          </div>
+          <div class="metric-strip" *ngIf="intervalStats as stats">
+            <div><span>n</span><strong>{{ stats.count }}</strong></div>
+            <div><span>min → max</span><strong>{{ stats.min }} → {{ stats.max }}</strong></div>
+            <div><span>moyenne</span><strong>{{ stats.mean | number:'1.1-1' }}</strong></div>
+            <div><span>médiane</span><strong>{{ stats.median }}</strong></div>
+            <div><span>Q1 · Q3</span><strong>{{ stats.q1 }} · {{ stats.q3 }}</strong></div>
+          </div>
+          <div class="interval-layout">
+            <div class="api-table-wrap">
+              <table class="api-table api-table--compact">
+                <thead><tr><th>Valeur</th><th>Classe trouvée</th></tr></thead>
+                <tbody>
+                  <tr *ngFor="let row of intervalAssignments"><td>{{ row.label }} · {{ row.score }}</td><td>{{ row.bucket }}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <div class="mini-heading">Catégories filtrables</div>
+              <div class="interval-list">
+                <div *ngFor="let category of intervalCategoryCounts"><span>{{ category.label }}</span><strong>{{ category.count }}</strong></div>
+              </div>
+            </div>
+          </div>
+          <details class="inline-details">
+            <summary>Comparer les intervalles manuels</summary>
+            <pre class="compact-output"><code>{{ formatJson({ breakpoints: fixedIntervals, equalWidth: equalWidthIntervals }) }}</code></pre>
+          </details>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'pivot'">
+          <div class="control-bar">
+            <label>Agrégation
+              <select [(ngModel)]="pivotAggregate">
+                <option value="sum">sum</option>
+                <option value="count">count</option>
+                <option value="min">min</option>
+                <option value="max">max</option>
+              </select>
+            </label>
+            <span class="control-hint">fill = 0 · colonnes imposées : Consommation, Production, Prévision</span>
+          </div>
+          <div class="pivot-layout">
+            <div>
+              <div class="mini-heading">Format long</div>
+              <pre class="compact-output"><code>{{ formatJson(pivotSourceRows) }}</code></pre>
+            </div>
+            <div>
+              <div class="mini-heading">Format large produit</div>
+              <pre class="compact-output"><code>{{ formatJson(pivotOutput) }}</code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'helpers'">
+          <div class="demo-columns">
+            <div>
+              <div class="mini-heading">Helpers de configuration</div>
+              <pre class="compact-output"><code>{{ formatJson(utilityOutput) }}</code></pre>
+            </div>
+            <div>
+              <div class="mini-heading">État Organizer immuable</div>
+              <div class="field-toggles">
+                <button *ngFor="let fieldDefinition of organizerFields" type="button" [class.is-active]="isOrganizerFieldSelected(fieldDefinition.id)" (click)="toggleOrganizerField(fieldDefinition.id)">
+                  {{ isOrganizerFieldSelected(fieldDefinition.id) ? '✓ ' : '' }}{{ fieldDefinition.label || fieldDefinition.id }}
+                </button>
+              </div>
+              <div class="organizer-summary">
+                <span>sélectionnés</span><strong>{{ organizerState.selectedFieldIds.join(' · ') || 'aucun' }}</strong>
+                <span>groupables / sliceables</span><strong>{{ groupableFields.length }} / {{ sliceableFields.length }}</strong>
+                <span>séries détectées</span><strong>{{ organizerSeriesFromProvider.length }}</strong>
+              </div>
+              <pre class="compact-output"><code>{{ formatJson(appliedOrganizerProvider.series) }}</code></pre>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'snapshots'">
+          <div class="control-bar">
+            <label class="wide-control">Nom du snapshot
+              <input type="text" [(ngModel)]="snapshotLabel">
+            </label>
+            <button type="button" (click)="createSnapshot()">Créer</button>
+            <button type="button" (click)="renameLatestSnapshot()">Renommer le dernier</button>
+            <button type="button" (click)="removeLatestSnapshot()">Supprimer le dernier</button>
+            <button type="button" (click)="clearSnapshots()">Vider</button>
+          </div>
+          <p class="demo-note" aria-live="polite">{{ snapshotFeedback }}</p>
+          <div class="snapshot-layout">
+            <div>
+              <div class="mini-heading">VisualSnapshotDraft</div>
+              <pre class="compact-output"><code>{{ formatJson(snapshotDraft) }}</code></pre>
+            </div>
+            <div>
+              <div class="mini-heading">Snapshots stockés : {{ snapshots.length }}</div>
+              <div class="snapshot-list" *ngIf="snapshots.length; else noSnapshots">
+                <div *ngFor="let snapshot of snapshots">
+                  <strong>{{ snapshot.label }}</strong>
+                  <span>{{ snapshot.createdAt }} · valide : {{ isStoredSnapshot(snapshot) }}</span>
+                </div>
+              </div>
+              <ng-template #noSnapshots><p class="empty-state">Le stockage de démonstration est vide.</p></ng-template>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'sync'">
+          <div class="sync-toolbar">
+            <button type="button" (click)="publishSync('tooltip')">Émettre tooltip</button>
+            <button type="button" (click)="publishSync('datazoom')">Émettre datazoom</button>
+            <span>groupe : <code>{{ syncGroupName }}</code></span>
+          </div>
+          <div class="sync-layout" #fullscreenTarget>
+            <div>
+              <div class="mini-heading">Événements reçus par le listener</div>
+              <div class="sync-event-list" *ngIf="syncEvents.length; else noSyncEvents">
+                <pre *ngFor="let event of syncEvents" class="compact-output"><code>{{ formatJson(event) }}</code></pre>
+              </div>
+              <ng-template #noSyncEvents><p class="empty-state">Émettez un événement pour voir le payload relayé.</p></ng-template>
+            </div>
+            <div class="fullscreen-demo">
+              <strong>FullscreenManager</strong>
+              <p>{{ fullscreenStatus }}</p>
+              <button type="button" (click)="toggleFullscreen(fullscreenTarget)">Basculer cette zone</button>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading">
+          <span>Code minimal</span>
+          <button type="button" (click)="copyCode(demo)">{{ demo.copied ? 'Copié' : 'Copier le code' }}</button>
+        </div>
+        <pre><code>{{ demo.code }}</code></pre>
+      </div>
+    </article>
+  </section>
+</main>

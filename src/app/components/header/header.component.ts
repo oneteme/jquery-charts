@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output, HostListener } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRouteSnapshot, Router } from '@angular/router';
 import { ChartTypesService } from 'src/app/core/services/chart-types.service';
 
 @Component({
@@ -7,9 +7,25 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
   template: `
     <header class="header">
       <nav class="nav">
-        <div class="header-left" (click)="goHome()">
-          <img src="assets/logo/app-logo.webp" alt="Logo" class="logo" />
-          <h1>Jquery-Charts</h1>
+        <div class="header-main">
+          <div class="header-left" (click)="goHome()">
+            <img src="assets/logo/app-logo.webp" alt="Logo" class="logo" />
+            <h1>Jquery-Charts</h1>
+          </div>
+          <div class="primary-nav" role="navigation" aria-label="Navigation principale">
+            <a
+              routerLink="/produit"
+              class="primary-nav__link"
+              [class.active]="isProductActive()"
+              [attr.aria-current]="isProductActive() ? 'page' : null"
+            >Produit</a>
+            <a
+              routerLink="/demarrer"
+              class="primary-nav__link"
+              [class.active]="isUsageActive()"
+              [attr.aria-current]="isUsageActive() ? 'page' : null"
+            >Utilisation</a>
+          </div>
         </div>
         <div class="header-right">
           <!-- Bouton Recherche rapide (Ctrl+K) -->
@@ -20,30 +36,38 @@ import { ChartTypesService } from 'src/app/core/services/chart-types.service';
             <span class="search-btn__label">Rechercher</span>
             <kbd class="search-btn__kbd">Ctrl K</kbd>
           </button>
-          <button class="doc-btn" (click)="goToDoc()">
-            <span>Documentation</span>
-          </button>
-          <div class="install-dropdown">
-            <button class="download-btn" (click)="toggleInstallMenu()">
-              <span>Installer</span>
-              <span class="version">v0.0.X</span>
-            </button>
-            <div class="dropdown-menu" *ngIf="showInstallMenu">
-              <button class="dropdown-item" (click)="goToInstall('apexcharts')">
-                <span class="library-name">jquery-apexcharts</span>
-              </button>
-              <button class="dropdown-item" (click)="goToInstall('highcharts')">
-                <span class="library-name">jquery-highcharts</span>
-              </button>
-              <button class="dropdown-item" (click)="goToInstall('echarts')">
-                <span class="library-name">jquery-echarts</span>
-              </button>
-            </div>
-          </div>
           <div class="separator"></div>
-          <button class="github-btn" (click)="goToGithub()">
-            <img src="assets/icons/github.svg" alt="GitHub" />
-          </button>
+          <div class="resource-links" role="group" aria-label="Ressources développeur">
+            <div class="install-dropdown">
+              <button class="download-btn" (click)="toggleInstallMenu()" aria-label="Ouvrir les paquets npm" aria-haspopup="menu" [attr.aria-expanded]="showInstallMenu" title="Ouvrir les paquets npm">
+                <img src="assets/icons/npm.svg" alt="npm" class="npm-logo" />
+              </button>
+              <div class="dropdown-menu" *ngIf="showInstallMenu">
+                <button class="dropdown-item" (click)="goToInstall('core')">
+                  <span class="library-name">jquery-core</span>
+                </button>
+                <button class="dropdown-item" (click)="goToInstall('organizer')">
+                  <span class="library-name">jquery-organizer</span>
+                </button>
+                <button class="dropdown-item" (click)="goToInstall('highcharts')">
+                  <span class="library-name">jquery-highcharts</span>
+                </button>
+                <button class="dropdown-item" (click)="goToInstall('echarts')">
+                  <span class="library-name">jquery-echarts</span>
+                </button>
+                <button class="dropdown-item" (click)="goToInstall('apexcharts')">
+                  <span class="library-name">jquery-apexcharts</span>
+                </button>
+                <button class="dropdown-item" (click)="goToInstall('table')">
+                  <span class="library-name">jquery-table</span>
+                </button>
+              </div>
+            </div>
+            <span class="resource-divider" aria-hidden="true"></span>
+            <button class="github-btn" (click)="goToGithub()" aria-label="Ouvrir GitHub" title="Ouvrir GitHub">
+              <img src="assets/icons/github.svg" alt="GitHub" />
+            </button>
+          </div>
         </div>
       </nav>
     </header>
@@ -73,8 +97,25 @@ export class HeaderComponent {
     this.router.navigate(['/']);
   }
 
-  goToDoc() {
-    this.router.navigate(['/documentation']);
+  isProductActive(): boolean {
+    return this.currentPath === '/' || this.currentPath === '/produit';
+  }
+
+  isUsageActive(): boolean {
+    return !this.isProductActive() && !this.isNotFoundRoute();
+  }
+
+  private get currentPath(): string {
+    return this.router.url.split(/[?#]/)[0] || '/';
+  }
+
+  private isNotFoundRoute(): boolean {
+    let route: ActivatedRouteSnapshot = this.router.routerState.snapshot.root;
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+
+    return route.data['notFound'] === true;
   }
 
   toggleInstallMenu() {
@@ -85,17 +126,20 @@ export class HeaderComponent {
     this.searchOpen.emit();
   }
 
-  goToInstall(library: 'apexcharts' | 'highcharts' | 'echarts') {
+  goToInstall(library: 'core' | 'organizer' | 'highcharts' | 'echarts' | 'apexcharts' | 'table') {
     const urls: Record<string, string> = {
-      apexcharts: 'https://www.npmjs.com/package/@oneteme/jquery-apexcharts',
+      core:       'https://www.npmjs.com/package/@oneteme/jquery-core',
+      organizer:  'https://www.npmjs.com/package/@oneteme/jquery-organizer',
       highcharts:  'https://www.npmjs.com/package/@oneteme/jquery-highcharts',
       echarts:     'https://www.npmjs.com/package/@oneteme/jquery-echarts',
+      apexcharts: 'https://www.npmjs.com/package/@oneteme/jquery-apexcharts',
+      table:      'https://www.npmjs.com/package/@oneteme/jquery-table',
     };
-    window.open(urls[library], '_blank');
+    window.open(urls[library], '_blank', 'noopener,noreferrer');
     this.showInstallMenu = false;
   }
 
   goToGithub() {
-    window.open('https://github.com/oneteme/jquery-charts', '_blank');
+    window.open('https://github.com/oneteme/jquery-charts', '_blank', 'noopener,noreferrer');
   }
 }

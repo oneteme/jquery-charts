@@ -1,186 +1,284 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { forkJoin } from 'rxjs';
-import { map } from 'rxjs/operators';
-import { col, TableProvider, TableComponent } from '@oneteme/jquery-table';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { of } from 'rxjs';
+import { delay } from 'rxjs/operators';
+import { JqtCellDefDirective, TableComponent, TableProvider, col } from '@oneteme/jquery-table';
 
-/** Post JSONPlaceholder enrichi avec les infos auteur. */
-interface Post {
-  id: number;
+type DemoStatus = 'Ouvert' | 'En cours' | 'Terminé';
+type DemoPriority = 'Haute' | 'Normale' | 'Basse';
+
+interface DemoRow {
+  reference: string;
+  subject: string;
+  team: string;
+  status: DemoStatus;
+  priority: DemoPriority;
+  duration: number;
+  updatedAt: string;
+}
+
+type CodeTab = 'ts' | 'html' | 'scss';
+
+interface ExampleCode {
+  ts: string;
+  html: string;
+  scss: string;
+}
+
+interface TableExample {
+  id: string;
+  index: string;
   title: string;
-  authorName: string;
-  authorCompany: string;
-  authorCity: string;
+  description: string;
+  tags: string[];
+  config: TableProvider<DemoRow>;
+  code: ExampleCode;
+  activeCodeTab: CodeTab;
 }
 
 @Component({
   selector: 'app-table',
   standalone: true,
-  imports: [CommonModule, TableComponent],
+  imports: [CommonModule, TableComponent, JqtCellDefDirective],
   templateUrl: './table.component.html',
   styleUrls: ['./table.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TableExempleComponent implements OnInit {
-  private readonly http = inject(HttpClient);
+export class TableExempleComponent {
+  readonly codeTabs: { key: CodeTab; label: string }[] = [
+    { key: 'ts', label: 'TS' },
+    { key: 'html', label: 'HTML' },
+    { key: 'scss', label: 'SCSS' },
+  ];
 
-  isLoading = true;
-  tableData: Post[] = [];
-  selectedRow: Post | null = null;
+  readonly rows: DemoRow[] = [
+    { reference: 'INT-2410', subject: 'Mise en service compteur', team: 'Raccordement', status: 'Terminé', priority: 'Haute', duration: 22, updatedAt: '17 avril 2024' },
+    { reference: 'INT-2409', subject: 'Diagnostic armoire', team: 'Dépannage', status: 'Ouvert', priority: 'Normale', duration: 64, updatedAt: '16 avril 2024' },
+    { reference: 'INT-2408', subject: 'Contrôle réseau HTA', team: 'Maintenance', status: 'En cours', priority: 'Basse', duration: 47, updatedAt: '15 avril 2024' },
+    { reference: 'INT-2407', subject: 'Raccordement photovoltaïque', team: 'Raccordement', status: 'Terminé', priority: 'Normale', duration: 33, updatedAt: '14 avril 2024' },
+    { reference: 'INT-2406', subject: 'Dépannage câble souterrain', team: 'Dépannage', status: 'Ouvert', priority: 'Haute', duration: 91, updatedAt: '13 avril 2024' },
+    { reference: 'INT-2405', subject: 'Remplacement disjoncteur', team: 'Maintenance', status: 'En cours', priority: 'Normale', duration: 54, updatedAt: '12 avril 2024' },
+    { reference: 'INT-2404', subject: 'Branchement collectif', team: 'Raccordement', status: 'Terminé', priority: 'Basse', duration: 26, updatedAt: '11 avril 2024' },
+    { reference: 'INT-2403', subject: 'Recherche de défaut', team: 'Dépannage', status: 'Ouvert', priority: 'Haute', duration: 73, updatedAt: '10 avril 2024' },
+    { reference: 'INT-2402', subject: 'Thermographie poste source', team: 'Maintenance', status: 'Terminé', priority: 'Normale', duration: 18, updatedAt: '9 avril 2024' },
+    { reference: 'INT-2401', subject: 'Étude raccordement maison', team: 'Raccordement', status: 'En cours', priority: 'Normale', duration: 42, updatedAt: '8 avril 2024' },
+  ];
 
-  // État des outputs
-  lastSort: { active: string; direction: string } | null = null;
-  lastPage: { pageIndex: number; pageSize: number } | null = null;
-  lastSearch = '';
-  lastGroupBy: string | null = null;
-  visibleColumns: string[] = [];
-
-  // Strings de code affichées dans la démo (sans backtick imbriqué)
-  readonly tableTemplateCode = [
-    '<jquery-table',
-    '  [config]="tableConfig"',
-    '  [data]="tableData"',
-    '  [isLoading]="isLoading"',
-    '  (rowSelected)="onRowSelected($event)"',
-    '  (sortChange)="lastSort = $event"',
-    '  (pageChange)="lastPage = $event"',
-    '  (searchChange)="lastSearch = $event"',
-    '  (groupByChange)="lastGroupBy = $event"',
-    '  (columnsChange)="visibleColumns = $event"',
-    '></jquery-table>',
-  ].join('\n');
-
-  readonly tableConfigCode = [
-    "import { col, TableProvider } from '@oneteme/jquery-table';",
-    "import { forkJoin } from 'rxjs';",
-    '',
-    'tableConfig: TableProvider<Post> = {',
-    "  title: 'JSONPlaceholder — Posts (100 lignes)',",
-    "  search:     { enabled: true, searchColumns: ['title', 'authorName', 'authorCompany'] },",
-    '  view:       { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },',
-    "  pagination: { enabled: true, pageSize: 10, pageSizeOptions: [10, 25, 50] },",
-    "  export:     { enabled: true, filename: 'posts' },",
-    "  defaultSort: { active: 'authorName', direction: 'asc' },",
-    '  columns: [',
-    "    col('title',         'Titre',   { sortable: true }),",
-    "    col('authorName',    'Auteur',  { sortable: true, groupable: true }),",
-    "    col('authorCompany', 'Société', { sortable: true, groupable: true }),",
-    "    col('authorCity',    'Ville',   { optional: true }),",
-    "    { key: 'comments', header: 'Commentaires', sortable: true, optional: true,",
-    "      lazy: { fetchFn: () => http.get('/comments').pipe(map(...)) },",
-    '    },',
-    '  ],',
-    '  slices: [',
-    "    { title: 'Société', columnKey: 'authorCompany' },",
-    "    { title: 'Auteur',  columnKey: 'authorName' },",
-    '  ],',
-    '};',
-  ].join('\n');
-
-  readonly tableDataCode = [
-    'forkJoin({',
-    "  users: http.get<any[]>('https://jsonplaceholder.typicode.com/users'),",
-    "  posts: http.get<any[]>('https://jsonplaceholder.typicode.com/posts'),",
-    '}).pipe(',
-    '  map(({ users, posts }) => {',
-    '    const userMap = new Map(users.map(u => [u.id, u]));',
-    '    return posts.map(p => ({',
-    '      id: p.id, title: p.title,',
-    "      authorName:    userMap.get(p.userId)?.name           ?? '',",
-    "      authorCompany: userMap.get(p.userId)?.company?.name  ?? '',",
-    "      authorCity:    userMap.get(p.userId)?.address?.city  ?? '',",
-    '    }));',
-    '  })',
-    ').subscribe({',
-    '  next: posts => { this.tableData = posts; this.isLoading = false; },',
-    '  error: ()    => { this.isLoading = false; },',
-    '});',
-  ].join('\n');
-
-  tableConfig: TableProvider<Post> = {
-    title: 'JSONPlaceholder — Posts (100 lignes)',
-    search:      { enabled: true, searchColumns: ['title', 'authorName', 'authorCompany'] },
-    view:        { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: false },
-    pagination:  { enabled: true, pageSize: 10, pageSizeOptions: [10, 25, 50] },
-    export:      { enabled: true, filename: 'posts' },
-    preferences: { enabled: true, tableId: 'demo-posts-table' },
-    defaultSort: { active: 'authorName', direction: 'asc' },
-    columns: [
-      col('title',         'Titre',   { sortable: true }),
-      col('authorName',    'Auteur',  { sortable: true, groupable: true }),
-      col('authorCompany', 'Société', { sortable: true, groupable: true }),
-      col('authorCity',    'Ville',   { optional: true }),
-      {
-        key: 'comments',
-        header: 'Commentaires',
-        sortable: true,
-        optional: true,
-        lazy: {
-          fetchFn: () => this.http.get<any[]>('https://jsonplaceholder.typicode.com/comments').pipe(
-            map(comments => {
-              const counts = new Map<number, number>();
-              comments.forEach((c: any) => counts.set(c.postId, (counts.get(c.postId) || 0) + 1));
-              return this.tableData.map(p => counts.get(p.id) ?? 0);
-            })
-          ),
-        },
-      },
-    ],
+  readonly overviewConfig: TableProvider<DemoRow> = {
+    title: 'Interventions réseau',
+    search: { enabled: true, searchColumns: ['reference', 'subject', 'team', 'status'] },
+    pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
+    view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
+    organizer: { buttonLabel: 'Vue', buttonIcon: 'tune', showButtonIcon: true },
     slices: [
-      { title: 'Société', columnKey: 'authorCompany' },
-      { title: 'Auteur',  columnKey: 'authorName' },
+      { title: 'Statut', columnKey: 'status', multiSelect: true },
+    ],
+    columns: [
+      col<DemoRow>('reference', 'Référence', { width: '130px', sortable: false, groupable: false, sliceable: false }),
+      col<DemoRow>('subject', 'Intervention', { groupable: false, sliceable: false }),
+      col<DemoRow>('team', 'Équipe'),
+      col<DemoRow>('status', 'Statut'),
+      col<DemoRow>('updatedAt', 'Mise à jour', { sortable: false, groupable: false, sliceable: false }),
     ],
   };
 
-  ngOnInit(): void {
-    this.isLoading = true;
-    forkJoin({
-      users: this.http.get<any[]>('https://jsonplaceholder.typicode.com/users'),
-      posts: this.http.get<any[]>('https://jsonplaceholder.typicode.com/posts'),
-    }).pipe(
-      map(({ users, posts }) => {
-        const userMap = new Map(users.map((u: any) => [u.id, u]));
-        return posts.map((p: any) => {
-          const u: any = userMap.get(p.userId) ?? {};
-          return {
-            id: p.id,
-            title: p.title,
-            authorName:    u.name          ?? '',
-            authorCompany: u.company?.name ?? '',
-            authorCity:    u.address?.city ?? '',
-          } as Post;
-        });
-      })
-    ).subscribe({
-      next: posts => { this.tableData = posts; this.isLoading = false; },
-      error: ()    => { this.isLoading = false; },
-    });
-  }
+  readonly viewConfig: TableProvider<DemoRow> = {
+    title: 'Interventions par équipe',
+    search: { enabled: true, searchColumns: ['subject', 'team', 'status', 'priority'] },
+    pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10], pageSizeOptionsGroupBy: [5, 10] },
+    view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
+    defaultGroupBy: 'team',
+    export: { enabled: true, filename: 'interventions' },
+    slices: [
+      { title: 'Statut', columnKey: 'status', multiSelect: true },
+      {
+        title: 'Priorité',
+        categories: [
+          { key: 'high', label: 'Haute', filter: row => row.priority === 'Haute' },
+          { key: 'normal', label: 'Normale', filter: row => row.priority === 'Normale' },
+          { key: 'low', label: 'Basse', filter: row => row.priority === 'Basse' },
+        ],
+      },
+    ],
+    columns: [
+      col<DemoRow>('reference', 'Référence', { sortable: true, width: '130px' }),
+      col<DemoRow>('subject', 'Intervention', { sortable: true }),
+      col<DemoRow>('team', 'Équipe', { sortable: true, groupable: true, sliceable: true }),
+      col<DemoRow>('status', 'Statut', { sortable: true, groupable: true, sliceable: true }),
+      col<DemoRow>('priority', 'Priorité', { sortable: true, optional: true }),
+    ],
+  };
 
-  onRowSelected(row: Post): void {
-    this.selectedRow = row;
-  }
+  readonly customConfig: TableProvider<DemoRow> = {
+    title: 'Cellules personnalisées et colonne différée',
+    pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
+    columns: [
+      col<DemoRow>('reference', 'Référence', { sortable: true, width: '130px' }),
+      col<DemoRow>('status', 'Statut', { sortable: true }),
+      col<DemoRow>('priority', 'Priorité', { sortable: true }),
+      {
+        key: 'duration',
+        header: 'Durée',
+        sortable: true,
+        value: row => `${row.duration} min`,
+        sortValue: row => row.duration,
+      },
+      {
+        key: 'details',
+        header: 'Détails chargés',
+        lazy: {
+          fetchFn: () => of(this.rows.map(row => row.duration > 60 ? 'Intervention longue' : 'Intervention standard')).pipe(delay(450)),
+        },
+      },
+    ],
+  };
 
-  onSortChange(event: { active: string; direction: string }): void {
-    this.lastSort = event;
-  }
-
-  onPageChange(event: { pageIndex: number; pageSize: number }): void {
-    this.lastPage = event;
-  }
-
-  onSearchChange(query: string): void {
-    this.lastSearch = query;
-  }
-
-  onGroupByChange(key: string | null): void {
-    this.lastGroupBy = key;
-  }
-
-  onColumnsChange(keys: string[]): void {
-    this.visibleColumns = keys;
-  }
-
+  readonly examples: TableExample[] = [
+    {
+      id: 'overview',
+      index: '01',
+      title: 'Recherche, tri et pagination + stylisation des différents éléments',
+      description: 'Le socle d’un tableau métier : recherche ciblée, organizer configurable et règles SCSS pour compacter le header et le footer.',
+      tags: ['search', 'sort', 'pagination', 'style', 'organizer'],
+      config: this.overviewConfig,
+      code: {
+        ts: `const config: TableProvider<Intervention> = {
+  view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
+  organizer: { buttonLabel: 'Vue', buttonIcon: 'tune', showButtonIcon: true },
+  slices: [{ title: 'Statut', columnKey: 'status', multiSelect: true }],
+  search: { enabled: true, searchColumns: ['subject', 'team'] },
+  pagination: { enabled: true, pageSize: 5 },
+  columns: [
+    col('reference', 'Référence', { sortable: false, groupable: false, sliceable: false }),
+    col('subject', 'Intervention', { groupable: false, sliceable: false }),
+    col('team', 'Équipe'),
+    col('status', 'Statut'),
+    col('updatedAt', 'Mise à jour', { sortable: false, groupable: false, sliceable: false }),
+  ],
+};`,
+        html: `<jquery-table
+  class="demo-table demo-table--styled"
+  [config]="config"
+  [data]="rows">
+</jquery-table>`,
+        scss: `:host {
+  display: block;
+  height: 420px;
 }
 
+.demo-table {
+  display: block;
+  height: 100%;
+}
 
+.demo-table--styled {
+  --jqt-primary-color: #176b72;
+  --jqt-header-bg: #e8f3f1;
+  --jqt-header-text-color: #175b61;
+  --jqt-footer-bg: #f6f8f8;
+  --jqt-footer-text-color: #526b73;
+  --jqt-footer-icon-color: #176b72;
+  --jqt-border-color: #c7d9d8;
+  --jqt-header-height: 40px;
+  --jqt-header-cell-padding-y: 0px;
+  --jqt-footer-height: 40px;
+  --jqt-organizer-button-height: 30px;
+  --jqt-organizer-button-radius: 4px;
+  --jqt-organizer-button-border-color: #176b72;
+  --jqt-organizer-button-background: #e8f3f1;
+  --jqt-organizer-button-hover-border-color: #bc5b35;
+  --jqt-organizer-button-hover-background: #fff5ef;
+  --jqt-organizer-button-icon-color: #176b72;
+}`,
+      },
+      activeCodeTab: 'ts',
+    },
+    {
+      id: 'view',
+      index: '02',
+      title: 'View, Group by, Slice by et export',
+      description: 'Le menu View rassemble les colonnes, le regroupement et les filtres ; l’export CSV reste accessible depuis la toolbar.',
+      tags: ['view', 'group by', 'slice by', 'export CSV'],
+      config: this.viewConfig,
+      code: {
+        ts: `const config: TableProvider<Intervention> = {
+  view: { enabled: true, enableColumnDragDrop: true },
+  defaultGroupBy: 'team',
+  slices: [{ title: 'Statut', columnKey: 'status' }],
+  export: { enabled: true, filename: 'interventions' },
+  columns: [
+    col('team', 'Équipe', { groupable: true, sliceable: true }),
+    col('status', 'Statut', { groupable: true, sliceable: true }),
+  ],
+};`,
+        html: `<jquery-table
+  class="demo-table"
+  [config]="config"
+  [data]="rows">
+</jquery-table>`,
+        scss: `:host {
+  display: block;
+  height: 420px;
+}
+
+.demo-table {
+  display: block;
+  height: 100%;
+}`,
+      },
+      activeCodeTab: 'ts',
+    },
+    {
+      id: 'custom',
+      index: '03',
+      title: 'Cellules personnalisées et données différées',
+      description: 'Un template Angular personnalise les badges, tandis qu’une colonne lazy simule une donnée chargée après le rendu initial.',
+      tags: ['jqtCellDef', 'value / sortValue', 'lazy'],
+      config: this.customConfig,
+      code: {
+        ts: `columns: [{
+  key: 'duration',
+  header: 'Durée',
+  value: row => row.duration + ' min',
+  sortValue: row => row.duration,
+}, {
+  key: 'details',
+  header: 'Détails chargés',
+  lazy: { fetchFn: () => details$ },
+}];`,
+        html: `<jquery-table
+  class="demo-table"
+  [config]="config"
+  [data]="rows">
+  <ng-template jqtCellDef="status" let-row>
+    <span class="status-chip">{{ row.status }}</span>
+  </ng-template>
+</jquery-table>`,
+        scss: `:host {
+  display: block;
+  height: 420px;
+}
+
+.demo-table {
+  display: block;
+  height: 100%;
+}`,
+      },
+      activeCodeTab: 'ts',
+    },
+  ];
+
+  selectedReference = 'Aucune ligne sélectionnée';
+
+  onRowSelected(row: DemoRow): void {
+    this.selectedReference = row.reference;
+  }
+
+  selectCodeTab(example: TableExample, tab: CodeTab): void {
+    example.activeCodeTab = tab;
+  }
+
+  codeFor(example: TableExample): string {
+    return example.code[example.activeCodeTab];
+  }
+}

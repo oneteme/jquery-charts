@@ -2,6 +2,18 @@
 
 Une bibliothèque Angular qui implémente l'interface `@oneteme/jquery-core` en utilisant Highcharts comme moteur de rendu. Cette bibliothèque agit comme un **wrapper** pour Highcharts, permettant d'utiliser la syntaxe unifiée de jQuery-Charts tout en bénéficiant de la puissance et des fonctionnalités avancées de Highcharts.
 
+> **Documentation et démonstrations** : [ouvrir l'application de documentation](https://oneteme.github.io/jquery-charts/)
+>
+> L'application documente les types de graphiques, les options natives Highcharts et les fonctionnalités communes du wrapper dans des exemples interactifs.
+
+## Fonctionnalités intégrées
+
+- contrat commun `ChartProvider` partagé avec ECharts et ApexCharts ;
+- options Highcharts natives via `config.options` et option de rendu via `[renderedOption]` ;
+- synchronisation du tooltip et du zoom avec `[group]` et `[groupSync]` ;
+- Organizer, drilldown, export d'image ou de données, snapshots visuels et plein écran ;
+- toolbar de navigation optionnelle, masquée par défaut tant que `showToolbar` n'est pas activé.
+
 ## Table des matières
 
 - [Installation](#installation)
@@ -129,7 +141,7 @@ La bibliothèque jQuery-Highcharts prend en charge une large gamme de types de g
 Ces graphiques affichent les données sous forme d'une seule série agrégée :
 
 - **`pie`** : Graphique circulaire
-- **`donut`** : Graphique en anneau (pie avec `innerSize: '40%'`)
+- **`donut`** : Graphique en anneau (pie avec `innerSize: '50%'`)
 - **`funnel`** : Graphique en entonnoir
 - **`pyramid`** : Graphique pyramidal
 
@@ -143,6 +155,7 @@ Ces graphiques peuvent afficher plusieurs séries simultanément :
 - **`areaspline`** : Graphique de zone lissé
 - **`bar`** : Graphique à barres horizontales
 - **`column`** : Graphique à barres verticales
+- **`mixed`** : Séries de types différents et axes Y multiples
 - **`columnpyramid`** : Graphique à barres pyramidales
 - **`scatter`** : Graphique de dispersion
 - **`bubble`** : Graphique à bulles
@@ -177,6 +190,13 @@ Nécessitent des données avec `rangeFields(minField, maxField)` :
 | `isLoading`   | `boolean`             | Non    | État de chargement (défaut: `false`)                     |
 | `debug`       | `boolean`             | Non    | Mode debug avec logs console (défaut: `false`)           |
 | `enablePivot` | `boolean`             | Non    | Active le bouton pivot dans la toolbar (défaut: `false`) |
+| `loadingLabel` | `string`           | Non    | Libellé de chargement                                   |
+| `noDataLabel` | `string`             | Non    | Libellé quand aucune donnée n'est disponible            |
+| `renderedOption` | `Highcharts.Options` | Non | Prend la priorité sur les options générées; les événements et états du wrapper restent appliqués |
+| `theme`       | `Highcharts.Options` | Non    | Options Highcharts servant de thème                    |
+| `group` / `groupSync` | `string` / `GroupSyncMode` | Non | Synchronise zoom et/ou tooltip entre graphiques, y compris avec jquery-echarts |
+| `organizerState` | `OrganizerState`   | Non    | Contrôle externe de la visibilité des séries            |
+| `drilldown`   | `ChartDrilldownConfig` | Non | Navigation hiérarchique pilotée par le parent          |
 
 ### Configuration du graphique (ChartProvider)
 
@@ -205,9 +225,11 @@ interface ChartProvider<X, Y> {
   showToolbar?: boolean; // Afficher la toolbar de navigation
 
   // Options Highcharts natives
-  options?: Highcharts.Options;
+  options?: Highcharts.Options; // Les séries sont fusionnées par index; les données générées restent prioritaires
 }
 ```
+
+Lorsque `height` n'est pas fournie et que le parent n'a pas encore de dimensions, le wrapper attend qu'une hauteur soit fournie par le layout, comme ECharts, sans fabriquer de taille par défaut. Un parent déjà dimensionné est rempli à `100%`.
 
 ### Définition d'une série
 
@@ -222,6 +244,10 @@ interface SerieProvider<X, Y> {
   color?: string | DataProvider<string>; // Couleur
   type?: string | DataProvider<string>; // Type spécifique
   visible?: boolean | DataProvider<boolean>; // Visibilité initiale
+  yAxisIndex?: number; // Axe Y ciblé (0 par défaut)
+  yAxisConfig?: Record<string, any>; // Options Highcharts de cet axe
+  unit?: string; // Unité affichée dans l'axe et le tooltip
+  showUnitOnAxis?: boolean; // Affiche l'unité sur les graduations (true par défaut)
 }
 ```
 
@@ -456,18 +482,7 @@ La toolbar apparaît au survol et propose :
 - **Bouton suivant** : Affiche le type de graphique suivant
 - **Bouton pivot** : Active/désactive le mode pivot (si `enablePivot: true`)
 
-Groupes de navigation par défaut :
-
-- Graphiques simples : `pie`, `spline`
-- Graphiques linéaires : `line`, `pie`, `donut`, `bar`, `column`
-- Graphiques de zone : `line`, `area`, `spline`, `areaspline`
-- Graphiques à barres : `bar`, `column`
-- Graphiques d'entonnoir : `funnel`, `pyramid`
-- Graphiques de dispersion : `scatter`, `bubble`
-- Graphiques polaires : `polar`, `radar`, `line`
-- Graphiques radar : `radar`, `polar`, `radarArea`
-- Graphiques radar avec zone : `radarArea`, `radar`, `area`
-- Graphiques radiaux : `radialBar`, `bar`, `column`
+Par défaut, tous les types non cartographiques compatibles peuvent être sélectionnés depuis la toolbar. `map` reste dans son propre groupe et `columnpyramid` est disponible avec les graphiques standards.
 
 ### Options Highcharts personnalisées
 
@@ -502,6 +517,16 @@ config = {
   }
 };
 ```
+
+Les options de `config.options.series` sont fusionnées par index avec les séries construites par le wrapper. Elles peuvent donc définir, par exemple, `type`, `color`, `marker` ou `dataLabels`; les données calculées depuis `config.series` et `data` restent la source de vérité.
+
+### Synchronisation de groupe
+
+`group` et `groupSync` synchronisent les tooltips et/ou le zoom avec les instances Highcharts et ECharts du même groupe. Pour les axes catégoriels, le wrapper publie aussi les valeurs de catégorie afin que deux graphiques dont les catégories sont ordonnées différemment conservent le même intervalle fonctionnel. Les axes X sont synchronisés par index; des graphiques qui n’exposent pas le même nombre d’axes ne synchronisent que leurs axes communs.
+
+### Cartes et environnement navigateur
+
+Un graphique `map` charge le GeoJSON depuis `mapEndpoint`. Lorsqu’un nouveau rendu remplace un chargement en cours, le résultat obsolète est ignoré. Le chargement, l’export et le plein écran utilisent des API navigateur (`fetch`, `document`, `window`, `ResizeObserver`); rendez le composant uniquement côté navigateur dans une application SSR.
 
 ### Système de transformation plotOptions
 
@@ -602,9 +627,9 @@ export class MesVentesComponent implements OnInit {
 
 Le graphique gère automatiquement 3 états :
 
-1. **Chargement initial** (`isLoading=true`, `data=[]`)
+1. **Chargement** (`isLoading=true`)
 
-   - Affiche : Texte "Chargement des données..."
+  - Affiche : Texte "Chargement des données...". Les séries existantes restent visibles pendant un rafraîchissement.
 
 2. **Aucune donnée** (`isLoading=false`, `data=[]`)
 

@@ -37,10 +37,27 @@
   // Header & cellules (Angular Material)
   --jqt-header-bg:          #f5f5f5;      // fond des cellules d'en-tête (doit être opaque pour sticky)
   --jqt-header-text-color:  #374151;      // texte des cellules d'en-tête
+  --jqt-header-height:      56px;         // hauteur des lignes d'en-tête
+  --jqt-header-cell-padding-y: 0px;       // espacement vertical des cellules d'en-tête
   --jqt-cell-bg:            #ffffff;      // fond des cellules de corps
   --jqt-footer-bg:          #f5f5f5;      // fond de la barre footer/paginator
   --jqt-footer-text-color:  #374151;      // texte paginator (label, nombre de pages)
   --jqt-footer-icon-color:  #374151;      // icônes/flèches navigateur de page
+  --jqt-footer-height:      var(--jqt-header-height); // hauteur du footer/paginator
+
+  // Contrôles de la toolbar
+  --jqt-toolbar-control-height: 34px;
+
+  // Panneau de slices
+  --jqt-slice-panel-min-width:          155px;
+  --jqt-slice-panel-max-width:          190px;
+  --jqt-slice-header-height:            34px;
+  --jqt-slice-header-margin-bottom:     8px;
+  --jqt-slice-body-padding:             4px 10px 10px;
+  --jqt-slice-section-title-font-size:  14px;
+  --jqt-slice-item-font-size:           13px;
+  --jqt-slice-item-min-height:          30px;
+  --jqt-slice-item-padding:             5px 10px 5px 16px;
 }
 
 :host.visual-fullscreen {
@@ -62,6 +79,7 @@
 }
 
 .visual-copy-feedback {
+  display: block;
   position: absolute;
   top: 8px;
   left: 50%;
@@ -93,11 +111,14 @@
 
 .table-layout {
   display: grid;
-  grid-template-columns: minmax(155px, 190px) minmax(0, 1fr);
+  grid-template-columns:
+    minmax(var(--jqt-slice-panel-min-width), var(--jqt-slice-panel-max-width))
+    minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
-  min-height: inherit;
-  height: 100%;
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
 
   &.no-slice {
     grid-template-columns: minmax(0, 1fr);
@@ -210,7 +231,7 @@
   align-items: center;
   flex: 1 1 auto;
   min-width: 0;
-  height: 34px;
+  height: var(--jqt-toolbar-control-height);
   border: 1px solid var(--jqt-border-color);
   border-radius: 8px;
   background: var(--jqt-surface-color);
@@ -304,8 +325,8 @@
 
 .slice-expand-btn {
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
+  width: var(--jqt-toolbar-control-height);
+  height: var(--jqt-toolbar-control-height);
   border: 1px solid var(--jqt-border-color);
   border-radius: 8px;
   background: var(--jqt-surface-color);
@@ -672,11 +693,17 @@
 
 :host ::ng-deep .mat-mdc-header-row {
   background: var(--jqt-header-bg);
+  height: var(--jqt-header-height);
+  min-height: var(--jqt-header-height);
 }
 
 :host ::ng-deep .mat-mdc-header-cell {
   background: var(--jqt-header-bg);
   color: var(--jqt-header-text-color);
+  height: var(--jqt-header-height);
+  min-height: var(--jqt-header-height);
+  padding-top: var(--jqt-header-cell-padding-y);
+  padding-bottom: var(--jqt-header-cell-padding-y);
 }
 
 :host ::ng-deep .mat-mdc-row,
@@ -691,6 +718,11 @@
 
 :host ::ng-deep .mat-mdc-row.no-pointer {
   cursor: auto;
+}
+
+:host ::ng-deep .mat-mdc-row:not(.no-pointer):focus-visible {
+  outline: 2px solid var(--jqt-primary-color);
+  outline-offset: -2px;
 }
 
 :host ::ng-deep .mat-mdc-row.no-data-row {
@@ -724,7 +756,10 @@
   color: var(--jqt-border-color);
   flex-shrink: 0;
   padding: 0 2px;
+  border: 0;
+  background: transparent;
   border-radius: 4px;
+  font: inherit;
   line-height: 1;
 
   &:active { cursor: grabbing; }
@@ -781,6 +816,7 @@
   display: flex;
   align-items: center;
   flex: 0 0 auto;
+  min-height: var(--jqt-footer-height, var(--actual-header-height, 56px));
   position: relative;
   background: var(--jqt-footer-bg);
   border-top: 1px solid var(--jqt-border-color);
@@ -792,28 +828,46 @@
 
 :host ::ng-deep .bottom-bar mat-paginator {
   flex: 1 1 auto;
+  min-width: 0;
   background: transparent;
   color: var(--jqt-footer-text-color);
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-paginator-outer-container {
   display: flex;
+  width: 100%;
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-paginator-container {
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
+  justify-content: flex-end;
+  width: 100%;
   min-height: 0;
-  height: var(--actual-header-height, 56px);
+  height: var(--jqt-footer-height, var(--actual-header-height, 56px));
   padding: 0 8px;
   box-sizing: border-box;
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-paginator-range-label,
 :host ::ng-deep .bottom-bar .mat-mdc-paginator-page-size-label {
+  flex-shrink: 0;
   font-size: 12px;
   color: var(--jqt-footer-text-color);
+  white-space: nowrap;
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-paginator-page-size,
+:host ::ng-deep .bottom-bar .mat-mdc-paginator-range-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  white-space: nowrap;
+}
+
+:host ::ng-deep .bottom-bar .mat-mdc-paginator-range-label {
+  margin: 0 12px;
 }
 
 :host ::ng-deep .bottom-bar .mat-mdc-icon-button {

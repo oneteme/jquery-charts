@@ -8,13 +8,13 @@
       </p>
     </div>
 
-    <nav class="tab-bar" role="tablist" aria-label="Bibliothèques de graphiques">
+    <nav class="tab-bar" aria-label="Bibliothèques de graphiques">
       <a
         *ngFor="let lib of libraries"
         class="tab-bar__item"
-        [routerLink]="lib.path"
+        [routerLink]="libraryRoute(lib.path)"
         routerLinkActive="tab-bar__item--active"
-        role="tab"
+        ariaCurrentWhenActive="page"
       >
         <span class="tab-bar__label">{{ lib.label }}</span>
       </a>

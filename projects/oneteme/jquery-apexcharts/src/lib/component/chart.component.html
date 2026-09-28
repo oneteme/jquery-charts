@@ -1,7 +1,117 @@
-<div style="height: 100%; width: 100%">
-  <div line-chart *ngIf="_type == 'line' || _type == 'area'" [type]="_type" [config]="_effectiveConfig" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-  <div pie-chart *ngIf="_type == 'donut' || _type == 'polar' || _type == 'radial' || _type == 'radar' || _type == 'pie'" [type]="_type" [config]="_effectiveConfig" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-  <div bar-chart *ngIf="_type == 'bar' || _type == 'column' || _type == 'funnel' || _type == 'pyramid'" [type]="_type" [config]="_effectiveConfig" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
-  <div treemap-chart *ngIf="_type == 'treemap' || _type == 'heatmap'" [type]="_type" [config]="_effectiveConfig" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)"></div>
-  <div range-chart *ngIf="_type == 'rangeArea' || _type == 'rangeBar' || _type == 'rangeColumn'" [type]="_type" [config]="_effectiveConfig" [data]="data" [isLoading]="isLoading" (customEvent)="change($event)" [canPivot]="_charts[_type].canPivot"></div>
+<div class="chart-frame" [class.chart-drilldown]="drilldown?.levels?.length">
+  <nav class="chart-drilldown-nav" *ngIf="drilldown?.levels?.length" aria-label="Navigation du graphique">
+    <ng-container *ngIf="drilldownIsActive">
+      <ng-container *ngFor="let level of drilldownLevels; let last = last">
+        <button
+          type="button"
+          class="chart-drilldown-link"
+          [attr.aria-current]="last ? 'page' : null"
+          [disabled]="last"
+          (click)="navigateDrilldown(level.id)">
+          {{ level.label }}
+        </button>
+        <span class="chart-drilldown-separator" *ngIf="!last" aria-hidden="true">&gt;</span>
+      </ng-container>
+    </ng-container>
+  </nav>
+  <output class="visual-copy-feedback" *ngIf="copyFeedbackText">
+    {{ copyFeedbackText }}
+  </output>
+  <div class="chart-canvas">
+    <div
+      line-chart
+      *ngIf="_type == 'line' || _type == 'area'"
+      [type]="_type"
+      [config]="_effectiveConfig"
+      [data]="data"
+      [isLoading]="isLoading"
+      [debug]="debug"
+      [loadingLabel]="loadingLabel"
+      [noDataLabel]="noDataLabel"
+      [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
+      [renderedOption]="renderedOption"
+      [theme]="theme"
+      [group]="group"
+      [groupSync]="groupSync"
+      (customEvent)="change($event)"
+      (chartClick)="handleChartClick($event)"
+      (renderError)="renderError.emit($event)"
+    ></div>
+    <div
+      pie-chart
+      *ngIf="_type == 'donut' || _type == 'polar' || _type == 'radial' || _type == 'radar' || _type == 'pie'"
+      [type]="_type"
+      [config]="_effectiveConfig"
+      [data]="data"
+      [isLoading]="isLoading"
+      [debug]="debug"
+      [loadingLabel]="loadingLabel"
+      [noDataLabel]="noDataLabel"
+      [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
+      [renderedOption]="renderedOption"
+      [theme]="theme"
+      [group]="group"
+      [groupSync]="groupSync"
+      (customEvent)="change($event)"
+      (chartClick)="handleChartClick($event)"
+      (renderError)="renderError.emit($event)"
+    ></div>
+    <div
+      bar-chart
+      *ngIf="_type == 'bar' || _type == 'column' || _type == 'funnel' || _type == 'pyramid'"
+      [type]="_type"
+      [config]="_effectiveConfig"
+      [data]="data"
+      [isLoading]="isLoading"
+      [debug]="debug"
+      [loadingLabel]="loadingLabel"
+      [noDataLabel]="noDataLabel"
+      [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
+      [renderedOption]="renderedOption"
+      [theme]="theme"
+      [group]="group"
+      [groupSync]="groupSync"
+      (customEvent)="change($event)"
+      (chartClick)="handleChartClick($event)"
+      (renderError)="renderError.emit($event)"
+    ></div>
+    <div
+      treemap-chart
+      *ngIf="_type == 'treemap' || _type == 'heatmap'"
+      [type]="_type"
+      [config]="_effectiveConfig"
+      [data]="data"
+      [isLoading]="isLoading"
+      [debug]="debug"
+      [loadingLabel]="loadingLabel"
+      [noDataLabel]="noDataLabel"
+      [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
+      [renderedOption]="renderedOption"
+      [theme]="theme"
+      [group]="group"
+      [groupSync]="groupSync"
+      (customEvent)="change($event)"
+      (chartClick)="handleChartClick($event)"
+      (renderError)="renderError.emit($event)"
+    ></div>
+    <div
+      range-chart
+      *ngIf="_type == 'rangeArea' || _type == 'rangeBar' || _type == 'rangeColumn'"
+      [type]="_type"
+      [config]="_effectiveConfig"
+      [data]="data"
+      [isLoading]="isLoading"
+      [debug]="debug"
+      [loadingLabel]="loadingLabel"
+      [noDataLabel]="noDataLabel"
+      [canPivot]="enablePivot && _charts[_type]?.canPivot !== false"
+      [renderedOption]="renderedOption"
+      [theme]="theme"
+      [group]="group"
+      [groupSync]="groupSync"
+      (customEvent)="change($event)"
+      (chartClick)="handleChartClick($event)"
+      (renderError)="renderError.emit($event)"
+    ></div>
+  </div>
 </div>

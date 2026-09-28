@@ -12,11 +12,15 @@ export class FullscreenManager {
 
   static async toggle(element: Element): Promise<boolean> {
     if (!this.isSupported(element)) return false;
-    if (this.isActive(element)) {
-      await document.exitFullscreen();
+    try {
+      if (this.isActive(element)) {
+        await document.exitFullscreen();
+        return false;
+      }
+      await element.requestFullscreen();
+      return true;
+    } catch {
       return false;
     }
-    await element.requestFullscreen();
-    return true;
   }
 }

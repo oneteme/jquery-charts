@@ -15,11 +15,12 @@
         autocomplete="off"
         spellcheck="false"
       />
-      <kbd class="qs-esc" (click)="close()">Esc</kbd>
+      <button type="button" class="qs-esc" (click)="close()" aria-label="Fermer la recherche">Esc</button>
     </div>
 
     <div class="qs-results" *ngIf="results.length > 0">
-      <div
+      <button
+        type="button"
         *ngFor="let item of results; let i = index"
         class="qs-item"
         [class.qs-item--active]="i === activeIndex"
@@ -34,7 +35,7 @@
         <svg class="qs-item__arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
         </svg>
-      </div>
+      </button>
     </div>
 
     <div class="qs-empty" *ngIf="results.length === 0 && query">

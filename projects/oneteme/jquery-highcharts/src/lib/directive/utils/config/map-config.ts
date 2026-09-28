@@ -30,9 +30,17 @@ export function buildMapSeries(
   if (seriesConfig && seriesConfig.length > 0) {
     return seriesConfig.map((serieConfig, index) => {
       const userOptions = userSeriesOptions[index] || {};
+      const sample = normalizedData[0];
+      const providerOptions: Record<string, unknown> = {};
+      const resolvedName = resolveMapProviderValue(serieConfig.name, sample, 0);
+      const resolvedColor = resolveMapProviderValue(serieConfig.color, sample, 0);
+      const resolvedVisible = resolveMapProviderValue(serieConfig.visible, sample, 0);
+      if (resolvedName !== undefined && resolvedName !== null) providerOptions.name = resolvedName;
+      if (resolvedColor !== undefined && resolvedColor !== null) providerOptions.color = resolvedColor;
+      if (resolvedVisible !== undefined && resolvedVisible !== null) providerOptions.visible = resolvedVisible;
 
       const defaultOptions = {
-        name: serieConfig.name || 'Données',
+        name: 'Données',
         data: normalizedData,
         joinBy: effectiveJoinBy,
         type: 'map',
@@ -40,6 +48,7 @@ export function buildMapSeries(
 
       return {
         ...defaultOptions,
+        ...providerOptions,
         ...userOptions,
       };
     });
@@ -109,9 +118,9 @@ export function extractCodeToNameMapping(geoJSON: any): Map<string, string> {
   const mapping = new Map<string, string>();
   if (geoJSON?.features) {
     geoJSON.features.forEach((feature: any) => {
-      const code = feature.properties?.code || feature.properties?.['hc-key'];
-      const name = feature.properties?.nom || feature.properties?.name;
-      if (code && name) {
+      const code = feature.properties?.code ?? feature.properties?.['hc-key'];
+      const name = feature.properties?.nom ?? feature.properties?.name;
+      if (code !== undefined && code !== null && name !== undefined && name !== null) {
         mapping.set(code.toString(), name);
       }
     });
@@ -126,24 +135,36 @@ export function replaceCodesWithNames(
   return categories.map((code) => codeToName.get(code) || code);
 }
 
-export function createMapTooltipFormatter() {
+export function createMapTooltipFormatter(valueLabel = '') {
   return {
     formatter: function (this: any) {
       const categoryName = this.x || '';
       const value = this.y;
-      return `<b>${categoryName}</b><br/>${value.toLocaleString('fr-FR')} habitants`;
+      const formattedValue = typeof value === 'number' ? value.toLocaleString('fr-FR') : String(value ?? '');
+      return `<b>${categoryName}</b><br/>${formattedValue}${valueLabel ? ` ${valueLabel}` : ''}`;
     },
   };
 }
 
-export function createSimpleMapTooltipFormatter() {
+export function createSimpleMapTooltipFormatter(valueLabel = '') {
   return {
     formatter: function (this: any) {
       const name = this.point.name || '';
       const value = this.point.y;
-      return `<b>${name}</b><br/>${value.toLocaleString('fr-FR')} habitants`;
+      const formattedValue = typeof value === 'number' ? value.toLocaleString('fr-FR') : String(value ?? '');
+      return `<b>${name}</b><br/>${formattedValue}${valueLabel ? ` ${valueLabel}` : ''}`;
     },
   };
+}
+
+function resolveMapProviderValue<T>(
+  provider: T | ((row: any, index: number) => T) | undefined,
+  row: any,
+  index: number,
+): T | undefined {
+  return typeof provider === 'function'
+    ? (provider as (value: any, position: number) => T)(row, index)
+    : provider;
 }
 
 function hasMapFormat(data: any[]): boolean {

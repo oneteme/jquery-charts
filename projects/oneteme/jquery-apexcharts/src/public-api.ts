@@ -7,3 +7,5 @@ export * from './lib/directive/pie-chart.directive';
 export * from './lib/directive/treemap-chart.directive';
 export * from './lib/directive/range-chart.directive';
 export * from './lib/component/chart.component';
+export * from './lib/component/view/chart-view.facade';
+export * from './lib/directive/apex-chart.directive';

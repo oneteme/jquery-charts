@@ -72,7 +72,7 @@ export const mapChartData = [
  * Données de test pour les départements français (échantillon)
  * Les codes correspondent aux codes INSEE des départements
  *
- * Pour tester : http://localhost:4201/atelier-graphiques?subdiv=fr-departement
+ * Pour tester : http://localhost:4201/atelier?subdiv=fr-departement
  */
 export const mapDepartementData = [
   // Île-de-France

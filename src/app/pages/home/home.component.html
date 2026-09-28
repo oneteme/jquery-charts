@@ -1,117 +1,254 @@
 <div class="home">
+  <section class="hero" aria-labelledby="home-title">
+    <div class="hero__copy">
+      <h1 class="hero__title" id="home-title">
+        Une API unifiée<br>
+        <span class="hero__title-line">pour <span class="hero__accent">vos</span></span><br>
+        <span class="hero__accent">bibliothèques graphiques</span>
+      </h1>
+      <p class="hero__desc">
+        <strong>Jquery-Charts</strong> permet de visualiser vos données avec une configuration bien plus simple
+        qu’une API graphique native. Vous obtenez rapidement un rendu cohérent, sans multiplier les branchements
+        techniques.
+      </p>
+      <div class="hero__actions">
+        <a class="btn btn--primary" routerLink="/demarrer">
+          <span>Découvrir la solution</span>
+          <span class="btn__icon" aria-hidden="true">&#8594;</span>
+        </a>
+        <button class="text-link" type="button" (click)="scrollToProductBenefits()">
+          Voir comment cela fonctionne <span aria-hidden="true">&#8595;</span>
+        </button>
+      </div>
+    </div>
 
-  <!-- Hero -->
-  <section class="hero">
-    <div class="hero__badge">jquery-charts</div>
-    <h1 class="hero__title">
-      Une API unifiée pour<br>
-      <span class="hero__accent">3 bibliothèques graphiques</span>
-    </h1>
-    <p class="hero__desc">
-      Créez des graphiques interactifs avec <strong>ECharts</strong>,
-      <strong>Highcharts</strong> et <strong>ApexCharts</strong> via une
-      configuration Angular identique — sans changer votre code métier.
-    </p>
-    <div class="hero__actions">
-      <button class="btn btn--primary" routerLink="/charts/echarts">Explorer les exemples</button>
-      <button class="btn btn--ghost" routerLink="/table">Composant tableau</button>
+    <div class="preview-stage" aria-label="Aperçus des vues Jquery-Charts">
+      <div
+        class="preview-stage__viewport"
+        [id]="'preview-panel-' + activePreviewIndex"
+        [ngSwitch]="productPreviews[activePreviewIndex].kind"
+        role="tabpanel"
+        [attr.aria-label]="productPreviews[activePreviewIndex].label">
+        <chart
+          *ngSwitchCase="'chart'"
+          class="preview-chart"
+          type="areaspline"
+          [config]="productChartConfig"
+          [data]="productChartData"
+          [drilldown]="productChartDrilldown"
+          (drilldownRequest)="onProductChartDrilldown($event)"
+          (drilldownNavigate)="onProductChartNavigate($event)">
+        </chart>
+        <jquery-table
+          *ngSwitchCase="'table'"
+          class="preview-table"
+          [config]="productTableConfig"
+          [data]="productTableData">
+        </jquery-table>
+        <div *ngSwitchCase="'organizer'" class="organizer-demo">
+          <div class="organizer-demo__intro">
+            <strong>Une vue adaptée à chaque besoin</strong>
+            <span>Le développeur définit le cadre ; l’utilisateur compose sa vue sans modifier l’application.</span>
+          </div>
+          <div class="organizer-demo__capabilities">
+            <div>
+              <small>Cadre disponible</small>
+              <span>3 dimensions</span><span>3 indicateurs</span><span>4 calculs</span>
+            </div>
+            <div>
+              <small>Personnalisation</small>
+              <span>Type de rendu</span><span>Regroupement</span><span>Filtres</span>
+            </div>
+          </div>
+          <div class="organizer-demo__state">
+            <span><small>Rendu</small>{{ productOrganizerState.viewMode === 'table' ? 'Tableau' : 'Graphique' }}</span>
+            <span><small>Dimension</small>{{ productOrganizerState.selectedX === 'region' ? 'Région' : productOrganizerState.selectedX === 'channel' ? 'Canal' : 'Mois' }}</span>
+            <span><small>Indicateur</small>{{ productOrganizerState.selectedY === 'orders' ? 'Commandes' : productOrganizerState.selectedY === 'margin' ? 'Marge' : 'Chiffre d’affaires' }}</span>
+            <span><small>Calcul</small>{{ productOrganizerState.selectedYAggregate === 'average' ? 'Moyenne' : productOrganizerState.selectedYAggregate === 'min' ? 'Minimum' : productOrganizerState.selectedYAggregate === 'max' ? 'Maximum' : 'Somme' }}</span>
+            <span><small>Découpage</small>{{ productOrganizerState.selectedGroupBy === 'region' ? 'Région' : productOrganizerState.selectedGroupBy === 'channel' ? 'Canal' : 'Aucun' }}</span>
+            <span><small>Filtre actif</small>{{ productOrganizerState.selectedSlices?.length || 0 }}</span>
+          </div>
+          <organizer-button
+            class="preview-organizer"
+            [config]="productOrganizerConfig"
+            [state]="productOrganizerState"
+            (viewChange)="onProductOrganizerChange($event)">
+          </organizer-button>
+        </div>
+      </div>
+
+      <div class="preview-stage__navigator">
+        <div class="preview-stage__navigator-heading">
+          <span class="preview-stage__navigator-label">Explorer les vues</span>
+          <span class="preview-stage__navigator-state">Trois façons d’explorer vos données</span>
+        </div>
+        <div class="preview-stage__controls" role="tablist" aria-label="Choisir une vue">
+        <button
+          *ngFor="let visual of productPreviews; let index = index"
+          type="button"
+          class="preview-stage__control"
+          [class.preview-stage__control--active]="activePreviewIndex === index"
+          [attr.aria-selected]="activePreviewIndex === index"
+          [attr.aria-controls]="'preview-panel-' + index"
+          [attr.aria-label]="'Afficher la vue ' + visual.label"
+          role="tab"
+          (click)="selectPreview(index)">
+          <mat-icon class="preview-stage__control-icon" aria-hidden="true">{{ visual.icon }}</mat-icon>
+          <span class="preview-stage__control-copy">
+            <span class="preview-stage__control-index">0{{ index + 1 }}</span>
+            <span class="preview-stage__control-label">{{ visual.label }}</span>
+          </span>
+          <mat-icon class="preview-stage__control-check" aria-hidden="true">check</mat-icon>
+        </button>
+        </div>
+      </div>
     </div>
   </section>
 
-  <!-- Libraries -->
-  <section class="libs">
-    <div class="libs__grid">
-
-      <div class="lib-card" (click)="goTo('/charts/echarts')">
-        <div class="lib-card__badge echarts">ECharts</div>
-        <h3 class="lib-card__name">jquery-echarts</h3>
-        <p class="lib-card__desc">Apache ECharts 5 — rendu Canvas ultra-performant, animations fluides, support des grands volumes de données.</p>
-        <div class="lib-card__types">
-          <span>bar</span><span>line</span><span>pie</span><span>scatter</span>
-          <span>heatmap</span><span>treemap</span><span>radar</span><span>+9</span>
-        </div>
-        <div class="lib-card__arrow">Explorer →</div>
+  <section class="value-section" id="product-benefits" aria-labelledby="value-title">
+    <div class="section-kicker">POUR LES ÉQUIPES QUI FONT ÉVOLUER LE PRODUIT</div>
+    <div class="value-section__grid">
+      <h2 id="value-title">Une solution qui reste souple quand vos besoins changent.</h2>
+      <div>
+        <p>
+          De par sa conception, <strong>Jquery-Charts</strong> permet de changer de bibliothèque graphique lorsque le besoin évolue,
+          sans remettre en cause l’ensemble du code de l’application. Les données et les usages restent stables,
+          tandis que le moteur de rendu peut s’adapter.
+        </p>
+        <p>
+          Comme nous gardons la main sur le code du wrapper, les corrections et les améliorations restent maîtrisées.
+          Les équipes gagnent du temps au quotidien et conservent une meilleure maintenabilité dans la durée.
+        </p>
       </div>
-
-      <div class="lib-card" (click)="goTo('/charts/highcharts')">
-        <div class="lib-card__badge highcharts">Highcharts</div>
-        <h3 class="lib-card__name">jquery-highcharts</h3>
-        <p class="lib-card__desc">Highcharts — la référence en visualisation SVG, options avancées, support des cartes géographiques.</p>
-        <div class="lib-card__types">
-          <span>line</span><span>spline</span><span>area</span><span>bar</span>
-          <span>polar</span><span>bubble</span><span>range</span><span>+14</span>
-        </div>
-        <div class="lib-card__arrow">Explorer →</div>
-      </div>
-
-      <div class="lib-card" (click)="goTo('/charts/apexcharts')">
-        <div class="lib-card__badge apex">ApexCharts</div>
-        <h3 class="lib-card__name">jquery-apexcharts</h3>
-        <p class="lib-card__desc">ApexCharts — moderne, léger, SVG natif avec animations intégrées et tooltips interactifs.</p>
-        <div class="lib-card__types">
-          <span>bar</span><span>line</span><span>pie</span><span>radial</span>
-          <span>heatmap</span><span>funnel</span><span>range</span><span>+9</span>
-        </div>
-        <div class="lib-card__arrow">Explorer →</div>
-      </div>
-
+    </div>
+    <div class="value-points">
+      <div><strong>Plus rapide</strong><span>à mettre en œuvre</span></div>
+      <div><strong>Plus souple</strong><span>quand le moteur change</span></div>
+      <div><strong>Plus durable</strong><span>à faire évoluer</span></div>
     </div>
   </section>
 
-  <!-- Principle -->
-  <section class="principle">
+  <section class="principle" id="principle" aria-labelledby="principle-title">
     <div class="principle__header">
       <span class="principle__label">Principe</span>
-      <h2>Une seule API, plusieurs moteurs</h2>
-      <p>Le même composant Angular, les mêmes <code>field()</code> et <code>rangeFields()</code> — seul l'import change.</p>
+      <h2 id="principle-title">Une seule base, plusieurs rendus visuels</h2>
+      <p>Les données métier et les règles communes restent en place. Seule la manière de les présenter s’adapte à votre usage.</p>
     </div>
-
-    <div class="code-compare">
-      <div class="code-compare__col">
-        <div class="code-compare__header">
-          <span class="dot echarts"></span>
-          ECharts
-        </div>
-        <pre class="code-block"><code><span class="kw">import</span> &#123; ChartComponent &#125;
-  <span class="kw">from</span> <span class="str">'&#64;oneteme/jquery-echarts'</span>;
-
-<span class="tag">&lt;chart</span>
-  <span class="attr">type</span>=<span class="str">"bar"</span>
-  <span class="attr">[config]</span>=<span class="str">"config"</span>
-  <span class="attr">[data]</span>=<span class="str">"data"</span>
-<span class="tag">&gt;&lt;/chart&gt;</span></code></pre>
-      </div>
-
-      <div class="code-compare__col">
-        <div class="code-compare__header">
-          <span class="dot highcharts"></span>
-          Highcharts
-        </div>
-        <pre class="code-block"><code><span class="kw">import</span> &#123; ChartComponent &#125;
-  <span class="kw">from</span> <span class="str">'&#64;oneteme/jquery-highcharts'</span>;
-
-<span class="tag">&lt;chart</span>
-  <span class="attr">type</span>=<span class="str">"bar"</span>
-  <span class="attr">[config]</span>=<span class="str">"config"</span>
-  <span class="attr">[data]</span>=<span class="str">"data"</span>
-<span class="tag">&gt;&lt;/chart&gt;</span></code></pre>
-      </div>
-
-      <div class="code-compare__col">
-        <div class="code-compare__header">
-          <span class="dot apex"></span>
-          ApexCharts
-        </div>
-        <pre class="code-block"><code><span class="kw">import</span> &#123; ChartComponent &#125;
-  <span class="kw">from</span> <span class="str">'&#64;oneteme/jquery-apexcharts'</span>;
-
-<span class="tag">&lt;chart</span>
-  <span class="attr">type</span>=<span class="str">"bar"</span>
-  <span class="attr">[config]</span>=<span class="str">"config"</span>
-  <span class="attr">[data]</span>=<span class="str">"data"</span>
-<span class="tag">&gt;&lt;/chart&gt;</span></code></pre>
-      </div>
+    <div class="principle-flow" aria-label="De la donnée à la vue utilisateur">
+      <div class="principle-flow__step"><span>01</span><strong>Données métier</strong><small>Vos informations restent au centre.</small></div>
+      <div class="principle-flow__connector" aria-hidden="true">&#8594;</div>
+      <div class="principle-flow__step principle-flow__step--accent"><span>02</span><strong>Configuration commune</strong><small>Une façon simple de structurer la vue.</small></div>
+      <div class="principle-flow__connector" aria-hidden="true">&#8594;</div>
+      <div class="principle-flow__step"><span>03</span><strong>Rendu adapté</strong><small>Graphique, tableau ou vue personnalisée.</small></div>
     </div>
   </section>
 
+  <section class="product-section product-section--table" id="table-capability" aria-labelledby="table-title">
+    <div class="product-section__copy">
+      <span class="section-kicker">JQUERY-TABLE</span>
+      <h2 id="table-title">Du graphique aux données détaillées, en toute simplicité.</h2>
+      <p>
+        Quand une décision demande d’entrer dans le détail, <strong>Jquery-Table</strong> propose une vue structurée et immédiatement
+        exploitable, construite sur les composants éprouvés d’<strong>Angular Material</strong>. Recherche, tri, filtres
+        et export se réunissent dans une même expérience pour passer rapidement de la synthèse à l’analyse précise.
+        Son intégration simplifiée permet d’obtenir rapidement un rendu complet, sans multiplier les développements spécifiques.
+      </p>
+      <a class="section-link" routerLink="/table">Voir les exemples de tableaux <span aria-hidden="true">&#8594;</span></a>
+    </div>
+    <jquery-table
+      class="product-table-preview"
+      aria-label="Exemple de tableau Jquery-Table"
+      [config]="productTableConfig"
+      [data]="productTableData">
+    </jquery-table>
+  </section>
+
+  <section class="product-section product-section--organizer" id="organizer-capability" aria-labelledby="organizer-title">
+    <div class="organizer-product-demo" aria-label="Exemple de Jquery-Organizer">
+      <div class="organizer-product-demo__heading">
+        <div>
+          <span>{{ organizerMetricLabel }} par {{ organizerDimensionLabel }}</span>
+          <small>{{ organizerAggregateLabel }} calculé à partir des données commerciales</small>
+        </div>
+        <organizer-button
+          class="organizer-product-preview"
+          [config]="productOrganizerConfig"
+          [state]="productOrganizerState"
+          (viewChange)="onProductOrganizerChange($event)">
+        </organizer-button>
+      </div>
+      <div class="organizer-product-demo__result">
+        <div class="organizer-product-demo__total">
+          <small>{{ organizerAggregateLabel }}</small>
+          <strong>{{ organizerResultTotal }}</strong>
+        </div>
+        <div class="organizer-product-demo__rows">
+          <div *ngFor="let row of organizerResultRows" class="organizer-product-demo__row">
+            <span>{{ row.label }}</span>
+            <i><b [style.width.%]="row.width"></b></i>
+            <strong>{{ row.formattedValue }}</strong>
+          </div>
+        </div>
+      </div>
+      <div class="organizer-product-demo__filters">
+        <small>Filtres disponibles</small>
+        <span *ngFor="let filter of organizerFilterLabels">{{ filter }}</span>
+        <em *ngIf="!organizerFilterLabels.length">Aucun filtre sélectionné</em>
+      </div>
+    </div>
+    <div class="product-section__copy">
+      <span class="section-kicker">JQUERY-ORGANIZER</span>
+      <h2 id="organizer-title">Donner à chacun la vue dont il a besoin.</h2>
+      <p>
+        Avec <strong>Jquery-Organizer</strong>, le développeur définit les dimensions, indicateurs et filtres disponibles, puis laisse
+        l’utilisateur composer sa propre vue. Chacun peut personnaliser son affichage et obtenir exactement
+        l’information utile, sans solliciter l’équipe technique à chaque évolution.
+      </p>
+      <a class="section-link" routerLink="/organizer">Découvrir l’Organizer <span aria-hidden="true">&#8594;</span></a>
+    </div>
+  </section>
+
+  <section class="libs" id="libraries" aria-labelledby="libraries-title">
+    <div class="libs__intro">
+      <span class="section-kicker">LES TECHNOLOGIES SOUS-JACENTES</span>
+      <h2 id="libraries-title">Le wrapper s’appuie sur des bibliothèques reconnues.</h2>
+      <p>Choisissez le rendu adapté à votre contexte tout en conservant la même expérience côté application.</p>
+    </div>
+    <div class="libs__grid">
+      <article class="lib-card">
+        <div class="lib-card__badge highcharts">Highcharts</div>
+        <h3 class="lib-card__name">jquery-highcharts</h3>
+        <p class="lib-card__desc">Visualisation SVG, options avancées et cartographie pour les besoins les plus riches.</p>
+        <div class="lib-card__types"><span>line</span><span>area</span><span>bar</span><span>maps</span><span>+14</span></div>
+        <div class="lib-card__links"><a routerLink="/charts/highcharts">Voir nos exemples <span aria-hidden="true">&#8594;</span></a><a href="https://www.highcharts.com/" target="_blank" rel="noopener">Découvrir Highcharts <span aria-hidden="true">&#8599;</span></a></div>
+      </article>
+
+      <article class="lib-card">
+        <div class="lib-card__badge echarts">Apache ECharts</div>
+        <h3 class="lib-card__name">jquery-echarts</h3>
+        <p class="lib-card__desc">Rendu performant, animations fluides et gestion de volumes importants de données.</p>
+        <div class="lib-card__types"><span>bar</span><span>line</span><span>heatmap</span><span>treemap</span><span>+9</span></div>
+        <div class="lib-card__links"><a routerLink="/charts/echarts">Voir nos exemples <span aria-hidden="true">&#8594;</span></a><a href="https://echarts.apache.org/" target="_blank" rel="noopener">Découvrir ECharts <span aria-hidden="true">&#8599;</span></a></div>
+      </article>
+
+      <article class="lib-card">
+        <div class="lib-card__badge apex">ApexCharts</div>
+        <h3 class="lib-card__name">jquery-apexcharts</h3>
+        <p class="lib-card__desc">Graphiques modernes, SVG natif, animations intégrées et interactions immédiates.</p>
+        <div class="lib-card__types"><span>bar</span><span>line</span><span>pie</span><span>radial</span><span>+9</span></div>
+        <div class="lib-card__links"><a routerLink="/charts/apexcharts">Voir nos exemples <span aria-hidden="true">&#8594;</span></a><a href="https://apexcharts.com/" target="_blank" rel="noopener">Découvrir ApexCharts <span aria-hidden="true">&#8599;</span></a></div>
+      </article>
+    </div>
+  </section>
+
+  <div class="home__actions">
+    <div>
+      <span class="section-kicker">PRÊT À ALLER PLUS VITE ?</span>
+      <h2>Créez plus vite des vues claires et faciles à faire évoluer.</h2>
+    </div>
+    <a class="btn btn--primary" routerLink="/demarrer">
+      <span>Démarrer avec Jquery-Charts</span>
+      <span class="btn__icon" aria-hidden="true">&#8594;</span>
+    </a>
+  </div>
 </div>

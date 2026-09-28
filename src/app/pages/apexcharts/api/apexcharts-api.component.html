@@ -1,0 +1,641 @@
+<div class="api-page">
+  <header class="api-hero">
+    <div>
+      <a class="back-link" routerLink="/charts/apexcharts">← Retour aux exemples ApexCharts</a>
+      <p class="eyebrow">jquery-apexcharts / référence du wrapper</p>
+      <h1>API du wrapper ApexCharts</h1>
+      <p class="intro">
+        Le composant <code>&lt;chart&gt;</code> traduit le modèle partagé de jquery-core vers ApexCharts.
+        Cette page documente les types pris en charge, les options natives transmissibles et les capacités
+        transverses du contrat public actuel.
+      </p>
+    </div>
+    <a class="official-link" href="https://apexcharts.com/" target="_blank" rel="noopener">
+      Documentation officielle ApexCharts ↗
+    </a>
+  </header>
+
+  <section class="reference-section" aria-labelledby="apex-api-reference-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Référence</p>
+      <h2 id="apex-api-reference-title">Inputs, configuration, événements et types</h2>
+      <p>Les tableaux distinguent le wrapper Angular, le modèle partagé jquery-core et les options ApexCharts natives.</p>
+    </div>
+
+    <article *ngFor="let section of sections" class="reference-block" [id]="section.id">
+      <div class="section-heading section-heading--small">
+        <p class="section-kicker">API</p>
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </div>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <colgroup>
+            <col class="api-column api-column--property">
+            <col class="api-column api-column--type">
+            <col class="api-column api-column--source">
+            <col class="api-column api-column--description">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Propriété</th>
+              <th>Type</th>
+              <th>Source</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of section.entries">
+              <td>
+                <code>{{ entry.name }}</code>
+                <small *ngIf="entry.types">{{ entry.types }}</small>
+              </td>
+              <td><code>{{ entry.type }}</code></td>
+              <td><span class="source-badge" [attr.data-source]="entry.source">{{ entry.source }}</span></td>
+              <td>{{ entry.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-example">
+        <div class="section-example-heading">
+          <span>Exemple de la section</span>
+          <small>Snippet aligné sur les exports publics</small>
+        </div>
+        <pre><code>{{ section.example }}</code></pre>
+      </div>
+    </article>
+  </section>
+
+  <section class="capabilities-section" aria-labelledby="apex-capabilities-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Démonstrations</p>
+      <h2 id="apex-capabilities-title">Le même contrat, plusieurs capacités</h2>
+      <p>
+        Chaque carte utilise le composant public <code>&lt;chart&gt;</code>. Les familles, options natives, événements,
+        synchronisations et actions exposées restent pilotés par le même contrat Angular.
+      </p>
+    </div>
+
+    <article class="capability-card" id="families">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER + CORE</p>
+          <h3>Familles de graphiques prises en charge</h3>
+          <p>
+            Les cinq directives internes adaptent les séries communes vers les formats line, bar, pie, treemap et range
+            d’ApexCharts. Un type ne peut être changé qu’à l’intérieur de sa famille de données.
+          </p>
+        </div>
+        <span class="capability-kind">types</span>
+      </header>
+
+      <div class="family-grid">
+        <div *ngFor="let demo of familyDemos" class="family-demo">
+          <div class="family-demo-heading">
+            <strong>{{ demo.label }}</strong>
+            <span>{{ demo.currentType }}</span>
+          </div>
+          <div class="type-switcher" role="toolbar" [attr.aria-label]="'Type ' + demo.label">
+            <button
+              *ngFor="let type of demo.types"
+              type="button"
+              [class.is-active]="demo.currentType === type"
+              (click)="setFamilyType(demo, type)"
+            >{{ type }}</button>
+          </div>
+          <chart class="api-chart family-chart" [type]="demo.currentType" [config]="demo.config" [data]="demo.data"></chart>
+        </div>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>import &#123; ChartComponent &#125; from '@oneteme/jquery-apexcharts';
+
+&lt;chart
+  type="rangeArea"
+  [config]="config"
+  [data]="rows"&gt;
+&lt;/chart&gt;
+
+// Pour une plage min/max :
+series: [&#123;
+  data: &#123; x: field('month'), y: rangeFields('min', 'max') &#125;
+&#125;]</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="states">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER</p>
+          <h3>Chargement et absence de données</h3>
+          <p>
+            <code>isLoading</code> modifie le message no-data utilisé par les directives. Pour rendre l’état observable,
+            la démonstration vide aussi les lignes ; les deux états restent distincts du graphique prêt à afficher.
+          </p>
+        </div>
+        <span class="capability-kind">isLoading</span>
+      </header>
+
+      <div class="demo-surface">
+        <div class="demo-controls">
+          <button type="button" [class.is-active]="!isLoadingDemo && !isEmptyDemo" (click)="setState('ready')">Données</button>
+          <button type="button" [class.is-active]="isLoadingDemo" (click)="setState('loading')">Chargement</button>
+          <button type="button" [class.is-active]="isEmptyDemo" (click)="setState('empty')">Aucune donnée</button>
+        </div>
+        <chart class="api-chart state-chart" type="line" [config]="deploymentConfig" [data]="stateData" [isLoading]="isLoadingDemo"></chart>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>&lt;chart
+  type="line"
+  [config]="config"
+  [data]="rows"
+  [isLoading]="isLoading"&gt;
+&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="native-options">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER → APEXCHARTS NATIF</p>
+          <h3>Options natives via <code>config.options</code></h3>
+          <p>
+            Les options propres à ApexCharts restent accessibles sans créer un nouvel input Angular. Le wrapper fusionne
+            ces options avec les dimensions, titres et séries construites depuis le provider.
+          </p>
+        </div>
+        <span class="capability-kind">options</span>
+      </header>
+
+      <div class="demo-surface">
+        <div class="native-option-proof">
+          <div><span class="proof-label">jquery-core</span><code>series · axes · données</code><small>Le provider décrit les données et le modèle commun.</small></div>
+          <div><span class="proof-label">ApexCharts</span><code>stroke · markers · tooltip · zoom</code><small><code>config.options</code> est fusionné après les options communes.</small></div>
+        </div>
+        <chart class="api-chart native-chart" type="line" [config]="nativeOptionsConfig" [data]="nativeOptionsData"></chart>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>const config: ChartProvider&lt;string, number&gt; = &#123;
+  series: [&#123; name: 'Déploiements', data: &#123; x: field('week'), y: field('count') &#125; &#125;],
+  options: &#123;
+    stroke: &#123; curve: 'smooth', width: 3 &#125;,
+    dataLabels: &#123; enabled: false &#125;,
+    tooltip: &#123; shared: true &#125;,
+  &#125;,
+&#125;;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="rendered-option">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER → APEXCHARTS NATIF</p>
+          <h3>Option rendue prioritaire</h3>
+          <p>
+            <code>renderedOption</code> fournit une option ApexCharts complète après la construction commune. Les
+            propriétés présentes dans cette option prennent la priorité sur les valeurs concurrentes du provider.
+          </p>
+        </div>
+        <span class="capability-kind">renderedOption</span>
+      </header>
+
+      <div class="demo-surface">
+        <div class="native-option-proof">
+          <div>
+            <span class="proof-label">ChartProvider</span>
+            <code>titre concurrent · toolbar=false · courbe droite orange</code>
+            <small>Le provider fournit volontairement des valeurs qui doivent être écrasées.</small>
+          </div>
+          <div>
+            <span class="proof-label">renderedOption</span>
+            <code>titre natif · courbe bleue lissée · toolbar de zoom</code>
+            <small>Le rendu visible confirme la priorité de l’option ApexCharts.</small>
+          </div>
+        </div>
+        <chart
+          class="api-chart rendered-option-chart"
+          type="line"
+          [config]="renderedOptionConfig"
+          [data]="nativeOptionsData"
+          [renderedOption]="renderedOption"
+        ></chart>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>const nativeOption = &#123;
+  chart: &#123; type: 'line', zoom: &#123; enabled: true &#125; &#125;,
+  xaxis: &#123; categories: ['Jan', 'Fév', 'Mar'] &#125;,
+  series: [&#123; name: 'Option native', data: [4, 7, 5] &#125;],
+&#125;;
+
+&lt;chart
+  [config]="&#123; series: [] &#125;"
+  [data]="rows"
+  [renderedOption]="nativeOption"&gt;
+&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="organizer">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER + ORGANIZER</p>
+          <h3>Visibilité des séries via OrganizerState</h3>
+          <p>
+            Le menu <code>organizer-button</code> émet la sélection ; le parent la traduit en
+            <code>OrganizerState</code>, puis <code>&lt;chart&gt;</code> reconstruit les séries visibles sans muter le
+            provider source.
+          </p>
+        </div>
+        <span class="capability-kind">organizer</span>
+      </header>
+
+      <div class="demo-surface">
+        <div class="organizer-demo-bar">
+          <organizer-button
+            [config]="organizerMenuConfig"
+            [state]="organizerMenuState"
+            (viewChange)="onOrganizerChange($event)"
+          ></organizer-button>
+          <span>{{ organizerState.selectedFieldIds.length }} / {{ organizerSeries.length }} séries visibles dans le chart</span>
+        </div>
+        <div class="organizer-state-panel" aria-live="polite">
+          <div class="organizer-state-heading">
+            <strong>État appliqué au graphique</strong>
+            <span>Le menu et le parent restent synchronisés.</span>
+          </div>
+          <div class="organizer-series-list">
+            <div *ngFor="let series of organizerSeries" class="organizer-series-status">
+              <span class="series-swatch" [style.backgroundColor]="series.color"></span>
+              <span>{{ series.name }}</span>
+              <strong>{{ organizerState.selectedFieldIds.includes(series.name) ? 'Visible' : 'Masquée' }}</strong>
+            </div>
+          </div>
+          <dl class="organizer-state-values">
+            <div>
+              <dt>visibleFields reçu du menu</dt>
+              <dd>{{ organizerMenuState.visibleFields?.join(', ') || 'Aucun champ' }}</dd>
+            </div>
+            <div>
+              <dt>selectedFieldIds réinjecté</dt>
+              <dd>{{ organizerState.selectedFieldIds.join(', ') || 'Aucune série' }}</dd>
+            </div>
+          </dl>
+        </div>
+        <chart
+          class="api-chart organizer-chart"
+          type="line"
+          [config]="organizerChartConfig"
+          [data]="organizerData"
+          [organizer]="organizerConfig"
+          [organizerState]="organizerState"
+        ></chart>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>organizerState = &#123;
+  selectedFieldIds: ['Ventes', 'Objectif'],
+  groupByKey: null,
+  dynamicSliceKeys: [],
+&#125;;
+
+&lt;organizer-button
+  [config]="organizerMenuConfig"
+  [state]="organizerMenuState"
+  (viewChange)="onOrganizerChange($event)"&gt;
+&lt;/organizer-button&gt;
+&lt;chart
+  [config]="config"
+  [data]="rows"
+  [organizer]="&#123; enabled: true &#125;"
+  [organizerState]="organizerState"&gt;
+&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="group-sync">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER + CORE</p>
+          <h3>Synchronisation tooltip et zoom</h3>
+          <p>
+            Deux instances ApexCharts portant le même <code>group</code> relaient les interactions déclarées par
+            <code>groupSync</code>. Ici, le survol et le datazoom sont synchronisés.
+          </p>
+        </div>
+        <span class="capability-kind">groupSync</span>
+      </header>
+
+      <div class="demo-surface">
+        <p class="demo-hint">Survolez une catégorie ou utilisez les contrôles de zoom : les deux instances utilisent le même groupe.</p>
+        <div class="sync-grid">
+          <chart class="api-chart" type="line" [config]="syncLineConfig" [data]="syncData" [group]="group" groupSync="all"></chart>
+          <chart class="api-chart" type="area" [config]="syncAreaConfig" [data]="syncData" [group]="group" groupSync="all"></chart>
+        </div>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>const syncOptions = &#123;
+  tooltip: &#123; shared: true, intersect: false &#125;,
+  chart: &#123; zoom: &#123; enabled: true, type: 'x' &#125; &#125;,
+&#125;;
+
+&lt;chart [config]="lineConfig" [data]="rows"
+  group="sales-dashboard" groupSync="all"&gt;&lt;/chart&gt;
+&lt;chart [config]="areaConfig" [data]="rows"
+  group="sales-dashboard" groupSync="all"&gt;&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="drilldown">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER</p>
+          <h3>Drilldown piloté par le parent</h3>
+          <p>
+            Le wrapper affiche le fil d’Ariane et émet la demande de niveau. Le parent charge les lignes, remplace la
+            configuration et met à jour <code>activeLevel</code>.
+          </p>
+        </div>
+        <span class="capability-kind">drilldown</span>
+      </header>
+
+      <div class="demo-surface">
+        <div class="event-status" aria-live="polite">
+          <div><strong>Dernier chartClick</strong><code>{{ lastChartClick }}</code></div>
+          <div *ngIf="lastRenderError"><strong>Dernière erreur de rendu</strong><code>{{ lastRenderError }}</code></div>
+        </div>
+        <chart
+          class="api-chart drilldown-chart"
+          type="column"
+          [config]="activeDrilldownConfig"
+          [data]="drilldownData"
+          [drilldown]="drilldown"
+          (chartClick)="onChartClick($event)"
+          (renderError)="onRenderError($event)"
+          (drilldownRequest)="onDrilldownRequest($event)"
+          (drilldownNavigate)="onDrilldownNavigate($event)"
+        ></chart>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>&lt;chart
+  [config]="activeConfig"
+  [data]="drilldownData"
+  [drilldown]="drilldown"
+  (drilldownRequest)="onDrilldownRequest($event)"
+  (drilldownNavigate)="onDrilldownNavigate($event)"
+  (chartClick)="onChartClick($event)"&gt;
+&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="exports">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER + ORGANIZER</p>
+          <h3>Exports, snapshots et plein écran</h3>
+          <p>
+            Les méthodes publiques restent accessibles par référence au composant. Le menu Organizer peut les regrouper
+            dans une action unique pour l’application consommatrice.
+          </p>
+        </div>
+        <span class="capability-kind">actions</span>
+      </header>
+
+      <div class="demo-surface">
+        <div class="organizer-demo-bar">
+          <organizer-button
+            [config]="exportOrganizerConfig"
+            [state]="exportOrganizerState"
+          ></organizer-button>
+          <span>Visuel, données, snapshot et plein écran passent par les méthodes du composant.</span>
+        </div>
+        <chart
+          #exportChart
+          class="api-chart export-chart"
+          type="column"
+          [config]="deploymentConfig"
+          [data]="toolbarData"
+          [copyFeedback]="{ enabled: true, message: 'Snapshot créé' }"
+          (visualCopied)="onSnapshotCreated($event)"
+        ></chart>
+        <pre *ngIf="snapshotDraft" class="snapshot-output snapshot-output--draft"><code>{{ formatJson(snapshotDraft) }}</code></pre>
+        <pre *ngIf="lastSnapshot" class="snapshot-output"><code>{{ formatJson(lastSnapshot) }}</code></pre>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>@ViewChild('chart') chart!: ApexChartComponent&lt;string, number&gt;;
+
+chart.exportImage('sales', 'png', 2);
+chart.exportData('sales', ';');
+chart.copyVisualSnapshot('Ventes filtrées');
+await chart.toggleFullscreen();</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="toolbar">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER</p>
+          <h3>Toolbar et navigation de type</h3>
+          <p>
+            <code>showToolbar</code> affiche la toolbar ApexCharts et les commandes de navigation du wrapper. Le pivot
+            reste désactivé dans cette démonstration et ne doit être activé que lorsqu’il est réellement utilisé.
+          </p>
+        </div>
+        <span class="capability-kind">showToolbar</span>
+      </header>
+
+      <div class="demo-surface">
+        <chart class="api-chart toolbar-chart" type="column" [config]="toolbarConfig" [data]="toolbarData"></chart>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Code minimal</span></div>
+        <pre><code>const config = &#123;
+  showToolbar: true,
+  series: [&#123; data: &#123; x: field('day'), y: field('count') &#125; &#125;],
+&#125;;
+
+&lt;chart type="column" [config]="config" [data]="rows"&gt;&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="organizer-complete">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">ORGANIZER + WRAPPER + CORE</p>
+          <h3>Organizer complet : dimensions, agrégations et actions</h3>
+          <p>
+            Cette dernière carte rassemble le contrat complet de <code>organizer-button</code> : axes X et Y,
+            agrégats, regroupements, filtres, templates, types de graphique, exports, préférences, actions et
+            bascule graphique / tableau. Chaque choix est traduit en projection de données avant d’être envoyé à
+            <code>&lt;chart&gt;</code>.
+          </p>
+        </div>
+        <span class="capability-kind">full config</span>
+      </header>
+
+      <div class="demo-surface complete-organizer-surface">
+        <div class="organizer-demo-bar complete-organizer-toolbar">
+          <organizer-button
+            [config]="completeOrganizerConfig"
+            [state]="completeOrganizerMenuState"
+            (viewChange)="onCompleteOrganizerChange($event)"
+          ></organizer-button>
+          <span>{{ completeOrganizerState.selectedFieldIds.length }} série(s) visible(s) · {{ completeOrganizerChartData.length }} ligne(s) agrégée(s)</span>
+          <span class="organizer-action-status" aria-live="polite">{{ completeOrganizerActionStatus }}</span>
+        </div>
+
+        <div class="complete-organizer-state-grid" aria-live="polite">
+          <div class="organizer-state-panel">
+            <div class="organizer-state-heading">
+              <strong>État Organizer</strong>
+              <span>Valeurs sélectionnées dans le menu</span>
+            </div>
+            <dl class="organizer-state-values organizer-state-values--three">
+              <div>
+                <dt>Vue</dt>
+                <dd>{{ completeOrganizerViewMode === 'chart' ? 'Graphique' : 'Tableau' }}</dd>
+              </div>
+              <div>
+                <dt>Type</dt>
+                <dd>{{ getCompleteOrganizerLabel('chartType', completeOrganizerMenuState.selectedChartType) }}</dd>
+              </div>
+              <div>
+                <dt>Template</dt>
+                <dd>{{ getCompleteOrganizerLabel('template', completeOrganizerMenuState.selectedTemplate) }}</dd>
+              </div>
+              <div>
+                <dt>Axe X</dt>
+                <dd>{{ getCompleteOrganizerLabel('x', completeOrganizerMenuState.selectedX) }}</dd>
+              </div>
+              <div>
+                <dt>Mesure Y</dt>
+                <dd>{{ getCompleteOrganizerLabel('y', completeOrganizerMenuState.selectedY) }}</dd>
+              </div>
+              <div>
+                <dt>Agrégat</dt>
+                <dd>{{ getCompleteOrganizerLabel('aggregate', completeOrganizerMenuState.selectedYAggregate) }}</dd>
+              </div>
+              <div>
+                <dt>Grouper par</dt>
+                <dd>{{ getCompleteOrganizerLabel('group', completeOrganizerMenuState.selectedGroupBy) }}</dd>
+              </div>
+              <div>
+                <dt>Filtrer par</dt>
+                <dd>{{ getCompleteOrganizerSlicesLabel() }}</dd>
+              </div>
+              <div>
+                <dt>Séries sélectionnées</dt>
+                <dd>{{ completeOrganizerState.selectedFieldIds.join(', ') || 'Aucune' }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="complete-organizer-contract">
+            <div class="organizer-state-heading">
+              <strong>Projection vers ApexCharts</strong>
+              <span>Le wrapper ne reçoit que le contrat de rendu</span>
+            </div>
+            <dl class="organizer-state-values">
+              <div>
+                <dt>groupByKey</dt>
+                <dd>{{ completeOrganizerState.groupByKey || 'null' }}</dd>
+              </div>
+              <div>
+                <dt>dynamicSliceKeys</dt>
+                <dd>{{ completeOrganizerState.dynamicSliceKeys.join(', ') || '[]' }}</dd>
+              </div>
+              <div>
+                <dt>Séries projetées</dt>
+                <dd>{{ getCompleteOrganizerProjectedSeriesLabel() || 'Aucune' }}</dd>
+              </div>
+              <div>
+                <dt>Actions</dt>
+                <dd>Export · copie · plein écran · préférences</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <chart
+          *ngIf="completeOrganizerViewMode === 'chart'"
+          #completeOrganizerChart
+          class="api-chart complete-organizer-chart"
+          [type]="completeOrganizerChartType"
+          [config]="completeOrganizerChartConfig"
+          [data]="completeOrganizerChartData"
+          [organizer]="organizerConfig"
+          [organizerState]="completeOrganizerState"
+        ></chart>
+
+        <div *ngIf="completeOrganizerViewMode === 'table'" class="complete-organizer-table-wrap">
+          <table class="complete-organizer-table">
+            <thead>
+              <tr>
+                <th>{{ getCompleteOrganizerLabel('x', completeOrganizerMenuState.selectedX) }}</th>
+                <th *ngFor="let column of completeOrganizerTableColumns">{{ column.name }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of completeOrganizerChartData">
+                <th scope="row">{{ row.label }}</th>
+                <td *ngFor="let column of completeOrganizerTableColumns">{{ row[column.valueKey] | number:'1.0-2' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <pre *ngIf="completeOrganizerSnapshot" class="snapshot-output"><code>Snapshot prêt : {{ completeOrganizerSnapshot.label }}</code></pre>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading"><span>Configuration complète</span></div>
+        <pre><code>const organizerConfig: OrganizerConfig = &#123;
+  fields: seriesFields,
+  xFields: [&#123; id: 'month', label: 'Mois' &#125;, &#123; id: 'region', label: 'Région' &#125;],
+  yFields: [&#123;
+    id: 'revenue',
+    label: 'Chiffre d’affaires',
+    aggregates: [
+      &#123; id: 'sum', label: 'Somme' &#125;,
+      &#123; id: 'average', label: 'Moyenne' &#125;,
+      &#123; id: 'count', label: 'Nombre' &#125;,
+      &#123; id: 'min', label: 'Minimum' &#125;,
+      &#123; id: 'max', label: 'Maximum' &#125;,
+    ],
+  &#125;],
+  groups: [&#123; id: 'region', label: 'Région' &#125;, &#123; id: 'channel', label: 'Canal' &#125;],
+  slices: regionAndChannelSlices,
+  templates: [monthlyRevenue, regionalOrders, onlineMargin],
+  chartTypes: ['line', 'column', 'donut', 'heatmap', 'rangeArea', ...],
+  showExport: true,
+  showActions: true,
+  showPreferences: true,
+  switchView: &#123; currentView: 'chart', onSwitch: onViewSwitch &#125;,
+&#125;;
+
+&lt;organizer-button
+  [config]="organizerConfig"
+  [state]="organizerState"
+  (viewChange)="onOrganizerChange($event)"&gt;
+&lt;/organizer-button&gt;
+&lt;chart [type]="selectedChartType" [config]="chartConfig" [data]="projectedRows"&gt;
+&lt;/chart&gt;</code></pre>
+      </div>
+    </article>
+  </section>
+</div>

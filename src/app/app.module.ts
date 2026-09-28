@@ -9,7 +9,6 @@ import { HeaderComponent } from './components/header/header.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
 import { ChartTypesService } from './core/services/chart-types.service';
 import { FooterComponent } from './components/footer/footer.component';
-import { BackToDocButtonComponent } from './components/back-to-doc-button/back-to-doc-button.component';
 import { ChartWorkbenchComponent } from './pages/basic-test/basic-test.component';
 import { TableExempleComponent } from './pages/table/table.component';
 import { TableShellComponent } from './pages/table/table-shell.component';
@@ -24,12 +23,12 @@ import { ApexChartsDetailComponent } from './pages/apexcharts/apexcharts-detail.
 import { QuickSearchComponent } from './components/quick-search/quick-search.component';
 import { TablePresentationComponent } from './pages/table/table-presentation.component';
 import { SnapshotsComponent } from './pages/snapshots/snapshots.component';
-import { DashboardEmsDemoComponent } from './pages/dashboard-ems-demo/dashboard-ems-demo.component';
+import { CoreApiComponent } from './pages/core-api/core-api.component';
+import { NotFoundComponent } from './pages/not-found/not-found.component';
 
 @NgModule({
   declarations: [
     AppComponent,
-    HomeComponent,
     HeaderComponent,
     SidebarComponent,
     FooterComponent,
@@ -39,7 +38,7 @@ import { DashboardEmsDemoComponent } from './pages/dashboard-ems-demo/dashboard-
     BrowserAnimationsModule,
     HttpClientModule,
     AppRoutingModule,
-    BackToDocButtonComponent,
+    HomeComponent,
     ChartWorkbenchComponent,
     TableExempleComponent,
     TableShellComponent,
@@ -54,7 +53,8 @@ import { DashboardEmsDemoComponent } from './pages/dashboard-ems-demo/dashboard-
     QuickSearchComponent,
     TablePresentationComponent,
     SnapshotsComponent,
-    DashboardEmsDemoComponent,
+    CoreApiComponent,
+    NotFoundComponent,
   ],
   providers: [ChartTypesService],
   bootstrap: [AppComponent],

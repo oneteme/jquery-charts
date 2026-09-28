@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
-import { ChartProvider, ChartType, cloneSerializable, containsFunction, FullscreenManager, OrganizerConfig, OrganizerState, VisualCopyFeedbackConfig, VisualSnapshot, VisualSnapshotApplyResult, VisualSnapshotDraft, VisualSnapshotStorage, XaxisType, YaxisType } from '@oneteme/jquery-core';
-import { ChartDirective, GroupSyncMode } from '../directive/chart.directive';
-import { ChartClickEvent, ChartCustomEvent, ChartDrilldownConfig, ChartDrilldownRequest, ChartDrilldownState, ChartRenderError, EChartsOption } from '../directive/utils/types';
+import { ChartExportImageType, ChartProvider, ChartType, cloneSerializable, containsFunction, FullscreenManager, OrganizerConfig, OrganizerState, VisualCopyFeedbackConfig, VisualSnapshot, VisualSnapshotApplyResult, VisualSnapshotDraft, VisualSnapshotStorage, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartDirective } from '../directive/chart.directive';
+import { ChartClickEvent, ChartCustomEvent, ChartDrilldownConfig, ChartDrilldownRequest, ChartDrilldownState, ChartRenderError, EChartsOption, GroupSyncMode } from '../directive/utils/types';
 import { ChartViewFacade } from './view/chart-view.facade';
 
 @Component({
@@ -84,6 +84,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
 
   copyFeedbackMessage = '';
   private _copyFeedbackTimer?: number;
+  private _fullscreenResizeFrame?: number;
   private drilldownPath: Record<string, unknown> = {};
 
   @ViewChild(ChartDirective) private _directive: ChartDirective<X, Y>;
@@ -141,7 +142,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
     });
   }
 
-  exportImage(fileName?: string, type?: 'png' | 'jpeg' | 'svg', pixelRatio?: number): void {
+  exportImage(fileName?: string, type?: ChartExportImageType, pixelRatio?: number): void {
     this._directive?.exportImage(fileName, type, pixelRatio);
   }
 
@@ -162,6 +163,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @HostListener('document:fullscreenchange')
   onFullscreenChange(): void {
     this._isFullscreen = FullscreenManager.isActive(this._element.nativeElement);
+    this.scheduleFullscreenResize();
   }
 
   /** Capture les données courantes et la configuration sérialisable du graphique. */
@@ -239,14 +241,36 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   }
 
   ngOnDestroy(): void {
-    if (this._copyFeedbackTimer !== undefined) window.clearTimeout(this._copyFeedbackTimer);
+    if (this._copyFeedbackTimer !== undefined && typeof window !== 'undefined') {
+      window.clearTimeout(this._copyFeedbackTimer);
+    }
+    if (this._fullscreenResizeFrame !== undefined && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(this._fullscreenResizeFrame);
+    }
     this._organizerFacade.destroy();
+  }
+
+  private scheduleFullscreenResize(): void {
+    if (typeof window === 'undefined') return;
+    if (this._fullscreenResizeFrame !== undefined) {
+      window.cancelAnimationFrame(this._fullscreenResizeFrame);
+    }
+    this._fullscreenResizeFrame = window.requestAnimationFrame(() => {
+      this._fullscreenResizeFrame = window.requestAnimationFrame(() => {
+        this._fullscreenResizeFrame = undefined;
+        this._directive?.resize();
+      });
+    });
   }
 
   private showCopyFeedback(): void {
     if (this.copyFeedback.enabled === false) return;
     this.copyFeedbackMessage = this.copyFeedback.message || 'Copié';
-    if (this._copyFeedbackTimer !== undefined) window.clearTimeout(this._copyFeedbackTimer);
-    this._copyFeedbackTimer = window.setTimeout(() => this.copyFeedbackMessage = '', this.copyFeedback.durationMs ?? 2200);
+    if (this._copyFeedbackTimer !== undefined && typeof window !== 'undefined') {
+      window.clearTimeout(this._copyFeedbackTimer);
+    }
+    this._copyFeedbackTimer = typeof window !== 'undefined'
+      ? window.setTimeout(() => this.copyFeedbackMessage = '', this.copyFeedback.durationMs ?? 2200)
+      : undefined;
   }
 }

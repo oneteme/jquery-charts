@@ -1,0 +1,259 @@
+<main class="api-page">
+  <header class="api-hero">
+    <div>
+      <a class="back-link" routerLink="/charts/highcharts">← Retour aux exemples Highcharts</a>
+      <p class="eyebrow">jquery-highcharts / référence et capacités du wrapper</p>
+      <h1>Référence de l’API Highcharts</h1>
+      <p class="intro">
+        Les inputs, événements et extensions ajoutés par jquery-highcharts sont documentés ici avec un exemple.
+        Les cartes associent chaque capacité à son rendu et à l’extrait de code correspondant.
+      </p>
+    </div>
+    <a class="official-link" href="https://www.highcharts.com/docs" target="_blank" rel="noopener">
+      Documentation officielle Highcharts ↗
+    </a>
+  </header>
+
+  <section class="reference-section" aria-labelledby="api-reference-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Référence</p>
+      <h2 id="api-reference-title">Inputs, événements et options</h2>
+      <p>Le tableau distingue ce qui appartient au wrapper, au contrat jquery-core et à la bibliothèque Highcharts.</p>
+    </div>
+
+    <article *ngFor="let section of apiSections" class="reference-block" [id]="section.id">
+      <div class="section-heading section-heading--small">
+        <p class="section-kicker">API</p>
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </div>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <colgroup>
+            <col class="api-column api-column--property">
+            <col class="api-column api-column--type">
+            <col class="api-column api-column--source">
+            <col class="api-column api-column--description">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Propriété</th>
+              <th>Type</th>
+              <th>Source</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of section.entries">
+              <td>
+                <code>{{ entry.name }}</code>
+                <small *ngIf="entry.types">{{ entry.types }}</small>
+              </td>
+              <td><code>{{ entry.type }}</code></td>
+              <td><span class="source-badge" [attr.data-source]="entry.source">{{ entry.source }}</span></td>
+              <td>{{ entry.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-example" *ngIf="section.example">
+        <div class="section-example-heading">
+          <span>Exemple global</span>
+          <small>Une configuration de synthèse pour la section</small>
+        </div>
+        <pre><code>{{ section.example }}</code></pre>
+      </div>
+    </article>
+  </section>
+
+  <section class="capabilities-section" aria-labelledby="capabilities-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Capacités du wrapper</p>
+      <h2 id="capabilities-title">Ce que le wrapper ajoute à Highcharts</h2>
+      <p>
+        Ces exemples isolent une capacité à la fois. Le rendu utilise le composant public <code>&lt;chart&gt;</code>;
+        le code sous chaque carte est la version minimale à copier.
+      </p>
+    </div>
+
+    <article *ngFor="let demo of demos" class="capability-card" [id]="demo.id">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">{{ demo.origin || 'WRAPPER' }}</p>
+          <h3>{{ demo.title }}</h3>
+          <p>{{ demo.description }}</p>
+        </div>
+        <span class="capability-kind">{{ demo.kind }}</span>
+      </header>
+
+      <div class="demo-surface" [class.demo-surface--theme]="demo.kind === 'theme'" [ngSwitch]="demo.kind">
+        <ng-container *ngSwitchCase="'loading'">
+          <div class="demo-controls">
+            <button type="button" [class.is-active]="isLoadingDemo" (click)="isLoadingDemo = !isLoadingDemo">
+              {{ isLoadingDemo ? 'Arrêter le chargement' : 'Simuler le chargement' }}
+            </button>
+            <button type="button" [class.is-active]="showNoDataDemo" (click)="showNoDataDemo = !showNoDataDemo">
+              {{ showNoDataDemo ? 'Restaurer les données' : 'Afficher no-data' }}
+            </button>
+          </div>
+          <chart class="api-chart"
+            type="area"
+            [config]="lineConfig"
+            [data]="loadingData"
+            [isLoading]="isLoadingDemo"
+            loadingLabel="Actualisation du graphique..."
+            noDataLabel="Aucun résultat pour cette période"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'theme'">
+          <chart class="api-chart" type="line" [config]="lineConfig" [data]="baseData" [theme]="theme"></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'rendered-option'">
+          <div class="native-option-proof">
+            <div>
+              <span class="proof-label">ChartProvider</span>
+              <code>type="line" · title="Titre ignoré" · data=[]</code>
+              <small>Ces valeurs sont volontairement en conflit avec l’option native.</small>
+            </div>
+            <div>
+              <span class="proof-label">renderedOption</span>
+              <code>areaspline · titre · axes · tooltip · séries</code>
+              <small>Pour ces propriétés, l’option native prend la priorité.</small>
+            </div>
+          </div>
+          <chart class="api-chart" type="line" [config]="renderedOptionConfig" [data]="baseData" [renderedOption]="renderedOption"></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'organizer'">
+          <div class="organizer-demo-bar">
+            <organizer-button
+              [config]="organizerMenuConfig"
+              [state]="organizerMenuState"
+              (viewChange)="onOrganizerChange($event)"
+            ></organizer-button>
+            <span>{{ organizerChartType }} · {{ organizerState.selectedFieldIds.length }} / {{ organizerSeries.length }} séries visibles dans le chart</span>
+          </div>
+          <div class="organizer-state-panel" aria-live="polite">
+            <div class="organizer-state-heading">
+              <strong>État réellement appliqué au graphique</strong>
+              <span>Le menu et le parent restent synchronisés.</span>
+            </div>
+            <div class="organizer-series-list">
+              <div *ngFor="let series of organizerSeries" class="organizer-series-status">
+                <span class="series-swatch" [style.backgroundColor]="series.color"></span>
+                <span>{{ series.name }}</span>
+                <strong>{{ organizerState.selectedFieldIds.includes(series.name) ? 'Visible' : 'Masquée' }}</strong>
+              </div>
+            </div>
+            <dl class="organizer-state-values">
+              <div>
+                <dt>visibleFields reçu du menu</dt>
+                <dd>{{ organizerMenuState.visibleFields.join(', ') || 'Aucun champ' }}</dd>
+              </div>
+              <div>
+                <dt>selectedFieldIds utilisé par le parent</dt>
+                <dd>{{ organizerState.selectedFieldIds.join(', ') || 'Aucune série' }}</dd>
+              </div>
+            </dl>
+          </div>
+          <chart class="api-chart"
+            [type]="organizerChartType"
+            [config]="organizerChartConfig"
+            [data]="baseData"
+            [possibleTypes]="organizerPossibleTypes"
+            [organizer]="organizerConfig"
+            [organizerState]="organizerState"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'group-sync'">
+          <div class="demo-controls sync-controls">
+            <span class="demo-hint">Faites glisser horizontalement dans l’un des deux graphiques pour zoomer les deux vues. Le bouton natif Highcharts permet ensuite de réinitialiser le zoom.</span>
+          </div>
+          <div class="sync-grid">
+            <chart class="api-chart" type="line" [config]="syncLineConfig" [data]="baseData" [group]="group" groupSync="all"></chart>
+            <chart class="api-chart" type="area" [config]="syncAreaConfig" [data]="baseData" [group]="group" groupSync="all"></chart>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'drilldown'">
+          <chart class="api-chart"
+            type="column"
+            [config]="activeDrilldownConfig"
+            [data]="drilldownData"
+            [drilldown]="drilldown"
+            (chartClick)="onChartClick($event)"
+            (drilldownRequest)="onDrilldownRequest($event)"
+            (drilldownNavigate)="onDrilldownNavigate($event)"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'export'">
+          <div class="organizer-demo-bar">
+            <organizer-button
+              [config]="exportOrganizerConfig"
+              [state]="exportOrganizerState"
+            ></organizer-button>
+            <span>Organizer centralise l’export du visuel, des données, du snapshot et du plein écran.</span>
+          </div>
+          <chart class="api-chart"
+            #exportChart
+            type="column"
+            [config]="lineConfig"
+            [data]="baseData"
+            [copyFeedback]="{ enabled: true, message: 'Snapshot créé' }"
+            (visualCopied)="onSnapshotCreated($event)"
+          ></chart>
+          <pre *ngIf="snapshotDraft" class="snapshot-output snapshot-output--draft"><code>{{ formatJson(snapshotDraft) }}</code></pre>
+          <pre *ngIf="lastSnapshot" class="snapshot-output"><code>{{ formatJson(lastSnapshot) }}</code></pre>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'axes'">
+          <div class="demo-controls axes-controls">
+            <span class="demo-hint">MWh est affiché sur l’axe Énergie, tandis que °C reste visible dans le tooltip de la série Température. Cliquez une série dans la légende pour vérifier que son axe disparaît.</span>
+          </div>
+          <chart class="api-chart" type="mixed" [config]="mixedConfig" [data]="baseData"></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'unit-conversion'">
+          <div class="demo-controls unit-controls">
+            <span class="demo-hint">Les lignes source sont en mètres; le Core les convertit en kilomètres avant le rendu. L’unité km est ensuite portée par la série Highcharts.</span>
+          </div>
+          <chart class="api-chart" type="column" [config]="distanceConfig" [data]="convertedDistanceData"></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'unit-scale'">
+          <div class="demo-controls unit-controls">
+            <span class="demo-hint">Les valeurs restent dans l’unité source. Le maximum de cette série sélectionne automatiquement k pour l’axe Y et le tooltip; les exemples isolés montrent aussi les seuils unités et M.</span>
+          </div>
+          <div class="scale-reference" aria-label="Exemples de formatage des échelles">
+            <div *ngFor="let example of compactScaleExamples">
+              <span>{{ example.source }}</span>
+              <strong>{{ example.output }}</strong>
+              <small>échelle {{ example.selectedUnit }}</small>
+            </div>
+          </div>
+          <chart class="api-chart" type="line" [config]="compactConfig" [data]="compactData"></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'toolbar'">
+          <chart class="api-chart" type="column" [config]="toolbarConfig" [data]="baseData"></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'map'">
+          <chart class="api-chart" type="map" [config]="mapConfig" [data]="mapData"></chart>
+        </ng-container>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading">
+          <span>Code minimal</span>
+          <button type="button" (click)="copyCode(demo)">{{ demo.copied ? 'Copié' : 'Copier le code' }}</button>
+        </div>
+        <pre><code>{{ demo.code }}</code></pre>
+      </div>
+    </article>
+  </section>
+</main>

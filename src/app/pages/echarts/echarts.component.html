@@ -37,6 +37,7 @@
       *ngFor="let section of sections"
       class="chart-wrapper"
       [id]="section.id"
+      [attr.data-chart-example]="section.id"
     >
       <div class="chart-label">{{ section.label }}</div>
 
@@ -46,6 +47,17 @@
         [config]="examples[section.exampleKey].config"
         [data]="examples[section.exampleKey].data"
       ></chart>
+
+      <button
+        type="button"
+        class="stackblitz-toggle"
+        (click)="openInStackBlitz(section, $event)"
+        aria-label="Modifier cet exemple dans StackBlitz"
+        title="Modifier dans StackBlitz"
+      >
+        <span aria-hidden="true">↗</span>
+        <span class="tooltip">Modifier dans StackBlitz</span>
+      </button>
 
       <button
         class="code-toggle"
@@ -62,30 +74,4 @@
     </div>
   </div>
 
-  <section class="drilldown-doc-section" id="drilldown">
-    <div class="chart-label">Navigation par drill-down</div>
-    <p class="drilldown-description">
-      Cliquez sur un mois : l’application charge le détail journalier, met à jour les données et affiche
-      le breadcrumb natif <code>Mois &gt; Jours</code>. Le retour sur <code>Mois</code> réutilise le cache.
-    </p>
-    <div class="chart-wrapper drilldown-wrapper">
-      <chart
-        class="chart-component"
-        type="line"
-        [config]="drilldownConfig"
-        [data]="drilldownRows"
-        [isLoading]="drilldownLoading"
-        [drilldown]="drilldownNavigation"
-        (chartClick)="onDrilldownClick($event)"
-        (drilldownNavigate)="onDrilldownNavigate($event)">
-      </chart>
-      <button class="code-toggle" (click)="toggleCode('drilldown', $event)" aria-label="Voir le code">
-        <img src="assets/icons/code.svg" class="code-icon" alt="code" />
-        <span class="tooltip">Voir le code</span>
-      </button>
-      <div class="code-block" [class.open]="isCodeOpen('drilldown')">
-        <pre><code [innerHTML]="_highlightCode(drilldownCode)"></code></pre>
-      </div>
-    </div>
-  </section>
 </div>

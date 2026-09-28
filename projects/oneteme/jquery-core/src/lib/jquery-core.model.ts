@@ -1,4 +1,6 @@
-export declare type ChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'map' | string;
+import type { GroupSyncMode } from './chart-capabilities.model';
+
+export declare type ChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'mixed' | 'map' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
   return (o, idx) => {
@@ -149,6 +151,9 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
         if (unit) {
           chartSeries[name].unit = unit;
         }
+        if ((m as any).showUnitOnAxis !== undefined) {
+          chartSeries[name].showUnitOnAxis = (m as any).showUnitOnAxis;
+        }
         if (yAxisIndex !== undefined) {
           chartSeries[name].yAxisIndex = yAxisIndex;
         }
@@ -288,16 +293,16 @@ function isUndefined(o: any): boolean {
 // Détecte automatiquement le meilleur format (µs, ms, s, etc.) basé sur l'ordre de grandeur des données.
 export interface UnitConfig {
   baseUnit: string;        // Unité source des données ('s', 'o', etc.)
-  scales: ScaleConfig[];   // Liste des formats disponibles (triée par seuil croissant)
+  scales: ScaleConfig[];   // Formats disponibles, choisis selon le maximum des valeurs
   precision?: number;      // Fixe les décimales (si non spécifié, utilise _smartFormatY adaptatif)
   formatter?: (v: number, selectedUnit: string) => string; // Formatage personnalisé
 }
 
 // Définit un format d'affichage avec sa plage d'applicabilité.
 export interface ScaleConfig {
-  unit: string;            // Unité affichée ('µs', 'ms', 's', 'KB', 'MB', etc.)
-  scale: number;           // Facteur de conversion (1000 pour s→ms, 1000000 pour s→µs)
-  threshold?: number;      // Utiliser ce format si max(values) > threshold (Infinity = défaut)
+  unit: string;            // Unité affichée ('µs', 'ms', 's', 'k', 'M', etc.)
+  scale: number;           // Facteur de conversion (1000 pour s→ms, 0.001 pour unités→k)
+  threshold?: number;      // Format utilisé si le maximum absolu des valeurs <= threshold
 }
 
 export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
@@ -315,7 +320,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   options?: any;
   showToolbar?: boolean;
   group?: string; // groupe de synchronisation inter-graphiques
-  groupSync?: 'all' | 'datazoom' | 'tooltip' | ('datazoom' | 'tooltip')[]; // ce qui est synchronisé dans le groupe
+  groupSync?: GroupSyncMode; // ce qui est synchronisé dans le groupe
   mapEndpoint?: string; // Endpoint pour GeoJSON
   mapParam?: string; // Param URL à lire pour la subdiv
   mapDefaultValue?: string; // Subdiv défaut si param absent
@@ -332,6 +337,7 @@ export interface SerieProvider<X extends XaxisType, Y extends YaxisType> {
   type?: string | DataProvider<string>; // first time at init
   visible?: boolean | DataProvider<boolean>; // pour masquer/afficher une série
   unit?: string;
+  showUnitOnAxis?: boolean; // affiche l'unité sur les graduations de l'axe Y (true par défaut)
   yAxisIndex?: number; // Pour les dual/multi-axis : 0 (défaut), 1, 2, etc.
   yAxisConfig?: Record<string, any>; // Options personnalisées pour cet axe Y (ex: splitNumber)
 }
@@ -392,6 +398,7 @@ export interface CommonSerie<Y extends YaxisType | Coordinate2D> {
   visible?: boolean;
   type?: string;
   yAxisIndex?: number; // Pour les dual/multi-axis : 0 (défaut), 1, 2, etc.
+  showUnitOnAxis?: boolean;
   yAxisConfig?: Record<string, any>; // Options personnalisées pour cet axe Y (ex: splitNumber)
 }
 

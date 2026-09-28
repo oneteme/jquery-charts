@@ -18,11 +18,11 @@ export function hideLoading(chart: Highcharts.Chart): void {
   chart.hideLoading();
 }
 
-export function showNoDataMessage(chart: Highcharts.Chart): void {
+export function showNoDataMessage(chart: Highcharts.Chart, text?: string): void {
   if (!chart) return;
 
   if (typeof (chart as any).showNoData === 'function') {
-    (chart as any).showNoData();
+    (chart as any).showNoData(text);
   }
 }
 
@@ -41,7 +41,10 @@ export function showValidationError(
   }
 }
 
-export function hideValidationError(chart: Highcharts.Chart): void {
+export function hideValidationError(
+  chart: Highcharts.Chart,
+  noDataLabel = 'Aucune donnée',
+): void {
   if (!chart) return;
 
   if (typeof (chart as any).hideNoData === 'function') {
@@ -49,7 +52,7 @@ export function hideValidationError(chart: Highcharts.Chart): void {
   }
 
   if (chart.options.lang) {
-    chart.options.lang.noData = 'Aucune donnée';
+    chart.options.lang.noData = noDataLabel;
   }
 }
 
@@ -94,26 +97,28 @@ export function updateChartLoadingState(
   isLoading: boolean,
   hasData: boolean,
   hasValidationError: boolean = false,
+  loadingLabel = 'Chargement des données...',
+  noDataLabel = 'Aucune donnée',
 ): void {
   if (!chart) return;
 
-  if (isLoading && !hasData) {
+  if (isLoading) {
     hideChartToolbar(chart);
-    showLoading(chart, 'Chargement des données...');
-    hideChartContent(chart);
-  } else if (hasValidationError) {
+    showLoading(chart, loadingLabel);
+    if (hasData) {
+      showChartContent(chart);
+    } else {
+      hideChartContent(chart);
+    }
+  } else if (hasValidationError || hasData) {
     hideLoading(chart);
     showChartToolbar(chart);
     showChartContent(chart);
-  } else if (!isLoading && !hasData) {
-    hideLoading(chart);
-    hideChartToolbar(chart);
-    showNoDataMessage(chart);
-    hideChartContent(chart);
   } else {
     hideLoading(chart);
-    showChartToolbar(chart);
-    showChartContent(chart);
+    hideChartToolbar(chart);
+    showNoDataMessage(chart, noDataLabel);
+    hideChartContent(chart);
   }
 }
 
@@ -154,9 +159,10 @@ function showChartContent(chart: Highcharts.Chart): void {
       (chart as any).seriesGroup.show();
     }
     chart.series?.forEach((s: any) => {
-      s.group?.show?.();
-      s.dataLabelsGroup?.show?.();
-      s.markerGroup?.show?.();
+      const showSeries = s.visible !== false;
+      (showSeries ? s.group?.show : s.group?.hide)?.call(s.group);
+      (showSeries ? s.dataLabelsGroup?.show : s.dataLabelsGroup?.hide)?.call(s.dataLabelsGroup);
+      (showSeries ? s.markerGroup?.show : s.markerGroup?.hide)?.call(s.markerGroup);
     });
     if (chart.container) {
       const dataLabels = chart.container.querySelectorAll(
@@ -177,18 +183,33 @@ function showChartContent(chart: Highcharts.Chart): void {
 
 export function configureLoadingOptions(
   chartOptions: Highcharts.Options,
+  loadingLabel = 'Chargement des données...',
+  noDataLabel = 'Aucune donnée',
 ): void {
-  chartOptions.loading = {
+  const defaultLoading: Highcharts.LoadingOptions = {
     hideDuration: 100,
     showDuration: 100,
     labelStyle: {
-      color: '#666',
+      color: '#18323a',
       fontSize: '14px',
-      fontWeight: 'normal',
+      fontWeight: '600',
     },
     style: {
-      backgroundColor: 'transparent',
+      backgroundColor: 'rgba(255, 255, 255, 0.76)',
       opacity: 1,
+    },
+  };
+  const currentLoading = chartOptions.loading ?? {};
+  chartOptions.loading = {
+    ...defaultLoading,
+    ...currentLoading,
+    labelStyle: {
+      ...defaultLoading.labelStyle,
+      ...currentLoading.labelStyle,
+    },
+    style: {
+      ...defaultLoading.style,
+      ...currentLoading.style,
     },
   };
 
@@ -197,7 +218,10 @@ export function configureLoadingOptions(
   }
 
   if (!(chartOptions as any).lang.noData) {
-    (chartOptions as any).lang.noData = 'Aucune donnée';
+    (chartOptions as any).lang.noData = noDataLabel;
+  }
+  if (!(chartOptions as any).lang.loading) {
+    (chartOptions as any).lang.loading = loadingLabel;
   }
 
   if (!(chartOptions as any).noData) {

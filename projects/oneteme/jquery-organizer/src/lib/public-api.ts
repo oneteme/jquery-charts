@@ -11,6 +11,7 @@ export {
   OrganizerButtonEvent,
   OrganizerViewField,
   OrganizerViewGroup,
+  OrganizerChartType,
   OrganizerViewStack,
   OrganizerViewSlice,
   FieldState,

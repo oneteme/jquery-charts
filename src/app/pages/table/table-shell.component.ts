@@ -22,7 +22,6 @@ export class TableShellComponent {
     { label: 'Démo',               path: '/table',                exact: true,  icon: 'demo'  },
     { label: 'Comparatif',         path: '/table/comparatif',     exact: false, icon: 'comp'  },
     { label: 'Slice + Graphique',  path: '/table/slice-chart',    exact: false, icon: 'slice' },
-    { label: 'Documentation',      path: '/table/documentation',  exact: false, icon: 'doc'   },
   ];
 
   constructor(private readonly router: Router) {}

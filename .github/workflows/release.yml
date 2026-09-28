@@ -258,6 +258,11 @@ jobs:
     # Build l'app avec base-href
     - run: npx ng build jquery-charts --base-href=/jquery-charts/
 
+    # GitHub Pages doit servir l'application Angular sur les routes profondes.
+    - name: Prepare Angular SPA fallback
+      shell: bash
+      run: cp dist/jquery-charts/index.html dist/jquery-charts/404.html
+
     - uses: oneteme/automation-scripts/.github/actions/npm-github-pages@main
       with:
         project: 'jquery-charts'

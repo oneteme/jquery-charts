@@ -1,56 +1,99 @@
-<div class="table-columns-example">
+<main class="comparison-page">
+  <header class="page-header">
+    <div>
+      <a class="back-link" routerLink="/table">← Tous les exemples</a>
+      <p class="eyebrow">jquery-table / comparatif</p>
+      <h1>Le même tableau, avec moins de plomberie.</h1>
+      <p class="subtitle">
+        Même jeu de données, mêmes besoins métier : recherche, tri, pagination, filtres et colonnes configurables.
+        Ce comparatif montre surtout où se trouve la responsabilité dans chaque approche.
+      </p>
+    </div>
+    <a class="api-link" routerLink="/api/table">Consulter la référence API ↗</a>
+  </header>
 
-  <h1>mat-table vs. jquery-table</h1>
-  <p class="intro">
-    Même dataset, même besoin : recherche, pagination, tri, filtres catégoriels et colonnes réorganisables.
-    Voici ce que chaque solution demande d’écrire.
-  </p>
-
-  <!-- Feature matrix -->
-  <div class="compare-grid">
-
-    <section class="compare-card">
-      <h2 class="card-title mat">Angular Material (mat-table seul)</h2>
-      <ul class="feature-list">
-        <li class="ok">  Affichage des données</li>
-        <li class="ok">  Tri via <code>MatSortModule</code></li>
-        <li class="nok"> Recherche &rarr; champ + filtre à coder manuellement</li>
-        <li class="nok"> Pagination &rarr; <code>MatPaginatorModule</code> + DataSource custom</li>
-        <li class="nok"> Filtres catégoriels &rarr; logique entièrement à écrire</li>
-        <li class="nok"> Colonnes masquables &rarr; <code>ngIf</code> sur chaque colonne</li>
-        <li class="nok"> Drag &amp; drop colonnes &rarr; <code>DragDropModule</code> + gestion d&#8217;&#233;tat</li>
-      </ul>
-      <h3 class="code-label">Code nécessaire (extrait)</h3>
-      <pre class="code-block mat-code"><code>{{ matCode }}</code></pre>
-    </section>
-
-    <section class="compare-card">
-      <h2 class="card-title jq">jquery-table</h2>
-      <ul class="feature-list">
-        <li class="ok"> Affichage des données</li>
-        <li class="ok"> Tri intégré (<code>sortable: true</code>)</li>
-        <li class="ok"> Recherche intégrée (<code>enableSearchBar: true</code>)</li>
-        <li class="ok"> Pagination intégrée (<code>enablePagination: true</code>)</li>
-        <li class="ok"> Filtres catégoriels (<code>slices: [...]</code>)</li>
-        <li class="ok"> Colonnes masquables (<code>allowColumnRemoval: true</code>)</li>
-        <li class="ok"> Drag &amp; drop colonnes (<code>enableColumnDragDrop: true</code>)</li>
-      </ul>
-      <h3 class="code-label">Code nécessaire (complet)</h3>
-      <pre class="code-block jq-code"><code>{{ jqCode }}</code></pre>
-    </section>
-
-  </div>
-
-  <!-- Demo live -->
-  <section class="live-demo">
-    <h2>D&#233;mo live</h2>
-    <p class="hint">
-      Recherche, pagination, tri, slices latéraux, masquage et réorganisation des colonnes &#8212;
-      tout configuré avec l&#8217;objet <code>tableConfig</code> ci-dessus.
-    </p>
-    <div class="demo-shell">
-      <jquery-table [data]="tasks" [config]="tableConfig"></jquery-table>
+  <section class="feature-summary" aria-label="Résumé du comparatif">
+    <div class="feature-summary__item">
+      <strong>Besoin identique</strong>
+      <span>Un backlog de sprint avec recherche, pagination, tri et filtres.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Point de comparaison</strong>
+      <span>Avec Material, l’application assemble les briques et conserve l’état.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Avec jquery-table</strong>
+      <span>La configuration décrit directement les capacités attendues du tableau.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>À retenir</strong>
+      <span>Le wrapper ne remplace pas Material : il rassemble le comportement métier répétitif.</span>
     </div>
   </section>
 
-</div>
+  <section class="comparison-section" aria-labelledby="comparison-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Comparaison</p>
+      <h2 id="comparison-title">Ce qui change réellement</h2>
+      <p>Les deux solutions affichent le même tableau. La différence porte sur la quantité de logique à maintenir autour du rendu.</p>
+    </div>
+
+    <div class="compare-grid">
+      <article class="compare-card compare-card--material">
+        <header class="compare-card__header">
+          <div>
+            <span class="card-index">A</span>
+            <h3>Angular Material seul</h3>
+          </div>
+          <span class="card-label">Briques à assembler</span>
+        </header>
+        <p class="card-intro">Une base robuste, mais la recherche, la pagination et la gestion de visibilité restent dans le composant hôte.</p>
+        <ul class="feature-list">
+          <li class="ok">Affichage et tri via Material</li>
+          <li class="work">Recherche et filtre à relier au DataSource</li>
+          <li class="work">Pagination à brancher sur MatPaginator</li>
+          <li class="work">Filtres catégoriels à implémenter</li>
+          <li class="work">Colonnes masquables et drag &amp; drop à gérer</li>
+        </ul>
+        <details class="code-details">
+          <summary>Voir un extrait d’implémentation</summary>
+          <pre><code>{{ matCode }}</code></pre>
+        </details>
+      </article>
+
+      <article class="compare-card compare-card--jquery">
+        <header class="compare-card__header">
+          <div>
+            <span class="card-index">B</span>
+            <h3>jquery-table</h3>
+          </div>
+          <span class="card-label">Configuration déclarative</span>
+        </header>
+        <p class="card-intro">Le composant garde le rendu Material et regroupe les comportements récurrents dans un <code>TableProvider</code>.</p>
+        <ul class="feature-list">
+          <li class="ok">Tri par colonne avec <code>sortable</code></li>
+          <li class="ok">Recherche avec <code>search</code></li>
+          <li class="ok">Pagination avec <code>pagination</code></li>
+          <li class="ok">Filtres catégoriels avec <code>slices</code></li>
+          <li class="ok">Colonnes et ordre pilotés par <code>view</code></li>
+        </ul>
+        <details class="code-details">
+          <summary>Voir la configuration</summary>
+          <pre><code>{{ jqCode }}</code></pre>
+        </details>
+      </article>
+    </div>
+  </section>
+
+  <section class="demo-section" aria-labelledby="comparison-demo-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Démo</p>
+      <h2 id="comparison-demo-title">Le résultat côté utilisateur</h2>
+      <p>La configuration présentée dans la carte jquery-table active les interactions ci-dessous sur le même dataset.</p>
+    </div>
+    <div class="demo-shell">
+      <jquery-table [data]="tasks" [config]="tableConfig"></jquery-table>
+    </div>
+    <div class="demo-note"><strong>Essayez :</strong> recherchez une tâche, triez une colonne, ouvrez View ou activez un filtre latéral.</div>
+  </section>
+</main>

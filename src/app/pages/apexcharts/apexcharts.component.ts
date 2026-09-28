@@ -1,16 +1,13 @@
-import { Component, HostListener, ChangeDetectionStrategy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
 import { APEXCHARTS_EXAMPLES } from 'src/app/data/chart/apexcharts-examples.data';
-import { ChartType } from '@oneteme/jquery-core';
+import type { ChartType } from '@oneteme/jquery-core';
+import { ChartExampleSection, APEXCHARTS_SECTIONS } from '../charts/chart-example-sections';
+import { ChartExampleNavigationService } from '../charts/chart-example-navigation.service';
+import { trackVisibleChartExample } from '../charts/chart-example-tracker';
 import { buildChartCode, highlightChartCode } from 'src/app/core/chart-code-snippet.util';
-
-interface ApexSection {
-  id: string;
-  label: string;
-  type: ChartType;
-  exampleKey: string;
-}
+import { StackBlitzService } from 'src/app/core/services/stackblitz.service';
 
 @Component({
   standalone: true,
@@ -20,38 +17,34 @@ interface ApexSection {
   styleUrls: ['./apexcharts.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ApexChartsPageComponent {
+export class ApexChartsPageComponent implements AfterViewInit, OnDestroy {
 
   readonly examples = APEXCHARTS_EXAMPLES;
 
-  readonly sections: ApexSection[] = [
-    // Simple
-    { id: 'pie',         label: 'Pie',               type: 'pie',         exampleKey: 'pieExample'        },
-    { id: 'donut',       label: 'Donut',             type: 'donut',       exampleKey: 'donutExample'      },
-    // Polar / Radar / Radial
-    { id: 'polar',       label: 'Polar',             type: 'polar',       exampleKey: 'polarExample'      },
-    { id: 'radar',       label: 'Radar',             type: 'radar',       exampleKey: 'radarExample'      },
-    { id: 'radial',      label: 'Radial Bar',        type: 'radial',      exampleKey: 'radialExample'     },
-    // Line / Area
-    { id: 'line',        label: 'Line',              type: 'line',        exampleKey: 'lineExample'       },
-    { id: 'area',        label: 'Area',              type: 'area',        exampleKey: 'areaExample'       },
-    // Bar / Column
-    { id: 'bar',         label: 'Bar (horizontal)',  type: 'bar',         exampleKey: 'barExample'        },
-    { id: 'column',      label: 'Column (vertical)', type: 'column',      exampleKey: 'columnExample'     },
-    // Heatmap / Treemap
-    { id: 'heatmap',     label: 'Heatmap',           type: 'heatmap',     exampleKey: 'heatmapExample'    },
-    { id: 'treemap',     label: 'Treemap',           type: 'treemap',     exampleKey: 'treemapExample'    },
-    // Funnel / Pyramid
-    { id: 'funnel',      label: 'Funnel',            type: 'funnel',      exampleKey: 'funnelExample'     },
-    { id: 'pyramid',     label: 'Pyramid',           type: 'pyramid',     exampleKey: 'pyramidExample'    },
-    // Range
-    { id: 'rangeBar',    label: 'Range Bar (Gantt)', type: 'rangeBar',    exampleKey: 'rangeBarExample'   },
-    { id: 'rangeColumn', label: 'Range Column',      type: 'rangeColumn', exampleKey: 'rangeColumnExample'},
-    { id: 'rangeArea',   label: 'Range Area',        type: 'rangeArea',   exampleKey: 'rangeAreaExample'  },
-  ];
+  readonly sections = APEXCHARTS_SECTIONS;
 
   openCodeBlocks: Record<string, boolean> = {};
   activeCodeBlock: string | null = null;
+
+  private stopExampleTracking: (() => void) | null = null;
+
+  constructor(
+    private readonly hostElement: ElementRef<HTMLElement>,
+    private readonly chartNavigation: ChartExampleNavigationService,
+    private readonly stackBlitzService: StackBlitzService,
+  ) {}
+
+  ngAfterViewInit(): void {
+    this.chartNavigation.reset();
+    this.stopExampleTracking = trackVisibleChartExample(
+      this.hostElement.nativeElement,
+      id => this.chartNavigation.setCurrentExample(id),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.stopExampleTracking?.();
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -73,6 +66,12 @@ export class ApexChartsPageComponent {
 
   isCodeOpen(id: string): boolean {
     return this.openCodeBlocks[id] ?? false;
+  }
+
+  openInStackBlitz(section: ChartExampleSection, event: Event): void {
+    event.stopPropagation();
+    const example = this.examples[section.exampleKey];
+    if (example) this.stackBlitzService.openExample('apexcharts', section, example);
   }
 
   getHighlightedCode(type: ChartType, exampleKey: string): string {

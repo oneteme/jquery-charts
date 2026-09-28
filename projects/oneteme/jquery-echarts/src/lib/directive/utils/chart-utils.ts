@@ -1,5 +1,7 @@
-import { ChartProvider, mergeDeep, UnitConfig } from '@oneteme/jquery-core';
+import { ChartProvider, formatChartValue, mergeDeep, selectBestScale, UnitConfig } from '@oneteme/jquery-core';
 import { EChartsOption } from './types';
+
+export { selectBestScale };
 
 export function buildTooltipOption(trigger: 'axis' | 'item', el?: HTMLElement): any {
   return {
@@ -48,15 +50,137 @@ export function formatTooltipValue(value: unknown): string {
     ? Number(value)
     : Number.NaN;
 
-  if (!Number.isFinite(numericValue)) {
-    if (value == null) return '–';
-    return typeof value === 'object' ? JSON.stringify(value) ?? '–' : String(value);
-  }
+  if (!Number.isFinite(numericValue)) return formatNonNumericTooltipValue(value);
 
   if (numericValue === 0) return '0';
-  const magnitude = Math.floor(Math.log10(Math.abs(numericValue)));
-  const decimals = Math.max(0, Math.min(-magnitude + 2, 6));
-  return numericValue.toLocaleString('fr-FR', { maximumFractionDigits: decimals });
+  return formatChartValue(numericValue);
+}
+
+function formatNonNumericTooltipValue(value: unknown): string {
+  if (value == null) return '–';
+  if (typeof value === 'object') {
+    try {
+      return JSON.stringify(value) ?? '–';
+    } catch {
+      return '–';
+    }
+  }
+  switch (typeof value) {
+    case 'string':
+    case 'number':
+    case 'boolean':
+    case 'bigint':
+    case 'symbol':
+      return value.toString();
+    case 'function':
+      return value.name || 'Function';
+    default:
+      return '–';
+  }
+}
+
+function formatNumericAxisValue(value: unknown): string {
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  if (Number.isFinite(numericValue)) return formatChartValue(numericValue);
+  return typeof value === 'string' ? value : '';
+}
+
+function centerTitle(title: any): any {
+  if (!title || typeof title !== 'object') return title;
+  return {
+    ...title,
+    left: title.left ?? 'center',
+  };
+}
+
+function applyDefaultNumericAxisLabel(axis: any): any {
+  if (!axis || (axis.type !== 'value' && axis.type !== 'log') || axis.axisLabel?.formatter !== undefined) return axis;
+  return {
+    ...axis,
+    axisLabel: { ...axis.axisLabel, formatter: formatNumericAxisValue },
+  };
+}
+
+function applyDefaultNumericXAxisLabel(axis: any): any {
+  if (!axis || (axis.type !== 'value' && axis.type !== 'log')) return axis;
+  return applyDefaultNumericAxisLabel(axis);
+}
+
+function applyDefaultNumericXAxisLabels(option: any): void {
+  if (Array.isArray(option.xAxis)) {
+    option.xAxis = option.xAxis.map(applyDefaultNumericXAxisLabel);
+  } else if (option.xAxis) {
+    option.xAxis = applyDefaultNumericXAxisLabel(option.xAxis);
+  }
+}
+
+function hasTooltipFormatter(result: any, options: any): boolean {
+  const configuredTooltip = options?.tooltip;
+  return configuredTooltip?.formatter !== undefined
+    || configuredTooltip?.valueFormatter !== undefined
+    || result.tooltip?.formatter !== undefined
+    || result.tooltip?.valueFormatter !== undefined;
+}
+
+function applyDefaultTooltip(result: any, options: any, valueFormatter: (value: number | string) => string): void {
+  if (hasTooltipFormatter(result, options)) return;
+  if (!result.tooltip) result.tooltip = {};
+  result.tooltip.valueFormatter = valueFormatter;
+}
+
+interface UnitFormatInfo {
+  displayUnit: string;
+  precision?: number;
+  scaleInfo?: { scale: number; unit: string; formatter?: (value: number, unit: string) => string };
+}
+
+function resolveUnitFormat(yUnit: string | UnitConfig, series: any[]): UnitFormatInfo {
+  if (typeof yUnit === 'string') return { displayUnit: yUnit };
+  const scaleInfo = selectBestScale(yUnit, _extractYValues(series));
+  return {
+    displayUnit: scaleInfo.unit,
+    precision: yUnit.precision,
+    scaleInfo,
+  };
+}
+
+function applyUnitFormatting(result: any, config: ChartProvider<any, any>): void {
+  const unitFormat = resolveUnitFormat(config.yUnit as string | UnitConfig, result.series);
+  const formatAxisValue = (value: number): string => {
+    const scaled = unitFormat.scaleInfo ? value * unitFormat.scaleInfo.scale : value;
+    return unitFormat.scaleInfo?.formatter
+      ? unitFormat.scaleInfo.formatter(scaled, unitFormat.displayUnit)
+      : formatChartValue(scaled, unitFormat.precision);
+  };
+  const applyAxisLabel = (axis: any): any => {
+    if (!axis || axis.axisLabel?.formatter !== undefined) return axis;
+    return { ...axis, axisLabel: { ...axis.axisLabel, formatter: formatAxisValue } };
+  };
+
+  result.yAxis = Array.isArray(result.yAxis)
+    ? result.yAxis.map(applyAxisLabel)
+    : applyAxisLabel(result.yAxis);
+  applyDefaultNumericXAxisLabels(result);
+  applyDefaultTooltip(result, config.options, (value: number | string) => {
+    if (value == null) return '–';
+    const num = typeof value === 'number' ? value : Number.parseFloat(String(value));
+    if (Number.isNaN(num)) return String(value);
+    const scaled = unitFormat.scaleInfo ? num * unitFormat.scaleInfo.scale : num;
+    if (unitFormat.scaleInfo?.formatter) {
+      return unitFormat.scaleInfo.formatter(scaled, unitFormat.displayUnit);
+    }
+    return `${formatChartValue(scaled, unitFormat.precision)}\u00a0${unitFormat.displayUnit}`;
+  });
+}
+
+function applyDefaultFormatting(result: any, config: ChartProvider<any, any>): void {
+  if (Array.isArray(result.yAxis)) {
+    result.yAxis = result.yAxis.map(applyDefaultNumericAxisLabel);
+  } else if (result.yAxis) {
+    result.yAxis = applyDefaultNumericAxisLabel(result.yAxis);
+  }
+  applyDefaultNumericXAxisLabels(result);
+  applyDefaultTooltip(result, config.options, (value: number | string) => formatTooltipValue(value));
 }
 
 /** Formatte un tooltip axe en conservant l'unité propre à chaque série. */
@@ -75,19 +199,25 @@ export function buildAxisTooltipFormatter(resolveUnit: (seriesIndex: number) => 
 
 /**
  * Construit l'option de base commune à tous les types de graphiques.
- * Les options spécifiques au type sont fusionnées par-dessus.
  */
 export function buildBaseOption(config: ChartProvider<any, any>): EChartsOption {
   const hasTitle = !!(config.title || config.subtitle);
   const hasSubtitle = !!config.subtitle;
-  // Réserver suffisamment d'espace en haut pour le titre ECharts :
-  // ~60px pour un titre seul, ~80px si sous-titre présent, 10px sinon.
-  const gridTop = hasTitle ? (hasSubtitle ? 80 : 60) : 10;
+  let gridTop = 10;
+  if (hasTitle) {
+    gridTop = hasSubtitle ? 80 : 60;
+  }
   return {
     animation: true,
     // N'inclure le composant title que s'il y a effectivement un contenu,
     // sinon ECharts réserve ~60px de padding en haut inutilement.
-    ...(hasTitle ? { title: { text: config.title ?? '', subtext: config.subtitle ?? '', left: 'auto' } } : {}),
+    ...(hasTitle ? {
+      title: {
+        text: config.title ?? '',
+        subtext: config.subtitle ?? '',
+        left: 'center',
+      },
+    } : {}),
     tooltip: buildTooltipOption('axis'),
     legend: {
       show: true,
@@ -118,7 +248,13 @@ export function applyCommonConfig(
   // (même guard que buildBaseOption pour éviter le padding ECharts inutile)
   const patch: EChartsOption = {
     ...(config.title || config.subtitle
-      ? { title: { text: config.title ?? '', subtext: config.subtitle ?? '' } }
+      ? {
+        title: {
+          text: config.title ?? '',
+          subtext: config.subtitle ?? '',
+          left: 'center',
+        },
+      }
       : {}),
   };
 
@@ -131,9 +267,16 @@ export function applyCommonConfig(
 
   const { series: seriesPatch, ...restOptions } = (config.options ?? {}) as any;
   const result = mergeDeep({}, option, patch, restOptions) as any;
+  if (Array.isArray(result.title)) {
+    result.title = result.title.map(centerTitle);
+  } else if (result.title) {
+    result.title = centerTitle(result.title);
+  }
   if (result.tooltip) {
     result.tooltip.appendToBody = false;
   }
+
+  applyControlledLegendSelection(result);
 
   if (seriesPatch && Array.isArray(seriesPatch) && Array.isArray(result.series)) {
     result.series = result.series.map((s: any, i: number) => {
@@ -150,47 +293,9 @@ export function applyCommonConfig(
   }
 
   if (config.yUnit) {
-    const yUnitConfig = config.yUnit;
-    let displayUnit: string;
-    let scaleInfo: { scale: number; unit: string; formatter?: (v: number, unit: string) => string } | undefined;
-
-    if (typeof yUnitConfig === 'string') {
-      // Cas simple : unité statique
-      displayUnit = yUnitConfig;
-    } else {
-      // Cas UnitConfig : auto-détection du meilleur format
-      const unitConfig = yUnitConfig as UnitConfig;
-      const dataValues = _extractYValues(result.series);
-      scaleInfo = selectBestScale(unitConfig, dataValues);
-      displayUnit = scaleInfo.unit;
-    }
-
-    if (!result.yAxis) result.yAxis = {};
-    if (!result.yAxis.axisLabel) result.yAxis.axisLabel = {};
-
-    if (scaleInfo?.formatter) {
-      result.yAxis.axisLabel.formatter = (v: number) => scaleInfo!.formatter!(v * scaleInfo!.scale, displayUnit);
-    } else {
-      result.yAxis.axisLabel.formatter = (v: number) => {
-        const scaled = scaleInfo ? v * scaleInfo.scale : v;
-        return _smartFormatY(scaled);
-      };
-    }
-
-    const devTooltip = (config.options as any)?.tooltip;
-    if (!devTooltip?.formatter && !devTooltip?.valueFormatter) {
-      if (!result.tooltip) result.tooltip = {};
-      result.tooltip.valueFormatter = (v: number | string) => {
-        if (v == null) return '–';
-        const num = typeof v === 'number' ? v : parseFloat(String(v));
-        if (isNaN(num)) return String(v);
-        const scaled = scaleInfo ? num * scaleInfo.scale : num;
-        if (scaleInfo?.formatter) {
-          return scaleInfo.formatter(scaled, displayUnit);
-        }
-        return `${_smartFormatY(scaled)}\u00a0${displayUnit}`;
-      };
-    }
+    applyUnitFormatting(result, config);
+  } else {
+    applyDefaultFormatting(result, config);
   }
 
   return result as EChartsOption;
@@ -217,41 +322,22 @@ function _extractYValues(series: any[]): number[] {
   return values;
 }
 
-export function selectBestScale(
-  unitConfig: UnitConfig,
-  dataValues: number[]
-): { scale: number; unit: string; formatter?: (v: number, unit: string) => string } {
-  if (!Array.isArray(unitConfig.scales) || unitConfig.scales.length === 0) {
-    return { scale: 1, unit: unitConfig.baseUnit };
-  }
-
-  const sortedScales = [...unitConfig.scales].sort((a, b) => (a.threshold ?? Infinity) - (b.threshold ?? Infinity));
-
-  const maxValue = Math.max(...dataValues.filter(v => isFinite(v) && v !== 0), 0);
-  for (const scale of sortedScales) {
-    const threshold = scale.threshold ?? Infinity;
-    if (maxValue <= threshold) {
-      return {
-        scale: scale.scale,
-        unit: scale.unit,
-        formatter: unitConfig.formatter,
-      };
+export function applyControlledLegendSelection(option: any): void {
+  const controlledSelection = (option.series ?? []).reduce((selection: Record<string, boolean>, series: any) => {
+    if (typeof series?.name === 'string' && typeof series.visible === 'boolean') {
+      selection[series.name] = series.visible;
     }
-  }
-  const lastScale = sortedScales[sortedScales.length - 1];
-  return {
-    scale: lastScale.scale,
-    unit: lastScale.unit,
-    formatter: unitConfig.formatter,
-  };
-}
+    return selection;
+  }, {});
+  if (Object.keys(controlledSelection).length === 0) return;
 
-function _smartFormatY(v: number): string {
-  if (!isFinite(v) || v === 0) return '0';
-  const abs = Math.abs(v);
-  const magnitude = Math.floor(Math.log10(abs));
-  const decimals = Math.max(0, Math.min(-magnitude + 2, 6));
-  return v.toLocaleString('fr-FR', { maximumFractionDigits: decimals });
+  if (option.legend) {
+    option.legend.selected = option.legend.selected
+      ? { ...option.legend.selected, ...controlledSelection }
+      : controlledSelection;
+  } else {
+    option.legend = { selected: controlledSelection };
+  }
 }
 
 export function buildNoDataGraphic(message = 'Aucune donnée'): any {

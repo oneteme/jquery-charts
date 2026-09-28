@@ -1,150 +1,133 @@
-<main class="organizer-page">
-  <header class="organizer-hero">
+<main class="organizer-gallery-page">
+  <header class="page-header">
     <div>
       <a class="back-link" routerLink="/">← Accueil</a>
-      <p class="eyebrow">jquery-organizer / documentation</p>
-      <h1>Un menu pour laisser l’utilisateur construire sa vue.</h1>
-      <p class="intro">
-        jquery-organizer fournit le menu de configuration et l’état des choix utilisateur.
-        Il ne modifie pas automatiquement votre graphique : votre composant doit appliquer les événements au modèle de données.
+      <p class="eyebrow">jquery-organizer / exemples</p>
+      <h1>Donner une vue claire aux choix de l’utilisateur.</h1>
+      <p class="subtitle">
+        Le bouton Organizer expose les choix pertinents et renvoie un état. Chaque carte montre ensuite comment une vue hôte
+        peut utiliser cet état.
       </p>
     </div>
-    <a class="api-link" routerLink="/api/organizer">Voir l’API complète ↗</a>
+    <a class="api-link" routerLink="/api/organizer">Consulter la référence API ↗</a>
   </header>
 
-  <section class="content-section setup-section">
-    <p class="section-kicker">Avant de commencer</p>
-    <h2>Installer et importer</h2>
-    <p>
-      La librairie attend Angular 16.1 ou supérieur, Angular Material/CDK 16 et <code>@oneteme/jquery-core</code>.
-      Le composant est standalone ; dans un composant standalone, importez directement <code>OrganizerButtonComponent</code>.
-      Dans un module Angular classique, utilisez <code>OrganizerButtonModule</code>.
-    </p>
-    <pre><code>npm install @oneteme/jquery-organizer @oneteme/jquery-core
-
-import {{ '{' }} OrganizerButtonComponent {{ '}' }} from '@oneteme/jquery-organizer';
-
-@Component({{ '{' }}
-  standalone: true,
-  imports: [OrganizerButtonComponent],
-{{ '}' }})</code></pre>
+  <section class="feature-summary" aria-label="Possibilités présentées">
+    <div class="feature-summary__item">
+      <strong>Déclarer</strong>
+      <span>Exposez seulement les champs, axes, groupes et filtres utiles à votre écran.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Écouter</strong>
+      <span><code>viewChange</code> renvoie un état complet après chaque choix utilisateur.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Appliquer</strong>
+      <span>Le parent garde la main sur le graphique, le tableau ou toute autre vue métier.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Composer</strong>
+      <span>Les templates regroupent plusieurs choix dans une vue immédiatement exploitable.</span>
+    </div>
   </section>
 
-  <section class="demo-section">
+  <section class="examples-section" aria-labelledby="organizer-examples-title">
     <div class="section-heading">
-      <div>
-        <p class="section-kicker">01 · Démo</p>
-        <h2>Essayez le menu Organizer</h2>
-        <p>Cette démo montre uniquement le composant Organizer : les changements sont renvoyés par <code>viewChange</code> et affichés sous le bouton. Le branchement avec le composant hôte est décrit plus bas.</p>
-      </div>
-      <organizer-button
-        [config]="organizerConfig"
-        [state]="organizerState"
-        (viewChange)="onViewChange($event)">
-      </organizer-button>
+      <p class="section-kicker">01 · Galerie</p>
+      <h2 id="organizer-examples-title">Un menu adapté à chaque vue</h2>
+      <p>Ouvrez le bouton à droite de chaque carte, modifiez un choix et observez l’état appliqué dans l’aperçu.</p>
     </div>
-    <div class="event-output">
-      <span>Dernier événement</span>
-      <strong>{{ lastEvent }}</strong>
-    </div>
-  </section>
 
-  <section class="content-section">
-    <p class="section-kicker">02 · Intégration</p>
-    <h2>Le principe en trois morceaux</h2>
-    <div class="principles">
-      <article>
-        <span class="number">01</span>
-        <h3>Décrire la vue</h3>
-        <p><code>OrganizerConfig</code> déclare les choix proposés dans le menu. Il ne contient pas vos données et ne construit pas les séries ou lignes de votre composant hôte.</p>
+    <div class="examples-list">
+      <article *ngFor="let example of examples" class="example-card" [attr.data-example]="example.id">
+        <header class="example-card__header">
+          <div>
+            <span class="example-index">{{ example.index }}</span>
+            <h3>{{ example.title }}</h3>
+            <p>{{ example.description }}</p>
+          </div>
+          <div class="tag-list" aria-label="Fonctionnalités utilisées">
+            <span *ngFor="let tag of example.tags" class="tag">{{ tag }}</span>
+          </div>
+        </header>
+
+        <div class="demo-layout">
+          <div class="organizer-stage">
+            <span class="stage-label">Menu interactif</span>
+            <div class="organizer-trigger-row">
+              <span>Personnaliser la vue</span>
+              <organizer-button
+                [config]="example.config"
+                [state]="example.state"
+                (viewChange)="onViewChange(example, $event)">
+              </organizer-button>
+            </div>
+            <p class="stage-help">Les choix disponibles sont définis par la configuration de cette carte.</p>
+          </div>
+
+          <div class="preview-stage">
+            <div class="preview-heading">
+              <span class="stage-label">Aperçu de la vue hôte</span>
+              <span class="state-badge">État appliqué</span>
+            </div>
+
+            <ng-container [ngSwitch]="example.id">
+              <div *ngSwitchCase="'fields'" class="table-preview">
+                <table class="data-preview">
+                  <thead>
+                    <tr>
+                      <ng-container *ngFor="let field of example.config.fields">
+                        <th *ngIf="isFieldVisible(example, field.id)">{{ field.label }}</th>
+                      </ng-container>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let row of tableRows">
+                      <ng-container *ngFor="let field of example.config.fields">
+                        <td *ngIf="isFieldVisible(example, field.id)">{{ row[field.id] }}</td>
+                      </ng-container>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div *ngSwitchCase="'axes'" class="axis-preview">
+                <div class="axis-card">
+                  <span>Axe X</span>
+                  <strong>{{ xLabel(example) }}</strong>
+                </div>
+                <div class="axis-arrow">→</div>
+                <div class="axis-card axis-card--accent">
+                  <span>Axe Y</span>
+                  <strong>{{ yLabel(example) }}</strong>
+                </div>
+                <div class="axis-bars" aria-hidden="true">
+                  <span style="height: 42%"></span><span style="height: 68%"></span><span style="height: 54%"></span><span style="height: 86%"></span><span style="height: 72%"></span>
+                </div>
+              </div>
+
+              <div *ngSwitchCase="'views'" class="view-preview">
+                <div class="view-state-line"><span>Template</span><strong>{{ templateLabel(example) }}</strong></div>
+                <div class="view-state-line"><span>Grouper par</span><strong>{{ groupLabel(example) }}</strong></div>
+                <div class="view-state-line"><span>Filtres actifs</span><strong>{{ selectedSliceLabels(example).join(' · ') || 'Aucun' }}</strong></div>
+                <div class="sample-groups">
+                  <span>Nord</span><span>Ouest</span><span>Sud</span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <div class="event-output">
+          <span>Dernier <code>viewChange</code></span>
+          <strong>{{ example.lastEvent }}</strong>
+        </div>
+
+        <details class="code-details">
+          <summary>Voir la configuration minimale</summary>
+          <pre><code>{{ example.code }}</code></pre>
+        </details>
       </article>
-      <article>
-        <span class="number">02</span>
-        <h3>Conserver l’état</h3>
-        <p><code>OrganizerState</code> contient les choix courants. Le parent le conserve et le repasse au composant.</p>
-      </article>
-      <article>
-        <span class="number">03</span>
-        <h3>Appliquer la vue</h3>
-        <p>Le parent écoute <code>viewChange</code> et applique l’état reçu à ses données, son graphique ou son tableau. La traduction dépend du modèle utilisé par votre composant hôte.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="code-section integration-section">
-    <div>
-      <p class="section-kicker">03 · Avec un composant hôte</p>
-      <h2>Relier le menu à votre vue</h2>
-      <p>
-        Le bouton Organizer ne connaît ni votre graphique ni votre tableau. Votre composant parent reçoit l’état,
-        l’applique à son modèle et recharge ses données si nécessaire.
-      </p>
-      <p>Pour une intégration avec un graphique, le package fournit aussi des adaptateurs pour le modèle <code>OrganizerChartConfig</code>. Ils sont indépendants d’un renderer précis, mais votre application reste responsable de produire les données et la configuration attendues par le composant utilisé.</p>
-      <p class="important-note"><strong>À retenir :</strong> <code>OrganizerConfig</code> configure le bouton. Il ne remplace pas la configuration de votre tableau ou de votre librairie graphique.</p>
-    </div>
-    <pre><code>import {{ '{' }}
-  buildOrganizerChartBinding,
-  handleOrganizerChartEvent,
-  OrganizerChartConfig,
-  OrganizerButtonEvent,
-{{ '}' }} from '@oneteme/jquery-organizer';
-
-  private viewConfig: OrganizerChartConfig = this.getViewConfig();
-  organizer = buildOrganizerChartBinding(this.viewConfig);
-
-  onOrganizerChange(event: OrganizerButtonEvent): void {{ '{' }}
-  const result = handleOrganizerChartEvent(
-    event,
-    this.viewConfig,
-    this.organizer
-  );
-  this.organizer = result.binding;
-  if (result.shouldRefetch) this.loadViewData();
-{{ '}' }}</code></pre>
-    <pre><code>&lt;organizer-button
-  [config]="organizer.config"
-  [state]="organizer.state"
-  (viewChange)="onOrganizerChange($event)"&gt;
-&lt;/organizer-button&gt;
-
-&lt;!-- Votre graphique ou tableau utilise ici son propre modèle. --&gt;</code></pre>
-  </section>
-
-  <section class="code-section">
-    <div>
-      <p class="section-kicker">04 · Exemple minimal</p>
-      <h2>Un bouton connecté à votre état</h2>
-      <p>La configuration ci-dessous suffit pour afficher un menu de champs. Ajoutez les autres blocs uniquement si votre écran les utilise.</p>
-    </div>
-    <pre><code>readonly organizerConfig: OrganizerConfig = {{ '{' }}
-  fields: [
-    {{ '{' }} id: 'sales', label: 'Ventes', visible: true {{ '}' }},
-    {{ '{' }} id: 'orders', label: 'Commandes', visible: true {{ '}' }},
-  ],
-{{ '}' }};
-
-organizerState: OrganizerState = {{ '{' }}
-  visibleFields: ['sales', 'orders'],
-{{ '}' }};</code></pre>
-    <pre><code>&lt;organizer-button
-  [config]="organizerConfig"
-  [state]="organizerState"
-  (viewChange)="organizerState = $event.state"&gt;
-&lt;/organizer-button&gt;</code></pre>
-  </section>
-
-  <section class="content-section details-section">
-    <p class="section-kicker">04 · Choisir les fonctionnalités</p>
-    <h2>Ce que vous pouvez exposer</h2>
-    <div class="detail-grid">
-      <div><code>fields</code><span>Afficher ou masquer des indicateurs.</span></div>
-      <div><code>xFields / yFields</code><span>Changer la dimension et la mesure.</span></div>
-      <div><code>groups</code><span>Choisir une clé de regroupement.</span></div>
-      <div><code>slices</code><span>Proposer des filtres chargés à la demande.</span></div>
-      <div><code>templates</code><span>Préparer des vues nommées réutilisables.</span></div>
-      <div><code>showExport</code><span>Afficher Export, avec visuel et/ou données selon les callbacks fournis.</span></div>
-      <div><code>showPreferences</code><span>Afficher le menu Préférences pour éditer, sauvegarder ou effacer une préférence.</span></div>
-      <div><code>showActions</code><span>Afficher Actions pour copier le visuel ou basculer en plein écran.</span></div>
     </div>
   </section>
 </main>

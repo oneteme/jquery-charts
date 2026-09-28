@@ -20,6 +20,17 @@ export function validateChartData(
     };
   }
 
+  const hasRenderableData = series.some((serie) =>
+    Array.isArray(serie?.data) && serie.data.some(isRenderablePoint),
+  );
+  if (!hasRenderableData) {
+    return {
+      isValid: false,
+      errorTitle: 'Données incompatibles',
+      errorMessage: 'Aucune valeur numérique rendable dans les séries fournies.',
+    };
+  }
+
   if (isRangeChart(chartType)) {
     return validateRangeChartData(series, chartType);
   }
@@ -29,6 +40,24 @@ export function validateChartData(
   }
 
   return { isValid: true };
+}
+
+function isRenderablePoint(point: any): boolean {
+  if (typeof point === 'number') return Number.isFinite(point);
+  if (Array.isArray(point)) return point.some(isFiniteNumericValue);
+  if (typeof point !== 'object' || point === null) return false;
+
+  if ('low' in point || 'high' in point) {
+    return isFiniteNumericValue(point.low) && isFiniteNumericValue(point.high);
+  }
+  if ('y' in point) return isFiniteNumericValue(point.y);
+  if ('value' in point) return isFiniteNumericValue(point.value);
+  return false;
+}
+
+function isFiniteNumericValue(value: any): boolean {
+  if (Array.isArray(value)) return value.some(isFiniteNumericValue);
+  return typeof value === 'number' && Number.isFinite(value);
 }
 
 function isRangeChart(chartType: ChartType): boolean {
@@ -86,11 +115,14 @@ function validateRangeChartData(
     const data = s.data || [];
     return data.some((point: any) => {
       if (Array.isArray(point)) {
-        return point.length >= 3;
+        return point.length >= 3
+          && isFiniteNumericValue(point[point.length - 2])
+          && isFiniteNumericValue(point[point.length - 1]);
       }
       return (
         typeof point === 'object' &&
-        (point.low !== undefined || point.high !== undefined)
+        isFiniteNumericValue(point.low) &&
+        isFiniteNumericValue(point.high)
       );
     });
   });

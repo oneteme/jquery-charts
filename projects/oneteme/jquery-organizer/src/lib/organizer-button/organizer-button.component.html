@@ -1,8 +1,15 @@
-<button type="button" class="organizer-btn" [matMenuTriggerFor]="viewMenu" #mainMenuTrigger="matMenuTrigger" [attr.aria-label]="'View'">
-  <mat-icon class="organizer-btn-icon">{{ config.buttonIcon || 'settings' }}</mat-icon>
+<button type="button" class="organizer-btn" [class.organizer-btn--labeled]="!!config.buttonLabel" [matMenuTriggerFor]="viewMenu" #mainMenuTrigger="matMenuTrigger" [attr.aria-label]="config.buttonLabel || 'Personnaliser la vue'" [attr.title]="config.buttonLabel || 'Personnaliser la vue'">
+  <mat-icon *ngIf="config.showButtonIcon !== false" class="organizer-btn-icon">{{ config.buttonIcon || 'settings' }}</mat-icon>
+  <span *ngIf="config.buttonLabel" class="organizer-btn-label">{{ config.buttonLabel }}</span>
 </button>
 
 <mat-menu #viewMenu="matMenu" panelClass="organizer-menu-panel">
+
+  <!-- Type -->
+  <button *ngIf="hasChartTypes()" mat-menu-item [matMenuTriggerFor]="chartTypesSubMenu" class="organizer-menu-trigger">
+    <span class="organizer-menu-label">Type</span>
+    <span class="organizer-menu-value" *ngIf="!hideMenuValues && activeChartTypeLabel()">{{ activeChartTypeLabel() }}</span>
+  </button>
 
   <!-- Champs : mode chart (X + Y) -->
   <button *ngIf="hasChartFields()" mat-menu-item [matMenuTriggerFor]="champsSubMenu" class="organizer-menu-trigger">
@@ -74,6 +81,12 @@
     <span class="organizer-menu-label">Préférences</span>
   </button>
 
+  <mat-divider *ngIf="config.showReset === true" class="organizer-divider"></mat-divider>
+  <button *ngIf="config.showReset === true" mat-menu-item type="button" class="organizer-menu-reset" (click)="onReset()">
+    <mat-icon class="organizer-menu-export-icon">restart_alt</mat-icon>
+    <span class="organizer-menu-label">Réinitialiser la vue</span>
+  </button>
+
   <!-- Switch chart / table -->
   <mat-divider *ngIf="hasSwitchView()" class="organizer-divider"></mat-divider>
   <button *ngIf="hasSwitchView()" mat-menu-item type="button" class="organizer-menu-trigger" (click)="onSwitchView()">
@@ -83,6 +96,24 @@
 
 </mat-menu>
 
+<!-- Sous-menu : types de graphique -->
+<mat-menu #chartTypesSubMenu="matMenu" panelClass="organizer-submenu-panel">
+  <div class="organizer-submenu"
+       (mousedown)="$event.stopPropagation()"
+       (click)="$event.stopPropagation()"
+       (keydown)="$event.stopPropagation()">
+    <button type="button" class="organizer-submenu-item"
+      *ngFor="let chartType of config.chartTypes"
+      [class.active]="isChartTypeActive(chartType.id)"
+      [disabled]="chartType.disabled"
+      (click)="onChartTypeSelect(chartType.id)">
+      <span class="organizer-submenu-check">{{ isChartTypeActive(chartType.id) ? '✓' : '' }}</span>
+      <mat-icon *ngIf="chartType.icon" class="organizer-submenu-icon">{{ chartType.icon }}</mat-icon>
+      {{ chartType.label }}
+    </button>
+  </div>
+</mat-menu>
+
 <!-- Sous-menu : actions du visuel -->
 <mat-menu #actionsSubMenu="matMenu" panelClass="organizer-submenu-panel">
   <div class="organizer-submenu"
@@ -90,13 +121,13 @@
        (click)="$event.stopPropagation()"
        (keydown)="$event.stopPropagation()">
     <button *ngIf="isCopyActionVisible()" type="button" class="organizer-submenu-item"
-      (mousedown)="onCopyVisual()">
+      (click)="onCopyVisual()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">content_copy</mat-icon>
       Copier
     </button>
     <button *ngIf="isFullscreenActionVisible()" type="button" class="organizer-submenu-item"
-      (mousedown)="onToggleFullscreen()">
+      (click)="onToggleFullscreen()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">{{ config.isFullscreen ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
       {{ config.isFullscreen ? 'Quitter le plein écran' : 'Plein écran' }}
@@ -111,13 +142,13 @@
        (click)="$event.stopPropagation()"
        (keydown)="$event.stopPropagation()">
     <button *ngIf="config.onExportVisual" type="button" class="organizer-submenu-item"
-      (mousedown)="onExportVisual()">
+      (click)="onExportVisual()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">image</mat-icon>
       Visuel
     </button>
     <button *ngIf="config.onExportData" type="button" class="organizer-submenu-item"
-      (mousedown)="onExportData()">
+      (click)="onExportData()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">table_chart</mat-icon>
       Données
@@ -139,7 +170,7 @@
         *ngFor="let xField of config.xFields"
         [class.active]="state?.selectedX === xField.id"
         [disabled]="xField.disabled"
-        (mousedown)="onXFieldSelect(xField.id)">
+        (click)="onXFieldSelect(xField.id)">
         <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
         {{ xField.label }}
       </button>
@@ -158,7 +189,7 @@
           type="button" class="organizer-submenu-item"
           [class.active]="isYActive(yField.id)"
           [disabled]="yField.disabled"
-          (mousedown)="onYFieldSelect(yField.id)">
+          (click)="onYFieldSelect(yField.id)">
           <span class="organizer-submenu-check">{{ isYActive(yField.id) ? '✓' : '' }}</span>
           {{ yField.label }}
         </button>
@@ -192,7 +223,7 @@
       <button type="button" class="organizer-submenu-item"
         *ngFor="let agg of yField.aggregates"
         [class.active]="isYAggregateActive(yField.id, agg.id)"
-        (mousedown)="onYAggregateSelect(yField.id, agg.id)">
+        (click)="onYAggregateSelect(yField.id, agg.id)">
         <span class="organizer-submenu-check">{{ isYAggregateActive(yField.id, agg.id) ? '✓' : '' }}</span>
         {{ agg.label }}
       </button>
@@ -209,7 +240,7 @@
     <button type="button" class="organizer-submenu-item"
       *ngFor="let field of config.fields"
       [class.active]="isFieldVisible(field.id)"
-      (mousedown)="onFieldToggle(field.id, !isFieldVisible(field.id))">
+      (click)="onFieldToggle(field.id, !isFieldVisible(field.id))">
       <span class="organizer-submenu-check">{{ isFieldVisible(field.id) ? '✓' : '' }}</span>      <mat-icon *ngIf="field.icon" class="organizer-submenu-icon">{{ field.icon }}</mat-icon>      {{ field.label }}
     </button>
   </div>
@@ -224,7 +255,7 @@
     <button type="button" class="organizer-submenu-item"
       *ngFor="let group of config.groups"
       [class.active]="state?.selectedGroupBy === group.id"
-      (mousedown)="onGroupBySelect(group.id)">
+      (click)="onGroupBySelect(group.id)">
       <span class="organizer-submenu-check">{{ state?.selectedGroupBy === group.id ? '✓' : '' }}</span>      <mat-icon *ngIf="group.icon" class="organizer-submenu-icon">{{ group.icon }}</mat-icon>      {{ group.label }}
     </button>
   </div>
@@ -239,7 +270,7 @@
     <button type="button" class="organizer-submenu-item"
       *ngFor="let slice of config.slices"
       [class.active]="state?.selectedSlices?.includes(slice.id)"
-      (mousedown)="onSliceClick(slice.id)">
+      (click)="onSliceClick(slice.id)">
       <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>      <mat-icon *ngIf="slice.icon" class="organizer-submenu-icon">{{ slice.icon }}</mat-icon>      {{ slice.label }}
     </button>
   </div>
@@ -255,7 +286,7 @@
       *ngFor="let tmpl of config.templates"
       [class.active]="state?.selectedTemplate === tmpl.id"
       [title]="tmpl.description || ''"
-      (mousedown)="onTemplateSelect(tmpl.id)">
+      (click)="onTemplateSelect(tmpl.id)">
       <span class="organizer-submenu-check">{{ state?.selectedTemplate === tmpl.id ? '✓' : '' }}</span>
       <mat-icon *ngIf="tmpl.icon" class="organizer-submenu-icon">{{ tmpl.icon }}</mat-icon>
       {{ tmpl.label }}
@@ -269,15 +300,15 @@
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
        (keydown)="$event.stopPropagation()">
-    <button type="button" class="organizer-submenu-item" (mousedown)="onPreferencesEdit()">
+    <button type="button" class="organizer-submenu-item" (click)="onPreferencesEdit()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">edit</mat-icon>Éditer
     </button>
-    <button type="button" class="organizer-submenu-item" (mousedown)="onPreferencesSave()">
+    <button type="button" class="organizer-submenu-item" (click)="onPreferencesSave()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">save</mat-icon>Sauvegarder
     </button>
-    <button type="button" class="organizer-submenu-item" [disabled]="!config.hasSavedPreferences" (mousedown)="onPreferencesClear()">
+    <button type="button" class="organizer-submenu-item" [disabled]="!config.hasSavedPreferences" (click)="onPreferencesClear()">
       <span class="organizer-submenu-check"></span>
       <mat-icon class="organizer-submenu-icon">delete_outline</mat-icon>Réinitialiser
     </button>

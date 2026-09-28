@@ -70,6 +70,11 @@
 }
 
 .qs-item {
+  width: 100%;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  text-align: left;
   display: flex;
   align-items: center;
   gap: var(--sp-3, 12px);
@@ -83,6 +88,11 @@
 
     .qs-item__arrow { opacity: 1; color: var(--clr-accent, #6366f1); }
     .qs-item__label { color: var(--clr-accent, #6366f1); }
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--clr-accent, #6366f1);
+    outline-offset: -2px;
   }
 
   &__body {

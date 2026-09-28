@@ -1,0 +1,195 @@
+<div class="api-page">
+  <header class="api-hero">
+    <div>
+      <a class="back-link" routerLink="/table">← Retour aux exemples Table</a>
+      <p class="eyebrow">jquery-table / référence et intégration</p>
+      <h1>API du wrapper Table</h1>
+      <p class="intro">
+        <code>&lt;jquery-table&gt;</code> encapsule Angular Material Table avec une configuration orientée données :
+        colonnes, recherche, tri, pagination, View, Group by, Slice by, export CSV, préférences et snapshots.
+      </p>
+    </div>
+    <a class="official-link" href="https://material.angular.dev/components/table/overview" target="_blank" rel="noopener">
+      Documentation Angular Material ↗
+    </a>
+  </header>
+
+  <section class="reference-section" aria-labelledby="table-api-reference-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Référence</p>
+      <h2 id="table-api-reference-title">Inputs, configuration et événements</h2>
+      <p>Les entrées du wrapper restent séparées des primitives Angular Material qu’il encapsule.</p>
+    </div>
+
+    <article *ngFor="let section of sections" class="reference-block" [id]="section.id">
+      <div class="section-heading section-heading--small">
+        <p class="section-kicker">API</p>
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </div>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <colgroup>
+            <col class="api-column api-column--property">
+            <col class="api-column api-column--type">
+            <col class="api-column api-column--source">
+            <col class="api-column api-column--description">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Propriété</th>
+              <th>Type</th>
+              <th>Source</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of section.entries">
+              <td>
+                <code>{{ entry.name }}</code>
+                <small *ngIf="entry.types">{{ entry.types }}</small>
+              </td>
+              <td><code>{{ entry.type }}</code></td>
+              <td><span class="source-badge" [attr.data-source]="entry.source">{{ entry.source }}</span></td>
+              <td>{{ entry.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-example">
+        <div class="section-example-heading">
+          <span>Exemple de la section</span>
+          <small>Snippet aligné sur les exports publics</small>
+        </div>
+        <pre><code>{{ section.example }}</code></pre>
+      </div>
+    </article>
+  </section>
+
+  <section class="capabilities-section" aria-labelledby="table-capabilities-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Démonstration</p>
+      <h2 id="table-capabilities-title">Un tableau piloté par sa configuration</h2>
+      <p>
+        Cette instance active les fonctions importantes du wrapper. Les événements reçus par le parent apparaissent à
+        droite et les contrôles de snapshot utilisent les méthodes réellement exposées par <code>TableComponent</code>.
+      </p>
+    </div>
+
+    <article class="capability-card" id="table-demo">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">WRAPPER + ANGULAR MATERIAL</p>
+          <h3>Recherche, View, Group by, slices et colonnes lazy</h3>
+          <p>
+            Ouvrez le menu View pour masquer une colonne, grouper ou ajouter un Slice by ; la recherche, le tri et la
+            pagination mettent ensuite le modèle filtré à jour.
+          </p>
+        </div>
+        <span class="capability-kind">TableProvider</span>
+      </header>
+
+      <div class="table-demo-layout">
+        <aside class="event-panel" aria-live="polite">
+          <div class="event-panel-heading">
+            <strong>État reçu par le parent</strong>
+            <span>outputs Angular</span>
+          </div>
+          <dl>
+            <div><dt>Ligne</dt><dd>{{ selectedRow?.reference || 'Aucune' }}</dd></div>
+            <div><dt>Recherche</dt><dd>{{ lastSearch || 'Aucune' }}</dd></div>
+            <div><dt>Tri</dt><dd>{{ lastSort || 'Aucun' }}</dd></div>
+            <div><dt>Page</dt><dd>{{ lastPage || 'Aucune' }}</dd></div>
+            <div><dt>Group by</dt><dd>{{ lastGroupBy }}</dd></div>
+            <div><dt>Colonnes</dt><dd>{{ lastColumns || 'Aucune modification' }}</dd></div>
+            <div><dt>Catégorie</dt><dd>{{ lastCategory || 'Aucune' }}</dd></div>
+          </dl>
+        </aside>
+
+        <div class="table-demo-surface">
+          <div class="demo-controls">
+            <button type="button" [class.is-active]="isLoadingDemo" (click)="toggleLoading()">
+              {{ isLoadingDemo ? 'Arrêter le chargement' : 'Simuler le chargement' }}
+            </button>
+            <button type="button" (click)="resetSearch()">Réinitialiser la recherche</button>
+          </div>
+
+          <jquery-table
+            #apiTable
+            class="api-table-component"
+            [config]="tableConfig"
+            [data]="rows"
+            [isLoading]="isLoadingDemo"
+            [clearSearchInput]="clearSearchToken"
+            [copyFeedback]="{ enabled: true, message: 'Snapshot créé' }"
+            (rowSelected)="onRowSelected($event)"
+            (sortChange)="onSortChange($event)"
+            (pageChange)="onPageChange($event)"
+            (searchChange)="lastSearch = $event"
+            (groupByChange)="onGroupByChange($event)"
+            (columnsChange)="onColumnsChange($event)"
+            (columnAdded)="onColumnAdded($event)"
+            (columnRemoved)="onColumnRemoved($event)"
+            (categorySelected)="lastCategory = $event"
+            (visualCopied)="onSnapshotCreated($event)"
+          >
+            <ng-template jqtCellDef="status" let-row>
+              <span class="status-chip" [attr.data-status]="row.status">{{ row.status }}</span>
+            </ng-template>
+            <ng-template jqtCellDef="priority" let-row>
+              <span class="priority-chip" [attr.data-priority]="row.priority">{{ row.priority }}</span>
+            </ng-template>
+          </jquery-table>
+        </div>
+      </div>
+
+      <div class="table-actions">
+        <button type="button" (click)="apiTable.onExport()">Exporter CSV</button>
+        <button type="button" (click)="prepareSnapshot(apiTable)">Préparer le draft</button>
+        <button type="button" (click)="apiTable.copyVisualSnapshot('Interventions API')">Créer un snapshot</button>
+        <button type="button" (click)="apiTable.toggleFullscreen()">Plein écran</button>
+      </div>
+
+      <div class="snapshot-grid">
+        <pre *ngIf="snapshotDraft" class="snapshot-output snapshot-output--draft"><code>{{ formatJson(snapshotDraft) }}</code></pre>
+        <pre *ngIf="lastSnapshot" class="snapshot-output"><code>{{ formatJson(lastSnapshot) }}</code></pre>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading">
+          <span>Code minimal de la démo</span>
+          <div class="code-tabs" role="tablist" aria-label="Langage du code de la démo">
+            <button
+              type="button"
+              role="tab"
+              class="code-tab"
+              [class.is-active]="activeCodeTab === 'ts'"
+              [attr.aria-selected]="activeCodeTab === 'ts'"
+              aria-controls="table-demo-code"
+              (click)="setCodeTab('ts')"
+            >TS</button>
+            <button
+              type="button"
+              role="tab"
+              class="code-tab"
+              [class.is-active]="activeCodeTab === 'html'"
+              [attr.aria-selected]="activeCodeTab === 'html'"
+              aria-controls="table-demo-code"
+              (click)="setCodeTab('html')"
+            >HTML</button>
+            <button
+              type="button"
+              role="tab"
+              class="code-tab"
+              [class.is-active]="activeCodeTab === 'scss'"
+              [attr.aria-selected]="activeCodeTab === 'scss'"
+              aria-controls="table-demo-code"
+              (click)="setCodeTab('scss')"
+            >SCSS</button>
+          </div>
+        </div>
+        <pre id="table-demo-code" role="tabpanel"><code>{{ demoCode[activeCodeTab] }}</code></pre>
+      </div>
+    </article>
+  </section>
+</div>

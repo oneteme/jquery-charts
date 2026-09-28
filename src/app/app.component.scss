@@ -2,12 +2,15 @@
   display: flex;
   justify-content: center;
   flex-direction: column;
-  min-height: 100vh;
-  padding-top: 64px;  // header height
+  height: 100vh;
+  min-height: 0;
   width: 100%;
+  overflow: hidden;
 
   main {
-    flex: 1;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
     &.with-sidebar {
       margin-left: 210px;
     }
@@ -15,10 +18,9 @@
 }
 
 @media (max-width: 768px) {
-  .app-container main {
+  .app-container main.with-sidebar {
     margin-left: 0;
     width: 100%;
     padding: 1rem;
-    padding-top: 4rem;
   }
 }

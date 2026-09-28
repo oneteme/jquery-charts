@@ -1,10 +1,15 @@
 import {
-  Component, OnInit, OnDestroy, HostListener,
+  Component, HostListener,
   ChangeDetectionStrategy, ChangeDetectorRef, ElementRef, ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import {
+  APEXCHARTS_SECTIONS,
+  ECHARTS_DETAIL_SECTIONS,
+  HIGHCHARTS_SECTIONS,
+} from '../../pages/charts/chart-example-sections';
 
 export interface SearchItem {
   label: string;
@@ -14,49 +19,53 @@ export interface SearchItem {
   keywords?: string[];
 }
 
+function createChartSearchItems(
+  libraryLabel: string,
+  route: string,
+  sections: readonly { id: string; label: string }[]
+): SearchItem[] {
+  return sections.map(section => ({
+    label: `${libraryLabel} — ${section.label}`,
+    sublabel: 'Exemple détaillé',
+    route: `${route}/${section.id}`,
+    category: libraryLabel,
+    keywords: [section.id, section.label, 'graphique', 'exemple'],
+  }));
+}
+
+function normalizeSearchText(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
 const SEARCH_INDEX: SearchItem[] = [
-  // Accueil
+  // Parcours principaux affichés dès l'ouverture de la recherche
   { label: 'Accueil', route: '/', category: 'Navigation' },
+  { label: 'Démarrer', sublabel: 'Choisir une galerie, un composant ou une API', route: '/demarrer', category: 'Navigation', keywords: ['documentation', 'prise en main', 'commencer', 'installation'] },
+  { label: 'Graphiques — Toutes les galeries', sublabel: 'ECharts, Highcharts et ApexCharts', route: '/charts', category: 'Graphiques', keywords: ['charts', 'exemples', 'renderer'] },
+  { label: 'ECharts — Galerie', sublabel: 'Exemples et types disponibles', route: '/charts/echarts', category: 'ECharts', keywords: ['graphique', 'exemple'] },
+  { label: 'Highcharts — Galerie', sublabel: 'Exemples et types disponibles', route: '/charts/highcharts', category: 'Highcharts', keywords: ['graphique', 'exemple'] },
+  { label: 'ApexCharts — Galerie', sublabel: 'Exemples et types disponibles', route: '/charts/apexcharts', category: 'ApexCharts', keywords: ['graphique', 'exemple'] },
+  { label: 'jquery-table — Galerie', sublabel: 'Démonstration du composant tableau', route: '/table', category: 'jquery-table', keywords: ['tableau', 'composant'] },
+  { label: 'jquery-organizer — Démo', sublabel: 'Menus et états de vue', route: '/organizer', category: 'jquery-organizer', keywords: ['organiseur', 'composant'] },
 
-  // jquery-table
-  { label: 'jquery-table — Démo', sublabel: 'Tableau avec 100 posts', route: '/table', category: 'jquery-table' },
-  { label: 'Snapshots visuels', sublabel: 'Copier et composer un dashboard', route: '/snapshots', category: 'Outils' },
-  { label: 'jquery-table — Comparatif', sublabel: 'mat-table vs jquery-table', route: '/table/comparatif', category: 'jquery-table' },
-  { label: 'jquery-table — Slice + Graphique', sublabel: 'slice-panel standalone', route: '/table/slice-chart', category: 'jquery-table' },
-  { label: 'jquery-table — Documentation', sublabel: 'Référence API complète', route: '/table/documentation', category: 'jquery-table' },
+  // Outils et écrans secondaires
+  { label: 'Atelier', sublabel: 'Tester une configuration librement', route: '/atelier', category: 'Outils', keywords: ['atelier', 'configuration'] },
+  { label: 'Snapshots visuels', sublabel: 'Copier et composer un dashboard', route: '/snapshots', category: 'Outils', keywords: ['snapshot', 'dashboard', 'copie'] },
 
-  // jquery-organizer
-  { label: 'jquery-organizer — Documentation', sublabel: 'Démo et guide d’intégration', route: '/organizer', category: 'jquery-organizer' },
-  { label: 'jquery-organizer — API', sublabel: 'Configuration, état et événements', route: '/api/organizer', category: 'jquery-organizer' },
+  // APIs publiques
+  { label: 'jquery-core — API', sublabel: 'Providers, transformations et utilitaires', route: '/api/core', category: 'API', keywords: ['data', 'provider', 'field', 'values'] },
+  { label: 'jquery-organizer — API', sublabel: 'Configuration, état et événements', route: '/api/organizer', category: 'API' },
+  { label: 'jquery-echarts — API', sublabel: 'Inputs, événements et capacités ECharts', route: '/api/echarts', category: 'API' },
+  { label: 'jquery-highcharts — API', sublabel: 'Wrapper, options et intégration Highcharts', route: '/api/highcharts', category: 'API' },
+  { label: 'jquery-apexcharts — API', sublabel: 'Types supportés et limites du wrapper', route: '/api/apexcharts', category: 'API' },
+  { label: 'jquery-table — API', sublabel: 'Colonnes, recherche, vues et export', route: '/api/table', category: 'API' },
 
-  // Graphiques — ECharts
-  { label: 'ECharts — API du wrapper', sublabel: 'Propriétés, providers, pivotRows et drill-down', route: '/api/echarts', category: 'ECharts' },
-  { label: 'ECharts — Tous les types', route: '/charts/echarts', category: 'ECharts' },
-  { label: 'ECharts — Bar', route: '/charts/echarts', category: 'ECharts', keywords: ['bar', 'horizontal'] },
-  { label: 'ECharts — Line', route: '/charts/echarts', category: 'ECharts', keywords: ['line', 'ligne'] },
-  { label: 'ECharts — Pie / Donut', route: '/charts/echarts', category: 'ECharts', keywords: ['pie', 'donut', 'camembert'] },
-  { label: 'ECharts — Heatmap', route: '/charts/echarts', category: 'ECharts', keywords: ['heatmap', 'chaleur'] },
-  { label: 'ECharts — Treemap', route: '/charts/echarts', category: 'ECharts', keywords: ['treemap', 'arbre'] },
-
-  // Graphiques — Highcharts
-  { label: 'Highcharts — Tous les types', route: '/charts/highcharts', category: 'Highcharts' },
-  { label: 'Highcharts — Pie', route: '/charts/highcharts/pie', category: 'Highcharts', keywords: ['pie', 'donut'] },
-  { label: 'Highcharts — Bar', route: '/charts/highcharts/bar', category: 'Highcharts', keywords: ['bar', 'barre'] },
-  { label: 'Highcharts — Line', route: '/charts/highcharts/line', category: 'Highcharts', keywords: ['line', 'ligne'] },
-  { label: 'Highcharts — Scatter', route: '/charts/highcharts/scatter', category: 'Highcharts' },
-  { label: 'Highcharts — Heatmap', route: '/charts/highcharts/heatmap', category: 'Highcharts' },
-  { label: 'Highcharts — Treemap', route: '/charts/highcharts/treemap', category: 'Highcharts' },
-  { label: 'Highcharts — Funnel', route: '/charts/highcharts/funnel', category: 'Highcharts' },
-  { label: 'Highcharts — Map', route: '/charts/highcharts/map', category: 'Highcharts' },
-
-  // Graphiques — ApexCharts
-  { label: 'ApexCharts — Tous les types', route: '/charts/apexcharts', category: 'ApexCharts' },
-  { label: 'ApexCharts — Bar', route: '/charts/apexcharts', category: 'ApexCharts', keywords: ['bar'] },
-  { label: 'ApexCharts — Pie', route: '/charts/apexcharts', category: 'ApexCharts', keywords: ['pie'] },
-
-  // Documentation
-  { label: 'Documentation — Démarrage', route: '/documentation/getting-started', category: 'Documentation' },
-  { label: 'Documentation — Types', route: '/documentation/graph-types', category: 'Documentation' },
+  // Sous-pages utiles, conservées pour les recherches ciblées
+  { label: 'jquery-table — Comparatif', sublabel: 'mat-table vs jquery-table', route: '/table/comparatif', category: 'jquery-table', keywords: ['material', 'comparaison'] },
+  { label: 'jquery-table — Slice + Graphique', sublabel: 'slice-panel standalone', route: '/table/slice-chart', category: 'jquery-table', keywords: ['slice', 'filtre', 'graphique'] },
+  ...createChartSearchItems('ECharts', '/charts/echarts', ECHARTS_DETAIL_SECTIONS),
+  ...createChartSearchItems('Highcharts', '/charts/highcharts', HIGHCHARTS_SECTIONS),
+  ...createChartSearchItems('ApexCharts', '/charts/apexcharts', APEXCHARTS_SECTIONS),
 ];
 
 @Component({
@@ -67,7 +76,7 @@ const SEARCH_INDEX: SearchItem[] = [
   styleUrls: ['./quick-search.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QuickSearchComponent implements OnInit, OnDestroy {
+export class QuickSearchComponent {
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   isOpen = false;
@@ -79,9 +88,6 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit() {}
-  ngOnDestroy() {}
 
   @HostListener('window:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -96,7 +102,7 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
     if (event.key === 'Escape') { this.close(); return; }
     if (event.key === 'ArrowDown') { event.preventDefault(); this.moveDown(); return; }
     if (event.key === 'ArrowUp') { event.preventDefault(); this.moveUp(); return; }
-    if (event.key === 'Enter') { this.selectActive(); return; }
+    if (event.key === 'Enter') { this.selectActive(); }
   }
 
   open() {
@@ -121,12 +127,11 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
     if (!q.trim()) {
       this.results = SEARCH_INDEX.slice(0, 8);
     } else {
-      const lower = q.toLowerCase();
+      const normalizedQuery = normalizeSearchText(q.trim());
       this.results = SEARCH_INDEX.filter(item =>
-        item.label.toLowerCase().includes(lower) ||
-        item.sublabel?.toLowerCase().includes(lower) ||
-        item.category.toLowerCase().includes(lower) ||
-        item.keywords?.some(k => k.includes(lower))
+        [item.label, item.sublabel, item.category, ...(item.keywords ?? [])]
+          .filter((value): value is string => Boolean(value))
+          .some(value => normalizeSearchText(value).includes(normalizedQuery))
       ).slice(0, 10);
     }
     this.cdr.markForCheck();
@@ -161,7 +166,7 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
 
   highlightMatch(text: string): string {
     if (!this.query) return text;
-    const escaped = this.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = this.query.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
     return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
   }
 }

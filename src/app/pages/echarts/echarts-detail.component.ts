@@ -3,30 +3,13 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ChartComponent } from '@oneteme/jquery-echarts';
 import { ECHARTS_EXAMPLES } from 'src/app/data/chart/echarts-examples.data';
-import { ChartType } from '@oneteme/jquery-core';
+import type { ChartType } from '@oneteme/jquery-core';
 import { buildChartCode, highlightChartCode } from 'src/app/core/chart-code-snippet.util';
+import { StackBlitzService } from 'src/app/core/services/stackblitz.service';
 import { Subscription } from 'rxjs';
+import { ChartExampleSection, ECHARTS_DETAIL_SECTIONS } from '../charts/chart-example-sections';
 
-interface EChartsSection { id: string; label: string; type: ChartType; exampleKey: string; }
-
-const SECTIONS: EChartsSection[] = [
-  { id: 'bar',         label: 'Bar (horizontal)',   type: 'bar',         exampleKey: 'barExample'         },
-  { id: 'column',      label: 'Column (vertical)',  type: 'column',      exampleKey: 'columnExample'      },
-  { id: 'line',        label: 'Line',               type: 'line',        exampleKey: 'lineExample'        },
-  { id: 'spline',      label: 'Spline',             type: 'spline',      exampleKey: 'splineExample'      },
-  { id: 'area',        label: 'Area',               type: 'area',        exampleKey: 'areaExample'        },
-  { id: 'pie',         label: 'Pie',                type: 'pie',         exampleKey: 'pieExample'         },
-  { id: 'donut',       label: 'Donut',              type: 'donut',       exampleKey: 'donutExample'       },
-  { id: 'scatter',     label: 'Scatter',            type: 'scatter',     exampleKey: 'scatterExample'     },
-  { id: 'bubble',      label: 'Bubble',             type: 'bubble',      exampleKey: 'bubbleExample'      },
-  { id: 'heatmap',     label: 'Heatmap',            type: 'heatmap',     exampleKey: 'heatmapExample'     },
-  { id: 'treemap',     label: 'Treemap',            type: 'treemap',     exampleKey: 'treemapExample'     },
-  { id: 'funnel',      label: 'Funnel',             type: 'funnel',      exampleKey: 'funnelExample'      },
-  { id: 'pyramid',     label: 'Pyramid',            type: 'pyramid',     exampleKey: 'pyramidExample'     },
-  { id: 'radar',       label: 'Radar',              type: 'radar',       exampleKey: 'radarExample'       },
-  { id: 'rangeBar',    label: 'Range Bar (Gantt)',  type: 'rangeBar',    exampleKey: 'rangeBarExample'    },
-  { id: 'rangeColumn', label: 'Range Column',       type: 'rangeColumn', exampleKey: 'rangeColumnExample' },
-];
+const SECTIONS: readonly ChartExampleSection[] = ECHARTS_DETAIL_SECTIONS;
 
 @Component({
   standalone: true,
@@ -51,6 +34,10 @@ const SECTIONS: EChartsSection[] = [
             [config]="currentConfig"
             [data]="currentData"
           ></chart>
+          <button class="stackblitz-toggle" (click)="openInStackBlitz($event)" aria-label="Modifier cet exemple dans StackBlitz" title="Modifier dans StackBlitz">
+            <span aria-hidden="true">↗</span>
+            <span class="tooltip">Modifier dans StackBlitz</span>
+          </button>
           <button class="code-toggle" (click)="toggleCode()" aria-label="Voir le code">
             <img src="assets/icons/code.svg" class="code-icon" alt="code" />
             <span class="tooltip">Voir le code</span>
@@ -66,9 +53,9 @@ const SECTIONS: EChartsSection[] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EChartsDetailComponent implements OnInit, OnDestroy {
-  section: EChartsSection | null = null;
-  prev: EChartsSection | null = null;
-  next: EChartsSection | null = null;
+  section: ChartExampleSection | null = null;
+  prev: ChartExampleSection | null = null;
+  next: ChartExampleSection | null = null;
   currentConfig: any = null;
   currentData: any = null;
   isCodeOpen = false;
@@ -80,6 +67,7 @@ export class EChartsDetailComponent implements OnInit, OnDestroy {
     private readonly route: ActivatedRoute,
     private readonly router: Router,
     private readonly cdr: ChangeDetectorRef,
+    private readonly stackBlitzService: StackBlitzService,
   ) {}
 
   ngOnInit() {
@@ -102,6 +90,15 @@ export class EChartsDetailComponent implements OnInit, OnDestroy {
   ngOnDestroy() { this.paramSub?.unsubscribe(); }
 
   toggleCode() { this.isCodeOpen = !this.isCodeOpen; this.cdr.markForCheck(); }
+
+  openInStackBlitz(event: Event): void {
+    event.stopPropagation();
+    if (!this.section) return;
+    this.stackBlitzService.openExample('echarts', this.section, {
+      config: this.currentConfig,
+      data: this.currentData ?? [],
+    });
+  }
 
   private _buildCode(type: ChartType, exampleKey: string): string {
     const example = (ECHARTS_EXAMPLES as any)[exampleKey];

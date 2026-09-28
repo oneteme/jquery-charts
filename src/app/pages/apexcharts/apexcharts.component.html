@@ -17,6 +17,7 @@
       *ngFor="let section of sections"
       class="chart-wrapper"
       [id]="section.id"
+      [attr.data-chart-example]="section.id"
     >
       <div class="chart-label">{{ section.label }}</div>
 
@@ -26,6 +27,17 @@
         [config]="examples[section.exampleKey].config"
         [data]="examples[section.exampleKey].data"
       ></chart>
+
+      <button
+        type="button"
+        class="stackblitz-toggle"
+        (click)="openInStackBlitz(section, $event)"
+        aria-label="Modifier cet exemple dans StackBlitz"
+        title="Modifier dans StackBlitz"
+      >
+        <span aria-hidden="true">↗</span>
+        <span class="tooltip">Modifier dans StackBlitz</span>
+      </button>
 
       <button
         class="code-toggle"

@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef, ChangeDetectionStrategy } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { APEXCHARTS_SECTIONS, ECHARTS_DETAIL_SECTIONS, HIGHCHARTS_SECTIONS } from 'src/app/pages/charts/chart-example-sections';
 
 interface ChartTypeItem { id: string; label: string; }
 interface LibItem { key: string; label: string; route: string; types: ChartTypeItem[]; }
@@ -14,11 +15,23 @@ interface LibItem { key: string; label: string; route: string; types: ChartTypeI
 
     <div class="sidebar" [class.open]="isMenuOpen">
 
+      <div class="sidebar-section sidebar-section--start">
+        <ul>
+          <li [class.active]="isDocumentationRoute()">
+            <button type="button" class="sidebar-link" (click)="goToDocumentation()">Démarrer</button>
+          </li>
+        </ul>
+      </div>
+
       <div class="sidebar-section">
         <span class="sidebar-section-label">Composants</span>
         <ul>
-          <li [class.active]="isTableRoute()" (click)="goToTable()">jquery-table</li>
-          <li [class.active]="isOrganizerRoute()" (click)="goToOrganizer()">jquery-organizer</li>
+          <li [class.active]="isTableRoute()">
+            <button type="button" class="sidebar-link" (click)="goToTable()">jquery-table</button>
+          </li>
+          <li [class.active]="isOrganizerRoute()">
+            <button type="button" class="sidebar-link" (click)="goToOrganizer()">jquery-organizer</button>
+          </li>
         </ul>
       </div>
 
@@ -26,14 +39,22 @@ interface LibItem { key: string; label: string; route: string; types: ChartTypeI
         <span class="sidebar-section-label">Graphiques</span>
         <ul>
           <li *ngFor="let lib of libs" [class.active]="isChartsLib(lib.key)">
-            <span class="lib-name" (click)="goToLib(lib)">{{ lib.label }}</span>
-            <span class="lib-arrow" [class.open]="isExpanded(lib.key)" (click)="toggleExpand(lib, $event)">›</span>
-            <ul class="sub-list" *ngIf="isExpanded(lib.key)" (click)="$event.stopPropagation()">
+            <button type="button" class="lib-name" (click)="goToLib(lib)">{{ lib.label }}</button>
+            <button
+              type="button"
+              class="lib-arrow"
+              [class.open]="isExpanded(lib.key)"
+              [attr.aria-label]="(isExpanded(lib.key) ? 'Replier' : 'Déplier') + ' les exemples ' + lib.label"
+              [attr.aria-expanded]="isExpanded(lib.key)"
+              (click)="toggleExpand(lib, $event)"
+            >›</button>
+            <ul class="sub-list" *ngIf="isExpanded(lib.key)">
               <li
                 *ngFor="let type of lib.types; trackBy: trackByFn"
                 [class.active]="isActiveType(lib, type)"
-                (click)="goToType(lib, type, $event)"
-              >{{ type.label }}</li>
+              >
+                <button type="button" class="sidebar-link" (click)="goToType(lib, type)">{{ type.label }}</button>
+              </li>
             </ul>
           </li>
         </ul>
@@ -42,8 +63,12 @@ interface LibItem { key: string; label: string; route: string; types: ChartTypeI
       <div class="sidebar-section">
         <span class="sidebar-section-label">API</span>
         <ul>
-          <li [class.active]="isApiRoute()" (click)="goToApi()">jquery-echarts</li>
-          <li [class.active]="isOrganizerApiRoute()" (click)="goToOrganizerApi()">jquery-organizer</li>
+          <li [class.active]="isCoreApiRoute()"><button type="button" class="sidebar-link" (click)="goToCoreApi()">jquery-core</button></li>
+          <li [class.active]="isOrganizerApiRoute()"><button type="button" class="sidebar-link" (click)="goToOrganizerApi()">jquery-organizer</button></li>
+          <li [class.active]="isHighchartsApiRoute()"><button type="button" class="sidebar-link" (click)="goToHighchartsApi()">jquery-highcharts</button></li>
+          <li [class.active]="isApiRoute()"><button type="button" class="sidebar-link" (click)="goToApi()">jquery-echarts</button></li>
+          <li [class.active]="isApexchartsApiRoute()"><button type="button" class="sidebar-link" (click)="goToApexchartsApi()">jquery-apexcharts</button></li>
+          <li [class.active]="isTableApiRoute()"><button type="button" class="sidebar-link" (click)="goToTableApi()">jquery-table</button></li>
         </ul>
       </div>
 
@@ -60,72 +85,16 @@ export class SidebarComponent implements OnInit {
 
   readonly libs: LibItem[] = [
     {
-      key: 'echarts', label: 'jquery-echarts', route: '/charts/echarts',
-      types: [
-        { id: 'bar',         label: 'Bar'          },
-        { id: 'column',      label: 'Column'       },
-        { id: 'line',        label: 'Line'         },
-        { id: 'spline',      label: 'Spline'       },
-        { id: 'area',        label: 'Area'         },
-        { id: 'pie',         label: 'Pie'          },
-        { id: 'donut',       label: 'Donut'        },
-        { id: 'scatter',     label: 'Scatter'      },
-        { id: 'bubble',      label: 'Bubble'       },
-        { id: 'heatmap',     label: 'Heatmap'      },
-        { id: 'treemap',     label: 'Treemap'      },
-        { id: 'funnel',      label: 'Funnel'       },
-        { id: 'pyramid',     label: 'Pyramid'      },
-        { id: 'radar',       label: 'Radar'        },
-        { id: 'rangeBar',    label: 'Range Bar'    },
-        { id: 'rangeColumn', label: 'Range Column' },
-      ]
+      key: 'highcharts', label: 'jquery-highcharts', route: '/charts/highcharts',
+      types: HIGHCHARTS_SECTIONS.map(({ id, label }) => ({ id, label }))
     },
     {
-      key: 'highcharts', label: 'jquery-highcharts', route: '/charts/highcharts',
-      types: [
-        { id: 'line',            label: 'Line'             },
-        { id: 'spline',          label: 'Spline'           },
-        { id: 'areaspline',      label: 'Area Spline'      },
-        { id: 'area',            label: 'Area'             },
-        { id: 'bar',             label: 'Bar'              },
-        { id: 'column',          label: 'Column'           },
-        { id: 'scatter',         label: 'Scatter'          },
-        { id: 'pie',             label: 'Pie'              },
-        { id: 'donut',           label: 'Donut'            },
-        { id: 'funnel',          label: 'Funnel'           },
-        { id: 'pyramid',         label: 'Pyramid'          },
-        { id: 'polar',           label: 'Polar'            },
-        { id: 'radar',           label: 'Radar'            },
-        { id: 'radarArea',       label: 'Radar Area'       },
-        { id: 'radialBar',       label: 'Radial Bar'       },
-        { id: 'bubble',          label: 'Bubble'           },
-        { id: 'heatmap',         label: 'Heatmap'          },
-        { id: 'treemap',         label: 'Treemap'          },
-        { id: 'columnrange',     label: 'Column Range'     },
-        { id: 'arearange',       label: 'Area Range'       },
-        { id: 'areasplinerange', label: 'Area Spline Range'},
-      ]
+      key: 'echarts', label: 'jquery-echarts', route: '/charts/echarts',
+      types: ECHARTS_DETAIL_SECTIONS.map(({ id, label }) => ({ id, label }))
     },
     {
       key: 'apexcharts', label: 'jquery-apexcharts', route: '/charts/apexcharts',
-      types: [
-        { id: 'pie',         label: 'Pie'          },
-        { id: 'donut',       label: 'Donut'        },
-        { id: 'polar',       label: 'Polar'        },
-        { id: 'radar',       label: 'Radar'        },
-        { id: 'radial',      label: 'Radial Bar'   },
-        { id: 'line',        label: 'Line'         },
-        { id: 'area',        label: 'Area'         },
-        { id: 'bar',         label: 'Bar'          },
-        { id: 'column',      label: 'Column'       },
-        { id: 'heatmap',     label: 'Heatmap'      },
-        { id: 'treemap',     label: 'Treemap'      },
-        { id: 'funnel',      label: 'Funnel'       },
-        { id: 'pyramid',     label: 'Pyramid'      },
-        { id: 'rangeBar',    label: 'Range Bar'    },
-        { id: 'rangeColumn', label: 'Range Column' },
-        { id: 'rangeArea',   label: 'Range Area'   },
-      ]
+      types: APEXCHARTS_SECTIONS.map(({ id, label }) => ({ id, label }))
     },
   ];
 
@@ -135,21 +104,37 @@ export class SidebarComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Init : expand lib active au démarrage
-    this.libs.forEach(lib => { if (this.isChartsLib(lib.key)) this.expandedLibs.add(lib.key); });
+    this.expandActiveLib();
 
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe(() => {
-      // Auto-expand la lib active (sans replier les autres)
-      this.libs.forEach(lib => { if (this.isChartsLib(lib.key)) this.expandedLibs.add(lib.key); });
+      this.expandActiveLib();
       this.cdr.markForCheck();
     });
+  }
+
+  private expandActiveLib(): void {
+    const activeLib = this.libs.find(lib => this.isChartsLib(lib.key));
+    this.expandedLibs.clear();
+    if (activeLib) this.expandedLibs.add(activeLib.key);
   }
 
   trackByFn(_index: number, item: ChartTypeItem): string { return item.id; }
 
   isTableRoute(): boolean { return this.router.url.startsWith('/table'); }
 
+  isDocumentationRoute(): boolean {
+    return this.router.url.startsWith('/demarrer') || this.router.url.startsWith('/prise-en-main') || this.router.url.startsWith('/documentation');
+  }
+
+  isCoreApiRoute(): boolean { return this.router.url === '/api/core'; }
+
   isApiRoute(): boolean { return this.router.url === '/api/echarts'; }
+
+  isHighchartsApiRoute(): boolean { return this.router.url === '/api/highcharts'; }
+
+  isApexchartsApiRoute(): boolean { return this.router.url === '/api/apexcharts'; }
+
+  isTableApiRoute(): boolean { return this.router.url === '/api/table'; }
 
   isOrganizerRoute(): boolean { return this.router.url === '/organizer'; }
 
@@ -168,8 +153,33 @@ export class SidebarComponent implements OnInit {
     if (this.isMenuOpen) this.toggleMenu();
   }
 
+  goToDocumentation() {
+    this.router.navigate(['/demarrer']);
+    if (this.isMenuOpen) this.toggleMenu();
+  }
+
+  goToCoreApi() {
+    this.router.navigate(['/api/core']);
+    if (this.isMenuOpen) this.toggleMenu();
+  }
+
   goToApi() {
     this.router.navigate(['/api/echarts']);
+    if (this.isMenuOpen) this.toggleMenu();
+  }
+
+  goToHighchartsApi() {
+    this.router.navigate(['/api/highcharts']);
+    if (this.isMenuOpen) this.toggleMenu();
+  }
+
+  goToApexchartsApi() {
+    this.router.navigate(['/api/apexcharts']);
+    if (this.isMenuOpen) this.toggleMenu();
+  }
+
+  goToTableApi() {
+    this.router.navigate(['/api/table']);
     if (this.isMenuOpen) this.toggleMenu();
   }
 
@@ -184,9 +194,17 @@ export class SidebarComponent implements OnInit {
   }
 
   goToLib(lib: LibItem) {
+    const wasExpanded = this.expandedLibs.has(lib.key);
     this.expandedLibs.clear();
-    this.expandedLibs.add(lib.key);
-    this.router.navigate([lib.route]);
+    if (!wasExpanded) this.expandedLibs.add(lib.key);
+    this.cdr.markForCheck();
+
+    this.router.navigate([lib.route]).then(() => {
+      if (wasExpanded) {
+        this.expandedLibs.delete(lib.key);
+        this.cdr.markForCheck();
+      }
+    });
     if (this.isMenuOpen) this.toggleMenu();
   }
 
@@ -201,8 +219,7 @@ export class SidebarComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  goToType(lib: LibItem, type: ChartTypeItem, event: Event) {
-    event.stopPropagation();
+  goToType(lib: LibItem, type: ChartTypeItem) {
     this.router.navigate([lib.route, type.id]);
     if (this.isMenuOpen) this.toggleMenu();
   }

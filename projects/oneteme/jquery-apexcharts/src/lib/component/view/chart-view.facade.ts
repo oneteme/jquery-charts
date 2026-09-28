@@ -69,6 +69,15 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     }
   }
 
+  /** Applique un état Organizer contrôlé par le composant parent. */
+  setState(state: OrganizerState): void {
+    const existingIds = new Set(this.viewFields.map(field => field.id));
+    this.state.selectedFieldIds = (state.selectedFieldIds ?? [])
+      .filter(id => existingIds.has(id));
+    this.state.groupByKey = state.groupByKey ?? null;
+    this.state.dynamicSliceKeys = [...(state.dynamicSliceKeys ?? [])];
+  }
+
   // ── Actions
 
   /** Bascule la visibilité d'une série. */
@@ -91,9 +100,9 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
    * Retourne le ChartProvider avec les flags `visible` appliqués selon l'état courant.
    * Si Organizer n'est pas activé, retourne le provider inchangé.
    */
-  getEffectiveProvider(): ChartProvider<X, Y> {
+  getEffectiveProvider(applyState = false): ChartProvider<X, Y> {
     if (!this._provider) return null as any;
-    if (!this.enabled) return this._provider;
+    if (!this.enabled && !applyState) return this._provider;
     return applyOrganizerStateToSeries(this._provider, this.state);
   }
 

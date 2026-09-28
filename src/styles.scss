@@ -1,44 +1,113 @@
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+$terracotta-palette: (
+  50: #fff3ee,
+  100: #f9d9ce,
+  200: #f2b8a7,
+  300: #e9967f,
+  400: #d97659,
+  500: #c6532f,
+  600: #b1482a,
+  700: #963c23,
+  800: #74301f,
+  900: #542218,
+  contrast: (
+    50: #151a20,
+    100: #151a20,
+    200: #151a20,
+    300: #151a20,
+    400: #ffffff,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  ),
+);
+
+$petrol-palette: (
+  50: #eef7f6,
+  100: #d5e9e7,
+  200: #b5d7d4,
+  300: #8ebfbb,
+  400: #6aa6a1,
+  500: #4b8b87,
+  600: #367571,
+  700: #2c605d,
+  800: #234d4b,
+  900: #193a39,
+  contrast: (
+    50: #151a20,
+    100: #151a20,
+    200: #151a20,
+    300: #151a20,
+    400: #151a20,
+    500: #ffffff,
+    600: #ffffff,
+    700: #ffffff,
+    800: #ffffff,
+    900: #ffffff,
+  ),
+);
+
+$app-theme: mat.define-light-theme((
+  color: (
+    primary: mat.define-palette($terracotta-palette, 500, 300, 700),
+    accent: mat.define-palette($petrol-palette, 600, 300, 800),
+    warn: mat.define-palette(mat.$red-palette),
+  ),
+  typography: mat.define-typography-config(
+    $font-family: 'Space Grotesk, system-ui, sans-serif',
+  ),
+  density: 0,
+));
+
+@include mat.all-component-themes($app-theme);
+
 // DESIGN: Space Grotesk — distinctif, tech, moderne sans être générique
 // DESIGN: DM Mono — lisible, adapté code, contraste serif/mono intentionnel
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
 // ─── Design tokens ─────────────────────────────────────────────────────────
 :root {
   // Surfaces
-  --clr-bg:              #f8fafc;
+  --clr-bg:              #f5f7f5;
   --clr-surface:         #ffffff;
-  --clr-surface-raised:  #f1f5f9;
+  --clr-surface-raised:  #edf2ef;
 
-  // Sidebar (dark)
-  --clr-sidebar-bg:           #0f172a;
-  --clr-sidebar-surface:      #1e293b;
-  --clr-sidebar-border:       rgba(255,255,255,0.06);
-  --clr-sidebar-text:         #94a3b8;
-  --clr-sidebar-text-hover:   #e2e8f0;
-  --clr-sidebar-text-section: #475569;
-  --clr-sidebar-active-bg:    rgba(99, 102, 241, 0.12);
-  --clr-sidebar-active-text:  #a5b4fc;
-  --clr-sidebar-active-bar:   #6366f1;
+  // Sidebar (light)
+  --clr-sidebar-bg:           #edf2ef;
+  --clr-sidebar-surface:      #ffffff;
+  --clr-sidebar-border:       #d8e0dc;
+  --clr-sidebar-text:         #526568;
+  --clr-sidebar-text-hover:   #151a20;
+  --clr-sidebar-text-section: #849694;
+  --clr-sidebar-active-bg:    rgba(198, 83, 47, 0.11);
+  --clr-sidebar-active-text:  #963c23;
+  --clr-sidebar-active-bar:   #c6532f;
 
   // Header
-  --clr-header-bg:     #ffffff;
-  --clr-header-border: #e2e8f0;
+  --header-height:    65px;
+  --clr-header-bg:     #fffdfb;
+  --clr-header-border: #d8e0dc;
 
   // Accent
-  --clr-accent:        #6366f1;
-  --clr-accent-hover:  #4f46e5;
-  --clr-accent-subtle: rgba(99, 102, 241, 0.1);
-  --clr-accent-text:   #a5b4fc;
+  --clr-accent:        #c6532f;
+  --clr-accent-hover:  #a9472b;
+  --clr-accent-subtle: rgba(198, 83, 47, 0.12);
+  --clr-accent-text:   #963c23;
+  --clr-secondary:     #2c605d;
 
   // Text
-  --clr-text-primary:   #0f172a;
-  --clr-text-secondary: #475569;
-  --clr-text-muted:     #94a3b8;
+  --clr-text-primary:   #151a20;
+  --clr-text-secondary: #526568;
+  --clr-text-muted:     #849694;
 
   // Borders
-  --clr-border:         #e2e8f0;
-  --clr-border-strong:  #cbd5e1;
+  --clr-border:         #d8e0dc;
+  --clr-border-strong:  #b9c8c2;
+  --clr-focus-ring:     rgba(198, 83, 47, 0.35);
 
   // Typography
   --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
@@ -62,6 +131,10 @@
   --radius-lg: 12px;
 }
 
+@media (max-width: 768px) {
+  :root { --header-height: 57px; }
+}
+
 // Reset SCSS
 *,
 *::before,
@@ -79,8 +152,8 @@ body {
   line-height: 1.6;
   background-color: var(--clr-bg);
   color: var(--clr-text-primary);
-  overflow-y: auto;
-  padding-right: calc(100vw - 100%);
+  overflow: hidden;
+  padding-right: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

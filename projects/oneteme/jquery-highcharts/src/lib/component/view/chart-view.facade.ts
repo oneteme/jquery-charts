@@ -43,16 +43,24 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     } else if (!visible) {
       this.state.selectedFieldIds = this.state.selectedFieldIds.filter(x => x !== id);
     }
+
     this._events$.next({ type: 'fieldsChanged', fieldIds: [...this.state.selectedFieldIds] });
+  }
+
+  setState(state: OrganizerState): void {
+    const existingIds = new Set(this.viewFields.map(field => field.id));
+    this.state.selectedFieldIds = (state.selectedFieldIds ?? []).filter(id => existingIds.has(id));
+    this.state.groupByKey = state.groupByKey ?? null;
+    this.state.dynamicSliceKeys = [...(state.dynamicSliceKeys ?? [])];
   }
 
   isSerieVisible(id: string): boolean {
     return this.state.selectedFieldIds.includes(id);
   }
 
-  getEffectiveProvider(): ChartProvider<X, Y> {
-    if (!this._provider) return null as any;
-    if (!this.enabled) return this._provider;
+  getEffectiveProvider(applyState = false): ChartProvider<X, Y> | null {
+    if (!this._provider) return null;
+    if (!this.enabled && !applyState) return this._provider;
     return applyOrganizerStateToSeries(this._provider, this.state);
   }
 

@@ -1,10 +1,11 @@
+import { OrganizerTemplate } from './organizer-config.interface';
 import { OrganizerChartItem, OrganizerChartSection } from './organizer-chart-adapter';
 
 export interface OrganizerChartConfig {
   groups?: OrganizerChartSection;
   indicators?: OrganizerChartSection;
   filters?: OrganizerChartSection;
-  templates?: any[]; // TODO: typer correctement les templates
+  templates?: OrganizerTemplate[];
 }
 
 export enum SyntheticItemKeys {
@@ -28,6 +29,7 @@ export enum OrganizerButtonEventType {
   GROUP_BY_SELECTED = 'groupBySelected',
   TEMPLATE_SELECTED = 'templateSelected',
   SLICE_SELECTED = 'sliceSelected',
+  CHART_TYPE_SELECTED = 'chartTypeSelected',
   VIEW_SWITCHED = 'viewSwitched'
 }
 

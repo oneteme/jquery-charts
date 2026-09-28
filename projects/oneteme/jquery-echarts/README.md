@@ -2,11 +2,24 @@
 
 Angular renderer for [Apache ECharts](https://echarts.apache.org/), built on top of [@oneteme/jquery-core](https://www.npmjs.com/package/@oneteme/jquery-core).
 
+> **Documentation et démonstrations** : [ouvrir l'application de documentation](https://oneteme.github.io/jquery-charts/)
+>
+> La documentation interactive permet de comparer les types ECharts, les états de chargement et d'absence de données, l'Organizer et la synchronisation entre graphiques.
+
 ## Overview
 
 This library provides an Angular component and directive to render interactive charts using Apache ECharts, with full integration with the `@oneteme/jquery-core` data model.
 
 **Supported chart types:** `bar`, `column`, `columnpyramid`, `line`, `spline`, `area`, `areaspline`, `mixed`, `pie`, `donut`, `scatter`, `bubble`, `heatmap`, `radar`, `radarArea`, `treemap`, `funnel`, `pyramid`, `rangeBar`, `rangeColumn`, `arearange`, `areasplinerange`, `columnrange`
+
+## Fonctionnalités intégrées
+
+- **Renderer configurable** : SVG par défaut, ou Canvas via `[renderer]`.
+- **Thème ECharts** : le thème est fourni à la création de l'instance via `[theme]`.
+- **Options natives** : `[renderedOption]` permet de fournir une option ECharts déjà construite ; les événements et états du wrapper restent actifs.
+- **Synchronisation** : `[group]` et `[groupSync]` synchronisent le tooltip et/ou le zoom avec d'autres graphiques, y compris avec les renderers de la suite.
+- **Organizer contrôlé** : `[organizer]` et `[organizerState]` pilotent la visibilité des séries sans coupler le composant à l'interface Organizer.
+- **Drilldown, export et snapshots** : les événements de navigation, `exportImage`, `exportData`, `createVisualSnapshot` et `applyVisualSnapshot` sont disponibles sur `ChartComponent`.
 
 ## Installation
 
@@ -104,7 +117,7 @@ Pour les configurations persistees, les coordonnees peuvent aussi etre definies 
 | `chartClick`   | `EventEmitter<any>`             | Emitted when a chart datum is clicked             |
 | `renderError`  | `EventEmitter<ChartRenderError>` | Emitted when configuration construction or ECharts rendering fails |
 
-`theme`, `renderer`, `group` and `groupSync` are applied when the ECharts instance is created. Recreate the component to change them.
+`theme`, `renderer`, `group` and `groupSync` are applied when the ECharts instance is created. Recreate the component to change them. Group events are exchanged through the shared `jquery-core` synchronization contract, so an ECharts chart can synchronize with a Highcharts chart using the same group ID.
 
 ### Chart synchronization
 
@@ -116,10 +129,12 @@ Charts sharing the same `group` ID can be synchronized:
 ```
 
 **`groupSync` values:**
-- `'all'` — Full sync via `echarts.connect()` (zoom + tooltip + legend)
+- `'all'` — Zoom and tooltip synchronization
 - `'datazoom'` — Zoom only
 - `'tooltip'` — Tooltip only
 - `['datazoom', 'tooltip']` — Combined manual sync
+
+When `datazoom` is enabled, the wrapper provides an ECharts inside/slider dataZoom control for cartesian charts. Series legends remain local to each chart instance.
 
 ### View panel (series visibility)
 

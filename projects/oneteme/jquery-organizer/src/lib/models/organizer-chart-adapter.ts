@@ -1,5 +1,5 @@
 ﻿import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField } from './organizer-config.interface';
-import { buildYFields, normalizeOrganizerState, resolveMatchingTemplateId, resolveYKey } from './organizer-utils';
+import { buildYFields, normalizeOrganizerState, resolveYKey } from './organizer-utils';
 import { UnitConfig } from '@oneteme/jquery-core';
 import { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
 

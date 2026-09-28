@@ -1,16 +1,22 @@
-import { CommonChart, Coordinate2D, XaxisType, YaxisType, ChartProvider, mergeDeep } from '@oneteme/jquery-core';
+import { ChartClickEvent, CommonChart, Coordinate2D, XaxisType, YaxisType, ChartProvider, mergeDeep } from '@oneteme/jquery-core';
 import { ICONS } from '../../assets/icons/icons';
 import { ElementRef, EventEmitter, NgZone } from '@angular/core';
 import ApexCharts from 'apexcharts';
 
 export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
 
+export interface ApexChartRuntimeEvents {
+  onZoomed?: (chartContext: any, xaxis: any) => void;
+  onMouseMove?: (event: any, chartContext: any, config: any) => void;
+  onMouseLeave?: () => void;
+}
+
 /**
  * Crée les boutons personnalisés pour la barre d'outils
  */
 export function customIcons(
   event: (arg: ChartCustomEvent) => void,
-  canPivot: boolean
+  canPivot: boolean = false
 ): any[] {
   let customIcons = [
     {
@@ -81,7 +87,9 @@ export function initCommonChartOptions(
   customEvent: EventEmitter<ChartCustomEvent>,
   ngZone: NgZone,
   chartType: string,
-  canPivot: boolean = true
+  canPivot: boolean = false,
+  chartClick?: EventEmitter<ChartClickEvent>,
+  runtimeEvents?: ApexChartRuntimeEvents,
 ) {
   return {
     shouldRedraw: true,
@@ -103,13 +111,39 @@ export function initCommonChartOptions(
         },
       },
       events: {
-        mouseMove: function () {
+        mouseMove: function (event: any, chartContext: any, config: any) {
           let toolbar = node.nativeElement.querySelector('.apexcharts-toolbar');
           if (toolbar) toolbar.style.visibility = 'visible';
+          runtimeEvents?.onMouseMove?.(event, chartContext, config);
         },
         mouseLeave: function () {
           let toolbar = node.nativeElement.querySelector('.apexcharts-toolbar');
           if (toolbar) toolbar.style.visibility = 'hidden';
+          runtimeEvents?.onMouseLeave?.();
+        },
+        zoomed: function (chartContext: any, payload: any) {
+          runtimeEvents?.onZoomed?.(chartContext, payload?.xaxis);
+        },
+        dataPointSelection: function (event: any, chartContext: any, config: any) {
+          if (!chartClick) return;
+          const seriesIndex = config?.seriesIndex;
+          const dataPointIndex = config?.dataPointIndex;
+          const series = chartContext?.w?.config?.series?.[seriesIndex];
+          const value = series?.data?.[dataPointIndex];
+          const name = chartContext?.w?.globals?.categoryLabels?.[dataPointIndex]
+            ?? chartContext?.w?.globals?.labels?.[dataPointIndex]
+            ?? chartContext?.w?.config?.xaxis?.categories?.[dataPointIndex]
+            ?? (value && typeof value === 'object' ? value.x : undefined);
+          chartClick.emit({
+            componentType: 'series',
+            seriesType: chartContext?.w?.config?.chart?.type,
+            seriesIndex,
+            dataIndex: dataPointIndex,
+            name,
+            value,
+            data: value,
+            event,
+          });
         },
       },
       zoom: {
@@ -203,7 +237,6 @@ export function updateChartOptions(
       })
       .catch((error) => {
         console.error('Erreur lors de la mise à jour des options:', error);
-        return Promise.resolve();
       })
   );
 }
@@ -224,13 +257,15 @@ export function transformSeriesVisibility(series: any[]): any[] {
 export function setupScrollPrevention(
   chartElement: HTMLElement,
   chartInstance: () => ApexCharts | null
-): void {
-  if (!chartElement) return;
+): (() => void) | null {
+  if (!chartElement) return null;
 
   let isMouseOverChart = false;
+  const onMouseEnter = () => (isMouseOverChart = true);
+  const onMouseLeave = () => (isMouseOverChart = false);
 
-  chartElement.addEventListener('mouseenter', () => (isMouseOverChart = true));
-  chartElement.addEventListener('mouseleave', () => (isMouseOverChart = false));
+  chartElement.addEventListener('mouseenter', onMouseEnter);
+  chartElement.addEventListener('mouseleave', onMouseLeave);
 
   const handleWheel = (e: WheelEvent) => {
     const chart = chartInstance();
@@ -241,8 +276,17 @@ export function setupScrollPrevention(
     }
   };
 
-  chartElement.addEventListener('wheel', handleWheel, { passive: false });
+  const wheelOptions = { passive: false } as AddEventListenerOptions;
+  chartElement.addEventListener('wheel', handleWheel, wheelOptions);
+
+  return () => {
+    chartElement.removeEventListener('mouseenter', onMouseEnter);
+    chartElement.removeEventListener('mouseleave', onMouseLeave);
+    chartElement.removeEventListener('wheel', handleWheel, wheelOptions);
+  };
 }
+
+let toolbarId = 0;
 
 // Corrige les IDs dupliqués dans les SVG de la toolbar pour éviter les conflits
 export function fixToolbarSvgIds(chartElement: HTMLElement): void {
@@ -251,7 +295,7 @@ export function fixToolbarSvgIds(chartElement: HTMLElement): void {
   const toolbar = chartElement.querySelector('.apexcharts-toolbar');
   if (!toolbar) return;
 
-  const uniqueId = `toolbar-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const uniqueId = `toolbar-${Date.now()}-${toolbarId++}`;
   const svgs = toolbar.querySelectorAll('svg');
 
   svgs.forEach((svg, svgIndex) => {

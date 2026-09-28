@@ -12,10 +12,18 @@ import {
 } from '@angular/core';
 import {
   ChartProvider,
+  ChartGroupSyncEvent,
   ChartType,
   XaxisType,
   YaxisType,
-  buildChart,
+  ChartClickEvent,
+  ChartExportImageType,
+  ChartRenderError,
+  GroupSyncAction,
+  GroupSyncMode,
+  cloneSerializable,
+  publishChartGroupSync,
+  registerChartGroupSync,
 } from '@oneteme/jquery-core';
 import {
   Highcharts,
@@ -24,14 +32,9 @@ import {
   setupToolbar,
   updateChartLoadingState,
   configureLoadingOptions,
-  transformDataForSimpleChart,
-  unifyPlotOptionsForChart,
-  applyChartConfigurations,
-  enforceCriticalOptions,
   transformChartData,
   needsDataConversion,
   detectPreviousChartType,
-  validateChartData,
   showValidationError,
   hideValidationError,
   buildMapUrl,
@@ -40,12 +43,15 @@ import {
   replaceCodesWithNames,
   createMapTooltipFormatter,
   createSimpleMapTooltipFormatter,
+  validateChartData,
   DEFAULT_MAP_JOINBY,
   buildMapSeries,
-  applyAxisOffsets,
-  applyDonutCenterLogic,
-  applyRadialBarLogic,
 } from './utils';
+import { applyHighchartsRuntimeEvents } from './runtime/highcharts-events.adapter';
+import { buildHighchartsOptions, PreparedHighchartsData } from './pipeline/highcharts-options.pipeline';
+import { prepareHighchartsData, resolveHighchartsPointValue } from './pipeline/highcharts-data.pipeline';
+import { applyHighchartsSeriesAxes } from './pipeline/highcharts-axis.builder';
+import { HighchartsInstanceController } from './runtime/highcharts-instance.controller';
 
 @Directive({
   selector: '[chart-directive]',
@@ -60,19 +66,41 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   @Input() possibleTypes?: ChartType[];
   @Input() debug: boolean = false;
   @Input() canPivot: boolean = false;
+  @Input() renderedOption?: Highcharts.Options | null;
+  @Input() loadingLabel = 'Chargement des données...';
+  @Input() noDataLabel = 'Aucune donnée';
+  @Input() theme: Highcharts.Options | null = null;
+  @Input() group: string | null = null;
+  @Input() groupSync: GroupSyncMode | null = null;
   @Output() customEvent = new EventEmitter<ChartCustomEvent>();
+  @Output() chartClick = new EventEmitter<ChartClickEvent>();
+  @Output() renderError = new EventEmitter<ChartRenderError>();
 
   @HostBinding('style.width') width = '100%';
-  @HostBinding('style.height') height = '100%';
   @HostBinding('style.display') display = 'block';
   @HostBinding('style.overflow') overflow = 'hidden';
 
-  private chart: Highcharts.Chart | null = null;
+  private readonly chartController = new HighchartsInstanceController();
   private _isLoading: boolean = false;
   private dataValidationError: { title: string; message: string } | null = null;
   private loadedMapData: any = null;
   private mapCodeToName: Map<string, string> = new Map();
   private resizeObserver: ResizeObserver | null = null;
+  private lastChartSize: { width: number; height: number } | null = null;
+  private chartCreationPending = false;
+  private destroyed = false;
+  private renderGeneration = 0;
+  private _isSyncing = false;
+  private readonly groupSyncSource = Symbol('jquery-highcharts');
+  private groupSyncUnregister: (() => void) | null = null;
+
+  private get effectiveGroup(): string | null {
+    return this.group ?? this.config?.group ?? null;
+  }
+
+  private get effectiveGroupSync(): GroupSyncMode {
+    return this.groupSync ?? this.config?.groupSync ?? 'all';
+  }
 
   @Input()
   set isLoading(isLoading: boolean) {
@@ -95,11 +123,13 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       this._isLoading,
       hasData,
       !!this.dataValidationError,
+      this.loadingLabel,
+      this.noDataLabel,
     );
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['config'] || changes['data'] || changes['type']) {
+    if (changes['config'] || changes['data'] || changes['type'] || changes['renderedOption'] || changes['theme'] || changes['group'] || changes['groupSync']) {
       this.updateChart();
     }
     if (changes['isLoading'] && !changes['isLoading'].firstChange) {
@@ -108,6 +138,9 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
+    this.renderGeneration += 1;
+    this.unregisterGroup();
     this.destroyChart();
     if (this.resizeObserver) {
       this.resizeObserver.disconnect();
@@ -118,11 +151,16 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   ngAfterViewInit(): void {
     if (this.elementRef.nativeElement) {
       this.resizeObserver = new ResizeObserver((entries) => {
-        if (this.chart && entries[0]) {
-          const { width, height } = entries[0].contentRect;
-          if (width > 0 && height > 0) {
-            this.chart.setSize(width, height, false);
-          }
+        if (this.destroyed) return;
+        if (!entries[0]) return;
+
+        const { width, height } = entries[0].contentRect;
+        if (width <= 0 || height <= 0) return;
+
+        if (this.chart) {
+          this.resizeChart(width, height);
+        } else if (this.chartCreationPending) {
+          this.updateChart();
         }
       });
       this.resizeObserver.observe(this.elementRef.nativeElement);
@@ -130,16 +168,29 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   private updateChart(): void {
+    if (this.destroyed) return;
+
+    const generation = ++this.renderGeneration;
+    this.dataValidationError = null;
+    this.loadedMapData = null;
+    this.mapCodeToName = new Map();
     if (!this.config || !this.data) {
       this.debug && console.log('Configuration ou données manquantes');
       return;
     }
 
+    if (!this.chart && !this.hasRenderableSize()) {
+      this.chartCreationPending = true;
+      return;
+    }
+
+    this.chartCreationPending = false;
+
     const hasData = Array.isArray(this.data) && this.data.length > 0;
     if (this.type === 'map' && this._isLoading && !hasData) {
       this.debug && console.log('[chart] map isLoading sans données');
       if (this.chart) {
-        updateChartLoadingState(this.chart, true, false, false);
+        updateChartLoadingState(this.chart, true, false, false, this.loadingLabel, this.noDataLabel);
         return;
       }
       this.createLoadingChart();
@@ -148,44 +199,48 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
     this.destroyChart();
 
-    if (this.type === 'map' && !this.config.mapEndpoint) {
-      this.loadedMapData = null;
-      this.mapCodeToName = new Map();
-    }
-
-    if (this.type === 'map' && this.config.mapEndpoint) {
-      this.createMapChartAsync();
+    if (this.shouldLoadMapData()) {
+      this.createMapChartAsync(generation);
     } else {
-      this.createChart();
+      this.createChart(generation);
     }
   }
 
-  private async createMapChartAsync(): Promise<void> {
+  private async createMapChartAsync(generation: number): Promise<void> {
+    const mapUrl = buildMapUrl(
+      this.config.mapEndpoint!,
+      this.config.mapParam,
+      this.config.mapDefaultValue,
+    );
+
     try {
-      const mapUrl = buildMapUrl(
-        this.config.mapEndpoint!,
-        this.config.mapParam,
-        this.config.mapDefaultValue,
-      );
+      const loadedMapData = await loadGeoJSON(mapUrl);
+      if (!this.isRenderCurrent(generation)) return;
+      this.loadedMapData = loadedMapData;
+      this.mapCodeToName = extractCodeToNameMapping(loadedMapData);
 
-      this.loadedMapData = await loadGeoJSON(mapUrl);
-      this.mapCodeToName = extractCodeToNameMapping(this.loadedMapData);
-
-      this.createChart();
+      this.createChart(generation);
     } catch (error) {
+      if (!this.isRenderCurrent(generation)) return;
       console.error('Erreur lors du chargement de la carte:', error);
+      this.renderError.emit({ error });
       this.dataValidationError = {
         title: 'Erreur de chargement',
-        message: 'Impossible de charger la carte géographique',
+        message: `Impossible de charger la carte géographique (${mapUrl})`,
       };
-      this.createChart(); // créer le chart meme si error pour l'afficher
+      this.createChart(generation); // créer le chart meme si error pour l'afficher
     }
   }
 
   private createLoadingChart(): void {
     try {
+      if (this.destroyed) return;
       const element = this.elementRef.nativeElement;
       if (!element) return;
+      if (!this.hasRenderableSize()) {
+        this.chartCreationPending = true;
+        return;
+      }
 
       const options: Highcharts.Options = {
         chart: {
@@ -197,54 +252,51 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         series: [],
       };
 
-      configureLoadingOptions(options);
+      configureLoadingOptions(options, this.loadingLabel, this.noDataLabel);
 
-      this.chart = Highcharts.chart(element, options);
+      this.chartController.create(element, options, false);
 
       if (this.chart) {
         const { width, height } = element.getBoundingClientRect();
-        if (width > 0 && height > 0) {
-          this.chart.setSize(width, height, false);
-        }
+        this.resizeChart(width, height);
       }
 
-      updateChartLoadingState(this.chart, true, false, false);
+      updateChartLoadingState(this.chart, true, false, false, this.loadingLabel, this.noDataLabel);
 
       this.debug && console.log('[chart] Loading chart créé pour map');
     } catch (error) {
       console.error('Erreur lors de la création du loading chart:', error);
+      this.renderError.emit({ error });
     }
   }
 
-  private async createChart(): Promise<void> {
+  private async createChart(generation: number): Promise<void> {
     try {
+      if (!this.isRenderCurrent(generation)) return;
       const element = this.elementRef.nativeElement;
-      if (!element) {
-        this.debug && console.log('Element not available');
+      if (!this.hasRenderableSize()) {
+        this.chartCreationPending = true;
         return;
       }
 
-      const options = await this.buildChartOptions();
+      const options = await this.buildChartOptions(generation);
+      if (!options || !this.isRenderCurrent(generation)) return;
       sanitizeChartDimensions(options, this.config);
 
-      if (this.type === 'map') {
-        this.chart = (Highcharts as any).mapChart(element, options);
-      } else {
-        this.chart = Highcharts.chart(element, options);
-      }
+      this.chartController.create(element, options, this.type === 'map');
+      this.configureZoomAxes();
+      this.registerGroup();
 
       // Force un premier redimensionnement si nécessaire
       if (this.chart) {
         const { width, height } = element.getBoundingClientRect();
-        if (width > 0 && height > 0) {
-          this.chart.setSize(width, height, false);
-        }
+        this.resizeChart(width, height);
       }
 
       if (this.dataValidationError) {
         showValidationError(this.chart, this.dataValidationError.message);
       } else {
-        hideValidationError(this.chart);
+        hideValidationError(this.chart, this.noDataLabel);
       }
 
       if (this.config.showToolbar && this.chart) {
@@ -263,18 +315,69 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
         this._isLoading,
         hasData,
         !!this.dataValidationError,
+        this.loadingLabel,
+        this.noDataLabel,
       );
 
       this.debug && console.log('Graphique créé:', this.type);
     } catch (error) {
       console.error('Erreur lors de la création du graphique:', error);
+      this.renderError.emit({ error });
     }
   }
 
-  private async buildChartOptions(): Promise<Highcharts.Options> {
+  private hasRenderableSize(): boolean {
+    const { width, height } = this.elementRef.nativeElement.getBoundingClientRect();
+    return width > 0 && height > 0;
+  }
+
+  private resizeChart(width: number, height: number): void {
+    const nextSize = {
+      width: Math.round(width),
+      height: Math.round(height),
+    };
+    if (nextSize.width <= 0 || nextSize.height <= 0) return;
+    if (this.lastChartSize?.width === nextSize.width && this.lastChartSize.height === nextSize.height) return;
+
+    this.lastChartSize = nextSize;
+    this.chartController.resize(nextSize.width, nextSize.height);
+  }
+
+  private shouldLoadMapData(): boolean {
+    if (!this.config.mapEndpoint) return false;
+    if (this.type === 'map') return true;
+
+    const sourceSeries = [{ data: this.data }];
+    return needsDataConversion(sourceSeries, this.type)
+      && detectPreviousChartType(sourceSeries, this.type) === 'map';
+  }
+
+  private isRenderCurrent(generation: number): boolean {
+    return !this.destroyed && generation === this.renderGeneration;
+  }
+
+  private get chart(): Highcharts.Chart | null {
+    return this.chartController.chart;
+  }
+
+  private async buildChartOptions(generation: number): Promise<Highcharts.Options | null> {
+    if (this.renderedOption) {
+      return buildHighchartsOptions({
+        chartType: this.type,
+        highchartsType: this.getHighchartsType(),
+        config: this.config,
+        theme: this.theme,
+        renderedOption: this.renderedOption,
+        loadingLabel: this.loadingLabel,
+        noDataLabel: this.noDataLabel,
+        debug: this.debug,
+        applySeriesAxes: (options, series) => applyHighchartsSeriesAxes(options, series, this.config, this.type),
+        applyRuntimeEvents: options => this.applyRuntimeEvents(options),
+      });
+    }
     // Pour les maps, pas utiliser processData() car transforme les données en tableaux
     // Les maps ont besoin des données au format objet {code, value}
-    let chartData: { series: any[]; xAxis?: any; yAxis?: any; tooltip?: any };
+    let chartData: PreparedHighchartsData;
 
     if (this.type === 'map') {
       // Pour les maps, construire les séries en préservant le format objet
@@ -289,30 +392,17 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
           defaultJoinBy,
         ),
       };
+      const validation = validateChartData(chartData.series, this.type);
+      if (!validation.isValid && !validation.isNoData) {
+        this.dataValidationError = {
+          title: validation.errorTitle || 'Erreur',
+          message: validation.errorMessage || 'Données incompatibles',
+        };
+      }
     } else {
       const tempSeries = [{ data: this.data }];
       if (needsDataConversion(tempSeries, this.type)) {
         const previousType = detectPreviousChartType(tempSeries, this.type);
-        if (
-          previousType === 'map' &&
-          this.mapCodeToName.size === 0 &&
-          this.config.mapEndpoint
-        ) {
-          const mapUrl = buildMapUrl(
-            this.config.mapEndpoint,
-            this.config.mapParam,
-            this.config.mapDefaultValue,
-          );
-          try {
-            this.loadedMapData = await loadGeoJSON(mapUrl);
-            this.mapCodeToName = extractCodeToNameMapping(this.loadedMapData);
-          } catch (error) {
-            console.error(
-              'Erreur lors du chargement du mapping GeoJSON:',
-              error,
-            );
-          }
-        }
         const result = transformChartData(
           tempSeries,
           previousType,
@@ -324,11 +414,11 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
             ? replaceCodesWithNames(result.categories, this.mapCodeToName)
             : result.categories;
 
-        if (this.isSimpleChart() && finalCategories && result.series[0]?.data) {
+        if (['pie', 'donut', 'funnel', 'pyramid'].includes(this.type) && finalCategories && result.series[0]?.data) {
           const formattedData = result.series[0].data.map(
             (value: any, index: number) => ({
               name: finalCategories[index] || `Item ${index + 1}`,
-              y: typeof value === 'number' ? value : value.y || value,
+                y: resolveHighchartsPointValue(value),
             }),
           );
 
@@ -341,7 +431,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
             ],
           } as any;
           if (this.mapCodeToName.size > 0) {
-            chartData.tooltip = createSimpleMapTooltipFormatter();
+            chartData.tooltip = createSimpleMapTooltipFormatter(this.config.options?.mapValueLabel);
           }
         } else {
           chartData = {
@@ -362,318 +452,108 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
           // Ajouter le tooltip personnalisé si mapping disponible
           if (this.mapCodeToName.size > 0) {
-            chartData.tooltip = createMapTooltipFormatter();
+            chartData.tooltip = createMapTooltipFormatter(this.config.options?.mapValueLabel);
           }
         }
       } else {
-        chartData = this.processData();
+        const prepared = prepareHighchartsData({
+          data: this.data,
+          config: this.config,
+          type: this.type,
+          mapCodeToName: this.mapCodeToName,
+          debug: this.debug,
+        });
+        chartData = prepared.data;
+        this.dataValidationError = prepared.validationError;
       }
     }
 
-    const baseOptions: Highcharts.Options = {
-      chart: {
-        type: this.getHighchartsType(),
-        backgroundColor: 'transparent',
-      },
-      title: { text: this.config.title || '' },
-      subtitle: { text: this.config.subtitle || '' },
-      credits: { enabled: false },
-      exporting: { enabled: false },
-      series: chartData.series,
-    };
-
-    // Ajouter xAxis et yAxis seulement s'ils existent (pas pour pie, donut, etc.)
-    if (chartData.xAxis) {
-      baseOptions.xAxis = chartData.xAxis;
-    }
-    if (chartData.yAxis) {
-      baseOptions.yAxis = chartData.yAxis;
-    }
-    if ((chartData as any).tooltip) {
-      baseOptions.tooltip = (chartData as any).tooltip;
-    }
-
-    // Définir le message d'erreur uniquement s'il y a une erreur de validation
-    if (this.dataValidationError) {
-      baseOptions.lang = {
-        noData: this.dataValidationError.message,
-      };
-      baseOptions.noData = {
-        style: {
-          fontWeight: 'normal',
-          fontSize: '14px',
-          color: '#666',
-        },
-      };
-    }
-
-    // Appliquer toutes les configurations spé au type de graph (via registry)
-    applyChartConfigurations(baseOptions, this.type, this.config);
-
-    // donut ? config spé
-    if (this.type === 'donut') {
-      baseOptions.plotOptions = {
-        pie: {
-          innerSize: '70%',
-          dataLabels: { enabled: false },
-          showInLegend: true,
-        },
-      };
-    }
-
-    if (this.type === 'pie') {
-      baseOptions.plotOptions = {
-        pie: {
-          dataLabels: { enabled: false },
-          showInLegend: true,
-        },
-      };
-    }
-
-    let finalOptions = baseOptions;
-    if (this.config.options) {
-      const { series: _, ...optionsWithoutSeries } = this.config.options;
-      finalOptions = Highcharts.merge(baseOptions, optionsWithoutSeries);
-      finalOptions.series = baseOptions.series;
-    }
-
-    if (
-      (this.type === 'donut' || this.type === 'pie') &&
-      this.config.options?.donutCenter
-    ) {
-      applyDonutCenterLogic(finalOptions, this.config.options.donutCenter);
-    }
-
-    if (this.type === 'radialBar' && this.config.options?.radialBar) {
-      applyRadialBarLogic(finalOptions, this.config.options.radialBar);
-    }
-
-    const hasCustomMap = !!(this.config.options as any)?.chart?.map;
-    if (this.type === 'map' && this.loadedMapData && !hasCustomMap) {
-      if (!finalOptions.chart) {
-        finalOptions.chart = {};
-      }
-      (finalOptions.chart as any).map = this.loadedMapData;
-      this.debug && console.log('GeoJSON injecté dans les options du chart');
-    }
-
-    unifyPlotOptionsForChart(finalOptions, this.type, this.debug);
-
-    enforceCriticalOptions(finalOptions, this.type);
-
-    applyAxisOffsets(finalOptions);
-
-    configureLoadingOptions(finalOptions);
-
-    const originalRender = finalOptions.chart?.events?.render;
-    const self = this;
-
-    if (!finalOptions.chart) finalOptions.chart = {};
-    if (!finalOptions.chart.events) finalOptions.chart.events = {};
-
-    finalOptions.chart.events.render = function (this: Highcharts.Chart) {
-      if (originalRender) {
-        originalRender.apply(this, arguments as any);
-      }
-
-      const hasData = Array.isArray(self.data) && self.data.length > 0;
-      if (self.isLoading && !hasData) {
-        const chart = this as any;
-        if (chart.customLabel) chart.customLabel.hide();
-        if (chart.customTotalLabel) chart.customTotalLabel.hide();
-        if (chart.seriesGroup) chart.seriesGroup.hide();
-        if (chart.subtitleGroup) chart.subtitleGroup.hide();
-      }
-    };
-
-    return finalOptions;
-  }
-
-  private processData(): { series: any[]; xAxis?: any; yAxis?: any } {
-    this.dataValidationError = null;
-
-    if (this.isSimpleChart()) {
-      return this.processSimpleChart();
-    } else {
-      return this.processComplexChart();
-    }
-  }
-
-  private processSimpleChart(): { series: any[] } {
-    const tempSeries = [{ data: this.data }];
-    let dataToUse = this.data;
-    if (needsDataConversion(tempSeries, this.type)) {
-      const previousType = detectPreviousChartType(tempSeries, this.type);
-      const result = transformChartData(
-        tempSeries,
-        previousType,
-        this.type,
-        undefined,
-      );
-      if (result.series && result.series[0]?.data) {
-        if (result.categories && this.mapCodeToName.size > 0) {
-          const categories = replaceCodesWithNames(
-            result.categories,
-            this.mapCodeToName,
-          );
-          dataToUse = result.series[0].data.map(
-            (value: any, index: number) => ({
-              name: categories[index] || `Item ${index + 1}`,
-              y: typeof value === 'number' ? value : value.y || value,
-            }),
-          );
-          this.debug &&
-            console.log(
-              '[Simple Chart - Map Transform] Données avec noms:',
-              dataToUse.slice(0, 3),
-            );
-        } else {
-          dataToUse = result.series[0].data;
-        }
-      }
-    }
-    const chartConfig = { ...this.config, continue: false };
-
-    if (dataToUse !== this.data && dataToUse[0]?.name && dataToUse[0]?.y) {
-      return {
-        series: [
-          {
-            name: this.config.title || 'Données',
-            data: dataToUse,
-          },
-        ],
-      };
-    }
-
-    const complexChart = buildChart(dataToUse, chartConfig, null);
-
-    if (complexChart.series && complexChart.series.length > 1) {
-      const aggregatedData = transformDataForSimpleChart(
-        {
-          series: complexChart.series,
-          xAxis: { categories: complexChart.categories },
-        },
-        this.config,
-      );
-      this.debug &&
-        console.log('[Simple Chart - Multi] Données agrégées:', aggregatedData);
-
-      return {
-        series: [
-          {
-            name: this.config.title || 'Total',
-            data: aggregatedData,
-          },
-        ],
-      };
-    }
-
-    const categories = complexChart.categories || [];
-    const serieData = complexChart.series[0]?.data || [];
-
-    const formattedData = serieData.map((value: any, index: number) => {
-      if (typeof value === 'object' && value !== null) {
-        return {
-          name: categories[value.x] || categories[index] || `Item ${index + 1}`,
-          y: value.y !== undefined ? value.y : value,
-        };
-      }
-      return {
-        name: categories[index] || `Item ${index + 1}`,
-        y: value,
-      };
+    return buildHighchartsOptions({
+      chartType: this.type,
+      highchartsType: this.getHighchartsType(),
+      config: this.config,
+      theme: this.theme,
+      loadingLabel: this.loadingLabel,
+      noDataLabel: this.noDataLabel,
+      debug: this.debug,
+      preparedData: chartData,
+      loadedMapData: this.loadedMapData,
+      dataValidationError: this.dataValidationError,
+      applySeriesAxes: (options, series) => applyHighchartsSeriesAxes(options, series, this.config, this.type),
+      applyRuntimeEvents: options => this.applyRuntimeEvents(options),
     });
-    this.debug &&
-      console.log('[Simple Chart - Single] Données:', {
-        categories,
-        serieData,
-        formattedData,
-      });
-
-    return {
-      series: [
-        {
-          name: complexChart.title || 'Données',
-          data: formattedData,
-        },
-      ],
-    };
   }
 
-  private processComplexChart(): { series: any[]; xAxis: any; yAxis?: any } {
-    const chartConfig = { ...this.config, continue: false };
-    const commonChart = buildChart(this.data, chartConfig, null);
-    let categories = commonChart.categories || [];
-
-    let series = commonChart.series || [];
-    let yCategories: string[] | undefined;
-
-    const validation = validateChartData(series, this.type);
-
-    if (!validation.isValid) {
-      if (validation.isNoData) {
-        this.dataValidationError = null;
-      } else {
-        this.dataValidationError = {
-          title: validation.errorTitle || 'Erreur',
-          message: validation.errorMessage || 'Données incompatibles',
-        };
-      }
-
-      return {
-        series: [],
-        xAxis: {
-          categories: [],
-          title: { text: this.config.xtitle || '' },
-        },
-      };
-    }
-
-    this.dataValidationError = null;
-    if (needsDataConversion(series, this.type)) {
-      const previousType = detectPreviousChartType(series, this.type);
-      const result = transformChartData(
-        series,
-        previousType,
-        this.type,
-        categories,
-      );
-      series = result.series;
-      yCategories = result.yCategories;
-      if (result.categories && result.categories.length > 0) {
-        categories = result.categories as any;
-      }
-    } else {
-      const result = transformChartData(
-        series,
-        this.type,
-        this.type,
-        categories,
-      );
-      series = result.series;
-      yCategories = result.yCategories;
-      if (result.categories && result.categories.length > 0) {
-        categories = result.categories as any;
-      }
-    }
-
-    return {
-      series: series,
-      xAxis: {
-        categories: categories,
-        title: { text: this.config.xtitle || '' },
+  private applyRuntimeEvents(options: Highcharts.Options): void {
+    applyHighchartsRuntimeEvents(options, {
+      render: chart => {
+        const hasData = Array.isArray(this.data) && this.data.length > 0;
+        if (this.isLoading && !hasData) {
+          const runtimeChart = chart as any;
+          runtimeChart.customLabel?.hide?.();
+          runtimeChart.customTotalLabel?.hide?.();
+          runtimeChart.seriesGroup?.hide?.();
+          runtimeChart.subtitleGroup?.hide?.();
+        }
       },
-      yAxis: yCategories
-        ? {
-            categories: yCategories,
-            title: { text: this.config.ytitle || '' },
+      pointClick: event => {
+        const point = event.point;
+        this.chartClick.emit({
+          seriesIndex: point?.series?.index,
+          dataIndex: point?.index,
+          seriesType: point?.series?.type,
+          name: point?.name ?? (point?.category === undefined ? undefined : String(point.category)),
+          value: point?.y ?? point?.value,
+          data: point?.options ?? point,
+          event,
+        });
+      },
+      pointMouseOver: point => {
+        this.publishGroupTooltip(point);
+      },
+      pointMouseOut: () => {
+        this.publishGroupTooltip(null);
+      },
+      seriesVisibility: series => {
+        this.updateAxisVisibility(series.chart);
+      },
+      afterSetExtremes: this.effectiveGroup && this.syncActions().includes('datazoom')
+        ? (event, xAxisIndex) => {
+            const min = event?.min ?? event?.dataMin;
+            const max = event?.max ?? event?.dataMax;
+            if (typeof min !== 'number' || typeof max !== 'number') return;
+            const axis = this.chart?.xAxis[xAxisIndex];
+            this.publishGroupDataZoom(
+              min,
+              max,
+              xAxisIndex,
+              this.resolveAxisCategoryValue(axis, min),
+              this.resolveAxisCategoryValue(axis, max),
+            );
           }
         : undefined,
-    };
-  }
+    });
 
-  private isSimpleChart(): boolean {
-    return ['pie', 'donut', 'funnel', 'pyramid'].includes(this.type);
+    if (this.effectiveGroup && this.syncActions().includes('datazoom')) {
+      const chartOptions = options.chart as any;
+      chartOptions.zooming = {
+        ...(chartOptions.zooming ?? {}),
+        type: chartOptions.zooming?.type ?? chartOptions.zoomType ?? 'x',
+      };
+      chartOptions.zoomType = chartOptions.zoomType ?? chartOptions.zooming.type;
+
+      let xAxes: any[] = [];
+      if (Array.isArray(options.xAxis)) {
+        xAxes = options.xAxis;
+      } else if (options.xAxis) {
+        xAxes = [options.xAxis];
+      }
+      xAxes.forEach((xAxis: any) => {
+        if (Array.isArray(xAxis.categories) && xAxis.minRange === undefined) {
+          xAxis.minRange = 1;
+        }
+      });
+    }
   }
 
   private getHighchartsType(): string {
@@ -684,20 +564,258 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       radar: 'line',
       radarArea: 'area',
       radialBar: 'column',
+      mixed: 'line',
     };
     return typeMapping[this.type] || this.type;
   }
 
-  private destroyChart(): void {
-    if (this.chart) {
-      try {
-        this.chart.destroy();
-        this.debug && console.log('Graphique détruit');
-      } catch (error) {
-        console.error('Erreur lors de la destruction:', error);
-      } finally {
-        this.chart = null;
-      }
+  exportImage(
+    fileName = 'chart',
+    type: ChartExportImageType = 'png',
+    pixelRatio = 2,
+  ): void {
+    if (!this.chart) return;
+    if (type === 'svg') {
+      const svg = this.chart.getSVG();
+      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      this.downloadBlob(blob, `${fileName}.svg`);
+      return;
     }
+    this.chart.exportChartLocal({
+      type: `image/${type}`,
+      filename: fileName,
+      sourceWidth: Math.round(this.chart.chartWidth * pixelRatio),
+      sourceHeight: Math.round(this.chart.chartHeight * pixelRatio),
+      fallbackToExportServer: false,
+    }, {
+      chart: {
+        backgroundColor: this.resolveExportBackgroundColor(),
+      },
+    });
+  }
+
+  exportData(fileName = 'data', separator = ';'): void {
+    if (!this.chart) return;
+    const csv = this.replaceCsvDelimiter(this.chart.getCSV(), separator);
+    this.downloadBlob(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8' }), `${fileName}.csv`);
+  }
+
+  zoomOut(): void {
+    this.chart?.zoomOut();
+  }
+
+  getRenderedOption(): Highcharts.Options | null {
+    if (this.renderedOption) return cloneSerializable(this.renderedOption);
+    if (!this.chart) return null;
+    try {
+      return cloneSerializable(this.chart.options);
+    } catch {
+      return null;
+    }
+  }
+
+  private downloadBlob(blob: Blob, fileName: string): void {
+    if (typeof document === 'undefined') return;
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.download = fileName;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private resolveExportBackgroundColor(): string {
+    const backgroundColor = this.chart?.options.chart?.backgroundColor;
+    if (typeof backgroundColor === 'string' && backgroundColor !== 'transparent') {
+      return backgroundColor;
+    }
+    return '#fff';
+  }
+
+  private replaceCsvDelimiter(csv: string, separator: string): string {
+    if (!separator || separator === ',') return csv;
+
+    let inQuotes = false;
+    let result = '';
+    for (const character of csv) {
+      if (character === '"') {
+        inQuotes = !inQuotes;
+      }
+      result += character === ',' && !inQuotes ? separator : character;
+    }
+    return result;
+  }
+
+  private registerGroup(): void {
+    this.unregisterGroup();
+    const group = this.effectiveGroup;
+    if (!group || !this.chart) return;
+    this.groupSyncUnregister = registerChartGroupSync(
+      group,
+      this.groupSyncSource,
+      (event) => this.applySharedGroupSync(event),
+    );
+  }
+
+  private unregisterGroup(): void {
+    this.groupSyncUnregister?.();
+    this.groupSyncUnregister = null;
+  }
+
+  private publishGroupTooltip(point: any): void {
+    if (!this.effectiveGroup || !this.syncActions().includes('tooltip') || this._isSyncing) return;
+    publishChartGroupSync({
+      group: this.effectiveGroup,
+      action: 'tooltip',
+      source: this.groupSyncSource,
+      payload: { xValue: point ? point.category ?? point.name ?? point.x : null },
+    });
+  }
+
+  private publishGroupDataZoom(
+    min: number,
+    max: number,
+    xAxisIndex: number,
+    startValue?: unknown,
+    endValue?: unknown,
+  ): void {
+    if (!this.effectiveGroup || !this.syncActions().includes('datazoom') || this._isSyncing) return;
+    publishChartGroupSync({
+      group: this.effectiveGroup,
+      action: 'datazoom',
+      source: this.groupSyncSource,
+      payload: { min, max, startValue, endValue, xAxisIndex },
+    });
+  }
+
+  private applySharedGroupSync(event: ChartGroupSyncEvent): void {
+    if (!this.chart || !this.syncActions().includes(event.action)) return;
+
+    this._isSyncing = true;
+    try {
+      if (event.action === 'tooltip') {
+        const xValue = event.payload.xValue;
+        if (xValue === null || xValue === undefined) {
+          this.chart.tooltip?.hide();
+          return;
+        }
+
+        const target = this.chart.series
+          .flatMap(series => series.points)
+          .find(point => [point.category, point.name, point.x]
+            .some(value => this.matchesGroupValue(value, xValue)));
+        if (target) this.chart.tooltip?.refresh(target);
+        return;
+      }
+
+      const axis = this.chart.xAxis[event.payload.xAxisIndex ?? 0];
+      if (!axis) return;
+      const min = this.resolveGroupAxisValue(event.payload.startValue, axis)
+        ?? this.resolveGroupAxisValue(event.payload.min, axis);
+      const max = this.resolveGroupAxisValue(event.payload.endValue, axis)
+        ?? this.resolveGroupAxisValue(event.payload.max, axis);
+      if (min !== undefined || max !== undefined) {
+        const extremes = axis.getExtremes();
+        const isReset = min === extremes.dataMin && max === extremes.dataMax;
+        if (isReset) {
+          this.chart.zoomOut();
+        } else {
+          this.applyZoomExtremes(axis, min, max);
+        }
+      }
+    } finally {
+      this._isSyncing = false;
+    }
+  }
+
+  private updateAxisVisibility(chart: Highcharts.Chart): void {
+    let changed = false;
+    chart.yAxis.forEach(axis => {
+      const options = axis.options as any;
+      if (options.custom?.jqueryHighchartsAutoVisibility !== true) return;
+
+      const hasVisibleSeries = axis.series.some(series => series.visible !== false);
+      if ((axis as any).visible !== hasVisibleSeries) {
+        axis.update({ visible: hasVisibleSeries }, false);
+        changed = true;
+      }
+    });
+
+    if (changed) chart.redraw();
+  }
+
+  private applyZoomExtremes(axis: Highcharts.Axis, min: number, max: number): void {
+    const chart = this.chart;
+    if (!chart || !Number.isFinite(min) || !Number.isFinite(max)) return;
+
+    const zoomMin = Math.min(min, max);
+    const zoomMax = Math.max(min, max);
+    const extremes = axis.getExtremes();
+    axis.setExtremes(zoomMin, zoomMax, false, false);
+    chart.redraw();
+
+    if (
+      zoomMin > (extremes.dataMin ?? zoomMin) ||
+      zoomMax < (extremes.dataMax ?? zoomMax)
+    ) {
+      chart.showResetZoom();
+    }
+  }
+
+  private configureZoomAxes(): void {
+    if (!this.chart || !this.effectiveGroup || !this.syncActions().includes('datazoom')) return;
+
+    let changed = false;
+    this.chart.xAxis.forEach(axis => {
+      const runtimeAxis = axis as any;
+      if (!Array.isArray(axis.categories) || runtimeAxis.userMinRange !== undefined) return;
+
+      runtimeAxis.minRange = 1;
+      runtimeAxis.userMinRange = 1;
+      axis.options.minRange = 1;
+      (axis.userOptions as any).minRange = 1;
+      runtimeAxis.setScale();
+      changed = true;
+    });
+
+    if (changed) this.chart.redraw();
+  }
+
+  private resolveGroupAxisValue(value: unknown, axis: Highcharts.Axis): number | undefined {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (value === null || value === undefined) return undefined;
+
+    const target = this.chart?.series
+      .flatMap(series => series.points)
+      .find(point => [point.category, point.name]
+        .some(candidate => this.matchesGroupValue(candidate, value)));
+    return target?.x;
+  }
+
+  private resolveAxisCategoryValue(axis: Highcharts.Axis | undefined, value: number): unknown {
+    const categories = axis?.categories;
+    if (!Array.isArray(categories) || !Number.isFinite(value)) return undefined;
+    return categories[Math.round(value)];
+  }
+
+  private matchesGroupValue(left: unknown, right: unknown): boolean {
+    if (left === right) return true;
+    const isComparable = (value: unknown): value is string | number =>
+      typeof value === 'string' || typeof value === 'number';
+    return isComparable(left) && isComparable(right) && String(left) === String(right);
+  }
+
+  private syncActions(): GroupSyncAction[] {
+    const mode = this.effectiveGroupSync;
+    if (mode === 'all') return ['datazoom', 'tooltip'];
+    return Array.isArray(mode) ? mode : [mode];
+  }
+
+  private destroyChart(): void {
+    this.unregisterGroup();
+    this.lastChartSize = null;
+    if (!this.chart) return;
+    this.chartController.destroy();
+    this.debug && console.log('Graphique détruit');
   }
 }

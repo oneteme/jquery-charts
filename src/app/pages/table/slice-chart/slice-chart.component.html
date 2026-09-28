@@ -1,65 +1,44 @@
-﻿<div class="slice-chart-page">
-  <!-- En-tête -->
-  <div class="page-header">
-    <h1>Slice panel — usage avec un graphique</h1>
-    <p class="subtitle">
-      Le composant <code>&lt;slice-panel&gt;</code> est découplé de <code>&lt;jquery-table&gt;</code>.
-      Il peut s'utiliser seul pour filtrer n'importe quel jeu de données : graphique, liste, carte, etc.
-    </p>
-  </div>
+﻿<main class="slice-chart-page">
+  <header class="page-header">
+    <div>
+      <a class="back-link" routerLink="/table">← Tous les exemples</a>
+      <p class="eyebrow">jquery-table / slice + graphique</p>
+      <h1>Un filtre de table qui pilote un graphique.</h1>
+      <p class="subtitle">
+        <code>&lt;slice-panel&gt;</code> est indépendant de <code>&lt;jquery-table&gt;</code> : l’hôte reçoit un prédicat,
+        recalcule ses données et les transmet au renderer de son choix.
+      </p>
+    </div>
+    <a class="api-link" routerLink="/api/table">Consulter la référence API ↗</a>
+  </header>
 
-  <!-- API Recap -->
-  <section class="doc-section">
-    <h2>API rapide</h2>
-
-    <h3>Inputs</h3>
-    <table class="api-table">
-      <thead>
-        <tr><th>Propriété</th><th>Type</th><th>Défaut</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>sliceConfigs</code></td><td><code>SliceConfig&lt;T&gt;[]</code></td><td><code>[]</code></td><td>Groupes de filtres. Chaque entrée génère un panneau de catégories.</td></tr>
-        <tr><td><code>data</code></td><td><code>T[]</code></td><td><code>[]</code></td><td>Données sources. Requis lorsque <code>columnKey</code> est utilisé pour l'inférence automatique.</td></tr>
-        <tr><td><code>showCounts</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Affiche le compteur de lignes sur chaque catégorie. Désactiver pour les graphiques.</td></tr>
-        <tr><td><code>alwaysShow</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Affiche le panneau même si <code>data</code> est vide (utile quand la data transite ailleurs).</td></tr>
-        <tr><td><code>showToggle</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Affiche le bouton de repli global du panneau.</td></tr>
-        <tr><td><code>collapsedByDefault</code></td><td><code>boolean</code></td><td><code>false</code></td><td>Replie le panneau à l'initialisation.</td></tr>
-      </tbody>
-    </table>
-
-    <h3>Outputs</h3>
-    <table class="api-table">
-      <thead>
-        <tr><th>Événement</th><th>Type</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>filterChange</code></td><td><code>(row: T) =&gt; boolean</code></td><td>Prédicat combiné de tous les slices actifs. À passer directement à <code>Array.filter()</code>.</td></tr>
-        <tr><td><code>activeKeysChange</code></td><td><code>string[][]</code></td><td>Clés actives par slice (index 0 = slice 0). Alternatif à <code>filterChange</code> pour alimenter les paramètres d'une requête graphique.</td></tr>
-        <tr><td><code>collapsedChange</code></td><td><code>boolean</code></td><td>Émet <code>true</code> quand le panneau est replié, <code>false</code> quand il est ouvert.</td></tr>
-      </tbody>
-    </table>
-
-    <h3>SliceConfig&lt;T&gt;</h3>
-    <table class="api-table">
-      <thead>
-        <tr><th>Propriété</th><th>Type</th><th>Description</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>title</code></td><td><code>string</code></td><td>Titre affiché en en-tête du groupe.</td></tr>
-        <tr><td><code>columnKey</code></td><td><code>keyof T</code></td><td>Clé de propriété. Les catégories sont générées automatiquement depuis les valeurs distinctes.</td></tr>
-        <tr><td><code>categories</code></td><td><code>SliceCategory&lt;T&gt;[]</code></td><td>Catégories manuelles. Mutuellement exclusif avec <code>columnKey</code>.</td></tr>
-        <tr><td><code>multiSelect</code></td><td><code>boolean</code></td><td>Sélection multiple dans ce groupe (défaut : <code>false</code>).</td></tr>
-      </tbody>
-    </table>
+  <section class="capability-strip" aria-label="Capacités illustrées">
+    <div class="capability-item">
+      <strong>1 · Définir</strong>
+      <span>Deux slices sont dérivés des champs <code>status</code> et <code>priority</code>.</span>
+    </div>
+    <div class="capability-item">
+      <strong>2 · Filtrer</strong>
+      <span><code>filterChange</code> fournit un prédicat directement utilisable avec <code>Array.filter()</code>.</span>
+    </div>
+    <div class="capability-item">
+      <strong>3 · Recalculer</strong>
+      <span>Le composant hôte agrège les lignes filtrées par développeur.</span>
+    </div>
+    <div class="capability-item">
+      <strong>4 · Afficher</strong>
+      <span>Le graphique reçoit seulement <code>chartData</code>, sans connaître le panneau.</span>
+    </div>
   </section>
 
-  <!-- Démo visuelle -->
-  <section class="doc-section demo-section">
-    <h2>Démo interactive</h2>
-    <p>Cliquez sur un filtre pour voir le graphique se mettre à jour en temps réel.</p>
+  <section class="demo-section" aria-labelledby="slice-demo-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Démo interactive</p>
+      <h2 id="slice-demo-title">Le filtre et son résultat restent synchronisés</h2>
+      <p>Sélectionnez un statut ou une priorité. Le tableau de bord recalcule immédiatement les volumes par développeur.</p>
+    </div>
 
     <div class="demo-shell" [class.slice-collapsed]="sliceCollapsed">
-
       <slice-panel
         [sliceConfigs]="sliceConfigs"
         [data]="tasks"
@@ -67,27 +46,54 @@
         [alwaysShow]="true"
         (collapsedChange)="sliceCollapsed = $event"
         (filterChange)="onFilterChange($event)"
+        (activeKeysChange)="onActiveKeysChange($event)"
       ></slice-panel>
 
       <div class="chart-area">
-        <chart type="bar" [config]="chartConfig" [data]="chartData"></chart>
+        <div class="chart-heading">
+          <div>
+            <span class="chart-kicker">Vue agrégée</span>
+            <h3>Tickets par développeur</h3>
+          </div>
+          <span class="chart-state" *ngIf="activeFilterLabels.length === 0">Tous les tickets</span>
+          <span class="chart-state chart-state--active" *ngIf="activeFilterLabels.length > 0">
+            {{ activeFilterLabels.join(' · ') }}
+          </span>
+        </div>
+        <div class="chart-canvas">
+          <chart type="bar" [config]="chartConfig" [data]="chartData"></chart>
+        </div>
       </div>
+    </div>
 
+    <div class="flow-note">
+      <strong>Flux de données :</strong> <code>slice-panel</code> émet → <code>onFilterChange()</code> agrège →
+      <code>chartData</code> rerend le graphique.
     </div>
   </section>
 
-  <!-- Code -->
-  <section class="doc-section">
-    <h2>Code</h2>
+  <section class="code-section" aria-labelledby="slice-code-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Intégration</p>
+      <h2 id="slice-code-title">Le minimum à brancher</h2>
+      <p>Le détail de l’API est documenté séparément ; ces trois extraits suffisent pour reproduire le scénario.</p>
+    </div>
 
-    <h3>Template</h3>
-    <pre><code [textContent]="codeHtml"></code></pre>
-
-    <h3>TypeScript</h3>
-    <pre><code [textContent]="codeTs"></code></pre>
-
-    <h3>SCSS</h3>
-    <pre><code [textContent]="codeScss"></code></pre>
+    <details class="code-details" open>
+      <summary>Afficher le code de l’exemple</summary>
+      <div class="code-tabs" role="tablist" aria-label="Langage du code">
+        <button
+          *ngFor="let codeTab of codeTabs"
+          type="button"
+          class="code-tab"
+          [class.is-active]="activeCodeTab === codeTab.key"
+          [attr.aria-selected]="activeCodeTab === codeTab.key"
+          role="tab"
+          (click)="selectCodeTab(codeTab.key)">
+          {{ codeTab.label }}
+        </button>
+      </div>
+      <pre><code [textContent]="activeCode"></code></pre>
+    </details>
   </section>
-
-</div>
+</main>

@@ -1,16 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, HostListener } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
 import { ChartComponent } from '@oneteme/jquery-highcharts';
 import { HIGHCHARTS_EXAMPLES } from 'src/app/data/chart/highcharts-examples.data';
-import { ChartType } from '@oneteme/jquery-core';
+import type { ChartType } from '@oneteme/jquery-core';
+import { ChartExampleSection, HIGHCHARTS_SECTIONS } from '../charts/chart-example-sections';
+import { ChartExampleNavigationService } from '../charts/chart-example-navigation.service';
+import { trackVisibleChartExample } from '../charts/chart-example-tracker';
 import { buildChartCode, highlightChartCode } from 'src/app/core/chart-code-snippet.util';
-
-interface HighchartsSection {
-  id: string;
-  label: string;
-  type: ChartType;
-  exampleKey: string;
-}
+import { StackBlitzService } from 'src/app/core/services/stackblitz.service';
 
 @Component({
   standalone: true,
@@ -19,42 +16,34 @@ interface HighchartsSection {
   templateUrl: './highcharts-gallery.component.html',
   styleUrls: ['./highcharts-gallery.component.scss'],
 })
-export class HighchartsGalleryComponent {
+export class HighchartsGalleryComponent implements AfterViewInit, OnDestroy {
 
   readonly examples = HIGHCHARTS_EXAMPLES;
 
-  readonly sections: HighchartsSection[] = [
-    // Standard XY
-    { id: 'line',              label: 'Line',                type: 'line',              exampleKey: 'lineExample'              },
-    { id: 'spline',            label: 'Spline',              type: 'spline',            exampleKey: 'splineExample'            },
-    { id: 'areaspline',        label: 'Area Spline',         type: 'areaspline',        exampleKey: 'areasplineExample'        },
-    { id: 'area',              label: 'Area',                type: 'area',              exampleKey: 'areaExample'              },
-    { id: 'bar',               label: 'Bar (horizontal)',    type: 'bar',               exampleKey: 'barExample'               },
-    { id: 'column',            label: 'Column (vertical)',   type: 'column',            exampleKey: 'columnExample'            },
-    { id: 'scatter',           label: 'Scatter',             type: 'scatter',           exampleKey: 'scatterExample'           },
-    // Simple
-    { id: 'pie',               label: 'Pie',                 type: 'pie',               exampleKey: 'pieExample'               },
-    { id: 'donut',             label: 'Donut',               type: 'donut',             exampleKey: 'donutExample'             },
-    { id: 'funnel',            label: 'Funnel',              type: 'funnel',            exampleKey: 'funnelExample'            },
-    { id: 'pyramid',           label: 'Pyramid',             type: 'pyramid',           exampleKey: 'pyramidExample'           },
-    // Polar / Radar
-    { id: 'polar',             label: 'Polar',               type: 'polar',             exampleKey: 'polarExample'             },
-    { id: 'radar',             label: 'Radar (Web)',         type: 'radar',             exampleKey: 'radarExample'             },
-    { id: 'radarArea',         label: 'Radar Area',          type: 'radarArea',         exampleKey: 'radarAreaExample'         },
-    { id: 'radialBar',         label: 'Radial Bar',          type: 'radialBar',         exampleKey: 'radialBarExample'         },
-    // Bubble
-    { id: 'bubble',            label: 'Bubble',              type: 'bubble',            exampleKey: 'bubbleExample'            },
-    // Heatmap / Treemap
-    { id: 'heatmap',           label: 'Heatmap',             type: 'heatmap',           exampleKey: 'heatmapExample'           },
-    { id: 'treemap',           label: 'Treemap',             type: 'treemap',           exampleKey: 'treemapExample'           },
-    // Range
-    { id: 'columnrange',       label: 'Column Range',        type: 'columnrange',       exampleKey: 'columnrangeExample'       },
-    { id: 'arearange',         label: 'Area Range',          type: 'arearange',         exampleKey: 'arearangeExample'         },
-    { id: 'areasplinerange',   label: 'Area Spline Range',   type: 'areasplinerange',   exampleKey: 'areasplinerangeExample'   },
-  ];
+  readonly sections = HIGHCHARTS_SECTIONS;
 
   openCodeBlocks: Record<string, boolean> = {};
   activeCodeBlock: string | null = null;
+
+  private stopExampleTracking: (() => void) | null = null;
+
+  constructor(
+    private readonly hostElement: ElementRef<HTMLElement>,
+    private readonly chartNavigation: ChartExampleNavigationService,
+    private readonly stackBlitzService: StackBlitzService,
+  ) {}
+
+  ngAfterViewInit(): void {
+    this.chartNavigation.reset();
+    this.stopExampleTracking = trackVisibleChartExample(
+      this.hostElement.nativeElement,
+      id => this.chartNavigation.setCurrentExample(id),
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.stopExampleTracking?.();
+  }
 
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
@@ -76,6 +65,13 @@ export class HighchartsGalleryComponent {
 
   isCodeOpen(id: string): boolean {
     return this.openCodeBlocks[id] ?? false;
+  }
+
+  openInStackBlitz(section: ChartExampleSection, event: Event): void {
+    event.stopPropagation();
+
+    const example = (this.examples as Record<string, { config: unknown; data: unknown[] }>)[section.exampleKey];
+    if (example) this.stackBlitzService.openExample('highcharts', section, example);
   }
 
   getHighlightedCode(type: ChartType, exampleKey: string): string {

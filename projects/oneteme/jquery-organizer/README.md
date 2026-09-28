@@ -1,3 +1,4 @@
+  (viewChange) | EventEmitter<OrganizerButtonEvent> | Émis à chaque interaction utilisateur |
 # @oneteme/jquery-organizer
 
 Bibliothèque Angular autonome pour la gestion décentralisée des configurations de graphiques et tableaux. Elle fournit :
@@ -12,6 +13,17 @@ Bibliothèque Angular autonome pour la gestion décentralisée des configuration
 - **Template normalization** avec validation permissive des états et auto-détection de templates
 - **Slice loading unification** dans le composant organizer (Promise/Observable dual-support)
 - **Chart binding facade** pour simplifier l'intégration ChartConfig ↔ Organizer (50% réduction de boilerplate)
+
+> **Documentation et démonstrations** : [ouvrir l'application de documentation](https://oneteme.github.io/jquery-charts/)
+>
+> L'application montre l'Organizer avec les tableaux et les trois renderers de graphiques, notamment les sélections, les regroupements, les slices, les exports et le plein écran.
+
+## Nouveautés intégrées
+
+- **Façade de binding** : `buildOrganizerChartBinding()` et `handleOrganizerChartEvent()` regroupent la conversion de configuration, la normalisation d'état et la décision de rechargement.
+- **État contrôlé** : les événements exposent un état complet et peuvent être réinjectés dans un graphique ou un tableau sans dépendance au renderer.
+- **Chargement de slices unifié** : `Promise` et `Observable` sont acceptés par `onFetchSliceData`.
+- **Actions visuelles** : export, copie et plein écran peuvent être branchés via `OrganizerConfig.actions` et les callbacks associés.
 
 ---
 
@@ -123,6 +135,7 @@ export interface OrganizerConfig {
   yFields?: OrganizerYField[];           // Indicateurs (ex: count, elapsed_avg)
   groups?: OrganizerViewGroup[];         // Options de regroupement
   slices?: OrganizerViewSlice[];         // Options de filtre
+  chartTypes?: OrganizerChartType[];     // Types proposés par le renderer hôte
 
   // Callbacks
   onFetchFieldData?: (fieldId: string) => Promise<any[]>;
@@ -149,7 +162,7 @@ export interface OrganizerConfig {
   onToggleFullscreen?: () => void;
 
   // UI
-  showReset?: boolean;                   // Défaut: true
+  showReset?: boolean;                   // Défaut: false
   buttonLabel?: string;
   buttonIcon?: string;                   // Icône Material
   showButtonIcon?: boolean;
@@ -169,6 +182,7 @@ export interface OrganizerConfig {
 export interface OrganizerState {
   viewMode?: 'chart' | 'table';
   visibleFields?: string[];             // Champs visibles en table
+  selectedChartType?: string;            // Type de graphique choisi par l’utilisateur
   selectedX?: string;                   // Dimension X (ex: 'date')
   selectedY?: string;                   // Indicateur Y (ex: 'count')
   selectedYAggregate?: string;           // Agrégat si applicable
@@ -178,11 +192,44 @@ export interface OrganizerState {
 
 export interface OrganizerButtonEvent {
   type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' 
-      | 'sliceSelected' | 'reset' | 'viewSwitched';
+  | 'sliceSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
   state: OrganizerState;                 // État complet après action
   source?: 'user' | 'api';
   resolvedYUnit?: string | UnitConfig;   // Unité auto-détectée (voir Auto-Scaling)
 }
+```
+
+### Changer le type d’un graphique
+
+`jquery-organizer` ne connaît pas le renderer. Le parent déclare les types compatibles, écoute `chartTypeSelected`, puis réinjecte l’identifiant dans le composant graphique :
+
+```typescript
+readonly organizerConfig: OrganizerConfig = {
+  chartTypes: [
+    { id: 'line', label: 'Courbe' },
+    { id: 'column', label: 'Colonnes' },
+  ],
+};
+
+state: OrganizerState = { selectedChartType: 'line' };
+chartType: ChartType = 'line';
+
+onViewChange(event: OrganizerButtonEvent): void {
+  this.state = event.state;
+  if (event.state.selectedChartType) {
+    this.chartType = event.state.selectedChartType as ChartType;
+  }
+}
+```
+
+```html
+<organizer-button
+  [config]="organizerConfig"
+  [state]="state"
+  (viewChange)="onViewChange($event)">
+</organizer-button>
+
+<chart [type]="chartType" [config]="config" [data]="data"></chart>
 ```
 
 ---

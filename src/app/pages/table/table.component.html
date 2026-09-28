@@ -1,31 +1,93 @@
-<div class="table-test-container">
-  <p class="page-intro">
-    100 posts JSONPlaceholder joints avec 10 users, colonne lazy Commentaires, export CSV,
-    Group By, recherche, sélection et préférences persistantes.
-  </p>
-
-  <jquery-table
-    [config]="tableConfig"
-    [data]="tableData"
-    [isLoading]="isLoading"
-    (rowSelected)="onRowSelected($event)"
-    (sortChange)="onSortChange($event)"
-    (pageChange)="onPageChange($event)"
-    (searchChange)="onSearchChange($event)"
-    (groupByChange)="onGroupByChange($event)"
-    (columnsChange)="onColumnsChange($event)"
-  ></jquery-table>
-
-  <div class="code-demo">
-    <div class="code-block">
-      <h3>Template</h3>
-      <pre><code [textContent]="tableTemplateCode"></code></pre>
-
-      <h3>Configuration</h3>
-      <pre><code [textContent]="tableConfigCode"></code></pre>
-
-      <h3>Data</h3>
-      <pre><code [textContent]="tableDataCode"></code></pre>
+<div class="table-gallery-page">
+  <header class="page-header">
+    <div>
+      <a class="back-link" routerLink="/">← Accueil</a>
+      <p class="eyebrow">jquery-table / exemples</p>
+      <h1>Des tableaux configurables, pensés pour vos usages métier.</h1>
+      <p class="subtitle">
+        Trois situations courantes pour voir le wrapper en action : du tableau simple aux vues métier avec filtres,
+        regroupement et cellules personnalisées.
+      </p>
     </div>
-  </div>
+    <a class="api-link" routerLink="/api/table">Consulter la référence API ↗</a>
+  </header>
+
+  <section class="feature-summary" aria-label="Possibilités présentées">
+    <div class="feature-summary__item">
+      <strong>Déclaratif</strong>
+      <span>Les colonnes, la recherche et la pagination vivent dans un <code>TableProvider</code>.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Explorable</strong>
+      <span>View, Group by et Slice by adaptent la vue sans réécrire les lignes.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Personnalisable</strong>
+      <span><code>jqtCellDef</code>, <code>value</code> et <code>lazy</code> couvrent les rendus avancés.</span>
+    </div>
+    <div class="feature-summary__item">
+      <strong>Prêt à intégrer</strong>
+      <span>Chaque carte associe une interaction réelle à un exemple de configuration minimal.</span>
+    </div>
+  </section>
+
+  <section class="examples-section" aria-labelledby="table-examples-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Galerie</p>
+      <h2 id="table-examples-title">Choisir le bon niveau de configuration</h2>
+      <p>Les exemples utilisent les mêmes données locales pour rendre les différences de configuration faciles à comparer.</p>
+    </div>
+
+    <div class="examples-list">
+      <article *ngFor="let example of examples" class="example-card" [attr.data-example]="example.id">
+        <header class="example-card__header">
+          <div>
+            <span class="example-index">{{ example.index }}</span>
+            <h3>{{ example.title }}</h3>
+            <p>{{ example.description }}</p>
+          </div>
+          <div class="tag-list" aria-label="Fonctionnalités utilisées">
+            <span *ngFor="let tag of example.tags" class="tag">{{ tag }}</span>
+          </div>
+        </header>
+
+        <jquery-table
+          class="demo-table"
+          [class.demo-table--styled]="example.id === 'overview'"
+          [config]="example.config"
+          [data]="rows"
+          (rowSelected)="onRowSelected($event)"
+        >
+          <ng-template jqtCellDef="status" let-row>
+            <span class="status-chip" [attr.data-status]="row.status">{{ row.status }}</span>
+          </ng-template>
+          <ng-template jqtCellDef="priority" let-row>
+            <span class="priority-chip" [attr.data-priority]="row.priority">{{ row.priority }}</span>
+          </ng-template>
+        </jquery-table>
+
+        <div class="selection-note">
+          <span>Événement <code>rowSelected</code></span>
+          <strong>{{ selectedReference }}</strong>
+        </div>
+
+        <details class="code-details">
+          <summary>Voir la configuration minimale</summary>
+          <div class="code-tabs" role="tablist" aria-label="Langage de l’exemple">
+            <button
+              *ngFor="let codeTab of codeTabs"
+              type="button"
+              class="code-tab"
+              [class.is-active]="example.activeCodeTab === codeTab.key"
+              [attr.aria-selected]="example.activeCodeTab === codeTab.key"
+              role="tab"
+              (click)="selectCodeTab(example, codeTab.key)">
+              {{ codeTab.label }}
+            </button>
+          </div>
+          <pre><code>{{ codeFor(example) }}</code></pre>
+        </details>
+      </article>
+    </div>
+  </section>
 </div>

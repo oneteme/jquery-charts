@@ -1,214 +1,68 @@
-import { Directive, ElementRef, EventEmitter, inject, Input, NgZone, OnChanges, OnDestroy, Output, signal, SimpleChanges } from '@angular/core';
-import { buildChart, ChartProvider, ChartView, DataProvider, field, naturalFieldComparator, XaxisType } from '@oneteme/jquery-core';
-import ApexCharts from 'apexcharts';
-import { asapScheduler, observeOn } from 'rxjs';
-import { ChartCustomEvent, getType, initCommonChartOptions, updateCommonOptions, destroyChart, setupScrollPrevention, transformSeriesVisibility, fixToolbarSvgIds, setupToolbarObserver } from './utils';
-import { fromPromise } from 'rxjs/internal/observable/innerFrom';
+import { Directive, Input } from '@angular/core';
+import {
+  buildChart,
+  DataProvider,
+  field,
+  naturalFieldComparator,
+  XaxisType,
+} from '@oneteme/jquery-core';
+import { ApexChartDirectiveBase } from './apex-chart.directive';
+import { getType, transformSeriesVisibility } from './utils';
+
+type BarChartType = 'bar' | 'column' | 'funnel' | 'pyramid';
 
 @Directive({
   standalone: true,
   selector: '[bar-chart]',
 })
 export class BarChartDirective<X extends XaxisType>
-  implements ChartView<X, number>, OnChanges, OnDestroy
+  extends ApexChartDirectiveBase<X, number>
 {
-  private readonly el: ElementRef = inject(ElementRef);
-  private readonly ngZone = inject(NgZone);
-  private readonly chartInstance = signal<ApexCharts | null>(null);
-  private toolbarObserver: MutationObserver | null = null;
-  private _chartConfig: ChartProvider<X, number>;
-  private _options: any;
-  private _canPivot: boolean = true;
+  private _type: BarChartType = 'bar';
 
-  @Input() debug: boolean;
-  @Input({ required: true }) type: 'bar' | 'column' | 'funnel' | 'pyramid';
-  @Input({ required: true }) data: any[];
-  @Output() customEvent: EventEmitter<ChartCustomEvent> = new EventEmitter();
-  @Input() set isLoading(isLoading: boolean) {
-    this._options.noData.text = isLoading
-      ? 'Chargement des données...'
-      : 'Aucune donnée';
+  @Input({ required: true })
+  set type(type: BarChartType) {
+    if (this._type === type) return;
+    this._type = type;
+    this.markForRedraw();
   }
-  @Input() set canPivot(canPivot: boolean) {
-    this._canPivot = canPivot;
-  }
-  get canPivot(): boolean {
-    return this._canPivot;
-  }
-  @Input() set config(config: ChartProvider<X, number>) {
-    this._chartConfig = config;
-    this._options = updateCommonOptions(this._options, config);
-    this.configureTypeSpecificOptions();
+
+  get type(): BarChartType {
+    return this._type;
   }
 
   constructor() {
-    this._options = initCommonChartOptions(this.el, this.customEvent, this.ngZone, 'bar');
+    super('bar');
   }
 
-  init() {
-    if (this.debug) {
-      console.log('Initialisation du graphique { ...this._options }', { ...this._options });
-      console.log('Initialisation du graphique this._options', this._options);
-    }
-
-    this.ngZone.runOutsideAngular(() => {
-      try {
-        let chart = new ApexCharts(this.el.nativeElement, { ...this._options });
-        this.chartInstance.set(chart);
-        fromPromise(
-          chart
-            .render()
-            .then(() => {
-              setupScrollPrevention(this.el.nativeElement, this.chartInstance);
-              fixToolbarSvgIds(this.el.nativeElement);
-              this.toolbarObserver = setupToolbarObserver(this.el.nativeElement);
-                this.debug && console.log(
-                  new Date().getMilliseconds(),
-                  'Rendu du graphique terminé'
-                );
-            })
-            .catch((error) => {
-              console.error('Erreur lors du rendu du graphique:', error);
-              this.chartInstance.set(null);
-            })
-        )
-          .pipe(observeOn(asapScheduler))
-          .subscribe({
-            next: () =>
-              this.debug &&
-              console.log(
-                new Date().getMilliseconds(),
-                'Observable rendu terminé'
-              ),
-            error: (error) =>
-              console.error('Erreur dans le flux Observable:', error),
-          });
-      } catch (error) {
-        console.error("Erreur lors de l'initialisation du graphique:", error);
-      }
-    });
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    if (this.debug)
-      console.log(
-        new Date().getMilliseconds(),
-        'Détection de changements',
-        changes
-      );
-    if (changes['type']) this.updateType();
-    this.ngZone.runOutsideAngular(() => {
-      asapScheduler.schedule(() => this.hydrate(changes));
-    });
-  }
-
-  ngOnDestroy() {
-    if (this.toolbarObserver) {
-      this.toolbarObserver.disconnect();
-      this.toolbarObserver = null;
-    }
-    destroyChart(this.chartInstance);
-  }
-
-  private hydrate(changes: SimpleChanges): void {
-    if (this.debug) console.log('Hydratation du graphique', { ...changes });
-    const needsDataUpdate =
-      changes['data'] || changes['config'] || changes['type'];
-    const needsOptionsUpdate = Object.keys(changes).some(
-      (key) => !['debug'].includes(key)
-    );
-
-    if (changes['type']) {
-      this.updateType();
-    }
-
-    if (needsDataUpdate && this.data && this._chartConfig) {
-      this.updateData();
-    }
-    if (changes['isLoading'] && this.chartInstance()) {
-      this._options.noData.text = changes['isLoading'].currentValue
-        ? 'Chargement des données...'
-        : 'Aucune donnée';
-
-      this.updateChartOptions({ noData: this._options.noData }, false, false, false);
-    }
-
-    if (this._options.shouldRedraw) {
-      if (this.debug)
-        console.log('Recréation complète du graphique nécessaire', changes);
-      this.ngOnDestroy();
-      this.init();
-      delete this._options.shouldRedraw;
-    } else if (needsOptionsUpdate) {
-      if (this.debug)
-        console.log('Mise à jour des options du graphique', changes);
-      this.updateChartOptions();
-    }
-  }
-
-  private updateChartOptions(
-    specificOptions?: any,
-    redrawPaths: boolean = true,
-    animate: boolean = true,
-    updateSyncedCharts: boolean = false
-  ): Promise<void> {
-    const chartInstance = this.chartInstance();
-    if (!chartInstance) return Promise.resolve();
-
-    const options = specificOptions ?? this._options;
-
-    return this.ngZone.runOutsideAngular(() =>
-      chartInstance
-        .updateOptions({ ...options }, redrawPaths, animate, updateSyncedCharts)
-        .then(() => {
-          fixToolbarSvgIds(this.el.nativeElement);
-        })
-        .catch((error) => {
-          console.error('Erreur lors de la mise à jour des options:', error);
-          return Promise.resolve();
-        })
-    );
-  }
-
-  private updateType() {
+  protected updateType(): void {
     this._options.chart.type = 'bar';
     this.configureTypeSpecificOptions();
-    this._options.shouldRedraw = true;
   }
 
-  private configureTypeSpecificOptions() {
+  protected configureTypeSpecificOptions(): void {
     this._options.plotOptions ??= {};
     this._options.plotOptions.bar ??= {};
-
-    if (this.type === 'bar') {
-      this._options.plotOptions.bar.horizontal = true;
-    } else if (this.type === 'column') {
-      this._options.plotOptions.bar.horizontal = false;
-    }
-
-    if (this.type === 'funnel' || this.type === 'pyramid') {
-      this._options.plotOptions.bar.isFunnel = true;
-      this._options.plotOptions.bar.horizontal = true;
-    }
+    this._options.plotOptions.bar.horizontal =
+      this._type === 'bar' || this._type === 'funnel' || this._type === 'pyramid';
+    this._options.plotOptions.bar.isFunnel =
+      this._type === 'funnel' || this._type === 'pyramid';
   }
 
-  private updateData() {
+  protected updateData(): void {
     let sortedData = [...this.data];
     const primaryYProvider = this.getPrimaryYProvider();
-    if (this.type == 'funnel') {
+    if (this._type === 'funnel') {
       sortedData = sortedData.sort(
         naturalFieldComparator('asc', primaryYProvider)
       );
-    } else if (this.type == 'pyramid') {
+    } else if (this._type === 'pyramid') {
       sortedData = sortedData.sort(
         naturalFieldComparator('desc', primaryYProvider)
       );
     }
 
-    const commonChart = buildChart(sortedData, {
-      ...this._chartConfig,
-      pivot: !this.canPivot ? false : this._chartConfig.pivot,
-    });
+    const commonChart = buildChart(sortedData, this.effectiveConfig);
 
     const seriesWithVisibility = transformSeriesVisibility(commonChart.series);
 
@@ -225,14 +79,15 @@ export class BarChartDirective<X extends XaxisType>
     const newType = getType(commonChart);
     if (this._options.xaxis.type !== newType) {
       this._options.xaxis.type = newType;
-      this._options.shouldRedraw = true;
+      this.markForRedraw();
     }
 
     this._options.xaxis.categories = commonChart.categories || [];
   }
 
   private getPrimaryYProvider(): DataProvider<number> {
-    const coordinate = this._chartConfig.series[0].data;
+    const coordinate = this._chartConfig.series?.[0]?.data;
+    if (!coordinate) return () => undefined as unknown as number;
     return 'yField' in coordinate ? field<number>(coordinate.yField) : coordinate.y;
   }
 }

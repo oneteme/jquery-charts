@@ -8,9 +8,9 @@ import { ChartComponent } from '@oneteme/jquery-highcharts';
 interface Task {
   id: string;
   title: string;
-  status: 'Backlog' | 'In Progress' | 'Done';
+  status: 'À faire' | 'En cours' | 'Terminé';
   owner: string;
-  priority: 'Low' | 'Medium' | 'High';
+  priority: 'Faible' | 'Moyenne' | 'Haute';
 }
 
 interface OwnerStat {
@@ -29,23 +29,31 @@ interface OwnerStat {
 })
 export class SliceChartComponent implements AfterViewInit {
 
+  readonly codeTabs = [
+    { key: 'ts', label: 'TS' },
+    { key: 'html', label: 'HTML' },
+    { key: 'scss', label: 'SCSS' },
+  ] as const;
+
+  activeCodeTab: 'ts' | 'html' | 'scss' = 'ts';
+
   readonly tasks: Task[] = [
-    { id: 'T-01', title: 'Refactoring auth',   status: 'Done',        owner: 'Amine',          priority: 'High'   },
-    { id: 'T-02', title: 'Dashboard v2',        status: 'In Progress', owner: 'Fufu',           priority: 'High'   },
-    { id: 'T-03', title: 'Fix pagination',      status: 'Done',        owner: 'Youssef Senior', priority: 'Medium' },
-    { id: 'T-04', title: 'Write tests',         status: 'Backlog',     owner: 'Amine',          priority: 'Low'    },
-    { id: 'T-05', title: 'Deploy staging',      status: 'In Progress', owner: 'Youssef',        priority: 'High'   },
-    { id: 'T-06', title: 'API gateway',         status: 'Backlog',     owner: 'Youssef Senior', priority: 'Medium' },
-    { id: 'T-07', title: 'UX review',           status: 'Done',        owner: 'Fufu',           priority: 'Low'    },
-    { id: 'T-08', title: 'DB migration',        status: 'In Progress', owner: 'Amine',          priority: 'High'   },
-    { id: 'T-09', title: 'Monitoring setup',    status: 'Backlog',     owner: 'Youssef',        priority: 'Medium' },
-    { id: 'T-10', title: 'Doc API',             status: 'Done',        owner: 'Youssef Senior', priority: 'Low'    },
-    { id: 'T-11', title: 'CI/CD pipeline',      status: 'In Progress', owner: 'Fufu',           priority: 'High'   },
-    { id: 'T-12', title: 'Security audit',      status: 'Backlog',     owner: 'Youssef',        priority: 'High'   },
+    { id: 'T-01', title: 'Refonte authentification', status: 'Terminé', owner: 'Amine',          priority: 'Haute'   },
+    { id: 'T-02', title: 'Tableau de bord v2',       status: 'En cours', owner: 'Fufu',           priority: 'Haute'   },
+    { id: 'T-03', title: 'Correction pagination',    status: 'Terminé', owner: 'Youssef Senior', priority: 'Moyenne' },
+    { id: 'T-04', title: 'Écrire les tests',          status: 'À faire', owner: 'Amine',          priority: 'Faible'  },
+    { id: 'T-05', title: 'Déployer la recette',       status: 'En cours', owner: 'Youssef',        priority: 'Haute'   },
+    { id: 'T-06', title: 'Passerelle API',            status: 'À faire', owner: 'Youssef Senior', priority: 'Moyenne' },
+    { id: 'T-07', title: 'Revue UX',                  status: 'Terminé', owner: 'Fufu',           priority: 'Faible'  },
+    { id: 'T-08', title: 'Migration SQL',             status: 'En cours', owner: 'Amine',          priority: 'Haute'   },
+    { id: 'T-09', title: 'Mise en place monitoring',  status: 'À faire', owner: 'Youssef',        priority: 'Moyenne' },
+    { id: 'T-10', title: 'Documentation API',         status: 'Terminé', owner: 'Youssef Senior', priority: 'Faible'  },
+    { id: 'T-11', title: 'Chaîne CI/CD',              status: 'En cours', owner: 'Fufu',           priority: 'Haute'   },
+    { id: 'T-12', title: 'Audit sécurité',            status: 'À faire', owner: 'Youssef',        priority: 'Haute'   },
   ];
 
   readonly sliceConfigs: SliceConfig<Task>[] = [
-    { title: 'Status',   columnKey: 'status'   },
+    { title: 'Statut',   columnKey: 'status'   },
     { title: 'Priorité', columnKey: 'priority' },
   ];
 
@@ -54,14 +62,15 @@ export class SliceChartComponent implements AfterViewInit {
     title: 'Tickets par développeur',
     stacked: true,
     series: [
-      { data: { x: field('owner'), y: field('done') },       name: 'Done',        color: '#10b981' },
-      { data: { x: field('owner'), y: field('inProgress') }, name: 'In Progress', color: '#f59e0b' },
-      { data: { x: field('owner'), y: field('backlog') },      name: 'Backlog',    color: '#94a3b8' },
+      { data: { x: field('owner'), y: field('done') },       name: 'Terminé', color: '#176b72' },
+      { data: { x: field('owner'), y: field('inProgress') }, name: 'En cours', color: '#bc5b35' },
+      { data: { x: field('owner'), y: field('backlog') },   name: 'À faire', color: '#9aadb0' },
     ],
     options: { yAxis: { allowDecimals: false } } as any,
   };
 
   sliceCollapsed = false;
+  activeSliceKeys: string[][] = [];
 
   chartData: OwnerStat[] = this.buildChartData(this.tasks);
 
@@ -74,29 +83,52 @@ export class SliceChartComponent implements AfterViewInit {
     this.chartData = this.buildChartData(this.tasks.filter(filterFn));
   }
 
+  onActiveKeysChange(keys: string[][]): void {
+    this.activeSliceKeys = keys;
+  }
+
+  get activeFilterLabels(): string[] {
+    return this.activeSliceKeys.flat();
+  }
+
+  selectCodeTab(tab: 'ts' | 'html' | 'scss'): void {
+    this.activeCodeTab = tab;
+  }
+
+  get activeCode(): string {
+    switch (this.activeCodeTab) {
+      case 'html':
+        return this.codeHtml;
+      case 'scss':
+        return this.codeScss;
+      default:
+        return this.codeTs;
+    }
+  }
+
   private buildChartData(filtered: Task[]): OwnerStat[] {
     const owners = [...new Set(this.tasks.map(t => t.owner))].sort((a, b) => a.localeCompare(b));
     return owners.map(owner => {
       const ownerTasks = filtered.filter(t => t.owner === owner);
       return {
         owner,
-        done:       ownerTasks.filter(t => t.status === 'Done').length,
-        inProgress: ownerTasks.filter(t => t.status === 'In Progress').length,
-        backlog:    ownerTasks.filter(t => t.status === 'Backlog').length,
+        done:       ownerTasks.filter(t => t.status === 'Terminé').length,
+        inProgress: ownerTasks.filter(t => t.status === 'En cours').length,
+        backlog:    ownerTasks.filter(t => t.status === 'À faire').length,
       };
     });
   }
 
   readonly codeTs = `// my.component.ts
-import { Component } from '@angular/core';
+import { AfterViewInit, Component } from '@angular/core';
 import { SliceConfig, SlicePanelComponent } from '@oneteme/jquery-table';
 import { ChartProvider, field } from '@oneteme/jquery-core';
 import { ChartComponent } from '@oneteme/jquery-highcharts';
 
 interface Task {
-  status: 'Backlog' | 'In Progress' | 'Done';
+  status: 'À faire' | 'En cours' | 'Terminé';
   owner: string;
-  priority: 'Low' | 'Medium' | 'High';
+  priority: 'Faible' | 'Moyenne' | 'Haute';
 }
 
 interface OwnerStat { owner: string; done: number; inProgress: number; backlog: number; }
@@ -112,7 +144,7 @@ export class MyComponent implements AfterViewInit {
   readonly tasks: Task[] = [ /* ... vos données */ ];
 
   readonly sliceConfigs: SliceConfig<Task>[] = [
-    { title: 'Status',   columnKey: 'status'   },
+    { title: 'Statut',   columnKey: 'status'   },
     { title: 'Priorité', columnKey: 'priority' },
   ];
 
@@ -121,9 +153,9 @@ export class MyComponent implements AfterViewInit {
     title: 'Tickets par développeur',
     stacked: true,
     series: [
-      { data: { x: field('owner'), y: field('done') },       name: 'Done',        color: '#10b981' },
-      { data: { x: field('owner'), y: field('inProgress') }, name: 'In Progress', color: '#f59e0b' },
-      { data: { x: field('owner'), y: field('backlog') },      name: 'Backlog',    color: '#94a3b8' },
+      { data: { x: field('owner'), y: field('done') },       name: 'Terminé', color: '#176b72' },
+      { data: { x: field('owner'), y: field('inProgress') }, name: 'En cours', color: '#bc5b35' },
+      { data: { x: field('owner'), y: field('backlog') },   name: 'À faire', color: '#9aadb0' },
     ],
     options: { yAxis: { allowDecimals: false } } as any,
   };
@@ -142,9 +174,9 @@ export class MyComponent implements AfterViewInit {
       const ownerTasks = filtered.filter(t => t.owner === owner);
       return {
         owner,
-        done:       ownerTasks.filter(t => t.status === 'Done').length,
-        inProgress: ownerTasks.filter(t => t.status === 'In Progress').length,
-        backlog:    ownerTasks.filter(t => t.status === 'Backlog').length,
+        done:       ownerTasks.filter(t => t.status === 'Terminé').length,
+        inProgress: ownerTasks.filter(t => t.status === 'En cours').length,
+        backlog:    ownerTasks.filter(t => t.status === 'À faire').length,
       };
     });
   }
@@ -181,8 +213,7 @@ export class MyComponent implements AfterViewInit {
   display: flex;
   flex: 1 1 0;
   min-height: 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid #d8e4e4;
   overflow: hidden;
 }
 

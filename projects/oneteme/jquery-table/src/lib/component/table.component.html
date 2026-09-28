@@ -1,5 +1,5 @@
 ﻿<section class="jquery-table-wrapper">
-  <div class="visual-copy-feedback" *ngIf="copyFeedbackMessage" role="status">{{ copyFeedbackMessage }}</div>
+  <output class="visual-copy-feedback" *ngIf="copyFeedbackMessage" aria-live="polite">{{ copyFeedbackMessage }}</output>
   <header class="table-header" *ngIf="showTitle">
     <h3>{{ title }}</h3>
   </header>
@@ -22,7 +22,7 @@
       (collapsedChange)="onSlicePanelCollapsedChange($event)"
     ></slice-panel>
 
-    <div class="table-shell">
+    <div class="table-shell" #tableShell>
       <div class="table-toolbar" *ngIf="showToolbar">
         <div class="table-toolbar-left">
           <button
@@ -43,6 +43,7 @@
               [(ngModel)]="searchQuery"
               (ngModelChange)="onSearchChange()"
               [placeholder]="i18n.searchPlaceholder"
+              [attr.aria-label]="i18n.searchPlaceholder"
               autocomplete="off"
             />
             <button *ngIf="searchQuery" type="button" class="search-clear-btn" (click)="searchQuery = ''; onSearchChange()">×</button>
@@ -56,6 +57,7 @@
           <table-organizer-button
             [config]="organizerConfig"
             [state]="organizerState"
+            [hideMenuValues]="organizerHideMenuValues"
             (viewChange)="onOrganizerViewChange($event)">
           </table-organizer-button>
         </div>
@@ -100,16 +102,20 @@
             <div class="head-cell">
               <mat-icon *ngIf="column.icon" class="head-icon" fontSet="material-icons-outlined">{{ column.icon }}</mat-icon>
               <span class="head-text" [title]="column.header">{{ column.header }}</span>
-              <span
+              <button
+                type="button"
                 *ngIf="isColumnDragDropEnabled || _editMode"
                 class="drag-handle"
                 draggable="true"
+                tabindex="0"
+                [attr.aria-label]="'Réordonner la colonne ' + column.header"
                 (dragstart)="onHeaderDragStart(column.key, $event)"
                 (dragend)="onHeaderDragEnd()"
+                (keydown)="onHeaderKeyDown(column.key, $event)"
                 (click)="$event.stopPropagation()"
               >
                 <mat-icon>drag_indicator</mat-icon>
-              </span>
+              </button>
             </div>
             <!-- Poignée de resize (visible uniquement en mode édition) -->
             <span
@@ -148,12 +154,14 @@
           mat-row
           *matRowDef="let row; columns: renderedColumns; when: !isGroupHeader"
           [attr.tabindex]="hasRowClickHandler && !_editMode ? 0 : null"
+          [attr.aria-label]="hasRowClickHandler && !_editMode ? rowActionLabel(row) : null"
+          [attr.aria-keyshortcuts]="hasRowClickHandler && !_editMode ? 'Enter Space' : null"
           [ngClass]="getRowClass(row)"
           [class.no-pointer]="!hasRowClickHandler || _editMode"
           [class.edit-mode-row]="_editMode"
           (click)="!_editMode && onRowClick(row, $event)"
           (keydown.enter)="!_editMode && onRowClick(row, null)"
-          (keydown.space)="!_editMode && onRowClick(row, null)"
+          (keydown.space)="!_editMode && onRowClick(row, null); $event.preventDefault()"
         ></tr>
         <ng-container [matColumnDef]="_GROUP_ROW_COLUMN">
           <td mat-cell *matCellDef="let row" [attr.colspan]="renderedColumns.length" class="group-header-cell">
@@ -163,7 +171,7 @@
               <span *ngIf="isGroupRowLoading(row)" class="lazy-skeleton group-lazy-key-skeleton"></span>
               <span *ngIf="isGroupRowTooMany(row)" class="group-too-many-label">{{ i18n.groupTooMany(row[_ROW_GROUP_COUNT]) }}</span>
               <span class="group-count-badge">{{ row[_ROW_GROUP_COUNT] }}</span>
-              <div class="group-pagination" *ngIf="!isGroupCollapsed(row[_ROW_GROUP_KEY]) && row[_ROW_GROUP_PAGE_COUNT] > 1" (click)="$event.stopPropagation()">
+              <div class="group-pagination" *ngIf="!isGroupCollapsed(row[_ROW_GROUP_KEY]) && row[_ROW_GROUP_PAGE_COUNT] > 1" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
                 <button type="button" class="group-page-btn" [disabled]="row[_ROW_GROUP_PAGE] === 0" (click)="groupPageBack(row[_ROW_GROUP_KEY])">‹</button>
                 <span class="group-page-info">{{ row[_ROW_GROUP_PAGE] + 1 }} / {{ row[_ROW_GROUP_PAGE_COUNT] }}</span>
                 <button type="button" class="group-page-btn" [disabled]="row[_ROW_GROUP_PAGE] >= row[_ROW_GROUP_PAGE_COUNT] - 1" (click)="groupPageForward(row[_ROW_GROUP_KEY], row[_ROW_GROUP_COUNT])">›</button>
@@ -176,7 +184,11 @@
             [class.group-header-loading]="isGroupRowLoading(row)"
             [class.group-header-too-many]="isGroupRowTooMany(row)"
             [attr.data-group-key]="row[_ROW_GROUP_KEY]"
-            (click)="onGroupHeaderClick(row)"></tr>
+          [attr.tabindex]="isNormalGroupRow(row) ? 0 : null"
+          [attr.aria-expanded]="isNormalGroupRow(row) ? !isGroupCollapsed(row[_ROW_GROUP_KEY]) : null"
+          (click)="onGroupHeaderClick(row)"
+          (keydown.enter)="onGroupHeaderClick(row)"
+          (keydown.space)="onGroupHeaderClick(row); $event.preventDefault()"></tr>
         <tr class="mat-mdc-row no-data-row" *matNoDataRow>
           <td class="mat-mdc-cell no-data-cell" [attr.colspan]="renderedColumns.length"></td>
         </tr>

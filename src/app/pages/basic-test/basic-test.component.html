@@ -1,177 +1,183 @@
-<div class="chart-workbench-container">
-  <h1>Atelier graphiques</h1>
-
-  <div class="description">
-    <p>
-      Cet espace permet de valider les intégrations de graphiques et d'accéder
-      aux démonstrations techniques de la bibliothèque.
-    </p>
-
-    <div class="library-toggle">
-      <button
-        class="library-btn"
-        (click)="toggleChartLibrary()"
-        title="Basculer entre ECharts, ApexCharts et Highcharts"
-      >
-        Utiliser
-        {{ chartLibrary === "echarts" ? "ApexCharts" : chartLibrary === "apexcharts" ? "Highcharts" : "ECharts" }}
-      </button>
-
-      <div class="separator"></div>
-
-      <button
-        class="data-mode-btn"
-        [class.active]="useSimpleData"
-        (click)="setDataType(true)"
-        title="Utiliser des données simples"
-      >
-        <span class="label">Simple</span>
-      </button>
-
-      <button
-        class="data-mode-btn"
-        [class.active]="!useSimpleData"
-        (click)="setDataType(false)"
-        title="Utiliser des données complexes"
-      >
-        <span class="label">Complex</span>
-      </button>
-    </div>
-  </div>
-
-  <div class="charts-container">
-    <div class="chart-wrapper">
-      <chart
-        *ngIf="chartLibrary === 'echarts'"
-        [type]="chartType"
-        [config]="chartConfig"
-        [data]="chartData"
-        [isLoading]="isLoadingData"
-      ></chart>
-
-      <app-apexcharts-chart-test
-        *ngIf="chartLibrary === 'apexcharts'"
-        [chartType]="chartType"
-        [chartConfig]="chartConfig"
-        [chartData]="chartData"
-      ></app-apexcharts-chart-test>
-
-      <app-highcharts-test
-        *ngIf="chartLibrary === 'highcharts'"
-        [chartType]="chartType"
-        [chartConfig]="chartConfig"
-        [chartData]="chartData"
-        [isLoadingChart]="isLoadingData"
-        [possibleTypes]="possibleTypes"
-      ></app-highcharts-test>
-    </div>
-  </div>
-
-  <!-- debug -->
-  <div class="debug-panel">
-    <h3>Informations de Debug</h3>
-    <div class="debug-info">
-      <p>
-        <strong>Bibliothèque utilisée :</strong> {{ getCurrentLibraryName() }}
+<main class="workbench-page">
+  <header class="workbench-hero">
+    <div class="workbench-hero__copy">
+      <a class="back-link" routerLink="/">← Accueil</a>
+      <p class="eyebrow">Atelier / rendu en direct</p>
+      <h1>Tester le contrat commun dans une vraie vue.</h1>
+      <p class="intro">
+        Choisissez un moteur, un type et un jeu de données. Le même
+        <code>ChartProvider</code> passe ensuite par ECharts, Highcharts ou
+        ApexCharts avec une visibilité de séries pilotée par Organizer.
       </p>
-      <p><strong>Type de graphique :</strong> {{ chartType }}</p>
-      <p><strong>Type de données :</strong> {{ getCurrentMode() }}</p>
-      <p><strong>Nombre de données :</strong> {{ chartData?.length || 0 }}</p>
-      <p><strong>Délai de chargement :</strong> {{ dataDelay }}ms</p>
-      <p>
-        <strong>État :</strong> {{ isLoadingData ? "Chargement..." : "Prêt" }}
-      </p>
+      <nav class="hero-links" aria-label="Parcours de l'atelier">
+        <a routerLink="/charts">Explorer les galeries <span aria-hidden="true">→</span></a>
+      </nav>
     </div>
-  </div>
+    <aside class="workbench-hero__signal" aria-label="Configuration active">
+      <span class="signal-label">Rendu actif</span>
+      <strong>{{ selectedLibrary.label }}</strong>
+      <span>{{ selectedTypeLabel }}</span>
+      <span class="signal-arrow" aria-hidden="true">↓</span>
+      <code>{{ selectedLibrary.packageName }}</code>
+    </aside>
+  </header>
 
-  <section class="workbench-tools" aria-labelledby="workbench-tools-title">
-    <h2 id="workbench-tools-title">Démonstrations complémentaires</h2>
-    <div class="workbench-tools-actions">
-      <button
-        class="sandbox-btn"
-        routerLink="/atelier-graphiques/sandbox"
-        title="Tester avec vos propres données"
-      >
-        Tester avec un jeu de données perso
+  <section class="workbench-layout" aria-label="Configuration et aperçu">
+    <aside class="control-panel" aria-labelledby="config-title">
+      <div class="section-heading">
+        <p class="section-kicker">01 / Configurer</p>
+        <h2 id="config-title">Une vue, trois moteurs</h2>
+        <p>Les contrôles modifient le rendu courant sans changer le contrat de données.</p>
+      </div>
+
+      <div class="control-block">
+        <span class="control-label">Moteur de rendu</span>
+        <div class="library-switch" role="tablist" aria-label="Choisir un moteur">
+          <button
+            *ngFor="let library of libraries"
+            type="button"
+            role="tab"
+            [class.is-active]="chartLibrary === library.id"
+            [attr.aria-selected]="chartLibrary === library.id"
+            (click)="setLibrary(library.id)"
+          >
+            {{ library.label }}
+          </button>
+        </div>
+      </div>
+
+      <div class="control-block">
+        <label class="control-label" for="chart-type-select">Type de graphique</label>
+        <select
+          id="chart-type-select"
+          [ngModel]="chartType"
+          (ngModelChange)="setChartType($event)"
+        >
+          <option *ngFor="let section of availableTypes; trackBy: trackByChartType" [value]="section.type">
+            {{ section.label }}
+          </option>
+        </select>
+        <span class="control-hint">Types communs aux moteurs disponibles.</span>
+      </div>
+
+      <div class="control-block">
+        <span class="control-label">Jeu de données</span>
+        <fieldset class="mode-switch">
+          <legend class="sr-only">Choisir un jeu de données</legend>
+          <button type="button" [class.is-active]="dataMode === 'compact'" (click)="setDataMode('compact')">
+            Échantillon compact
+          </button>
+          <button type="button" [class.is-active]="dataMode === 'series'" (click)="setDataMode('series')">
+            Séries temporelles
+          </button>
+        </fieldset>
+      </div>
+
+      <button class="reload-button" type="button" (click)="reloadData()" [disabled]="isLoadingData">
+        <span aria-hidden="true">↻</span>
+        {{ isLoadingData ? 'Actualisation…' : 'Actualiser les données' }}
       </button>
 
-      <button
-        class="tool-link"
-        routerLink="/snapshots"
-        title="Ouvrir la démonstration de snapshots visuels"
-      >
-        Snapshots visuels
-      </button>
+      <p class="control-note">
+        Le dropdown et le menu <strong>Organiser</strong> changent le type ; le même menu filtre aussi les deux séries nommées du provider.
+      </p>
+    </aside>
 
-      <button
-        class="tool-link"
-        routerLink="/demo/dashboard-ems"
-        title="Ouvrir la démonstration du dashboard EMS"
-      >
-        Dashboard EMS
-      </button>
+    <section class="preview-panel" aria-labelledby="preview-title">
+      <header class="preview-header">
+        <div>
+          <p class="section-kicker">02 / Prévisualiser</p>
+          <h2 id="preview-title">{{ selectedTypeLabel }}</h2>
+          <p>{{ currentModeLabel }} · {{ chartData.length }} lignes disponibles</p>
+        </div>
+        <organizer-button
+          [config]="organizerMenuConfig"
+          [state]="organizerMenuState"
+          (viewChange)="onOrganizerChange($event)"
+        ></organizer-button>
+      </header>
 
-      <button
-        class="tool-link"
-        routerLink="/table/presentation"
-        title="Ouvrir la présentation avancée de jquery-table"
-      >
-        Présentation tableau
-      </button>
+      <div class="preview-toolbar">
+        <span class="engine-badge">{{ selectedLibrary.label }}</span>
+        <span>{{ selectedLibrary.packageName }}</span>
+        <a [routerLink]="currentLibraryRoute">Voir la galerie <span aria-hidden="true">↗</span></a>
+      </div>
+
+      <div class="chart-stage" [class.chart-stage--loading]="isLoadingData">
+        <chart
+          *ngIf="chartLibrary === 'echarts'"
+          class="chart-renderer"
+          [type]="chartType"
+          [config]="effectiveChartConfig"
+          [data]="chartData"
+          [isLoading]="isLoadingData"
+          loadingLabel="Actualisation du graphique…"
+          noDataLabel="Aucune série visible"
+        ></chart>
+
+        <app-apexcharts-chart-test
+          *ngIf="chartLibrary === 'apexcharts'"
+          class="chart-renderer"
+          [chartType]="chartType"
+          [chartConfig]="effectiveChartConfig"
+          [chartData]="chartData"
+        ></app-apexcharts-chart-test>
+
+        <app-highcharts-test
+          *ngIf="chartLibrary === 'highcharts'"
+          class="chart-renderer"
+          [chartType]="chartType"
+          [chartConfig]="effectiveChartConfig"
+          [chartData]="chartData"
+          [isLoadingChart]="isLoadingData"
+          loadingLabel="Actualisation du graphique…"
+          noDataLabel="Aucune série visible"
+        ></app-highcharts-test>
+      </div>
+
+      <footer class="preview-footer">
+        <div><span>Bibliothèque</span><strong>{{ selectedLibrary.label }}</strong></div>
+        <div><span>Type</span><strong>{{ chartType }}</strong></div>
+        <div><span>Séries visibles</span><strong>{{ visibleSeriesCount }} / 2</strong></div>
+        <div><span>État</span><strong>{{ isLoadingData ? 'Chargement' : 'Prêt' }}</strong></div>
+      </footer>
+    </section>
+  </section>
+
+  <section class="state-section" aria-labelledby="state-title">
+    <header class="section-heading">
+      <p class="section-kicker">03 / Observer</p>
+      <h2 id="state-title">Le parent garde la main sur l’état.</h2>
+      <p>La configuration source reste stable. Seule la sélection de séries est appliquée à la vue effective.</p>
+    </header>
+    <div class="state-grid">
+      <div class="state-item">
+        <span>Contrat partagé</span>
+        <code>config / data / type</code>
+      </div>
+      <div class="state-item">
+        <span>État Organizer</span>
+        <code>{{ organizerMenuState.visibleFields?.join(' · ') || 'Aucune série' }}</code>
+      </div>
+      <div class="state-item">
+        <span>Mode actif</span>
+        <code>{{ currentModeLabel }}</code>
+      </div>
     </div>
   </section>
 
-  <!-- Contrôles simples (sticky) -->
-  <div class="control-panel-simple" [class.hidden]="!isPanelVisible">
-    <div class="control-group">
-      <label for="chart-type-select">Type de graphique :</label>
-      <select
-        id="chart-type-select"
-        [(ngModel)]="chartType"
-        (change)="changeChartType()"
-      >
-        <option value="pie">Pie</option>
-        <option value="donut">Donut</option>
-        <option value="funnel">Funnel</option>
-        <option value="pyramid">Pyramid</option>
-        <option value="polar">Polar</option>
-        <option value="radar">Radar</option>
-        <option value="radialBar">Radial Bar</option>
-        <option value="bar">Bar</option>
-        <option value="column">Column</option>
-        <option value="columnpyramid">Column Pyramid</option>
-        <option value="line">Line</option>
-        <option value="area">Area</option>
-        <option value="spline">Spline</option>
-        <option value="areaspline">Area Spline</option>
-        <option value="columnrange">Column Range</option>
-        <option value="arearange">Area Range</option>
-        <option value="areasplinerange">Area Spline Range</option>
-        <option value="scatter">Scatter</option>
-        <option value="bubble">Bubble</option>
-        <option value="heatmap">Heatmap</option>
-        <option value="treemap">Treemap</option>
-        <option value="boxplot">BoxPlot</option>
-        <option value="map">Map</option>
-      </select>
+  <section class="workbench-tools" aria-labelledby="tools-title">
+    <header class="section-heading">
+      <p class="section-kicker">04 / Continuer</p>
+      <h2 id="tools-title">Poursuivre avec le bon outil</h2>
+    </header>
+    <div class="tool-grid">
+      <a routerLink="/api/core">
+        <span class="tool-index">A</span>
+        <strong>API jquery-core</strong>
+        <span>Explorer les providers, unités et transformations.</span>
+        <span class="tool-arrow" aria-hidden="true">→</span>
+      </a>
     </div>
-
-    <div class="control-group">
-      <button
-        class="btn reload-btn"
-        (click)="reloadData()"
-        title="Recharger les données"
-      >
-        Recharger
-      </button>
-    </div>
-  </div>
-
-  <button
-    class="toggle-panel-btn"
-    (click)="toggleControlPanel()"
-    title="{{ isPanelVisible ? 'Masquer' : 'Afficher' }} le panneau de contrôle"
-  >
-    {{ isPanelVisible ? "✕" : "≡" }}
-  </button>
-</div>
+  </section>
+</main>

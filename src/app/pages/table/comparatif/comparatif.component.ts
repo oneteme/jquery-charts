@@ -7,7 +7,7 @@ interface Task {
   taskId: string;
   summary: string;
   owner: string;
-  status: 'Backlog' | 'In Progress' | 'Done';
+  status: 'À faire' | 'En cours' | 'Terminé';
   sprint: string;
   updatedAt: string;
 }
@@ -22,18 +22,18 @@ interface Task {
 export class TableComparatifComponent {
 
   readonly tasks: Task[] = [
-    { taskId: 'T-1001', summary: 'Auth SSO migration',         owner: 'Amine',          status: 'Done',        sprint: 'Sprint 7', updatedAt: '2026-01-10 14:00' },
-    { taskId: 'T-1002', summary: 'Dashboard v2',                owner: 'Fufu',           status: 'In Progress', sprint: 'Sprint 8', updatedAt: '2026-01-12 09:15' },
-    { taskId: 'T-1003', summary: 'Fix pagination bug',          owner: 'Youssef Senior', status: 'Done',        sprint: 'Sprint 7', updatedAt: '2026-01-11 11:45' },
-    { taskId: 'T-1004', summary: 'Unit tests auth module',      owner: 'Amine',          status: 'Backlog',     sprint: 'Sprint 9', updatedAt: '2026-01-14 08:00' },
-    { taskId: 'T-1005', summary: 'Deploy staging env',          owner: 'Youssef',        status: 'In Progress', sprint: 'Sprint 8', updatedAt: '2026-01-13 16:30' },
-    { taskId: 'T-1006', summary: 'API gateway rate limiting',   owner: 'Youssef Senior', status: 'Backlog',     sprint: 'Sprint 9', updatedAt: '2026-01-15 10:00' },
-    { taskId: 'T-1007', summary: 'UX review onboarding',        owner: 'Fufu',           status: 'Done',        sprint: 'Sprint 7', updatedAt: '2026-01-10 17:20' },
-    { taskId: 'T-1008', summary: 'DB schema migration',         owner: 'Amine',          status: 'In Progress', sprint: 'Sprint 8', updatedAt: '2026-01-13 14:00' },
-    { taskId: 'T-1009', summary: 'Monitoring Grafana setup',    owner: 'Youssef',        status: 'Backlog',     sprint: 'Sprint 9', updatedAt: '2026-01-16 09:00' },
-    { taskId: 'T-1010', summary: 'API documentation',           owner: 'Youssef Senior', status: 'Done',        sprint: 'Sprint 7', updatedAt: '2026-01-11 15:00' },
-    { taskId: 'T-1011', summary: 'CI/CD pipeline refactor',     owner: 'Fufu',           status: 'In Progress', sprint: 'Sprint 8', updatedAt: '2026-01-14 11:00' },
-    { taskId: 'T-1012', summary: 'Security audit remédiation',  owner: 'Youssef',        status: 'Backlog',     sprint: 'Sprint 9', updatedAt: '2026-01-17 08:30' },
+    { taskId: 'T-1001', summary: 'Migration authentification SSO', owner: 'Amine',          status: 'Terminé', sprint: 'Sprint 7', updatedAt: '10 janvier 2026' },
+    { taskId: 'T-1002', summary: 'Tableau de bord v2',            owner: 'Fufu',           status: 'En cours', sprint: 'Sprint 8', updatedAt: '12 janvier 2026' },
+    { taskId: 'T-1003', summary: 'Correction de la pagination',   owner: 'Youssef Senior', status: 'Terminé', sprint: 'Sprint 7', updatedAt: '11 janvier 2026' },
+    { taskId: 'T-1004', summary: 'Tests unitaires du module auth', owner: 'Amine',         status: 'À faire', sprint: 'Sprint 9', updatedAt: '14 janvier 2026' },
+    { taskId: 'T-1005', summary: 'Déploiement de la recette',     owner: 'Youssef',        status: 'En cours', sprint: 'Sprint 8', updatedAt: '13 janvier 2026' },
+    { taskId: 'T-1006', summary: 'Limitation de débit API',       owner: 'Youssef Senior', status: 'À faire', sprint: 'Sprint 9', updatedAt: '15 janvier 2026' },
+    { taskId: 'T-1007', summary: 'Revue UX onboarding',            owner: 'Fufu',           status: 'Terminé', sprint: 'Sprint 7', updatedAt: '10 janvier 2026' },
+    { taskId: 'T-1008', summary: 'Migration du schéma SQL',        owner: 'Amine',          status: 'En cours', sprint: 'Sprint 8', updatedAt: '13 janvier 2026' },
+    { taskId: 'T-1009', summary: 'Mise en place du monitoring',    owner: 'Youssef',        status: 'À faire', sprint: 'Sprint 9', updatedAt: '16 janvier 2026' },
+    { taskId: 'T-1010', summary: 'Documentation API',              owner: 'Youssef Senior', status: 'Terminé', sprint: 'Sprint 7', updatedAt: '11 janvier 2026' },
+    { taskId: 'T-1011', summary: 'Refonte de la chaîne CI/CD',     owner: 'Fufu',           status: 'En cours', sprint: 'Sprint 8', updatedAt: '14 janvier 2026' },
+    { taskId: 'T-1012', summary: 'Remédiation audit sécurité',     owner: 'Youssef',        status: 'À faire', sprint: 'Sprint 9', updatedAt: '17 janvier 2026' },
   ];
 
   // ── mat-table : colonnes à gérer manuellement ──────────────────────────────
@@ -50,9 +50,9 @@ export class TableComparatifComponent {
       { key: 'sprint',    header: 'Sprint' },
       { key: 'updatedAt', header: 'Mis à jour le' },
     ],
-    search: { enabled: true },
+    search: { enabled: true, searchColumns: ['taskId', 'summary', 'owner', 'status', 'sprint'] },
     pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
-    view: { enableColumnRemoval: true, enableColumnDragDrop: true },
+    view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
     slices: [
       { title: 'Statut',       columnKey: 'status' },
       { title: 'Sprint',       columnKey: 'sprint' },
@@ -87,7 +87,7 @@ applySearch() {
 </table>
 
 <mat-paginator [pageSizeOptions]="[5,10]"></mat-paginator>
-// + DataSource, sort/paginator binding, OnInit, etc.`;
+// + MatTableDataSource, MatSort, MatPaginator et leurs branchements.`;
 
   readonly jqCode = `// component.ts
 readonly tableConfig: TableProvider<Task> = {
@@ -100,9 +100,9 @@ readonly tableConfig: TableProvider<Task> = {
     { key: 'sprint',    header: 'Sprint' },
     { key: 'updatedAt', header: 'Mis à jour le' },
   ],
-  search: { enabled: true },
+  search: { enabled: true, searchColumns: ['taskId', 'summary', 'owner', 'status', 'sprint'] },
   pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
-  view: { enableColumnRemoval: true, enableColumnDragDrop: true },
+  view: { enabled: true, enableColumnRemoval: true, enableColumnDragDrop: true },
   slices: [
     { title: 'Statut',      columnKey: 'status' },
     { title: 'Sprint',      columnKey: 'sprint' },

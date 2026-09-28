@@ -1,6 +1,6 @@
 import { DataProvider } from '@oneteme/jquery-core';
 import { Observable } from 'rxjs';
-import { SliceConfig } from '@oneteme/jquery-organizer';
+import { OrganizerConfig, SliceConfig } from '@oneteme/jquery-organizer';
 export { SliceConfig } from '@oneteme/jquery-organizer';
 
 export interface TableColumnProvider<T = any> {
@@ -18,11 +18,14 @@ export interface TableColumnProvider<T = any> {
    * Exemple : `searchValue: (row) => durationPipe.transform((today - row.start) / 1000)`
    */
   searchValue?: DataProvider<string>;
+  /** Active le tri ; `true` par défaut. */
   sortable?: boolean;
   removable?: boolean;
   optional?: boolean;
   width?: string;
+  /** Rend la colonne disponible dans Group by ; `true` par défaut si `header` est défini. */
   groupable?: boolean;
+  /** Rend la colonne disponible comme Slice by dynamique ; `true` par défaut si `header` est défini. */
   sliceable?: boolean;
   /** Chargement différé : la présence de cet objet active le mode lazy. */
   lazy?: {
@@ -66,6 +69,18 @@ export interface TableLabelsConfig {
   empty?: string;
   /** Affiché pendant le chargement. Par défaut : `'Chargement des données...'`. */
   loading?: string;
+}
+
+/** Options publiques du bouton Organizer intégré à la toolbar. */
+export interface TableOrganizerConfig {
+  /** Libellé optionnel affiché à côté de l'icône. */
+  buttonLabel?: OrganizerConfig['buttonLabel'];
+  /** Icône Material affichée dans le bouton. */
+  buttonIcon?: OrganizerConfig['buttonIcon'];
+  /** Masque l'icône lorsque le bouton utilise un libellé seul. */
+  showButtonIcon?: OrganizerConfig['showButtonIcon'];
+  /** Masque les valeurs récapitulatives dans les sous-menus. */
+  hideMenuValues?: boolean;
 }
 
 /**
@@ -149,6 +164,8 @@ export interface TableProvider<T = any> {
   onCopyVisual?: () => void;
   onToggleFullscreen?: () => void;
   slices?: SliceConfig<T>[];
+  /** État initial du panneau de slices. Une préférence sauvegardée reste prioritaire. */
+  slicePanelCollapsed?: boolean;
   /** Affiche le bouton toggle pour replier/déplier le panneau de slices. Par défaut : `true`. */
   enableSliceToggle?: boolean;
   /**
@@ -159,6 +176,7 @@ export interface TableProvider<T = any> {
   search?: TableSearchConfig;
   pagination?: TablePaginationConfig;
   view?: TableViewConfig;
+  organizer?: TableOrganizerConfig;
   labels?: TableLabelsConfig;
   /** Tri initial appliqué au chargement. N'est pas écrasé par les changements de données. */
   defaultSort?: { active: string; direction: 'asc' | 'desc' };

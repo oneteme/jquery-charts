@@ -1,4 +1,4 @@
-import { field, rangeFields } from '@oneteme/jquery-core';
+import { field } from '@oneteme/jquery-core';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Données d'exemples pour @oneteme/jquery-highcharts
@@ -333,7 +333,10 @@ export const HIGHCHARTS_EXAMPLES = {
     config: {
       title: 'SLA : plage de disponibilité (%)',
       subtitle: 'Colonnes min/max',
-      series: [{ data: { x: field('mois'), y: rangeFields('min', 'max') }, name: 'Uptime' }],
+      series: [
+        { data: { x: field('mois'), y: field('min') }, name: 'Minimum' },
+        { data: { x: field('mois'), y: field('max') }, name: 'Maximum' },
+      ],
     },
   },
 
@@ -351,7 +354,10 @@ export const HIGHCHARTS_EXAMPLES = {
     config: {
       title: 'Températures mensuelles (°C)',
       subtitle: 'Plage min/max — zone remplie',
-      series: [{ data: { x: field('mois'), y: rangeFields('tmin', 'tmax') }, name: 'Température' }],
+      series: [
+        { data: { x: field('mois'), y: field('tmin') }, name: 'Minimum' },
+        { data: { x: field('mois'), y: field('tmax') }, name: 'Maximum' },
+      ],
     },
   },
 
@@ -367,7 +373,10 @@ export const HIGHCHARTS_EXAMPLES = {
     config: {
       title: 'Score de qualité code (%)',
       subtitle: 'Plage lissée (areasplinerange)',
-      series: [{ data: { x: field('semaine'), y: rangeFields('low', 'high') }, name: 'Score' }],
+      series: [
+        { data: { x: field('semaine'), y: field('low') }, name: 'Minimum' },
+        { data: { x: field('semaine'), y: field('high') }, name: 'Maximum' },
+      ],
     },
   },
 };

@@ -1,8 +1,8 @@
-import { ChartType, ChartProvider } from '@oneteme/jquery-core';
+import { ChartCustomEvent, ChartType, ChartProvider } from '@oneteme/jquery-core';
 import { EventEmitter } from '@angular/core';
 import { Highcharts } from './highcharts-modules';
 
-export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
+export { ChartClickEvent, ChartCustomEvent, ChartDrilldownConfig, ChartDrilldownLevel, ChartDrilldownRequest, ChartDrilldownState, ChartExportImageType, ChartRenderError, GroupSyncAction, GroupSyncMode } from '@oneteme/jquery-core';
 
 export interface ToolbarOptions {
   chart: Highcharts.Chart;

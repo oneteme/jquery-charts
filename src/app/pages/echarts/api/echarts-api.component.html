@@ -1,12 +1,12 @@
 <div class="api-page">
   <header class="api-hero">
     <div>
-      <a class="back-link" routerLink="/charts/echarts">← Retour aux exemples</a>
-      <p class="eyebrow">jquery-echarts / référence</p>
+      <a class="back-link" routerLink="/charts/echarts">← Retour aux exemples ECharts</a>
+      <p class="eyebrow">jquery-echarts / référence et capacités du wrapper</p>
       <h1>API du wrapper ECharts</h1>
       <p class="intro">
-        Retrouvez rapidement les propriétés et utilitaires disponibles dans jquery-echarts et jquery-core,
-        au-delà des exemples. Les options natives ECharts restent disponibles dans la documentation officielle.
+        Les inputs, événements et extensions ajoutés par jquery-echarts sont documentés ici avec un exemple.
+        Les cartes associent chaque capacité à son rendu et à l’extrait de code correspondant.
       </p>
     </div>
     <a class="official-link" href="https://echarts.apache.org/en/option.html" target="_blank" rel="noopener">
@@ -14,45 +14,236 @@
     </a>
   </header>
 
-  <div class="api-layout">
-    <main class="api-content">
-      <section *ngFor="let section of sections" class="api-section" [id]="section.id">
-        <div class="section-heading">
-          <p class="section-number">API</p>
-          <h2>{{ section.title }}</h2>
-          <p>{{ section.description }}</p>
-        </div>
+  <section class="reference-section" aria-labelledby="api-reference-title">
+    <div class="section-heading">
+      <p class="section-kicker">01 · Référence</p>
+      <h2 id="api-reference-title">Inputs, événements et options</h2>
+      <p>Le tableau distingue ce qui appartient au wrapper et à la bibliothèque ECharts.</p>
+    </div>
 
-        <div class="api-table-wrap">
-          <table class="api-table">
-            <thead>
-              <tr>
-                <th>Propriété</th>
-                <th>Type</th>
-                <th>Source</th>
-                <th>Description</th>
-                <th>Exemple</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let entry of section.entries">
-                <td>
-                  <code>{{ entry.name }}</code>
-                  <small *ngIf="entry.types">{{ entry.types }}</small>
-                </td>
-                <td><code>{{ entry.type }}</code></td>
-                <td><span class="source-badge" [attr.data-source]="entry.source">{{ entry.source }}</span></td>
-                <td>
-                  {{ entry.description }}
-                </td>
-                <td><pre><code>{{ entry.code }}</code></pre></td>
-              </tr>
-            </tbody>
-          </table>
+    <article *ngFor="let section of sections" class="reference-block" [id]="section.id">
+      <div class="section-heading section-heading--small">
+        <p class="section-kicker">API</p>
+        <h3>{{ section.title }}</h3>
+        <p>{{ section.description }}</p>
+      </div>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <colgroup>
+            <col class="api-column api-column--property">
+            <col class="api-column api-column--type">
+            <col class="api-column api-column--source">
+            <col class="api-column api-column--description">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Propriété</th>
+              <th>Type</th>
+              <th>Source</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of section.entries">
+              <td>
+                <code>{{ entry.name }}</code>
+                <small *ngIf="entry.types">{{ entry.types }}</small>
+              </td>
+              <td><code>{{ entry.type }}</code></td>
+              <td><span class="source-badge" [attr.data-source]="entry.source">{{ entry.source }}</span></td>
+              <td>{{ entry.description }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="section-example">
+        <div class="section-example-heading">
+          <span>Exemples de la section</span>
+          <small>Les snippets regroupés sous le tableau</small>
         </div>
-      </section>
+        <pre><code>{{ getSectionExample(section) }}</code></pre>
+      </div>
+    </article>
+  </section>
 
-    </main>
-  </div>
+  <section class="capabilities-section" aria-labelledby="capabilities-title">
+    <div class="section-heading">
+      <p class="section-kicker">02 · Capacités du wrapper</p>
+      <h2 id="capabilities-title">Ce que le wrapper ajoute à ECharts</h2>
+      <p>
+        Ces exemples isolent une capacité à la fois. Le rendu utilise le composant public <code>&lt;chart&gt;</code> ;
+        le code sous chaque carte est la version minimale à copier.
+      </p>
+    </div>
+
+    <article *ngFor="let demo of demos" class="capability-card" [id]="demo.id">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">{{ demo.origin || 'WRAPPER' }}</p>
+          <h3>{{ demo.title }}</h3>
+          <p>{{ demo.description }}</p>
+        </div>
+        <span class="capability-kind">{{ demo.kind }}</span>
+      </header>
+
+      <div class="demo-surface" [class.demo-surface--theme]="demo.kind === 'theme-renderer'" [ngSwitch]="demo.kind">
+        <ng-container *ngSwitchCase="'loading'">
+          <div class="demo-controls">
+            <button type="button" [class.is-active]="isLoadingDemo" (click)="toggleLoadingDemo()">
+              {{ isLoadingDemo ? 'Arrêter le chargement' : 'Simuler le chargement' }}
+            </button>
+            <button type="button" [class.is-active]="showNoDataDemo" (click)="toggleNoDataDemo()">
+              {{ showNoDataDemo ? 'Restaurer les données' : 'Afficher no-data' }}
+            </button>
+          </div>
+          <chart class="api-chart"
+            type="area"
+            [config]="lineConfig"
+            [data]="loadingData"
+            [isLoading]="isLoadingDemo"
+            loadingLabel="Actualisation du graphique..."
+            noDataLabel="Aucun résultat pour cette période"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'theme-renderer'">
+          <div class="renderer-grid">
+            <div class="renderer-example">
+              <div class="renderer-example-heading">
+                <strong>SVG</strong>
+                <span>renderer="svg"</span>
+              </div>
+              <chart class="api-chart" type="line" [config]="rendererConfig" [data]="baseData" [theme]="theme" renderer="svg"></chart>
+            </div>
+            <div class="renderer-example">
+              <div class="renderer-example-heading">
+                <strong>Canvas</strong>
+                <span>renderer="canvas"</span>
+              </div>
+              <chart class="api-chart" type="line" [config]="rendererConfig" [data]="baseData" [theme]="theme" renderer="canvas"></chart>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'rendered-option'">
+          <div class="native-option-proof">
+            <div>
+              <span class="proof-label">ChartProvider</span>
+              <code>type="line" · series=[] · data=rows</code>
+              <small>Le provider ne porte aucune série ; les lignes évitent seulement l’état no-data.</small>
+            </div>
+            <div>
+              <span class="proof-label">renderedOption</span>
+              <code>titre · axes · tooltip · séries</code>
+              <small>L’option ECharts complète prend la priorité sur les propriétés en conflit.</small>
+            </div>
+          </div>
+          <chart class="api-chart"
+            type="line"
+            [config]="renderedOptionConfig"
+            [data]="baseData"
+            [renderedOption]="renderedOption"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'organizer'">
+          <div class="organizer-demo-bar">
+            <organizer-button
+              [config]="organizerMenuConfig"
+              [state]="organizerMenuState"
+              (viewChange)="onOrganizerChange($event)"
+            ></organizer-button>
+            <span>{{ organizerState.selectedFieldIds.length }} / {{ organizerSeries.length }} séries visibles dans le chart</span>
+          </div>
+          <div class="organizer-state-panel" aria-live="polite">
+            <div class="organizer-state-heading">
+              <strong>État réellement appliqué au graphique</strong>
+              <span>Le menu et le parent restent synchronisés.</span>
+            </div>
+            <div class="organizer-series-list">
+              <div *ngFor="let series of organizerSeries" class="organizer-series-status">
+                <span class="series-swatch" [style.backgroundColor]="series.color"></span>
+                <span>{{ series.name }}</span>
+                <strong>{{ organizerState.selectedFieldIds.includes(series.name) ? 'Visible' : 'Masquée' }}</strong>
+              </div>
+            </div>
+            <dl class="organizer-state-values">
+              <div>
+                <dt>visibleFields reçu du menu</dt>
+                <dd>{{ organizerMenuState.visibleFields?.join(', ') || 'Aucun champ' }}</dd>
+              </div>
+              <div>
+                <dt>selectedFieldIds utilisé par le parent</dt>
+                <dd>{{ organizerState.selectedFieldIds.join(', ') || 'Aucune série' }}</dd>
+              </div>
+            </dl>
+          </div>
+          <chart class="api-chart"
+            type="line"
+            [config]="organizerChartConfig"
+            [data]="baseData"
+            [organizer]="organizerConfig"
+            [organizerState]="organizerState"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'group-sync'">
+          <div class="demo-controls sync-controls">
+            <span class="demo-hint">Le survol et le datazoom circulent entre les deux instances portant le même group.</span>
+          </div>
+          <div class="sync-grid">
+            <chart class="api-chart" type="line" [config]="syncLineConfig" [data]="baseData" [group]="group" groupSync="all"></chart>
+            <chart class="api-chart" type="area" [config]="syncAreaConfig" [data]="baseData" [group]="group" groupSync="all"></chart>
+          </div>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'drilldown'">
+          <div class="event-status" aria-live="polite">
+            <div><strong>Dernier chartClick</strong><code>{{ lastChartClick }}</code></div>
+            <div *ngIf="lastRenderError"><strong>Dernière erreur de rendu</strong><code>{{ lastRenderError }}</code></div>
+          </div>
+          <chart class="api-chart"
+            type="column"
+            [config]="activeDrilldownConfig"
+            [data]="drilldownData"
+            [drilldown]="drilldown"
+            (chartClick)="onChartClick($event)"
+            (renderError)="onRenderError($event)"
+            (drilldownRequest)="onDrilldownRequest($event)"
+            (drilldownNavigate)="onDrilldownNavigate($event)"
+          ></chart>
+        </ng-container>
+
+        <ng-container *ngSwitchCase="'export'">
+          <div class="organizer-demo-bar">
+            <organizer-button
+              [config]="exportOrganizerConfig"
+              [state]="exportOrganizerState"
+            ></organizer-button>
+            <span>Organizer centralise l’export du visuel, des données, du snapshot et du plein écran.</span>
+          </div>
+          <chart class="api-chart"
+            #exportChart
+            type="column"
+            [config]="lineConfig"
+            [data]="baseData"
+            [copyFeedback]="{ enabled: true, message: 'Snapshot créé' }"
+            (visualCopied)="onSnapshotCreated($event)"
+          ></chart>
+          <pre *ngIf="snapshotDraft" class="snapshot-output snapshot-output--draft"><code>{{ formatJson(snapshotDraft) }}</code></pre>
+          <pre *ngIf="lastSnapshot" class="snapshot-output"><code>{{ formatJson(lastSnapshot) }}</code></pre>
+        </ng-container>
+
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading">
+          <span>Code minimal</span>
+          <button type="button" (click)="copyCode(demo)">{{ demo.copied ? 'Copié' : 'Copier le code' }}</button>
+        </div>
+        <pre><code>{{ demo.code }}</code></pre>
+      </div>
+    </article>
+  </section>
 
 </div>

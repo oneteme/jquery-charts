@@ -1,48 +1,15 @@
-/** Type EventEmitter pour les events toolbar */
-export type ChartCustomEvent = 'previous' | 'next' | 'pivot';
-
-/** Paramètres utiles lors d'un clic sur un élément ECharts. */
-export interface ChartClickEvent {
-  componentType?: string;
-  seriesType?: string;
-  seriesIndex?: number;
-  dataIndex?: number;
-  name?: string;
-  value?: unknown;
-  data?: unknown;
-  encode?: Record<string, number[]>;
-  event?: unknown;
-}
-
-export interface ChartDrilldownLevel {
-  id: string;
-  label: string;
-  groupBy?: string;
-}
-
-export interface ChartDrilldownConfig {
-  levels: ChartDrilldownLevel[];
-  activeLevel: string;
-}
-
-export interface ChartDrilldownState {
-  active: boolean;
-  activeLevel: string;
-  rootLevel: string | null;
-}
-
-export interface ChartDrilldownRequest {
-  fromLevel: string;
-  toLevel: string;
-  groupBy?: string;
-  value: unknown;
-  path: Record<string, unknown>;
-}
-
-/** Erreur produite lors de la construction de l'option ou de son application a ECharts. */
-export interface ChartRenderError {
-  error: unknown;
-}
+export {
+  ChartClickEvent,
+  ChartCustomEvent,
+  ChartExportImageType,
+  ChartDrilldownConfig,
+  ChartDrilldownLevel,
+  ChartDrilldownRequest,
+  ChartDrilldownState,
+  ChartRenderError,
+  GroupSyncAction,
+  GroupSyncMode,
+} from '@oneteme/jquery-core';
 
 /** Alias exposé pour les options ECharts natives */
 export type { ECharts, EChartsOption } from 'echarts';

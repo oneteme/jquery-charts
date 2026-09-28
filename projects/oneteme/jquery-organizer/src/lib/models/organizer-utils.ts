@@ -1,5 +1,7 @@
 import { OrganizerConfig, OrganizerState, OrganizerTemplate, OrganizerYField } from './organizer-config.interface';
 
+type OrganizerStateConfig = Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates' | 'chartTypes'>;
+
 export interface OrganizerYIndicator {
   id: string;
   label: string;
@@ -39,16 +41,18 @@ export function resolveYKey(
 
 export function normalizeOrganizerState(
   state: OrganizerState | undefined,
-  config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
+  config: OrganizerStateConfig
 ): OrganizerState {
   const base = state || {};
   const normalizedY = normalizeYSelection(base.selectedY, base.selectedYAggregate, config.yFields);
   const selectedX = hasOption(config.xFields, base.selectedX) ? base.selectedX : undefined;
+  const selectedChartType = hasOption(config.chartTypes, base.selectedChartType) ? base.selectedChartType : undefined;
   const selectedGroupBy = hasOption(config.groups, base.selectedGroupBy) ? base.selectedGroupBy : undefined;
   const selectedSlices = (base.selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId));
 
   const normalized: OrganizerState = {
     ...base,
+    selectedChartType,
     selectedX,
     selectedY: normalizedY.selectedY,
     selectedYAggregate: normalizedY.selectedYAggregate,
@@ -65,7 +69,7 @@ export function normalizeOrganizerState(
 export function normalizeTemplateToState(
   template: OrganizerTemplate,
   currentState: OrganizerState | undefined,
-  config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
+  config: OrganizerStateConfig
 ): OrganizerState {
   const base = normalizeOrganizerState(currentState, config);
   const normalizedY = normalizeYSelection(template.yField, template.yAggregate, config.yFields, base);
@@ -73,6 +77,7 @@ export function normalizeTemplateToState(
   const nextState: OrganizerState = {
     viewMode: base.viewMode,
     visibleFields: base.visibleFields,
+    selectedChartType: base.selectedChartType,
     selectedX: hasOption(config.xFields, template.xField) ? template.xField : base.selectedX,
     selectedY: normalizedY.selectedY,
     selectedYAggregate: normalizedY.selectedYAggregate,
@@ -90,7 +95,7 @@ export function normalizeTemplateToState(
 export function resolveMatchingTemplateId(
   templates: OrganizerTemplate[] | undefined,
   state: OrganizerState | undefined,
-  config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
+  config: OrganizerStateConfig
 ): string | undefined {
   if (!templates?.length) return undefined;
 
@@ -126,7 +131,7 @@ function normalizeStateCore(
 function normalizeTemplateToComparableState(
   template: OrganizerTemplate,
   baseState: OrganizerState,
-  config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
+  config: OrganizerStateConfig
 ): OrganizerState {
   return normalizeStateCore(
     template.xField,
@@ -141,7 +146,7 @@ function normalizeTemplateToComparableState(
 
 function normalizeStateWithoutTemplate(
   state: OrganizerState | undefined,
-  config: Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates'>
+  config: OrganizerStateConfig
 ): OrganizerState {
   const base = state || {};
   return normalizeStateCore(
