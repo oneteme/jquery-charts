@@ -720,6 +720,11 @@
   cursor: auto;
 }
 
+:host ::ng-deep .mat-mdc-row:not(.no-pointer):focus-visible {
+  outline: 2px solid var(--jqt-primary-color);
+  outline-offset: -2px;
+}
+
 :host ::ng-deep .mat-mdc-row.no-data-row {
   cursor: default;
 }

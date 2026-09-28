@@ -238,14 +238,16 @@ export abstract class ApexChartDirectiveBase<
       return;
     }
 
-    void chart.dataURI({ scale: pixelRatio }).then((result) => {
-      if (!('imgURI' in result)) return;
-      if (type === 'png') {
-        this.download(result.imgURI, `${fileName}.png`);
-        return;
-      }
-      this.downloadJpeg(result.imgURI, `${fileName}.jpeg`);
-    });
+    void chart.dataURI({ scale: pixelRatio })
+      .then((result) => {
+        if (!('imgURI' in result)) return;
+        if (type === 'png') {
+          this.download(result.imgURI, `${fileName}.png`);
+          return;
+        }
+        this.downloadJpeg(result.imgURI, `${fileName}.jpeg`);
+      })
+      .catch((error) => this.handleExportError(error));
   }
 
   exportData(fileName = 'data', separator = ';'): void {
@@ -499,16 +501,33 @@ export abstract class ApexChartDirectiveBase<
     if (typeof document === 'undefined') return;
     const image = new Image();
     image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext('2d');
-      if (!context) return;
-      context.fillStyle = '#fff';
-      context.fillRect(0, 0, canvas.width, canvas.height);
-      context.drawImage(image, 0, 0);
-      this.download(canvas.toDataURL('image/jpeg'), fileName);
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Le contexte canvas est indisponible.');
+        context.fillStyle = '#fff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0);
+        this.download(canvas.toDataURL('image/jpeg'), fileName);
+      } catch (error) {
+        this.handleExportError(error);
+      } finally {
+        image.onload = null;
+        image.onerror = null;
+      }
+    };
+    image.onerror = () => {
+      image.onload = null;
+      image.onerror = null;
+      this.handleExportError(new Error('Impossible de convertir l’export PNG en JPEG.'));
     };
     image.src = source;
+  }
+
+  private handleExportError(error: unknown): void {
+    console.error('[jquery-apexcharts] Échec de l’export.', error);
+    this.ngZone.run(() => this.renderError.emit({ error }));
   }
 }

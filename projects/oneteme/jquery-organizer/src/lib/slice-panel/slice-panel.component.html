@@ -17,19 +17,28 @@
 
     <div class="slice-panel-body" *ngIf="!isCollapsed" #slicePanelBody>
       <ng-container *ngFor="let slice of slices; let si = index; trackBy: trackBySliceIndex">
-        <div class="slice-title-row" [attr.data-slice-index]="si" (click)="toggleSliceCollapse(si)">
-          <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
-          <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon">{{ getSliceIcon(slice) }}</mat-icon>
-          <p class="slice-title">{{ slice.title || i18n.filterBlockDefaultTitle }}</p>
+        <div class="slice-title-row" [attr.data-slice-index]="si">
+          <button
+            type="button"
+            class="slice-title-toggle"
+            [attr.aria-controls]="'slice-section-' + si"
+            [attr.aria-expanded]="!isSliceCollapsed(si)"
+            (click)="toggleSliceCollapse(si)"
+          >
+            <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
+            <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon">{{ getSliceIcon(slice) }}</mat-icon>
+            <span class="slice-title">{{ slice.title || i18n.filterBlockDefaultTitle }}</span>
+          </button>
           <button
             *ngIf="isSliceDynamic(si)"
             type="button"
             class="slice-remove-btn"
-            (click)="$event.stopPropagation(); removeDynamicSlice(si)"
+            [attr.aria-label]="'Supprimer le filtre ' + (slice.title || i18n.filterBlockDefaultTitle)"
+            (click)="removeDynamicSlice(si)"
           >×</button>
         </div>
 
-        <div class="slice-section-items" *ngIf="!isSliceCollapsed(si)">
+        <div [id]="'slice-section-' + si" class="slice-section-items" *ngIf="!isSliceCollapsed(si)">
           <ng-container *ngIf="isSliceLoading(si); else sliceContent">
             <div class="slice-lazy-loading">
               <span class="lazy-skeleton"></span>

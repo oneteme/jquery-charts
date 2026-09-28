@@ -38,6 +38,11 @@ interface GroupByCache<T> {
   map: Map<string, T[]>;
 }
 
+interface TableSortState {
+  active: string;
+  direction: 'asc' | 'desc' | '';
+}
+
 @Component({
   standalone: true,
   selector: 'jquery-table',
@@ -76,23 +81,23 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
   }
 
-  @Output() addRequested = new EventEmitter<void>();
-  @Output() columnAdded = new EventEmitter<TableColumnProvider<T>>();
-  @Output() columnRemoved = new EventEmitter<TableColumnProvider<T>>();
-  @Output() categorySelected = new EventEmitter<string>();
-  @Output() rowSelected = new EventEmitter<T>();
+  @Output() readonly addRequested = new EventEmitter<void>();
+  @Output() readonly columnAdded = new EventEmitter<TableColumnProvider<T>>();
+  @Output() readonly columnRemoved = new EventEmitter<TableColumnProvider<T>>();
+  @Output() readonly categorySelected = new EventEmitter<string>();
+  @Output() readonly rowSelected = new EventEmitter<T>();
 
   /** Émis à chaque changement de tri (y compris le tri initial). */
-  @Output() sortChange    = new EventEmitter<{ active: string; direction: 'asc' | 'desc' | '' }>();
+  @Output() readonly sortChange    = new EventEmitter<TableSortState>();
   /** Émis à chaque changement de page ou de taille de page. */
-  @Output() pageChange    = new EventEmitter<{ pageIndex: number; pageSize: number }>();
+  @Output() readonly pageChange    = new EventEmitter<{ pageIndex: number; pageSize: number }>();
   /** Émis à chaque changement de la recherche texte. */
-  @Output() searchChange  = new EventEmitter<string>();
+  @Output() readonly searchChange  = new EventEmitter<string>();
   /** Émis quand le Group by change (clé de colonne, ou `null` si désactivé). */
-  @Output() groupByChange = new EventEmitter<string | null>();
+  @Output() readonly groupByChange = new EventEmitter<string | null>();
   /** Émis quand la liste des colonnes visibles change (clés dans l’ordre d’affichage). */
-  @Output() columnsChange = new EventEmitter<string[]>();
-  @Output() visualCopied = new EventEmitter<VisualSnapshot>();
+  @Output() readonly columnsChange = new EventEmitter<string[]>();
+  @Output() readonly visualCopied = new EventEmitter<VisualSnapshot>();
 
   @ViewChild(MatPaginator)
   set paginator(value: MatPaginator | undefined) {
@@ -159,7 +164,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   get activeGroupByKey(): string | null { return this._organizer.groupBy.activeKey; }
   _matSortActive = '';
   _matSortDirection: 'asc' | 'desc' | '' = '';
-  private _activeSort: { active: string; direction: 'asc' | 'desc' | '' } = { active: '', direction: '' };
+  private _activeSort: TableSortState = { active: '', direction: '' };
   private _sortSubscribed: MatSort | null = null;
   private _destroy$ = new Subject<void>();
   private _totalFilteredCount = 0;
@@ -193,7 +198,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _copyFeedbackTimer?: number;
 
   /** Labels de l’interface. Fusionnés depuis JQT_I18N_DEFAULTS et le token JQT_I18N injecté. */
-  readonly i18n: JqtI18n = { ...JQT_I18N_DEFAULTS, ...(this._i18nRaw ?? {}) };
+  readonly i18n: JqtI18n = this._i18nRaw
+    ? { ...JQT_I18N_DEFAULTS, ...this._i18nRaw }
+    : { ...JQT_I18N_DEFAULTS };
 
   isGroupHeader = (_: number, row: any): boolean => row[GROUP_HEADER_MARKER] === true;
 
@@ -263,6 +270,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Cache groupBy — invalidé dès que rows/key/tri changent. */
   private _groupCache: GroupByCache<T> | null = null;
   private _pendingRender: ReturnType<typeof setTimeout> | null = null;
+  private readonly _deferredTimers = new Set<ReturnType<typeof setTimeout>>();
+  private _headerMeasureFrame: number | null = null;
+  private _destroyed = false;
 
   private _staticSliceHiddenKeys = new Set<string>();
   private _configHiddenKeys = new Set<string>();
@@ -340,7 +350,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._pendingDynamicSliceKeys = null;
     this._pendingSliceFilters = null;
 
-    setTimeout(() => {
+    this._scheduleDeferred(() => {
       if (this._resolvedData.length === 0) {
         console.log('[SliceRestore] ngAfterViewInit: données absentes, restauration différée à _recomputeShowSlicePanel', { keys, filters });
         if (filters) this._pendingSliceFilters = filters;
@@ -361,6 +371,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   ngOnDestroy(): void {
+    this._destroyed = true;
     this._tableShellResizeObserver?.disconnect();
     if (this._copyFeedbackTimer !== undefined) window.clearTimeout(this._copyFeedbackTimer);
     if (this._pendingRender !== null) {
@@ -369,6 +380,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (this._preferencesMessageTimer !== null) {
       clearTimeout(this._preferencesMessageTimer);
     }
+    this._deferredTimers.forEach(timer => clearTimeout(timer));
+    this._deferredTimers.clear();
+    if (this._headerMeasureFrame !== null) cancelAnimationFrame(this._headerMeasureFrame);
     // Nettoie un éventuel resize en cours (listeners window non retirés)
     this._resizeState = null;
     this._destroy$.next();
@@ -378,6 +392,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   private _measureHeaderHeight(): void {
     const measure = () => {
+      if (this._destroyed) return;
       const headerRow = this._el.nativeElement.querySelector('tr.mat-mdc-header-row') as HTMLElement;
       if (headerRow) {
         const h = headerRow.getBoundingClientRect().height;
@@ -387,9 +402,26 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         }
       }
       // Header pas encore rendu (ex: lazy Angular Material), on réessaie après le prochain frame
-      this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
+      this._scheduleHeaderMeasure(measure);
     };
-    this._ngZone.runOutsideAngular(() => requestAnimationFrame(() => measure()));
+    this._scheduleHeaderMeasure(measure);
+  }
+
+  private _scheduleHeaderMeasure(measure: () => void): void {
+    this._ngZone.runOutsideAngular(() => {
+      this._headerMeasureFrame = requestAnimationFrame(() => {
+        this._headerMeasureFrame = null;
+        measure();
+      });
+    });
+  }
+
+  private _scheduleDeferred(callback: () => void): void {
+    const timer = setTimeout(() => {
+      this._deferredTimers.delete(timer);
+      if (!this._destroyed) callback();
+    }, 0);
+    this._deferredTimers.add(timer);
   }
 
   private _organizerConfigCache: OrganizerConfig | null = null;
@@ -593,9 +625,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         this.triggerLazyFetch(colDef);
       }
     } else {
-      this._ngZone.runOutsideAngular(() => setTimeout(() => {
+      this._ngZone.runOutsideAngular(() => this._scheduleDeferred(() => {
         this.tableBodyScrollRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
-      }, 0));
+      }));
     }
   }
 
@@ -605,7 +637,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   onGroupSortToggle(dir: 'asc' | 'desc'): void {
     this._groupBy.onGroupSortToggle(dir, (key) => {
-      this._ngZone.runOutsideAngular(() => setTimeout(() => this.scrollToGroupHeader(key), 0));
+      this._ngZone.runOutsideAngular(() => this._scheduleDeferred(() => this.scrollToGroupHeader(key)));
     });
   }
 
@@ -634,7 +666,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   toggleGroupCollapse(groupKey: string): void {
     this._groupBy.toggleGroupCollapse(groupKey, (key) => {
-      this._ngZone.runOutsideAngular(() => setTimeout(() => this.scrollToGroupHeader(key), 0));
+      this._ngZone.runOutsideAngular(() => this._scheduleDeferred(() => this.scrollToGroupHeader(key)));
     });
   }
 
@@ -643,7 +675,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (!container) return;
     const row = container.querySelector<HTMLElement>(`tr[data-group-key="${CSS.escape(groupKey)}"]`);
     if (!row) return;
-    const headerHeight = parseFloat(
+    const headerHeight = Number.parseFloat(
       this._el.nativeElement.style.getPropertyValue('--actual-header-height') || '56'
     ) || 56;
     const containerRect = container.getBoundingClientRect();
@@ -715,7 +747,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this._pendingDynamicSliceKeys = null;
       const allCols = this.resolvedConfig.columns ?? [];
       console.log('[SliceRestore] _recomputeShowSlicePanel: données arrivées', { dynamicKeys, filters });
-      setTimeout(() => {
+      this._scheduleDeferred(() => {
         if (dynamicKeys) {
           dynamicKeys.forEach(key => {
             const col = allCols.find(c => c.key === key);
@@ -902,6 +934,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return this.rowSelected.observed || !!this.resolvedConfig.onRowSelected;
   }
 
+  rowActionLabel(row: any): string {
+    return `Sélectionner la ligne ${(row?.[ROW_INDEX_KEY] ?? 0) + 1}`;
+  }
+
   /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives.
    * Retourne null si aucune colonne n'a de largeur définie (le tableau remplit alors 100% du conteneur).
    * Seules les valeurs explicitement en `px` sont sommables ; les pourcentages ou autres unités sont ignorés. */
@@ -1035,7 +1071,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (scrollEl) {
       const allTh = scrollEl.querySelectorAll<HTMLElement>('th.mat-mdc-header-cell');
       allTh.forEach(thEl => {
-        const key = thEl.getAttribute('mat-column-header') || thEl.getAttribute('mat-sort-header') || '';
         const colClass = Array.from(thEl.classList).find(c => c.startsWith('mat-column-'));
         const colKey = colClass ? colClass.replace('mat-column-', '') : null;
         if (colKey && this._columnWidths[colKey] == null) {
@@ -1728,25 +1763,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       rows.forEach(row => groupValueCache.set(row, String(this.getLazyAwareValue(groupKey, row) ?? '')));
 
       // Pré-calcul des valeurs de tri (évite O(n log n) × getLazyAwareValue dans le comparateur)
-      let fastCompareFn: ((a: T, b: T) => number) | null = null;
-      if (effectiveSort.active && effectiveSort.direction) {
-        const sortValueCache = new Map<T, any>();
-        rows.forEach(row => sortValueCache.set(row, this.getLazyAwareValue(effectiveSort.active, row)));
-        const dir = effectiveSort.direction;
-        fastCompareFn = (a: T, b: T): number => {
-          const va = sortValueCache.get(a);
-          const vb = sortValueCache.get(b);
-          let cmp = 0;
-          if (typeof va === 'number' && typeof vb === 'number') {
-            cmp = va < vb ? -1 : va > vb ? 1 : 0;
-          } else {
-            const sa = va == null ? '' : String(va).toLowerCase();
-            const sb = vb == null ? '' : String(vb).toLowerCase();
-            cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
-          }
-          return dir === 'asc' ? cmp : -cmp;
-        };
-      }
+      const fastCompareFn = this._buildCachedSortComparator(rows, effectiveSort);
 
       const sorted = [...rows].sort((a, b) => {
         const va = groupValueCache.get(a)!;
@@ -1795,6 +1812,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
     const pageSize = this.groupPageSize;
     const result: any[] = [];
+    const rowIndexes = new Map<T, number>();
+    rows.forEach((row, index) => rowIndexes.set(row, index));
 
     groupOrder.forEach((groupValue) => {
       const groupRows = groupMap.get(groupValue)!;
@@ -1808,8 +1827,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       if (!collapsed) {
         const start = pageSize === 0 ? 0 : currentPage * pageSize;
         const end = pageSize === 0 ? totalCount : Math.min(start + pageSize, totalCount);
-        groupRows.slice(start, end).forEach((row, i) => {
-          const idx = start + i;
+        groupRows.slice(start, end).forEach((row) => {
+          const idx = rowIndexes.get(row) ?? 0;
           const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx, [ROW_GROUP_KEY]: groupValue };
           this.activeFields.forEach((col) => {
             projected[col.key] = this.resolveCellValue(col, row, idx);
@@ -1828,19 +1847,51 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       : this.resolvedConfig.defaultSort ?? { active: '', direction: '' as const };
     const { active, direction } = sort;
     if (!active || !direction) return null;
+    const sortDirection: 'asc' | 'desc' = direction;
     return (a: T, b: T): number => {
-      const va = this.getLazyAwareValue(active, a);
-      const vb = this.getLazyAwareValue(active, b);
-      let cmp = 0;
-      if (typeof va === 'number' && typeof vb === 'number') {
-        cmp = va < vb ? -1 : va > vb ? 1 : 0;
-      } else {
-        const sa = va == null ? '' : String(va).toLowerCase();
-        const sb = vb == null ? '' : String(vb).toLowerCase();
-        cmp = sa < sb ? -1 : sa > sb ? 1 : 0;
-      }
-      return direction === 'asc' ? cmp : -cmp;
+      const comparison = this._compareSortValues(
+        this.getLazyAwareValue(active, a),
+        this.getLazyAwareValue(active, b),
+      );
+      return this._applySortDirection(comparison, sortDirection);
     };
+  }
+
+  private _buildCachedSortComparator(
+    rows: T[],
+    sort: TableSortState,
+  ): ((a: T, b: T) => number) | null {
+    if (!sort.active || !sort.direction) return null;
+    const sortKey = sort.active;
+    const sortDirection: 'asc' | 'desc' = sort.direction;
+    const sortValueCache = new Map<T, unknown>();
+    rows.forEach(row => sortValueCache.set(row, this.getLazyAwareValue(sortKey, row)));
+    return (left: T, right: T): number => this._applySortDirection(
+      this._compareSortValues(sortValueCache.get(left), sortValueCache.get(right)),
+      sortDirection,
+    );
+  }
+
+  private _compareSortValues(left: unknown, right: unknown): number {
+    if (typeof left === 'number' && typeof right === 'number') {
+      if (left < right) return -1;
+      if (left > right) return 1;
+      return 0;
+    }
+
+    const leftText = this._normalizeSortValue(left);
+    const rightText = this._normalizeSortValue(right);
+    if (leftText < rightText) return -1;
+    if (leftText > rightText) return 1;
+    return 0;
+  }
+
+  private _normalizeSortValue(value: any): string {
+    return value == null ? '' : String(value).toLowerCase();
+  }
+
+  private _applySortDirection(comparison: number, direction: 'asc' | 'desc'): number {
+    return direction === 'asc' ? comparison : -comparison;
   }
 
   /**

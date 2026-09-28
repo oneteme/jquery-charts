@@ -154,12 +154,14 @@
           mat-row
           *matRowDef="let row; columns: renderedColumns; when: !isGroupHeader"
           [attr.tabindex]="hasRowClickHandler && !_editMode ? 0 : null"
+          [attr.aria-label]="hasRowClickHandler && !_editMode ? rowActionLabel(row) : null"
+          [attr.aria-keyshortcuts]="hasRowClickHandler && !_editMode ? 'Enter Space' : null"
           [ngClass]="getRowClass(row)"
           [class.no-pointer]="!hasRowClickHandler || _editMode"
           [class.edit-mode-row]="_editMode"
           (click)="!_editMode && onRowClick(row, $event)"
           (keydown.enter)="!_editMode && onRowClick(row, null)"
-          (keydown.space)="!_editMode && onRowClick(row, null)"
+          (keydown.space)="!_editMode && onRowClick(row, null); $event.preventDefault()"
         ></tr>
         <ng-container [matColumnDef]="_GROUP_ROW_COLUMN">
           <td mat-cell *matCellDef="let row" [attr.colspan]="renderedColumns.length" class="group-header-cell">

@@ -181,14 +181,33 @@
   justify-content: space-between;
   gap: 6px;
   margin: 4px 0 6px;
-  cursor: pointer;
   user-select: none;
+
+  &:first-of-type .slice-title {
+    margin-top: 0;
+  }
+}
+
+.slice-title-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
 
   &:hover .slice-title { color: var(--jqt-text-color); }
   &:hover .slice-title-chevron { color: var(--jqt-text-secondary); }
 
-  &:first-of-type .slice-title {
-    margin-top: 0;
+  &:focus-visible {
+    outline: 2px solid var(--jqt-primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 

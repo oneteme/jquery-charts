@@ -86,8 +86,6 @@
 
     li {
       position: relative;
-      padding: 0.45rem 12px;
-      cursor: pointer;
       margin-bottom: 1px;
       color: var(--clr-sidebar-text, #a6bcba);
       font-size: 0.875rem;
@@ -110,7 +108,7 @@
         transition: top 0.2s ease, bottom 0.2s ease;
       }
 
-      &:hover {
+      &:focus-within {
         color: var(--clr-sidebar-text-hover, #eef7f3);
         background: rgba(44, 96, 93, 0.06);
         border-radius: 6px;
@@ -135,13 +133,35 @@
     }
   }
 
+  .sidebar-link,
+  .lib-name,
+  .lib-arrow {
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+
+  .sidebar-link,
+  .lib-name {
+    width: 100%;
+    padding: 0.45rem 12px;
+    text-align: left;
+    cursor: pointer;
+  }
+
   .lib-name { flex: 1; }
+
+  button:focus-visible {
+    outline: 2px solid var(--clr-sidebar-active-bar, #c6532f);
+    outline-offset: -2px;
+  }
 
   .lib-arrow {
     font-size: 1.1rem;
     color: var(--clr-sidebar-text, #a6bcba);
     cursor: pointer;
-    padding: 0 2px;
+    padding: 0 8px;
     user-select: none;
     transition: transform 0.2s ease, color 0.15s ease;
 
@@ -163,14 +183,13 @@
 
     li {
       font-size: 0.78rem;
-      padding: 0.28rem 8px;
       color: var(--clr-sidebar-text, #a6bcba);
       font-weight: 400;
       border-left: none;
 
       &::before { display: none; }
 
-      &:hover {
+      &:focus-within {
         color: var(--clr-sidebar-text-hover, #eef7f3);
         background: rgba(44, 96, 93, 0.06);
         border-radius: 4px;
@@ -180,6 +199,8 @@
         color: var(--clr-sidebar-active-text, #ffc5b2);
         font-weight: 700;
       }
+
+      .sidebar-link { padding: 0.28rem 8px; }
     }
   }
 }

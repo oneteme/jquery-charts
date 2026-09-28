@@ -17,15 +17,21 @@ interface LibItem { key: string; label: string; route: string; types: ChartTypeI
 
       <div class="sidebar-section sidebar-section--start">
         <ul>
-          <li [class.active]="isDocumentationRoute()" (click)="goToDocumentation()">Démarrer</li>
+          <li [class.active]="isDocumentationRoute()">
+            <button type="button" class="sidebar-link" (click)="goToDocumentation()">Démarrer</button>
+          </li>
         </ul>
       </div>
 
       <div class="sidebar-section">
         <span class="sidebar-section-label">Composants</span>
         <ul>
-          <li [class.active]="isTableRoute()" (click)="goToTable()">jquery-table</li>
-          <li [class.active]="isOrganizerRoute()" (click)="goToOrganizer()">jquery-organizer</li>
+          <li [class.active]="isTableRoute()">
+            <button type="button" class="sidebar-link" (click)="goToTable()">jquery-table</button>
+          </li>
+          <li [class.active]="isOrganizerRoute()">
+            <button type="button" class="sidebar-link" (click)="goToOrganizer()">jquery-organizer</button>
+          </li>
         </ul>
       </div>
 
@@ -33,14 +39,22 @@ interface LibItem { key: string; label: string; route: string; types: ChartTypeI
         <span class="sidebar-section-label">Graphiques</span>
         <ul>
           <li *ngFor="let lib of libs" [class.active]="isChartsLib(lib.key)">
-            <span class="lib-name" (click)="goToLib(lib)">{{ lib.label }}</span>
-            <span class="lib-arrow" [class.open]="isExpanded(lib.key)" (click)="toggleExpand(lib, $event)">›</span>
-            <ul class="sub-list" *ngIf="isExpanded(lib.key)" (click)="$event.stopPropagation()">
+            <button type="button" class="lib-name" (click)="goToLib(lib)">{{ lib.label }}</button>
+            <button
+              type="button"
+              class="lib-arrow"
+              [class.open]="isExpanded(lib.key)"
+              [attr.aria-label]="(isExpanded(lib.key) ? 'Replier' : 'Déplier') + ' les exemples ' + lib.label"
+              [attr.aria-expanded]="isExpanded(lib.key)"
+              (click)="toggleExpand(lib, $event)"
+            >›</button>
+            <ul class="sub-list" *ngIf="isExpanded(lib.key)">
               <li
                 *ngFor="let type of lib.types; trackBy: trackByFn"
                 [class.active]="isActiveType(lib, type)"
-                (click)="goToType(lib, type, $event)"
-              >{{ type.label }}</li>
+              >
+                <button type="button" class="sidebar-link" (click)="goToType(lib, type)">{{ type.label }}</button>
+              </li>
             </ul>
           </li>
         </ul>
@@ -49,12 +63,12 @@ interface LibItem { key: string; label: string; route: string; types: ChartTypeI
       <div class="sidebar-section">
         <span class="sidebar-section-label">API</span>
         <ul>
-          <li [class.active]="isCoreApiRoute()" (click)="goToCoreApi()">jquery-core</li>
-          <li [class.active]="isOrganizerApiRoute()" (click)="goToOrganizerApi()">jquery-organizer</li>
-          <li [class.active]="isHighchartsApiRoute()" (click)="goToHighchartsApi()">jquery-highcharts</li>
-          <li [class.active]="isApiRoute()" (click)="goToApi()">jquery-echarts</li>
-          <li [class.active]="isApexchartsApiRoute()" (click)="goToApexchartsApi()">jquery-apexcharts</li>
-          <li [class.active]="isTableApiRoute()" (click)="goToTableApi()">jquery-table</li>
+          <li [class.active]="isCoreApiRoute()"><button type="button" class="sidebar-link" (click)="goToCoreApi()">jquery-core</button></li>
+          <li [class.active]="isOrganizerApiRoute()"><button type="button" class="sidebar-link" (click)="goToOrganizerApi()">jquery-organizer</button></li>
+          <li [class.active]="isHighchartsApiRoute()"><button type="button" class="sidebar-link" (click)="goToHighchartsApi()">jquery-highcharts</button></li>
+          <li [class.active]="isApiRoute()"><button type="button" class="sidebar-link" (click)="goToApi()">jquery-echarts</button></li>
+          <li [class.active]="isApexchartsApiRoute()"><button type="button" class="sidebar-link" (click)="goToApexchartsApi()">jquery-apexcharts</button></li>
+          <li [class.active]="isTableApiRoute()"><button type="button" class="sidebar-link" (click)="goToTableApi()">jquery-table</button></li>
         </ul>
       </div>
 
@@ -205,8 +219,7 @@ export class SidebarComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  goToType(lib: LibItem, type: ChartTypeItem, event: Event) {
-    event.stopPropagation();
+  goToType(lib: LibItem, type: ChartTypeItem) {
     this.router.navigate([lib.route, type.id]);
     if (this.isMenuOpen) this.toggleMenu();
   }
