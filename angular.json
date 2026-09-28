@@ -24,6 +24,20 @@
             "main": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "apexcharts",
+              "highcharts/highcharts-more",
+              "highcharts/highmaps",
+              "highcharts/modules/accessibility",
+              "highcharts/modules/drilldown",
+              "highcharts/modules/export-data",
+              "highcharts/modules/exporting",
+              "highcharts/modules/funnel",
+              "highcharts/modules/heatmap",
+              "highcharts/modules/no-data-to-display",
+              "highcharts/modules/offline-exporting",
+              "highcharts/modules/treemap"
+            ],
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",

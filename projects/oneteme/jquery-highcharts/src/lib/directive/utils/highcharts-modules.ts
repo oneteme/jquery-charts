@@ -9,6 +9,7 @@ import Drilldown from 'highcharts/modules/drilldown';
 import Funnel from 'highcharts/modules/funnel';
 import Treemap from 'highcharts/modules/treemap';
 import Heatmap from 'highcharts/modules/heatmap';
+import Accessibility from 'highcharts/modules/accessibility';
 
 export const FRENCH_HIGHCHARTS_LANG: Highcharts.LangOptions = {
 	contextButtonTitle: 'Menu contextuel du graphique',
@@ -39,5 +40,6 @@ Drilldown(Highcharts);
 Funnel(Highcharts);
 Treemap(Highcharts);
 Heatmap(Highcharts);
+Accessibility(Highcharts);
 
 export { Highcharts };

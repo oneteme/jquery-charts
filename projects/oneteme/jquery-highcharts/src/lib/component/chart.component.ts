@@ -6,7 +6,7 @@ import { ChartDirective } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils';
 import { ChartViewFacade } from './view/chart-view.facade';
 
-const STANDARD_CHARTS: ChartType[] = [ 'line', 'area', 'spline', 'areaspline', 'bar', 'column', 'columnpyramid', 'scatter', 'mixed' ];
+const STANDARD_CHARTS: ChartType[] = [ 'line', 'area', 'spline', 'areaspline', 'bar', 'column', 'scatter', 'mixed' ];
 const SIMPLE_CHARTS: ChartType[] = ['pie', 'donut', 'funnel', 'pyramid'];
 const POLAR_CHARTS: ChartType[] = ['polar', 'radar', 'radarArea', 'radialBar'];
 const RANGE_CHARTS: ChartType[] = [ 'columnrange', 'arearange', 'areasplinerange' ];
