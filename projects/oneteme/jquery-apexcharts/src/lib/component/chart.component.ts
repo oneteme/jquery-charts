@@ -76,7 +76,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   }
 
   protected readonly _charts: {
-    [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
+    [key: string]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
     pie: { possibleType: ['pie', 'donut', 'polar', 'radar', 'radial'] },
     donut: { possibleType: ['pie', 'donut', 'polar', 'radar', 'radial'] },

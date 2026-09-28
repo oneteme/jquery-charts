@@ -135,11 +135,11 @@ export class HeaderComponent {
       apexcharts: 'https://www.npmjs.com/package/@oneteme/jquery-apexcharts',
       table:      'https://www.npmjs.com/package/@oneteme/jquery-table',
     };
-    window.open(urls[library], '_blank');
+    window.open(urls[library], '_blank', 'noopener,noreferrer');
     this.showInstallMenu = false;
   }
 
   goToGithub() {
-    window.open('https://github.com/oneteme/jquery-charts', '_blank');
+    window.open('https://github.com/oneteme/jquery-charts', '_blank', 'noopener,noreferrer');
   }
 }

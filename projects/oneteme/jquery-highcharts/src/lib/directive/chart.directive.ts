@@ -581,12 +581,17 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       this.downloadBlob(blob, `${fileName}.svg`);
       return;
     }
-    this.chart.exportChart({
+    this.chart.exportChartLocal({
       type: `image/${type}`,
       filename: fileName,
       sourceWidth: Math.round(this.chart.chartWidth * pixelRatio),
       sourceHeight: Math.round(this.chart.chartHeight * pixelRatio),
-    }, {});
+      fallbackToExportServer: false,
+    }, {
+      chart: {
+        backgroundColor: this.resolveExportBackgroundColor(),
+      },
+    });
   }
 
   exportData(fileName = 'data', separator = ';'): void {
@@ -617,6 +622,14 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  private resolveExportBackgroundColor(): string {
+    const backgroundColor = this.chart?.options.chart?.backgroundColor;
+    if (typeof backgroundColor === 'string' && backgroundColor !== 'transparent') {
+      return backgroundColor;
+    }
+    return '#fff';
   }
 
   private replaceCsvDelimiter(csv: string, separator: string): string {

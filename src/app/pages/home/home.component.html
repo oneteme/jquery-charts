@@ -77,7 +77,12 @@
         </div>
       </div>
 
-      <div class="preview-stage__controls" role="tablist" aria-label="Choisir un aperçu">
+      <div class="preview-stage__navigator">
+        <div class="preview-stage__navigator-heading">
+          <span class="preview-stage__navigator-label">Explorer les vues</span>
+          <span class="preview-stage__navigator-state">Trois façons d’explorer vos données</span>
+        </div>
+        <div class="preview-stage__controls" role="tablist" aria-label="Choisir une vue">
         <button
           *ngFor="let visual of productPreviews; let index = index"
           type="button"
@@ -85,11 +90,17 @@
           [class.preview-stage__control--active]="activePreviewIndex === index"
           [attr.aria-selected]="activePreviewIndex === index"
           [attr.aria-controls]="'preview-panel-' + index"
+          [attr.aria-label]="'Afficher la vue ' + visual.label"
           role="tab"
           (click)="selectPreview(index)">
-          <span class="preview-stage__control-index">0{{ index + 1 }}</span>
-          <span>{{ visual.label }}</span>
+          <mat-icon class="preview-stage__control-icon" aria-hidden="true">{{ visual.icon }}</mat-icon>
+          <span class="preview-stage__control-copy">
+            <span class="preview-stage__control-index">0{{ index + 1 }}</span>
+            <span class="preview-stage__control-label">{{ visual.label }}</span>
+          </span>
+          <mat-icon class="preview-stage__control-check" aria-hidden="true">check</mat-icon>
         </button>
+        </div>
       </div>
     </div>
   </section>

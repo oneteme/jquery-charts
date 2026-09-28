@@ -1,5 +1,5 @@
 import {
-  Component, OnInit, OnDestroy, HostListener,
+  Component, HostListener,
   ChangeDetectionStrategy, ChangeDetectorRef, ElementRef, ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -76,7 +76,7 @@ const SEARCH_INDEX: SearchItem[] = [
   styleUrls: ['./quick-search.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class QuickSearchComponent implements OnInit, OnDestroy {
+export class QuickSearchComponent {
   @ViewChild('searchInput') searchInput!: ElementRef<HTMLInputElement>;
 
   isOpen = false;
@@ -88,9 +88,6 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
     private readonly router: Router,
     private readonly cdr: ChangeDetectorRef
   ) {}
-
-  ngOnInit() {}
-  ngOnDestroy() {}
 
   @HostListener('window:keydown', ['$event'])
   onKeydown(event: KeyboardEvent) {
@@ -105,7 +102,7 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
     if (event.key === 'Escape') { this.close(); return; }
     if (event.key === 'ArrowDown') { event.preventDefault(); this.moveDown(); return; }
     if (event.key === 'ArrowUp') { event.preventDefault(); this.moveUp(); return; }
-    if (event.key === 'Enter') { this.selectActive(); return; }
+    if (event.key === 'Enter') { this.selectActive(); }
   }
 
   open() {
@@ -169,7 +166,7 @@ export class QuickSearchComponent implements OnInit, OnDestroy {
 
   highlightMatch(text: string): string {
     if (!this.query) return text;
-    const escaped = this.query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = this.query.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
     return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark>$1</mark>');
   }
 }

@@ -131,7 +131,7 @@ function normalizeLabel(label: string): string {
 }
 
 function normalizeLabelKey(label: string): string {
-  return normalizeLabel(label).toLocaleLowerCase();
+  return normalizeLabel(label).toLowerCase();
 }
 
 function isCollection(value: unknown): value is VisualSnapshotCollection {

@@ -79,6 +79,7 @@
 }
 
 .visual-copy-feedback {
+  display: block;
   position: absolute;
   top: 8px;
   left: 50%;
@@ -750,7 +751,10 @@
   color: var(--jqt-border-color);
   flex-shrink: 0;
   padding: 0 2px;
+  border: 0;
+  background: transparent;
   border-radius: 4px;
+  font: inherit;
   line-height: 1;
 
   &:active { cursor: grabbing; }

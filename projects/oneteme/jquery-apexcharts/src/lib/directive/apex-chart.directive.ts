@@ -58,6 +58,7 @@ export abstract class ApexChartDirectiveBase<
   protected _options: any;
   protected _chartConfig!: ChartProvider<X, Y>;
   private toolbarObserver: MutationObserver | null = null;
+  private scrollPreventionCleanup: (() => void) | null = null;
   private groupSyncUnregister: (() => void) | null = null;
   private readonly groupSyncSource = Symbol('jquery-apexcharts');
   private isSyncing = false;
@@ -190,7 +191,8 @@ export abstract class ApexChartDirectiveBase<
               chart.destroy();
               return;
             }
-            setupScrollPrevention(this.el.nativeElement, this.chartInstance);
+            this.scrollPreventionCleanup?.();
+            this.scrollPreventionCleanup = setupScrollPrevention(this.el.nativeElement, this.chartInstance);
             fixToolbarSvgIds(this.el.nativeElement);
             this.toolbarObserver = setupToolbarObserver(this.el.nativeElement);
           })
@@ -232,7 +234,7 @@ export abstract class ApexChartDirectiveBase<
       const blob = new Blob([new XMLSerializer().serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       this.download(url, `${fileName}.svg`);
-      URL.revokeObjectURL(url);
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
       return;
     }
 
@@ -351,6 +353,8 @@ export abstract class ApexChartDirectiveBase<
   private disposeChart(): void {
     this.toolbarObserver?.disconnect();
     this.toolbarObserver = null;
+    this.scrollPreventionCleanup?.();
+    this.scrollPreventionCleanup = null;
     this.groupSyncUnregister?.();
     this.groupSyncUnregister = null;
     destroyChart(this.chartInstance);
@@ -376,6 +380,7 @@ export abstract class ApexChartDirectiveBase<
 
   private publishDataZoom(xaxis: any): void {
     if (!this.group || !this.syncs('datazoom') || this.isSyncing || !xaxis) return;
+    if (!Number.isFinite(xaxis.min) || !Number.isFinite(xaxis.max)) return;
     publishChartGroupSync({
       group: this.group,
       action: 'datazoom',

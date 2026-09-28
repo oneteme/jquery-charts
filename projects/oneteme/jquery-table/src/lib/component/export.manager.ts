@@ -41,8 +41,8 @@ export class ExportManager<T> {
   }
 
   private _csvEscape(value: string): string {
-    if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-      return '"' + value.replace(/"/g, '""') + '"';
+    if (value.includes(',') || value.includes('"') || value.includes('\n') || value.includes('\r')) {
+      return '"' + value.replaceAll('"', '""') + '"';
     }
     return value;
   }

@@ -77,7 +77,7 @@ const config = {
         throw new Error('La copie du code a échoué.');
       }
     } finally {
-      document.body.removeChild(textArea);
+      textArea.remove();
     }
   }
 }

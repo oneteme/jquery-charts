@@ -83,9 +83,9 @@ export class EChartsComponent implements AfterViewInit, OnDestroy {
 
   _highlightCode(code: string): string {
     const escaped = code
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;');
 
     return escaped
       .replace(/(\/\/.*)/g, '<span class="comment">$1</span>')

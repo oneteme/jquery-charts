@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import {
@@ -21,6 +22,7 @@ type ProductPreviewKind = 'chart' | 'table' | 'organizer';
 interface ProductPreview {
   kind: ProductPreviewKind;
   label: string;
+  icon: string;
 }
 
 interface ProductChartRow {
@@ -48,7 +50,7 @@ interface OrganizerResultRow {
 @Component({
   selector: 'home',
   standalone: true,
-  imports: [CommonModule, RouterModule, HighchartsChartComponent, TableComponent, OrganizerButtonComponent],
+  imports: [CommonModule, RouterModule, MatIconModule, HighchartsChartComponent, TableComponent, OrganizerButtonComponent],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.scss'],
 })
@@ -57,14 +59,17 @@ export class HomeComponent {
     {
       kind: 'chart',
       label: 'Graphique',
+      icon: 'show_chart',
     },
     {
       kind: 'table',
       label: 'Tableau',
+      icon: 'table_rows',
     },
     {
       kind: 'organizer',
       label: 'Organizer',
+      icon: 'tune',
     },
   ];
 
@@ -320,12 +325,20 @@ export class HomeComponent {
     return (this.productOrganizerState.selectedSlices || []).map(slice => labels[slice] || slice);
   }
 
+  private getOrganizerDimension(): 'month' | 'region' | 'channel' {
+    if (this.productOrganizerState.selectedX === 'region') return 'region';
+    if (this.productOrganizerState.selectedX === 'channel') return 'channel';
+    return 'month';
+  }
+
+  private getOrganizerMetric(): 'orders' | 'margin' | 'revenue' {
+    if (this.productOrganizerState.selectedY === 'orders') return 'orders';
+    if (this.productOrganizerState.selectedY === 'margin') return 'margin';
+    return 'revenue';
+  }
+
   get organizerResultRows(): OrganizerResultRow[] {
-    const dimension = this.productOrganizerState.selectedX === 'region'
-      ? 'region'
-      : this.productOrganizerState.selectedX === 'channel'
-        ? 'channel'
-        : 'month';
+    const dimension = this.getOrganizerDimension();
     const grouped = new Map<string, ProductTableRow[]>();
 
     this.productTableData.forEach(row => {
@@ -346,11 +359,7 @@ export class HomeComponent {
   }
 
   private aggregateOrganizerValues(rows: ProductTableRow[]): number {
-    const metric = this.productOrganizerState.selectedY === 'orders'
-      ? 'orders'
-      : this.productOrganizerState.selectedY === 'margin'
-        ? 'margin'
-        : 'revenue';
+    const metric = this.getOrganizerMetric();
     const values = rows.map(row => row[metric]);
     const aggregate = this.productOrganizerState.selectedYAggregate;
 

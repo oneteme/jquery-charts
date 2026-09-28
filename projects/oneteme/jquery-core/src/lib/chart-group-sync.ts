@@ -52,6 +52,11 @@ export function registerChartGroupSync(
 
 export function publishChartGroupSync(event: ChartGroupSyncEvent): void {
   registrations.get(event.group)?.forEach(({ source, listener }) => {
-    if (source !== event.source) listener(event);
+    if (source === event.source) return;
+    try {
+      listener(event);
+    } catch (error) {
+      console.error('[jquery-core] Chart group sync listener failed', error);
+    }
   });
 }

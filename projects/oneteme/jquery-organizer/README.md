@@ -162,7 +162,7 @@ export interface OrganizerConfig {
   onToggleFullscreen?: () => void;
 
   // UI
-  showReset?: boolean;                   // Défaut: true
+  showReset?: boolean;                   // Défaut: false
   buttonLabel?: string;
   buttonIcon?: string;                   // Icône Material
   showButtonIcon?: boolean;

@@ -322,7 +322,7 @@ function _extractYValues(series: any[]): number[] {
   return values;
 }
 
-function applyControlledLegendSelection(option: any): void {
+export function applyControlledLegendSelection(option: any): void {
   const controlledSelection = (option.series ?? []).reduce((selection: Record<string, boolean>, series: any) => {
     if (typeof series?.name === 'string' && typeof series.visible === 'boolean') {
       selection[series.name] = series.visible;

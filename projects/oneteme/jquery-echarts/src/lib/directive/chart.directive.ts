@@ -4,7 +4,7 @@ import { asapScheduler } from 'rxjs';
 
 import { echarts } from './utils/echarts-init';
 import { EChartsOption, ChartClickEvent, ChartCustomEvent, ChartRenderError, DEFAULT_LOADING_OPTION, GroupSyncAction, GroupSyncMode } from './utils/types';
-import { applyCommonConfig, buildBaseOption, buildNoDataGraphic, buildTooltipOption } from './utils/chart-utils';
+import { applyCommonConfig, applyControlledLegendSelection, buildBaseOption, buildNoDataGraphic, buildTooltipOption } from './utils/chart-utils';
 import { resolveConfigurator } from './utils/config/chart-config-registry';
 
 @Directive({
@@ -352,7 +352,19 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
   }
 
   private _buildFullOption(): EChartsOption {
-    if (this.renderedOption) return this.renderedOption;
+    if (this.renderedOption) {
+      const option = mergeDeep({}, this.renderedOption as object) as EChartsOption;
+      const nativeSeries = Array.isArray((option as any).series) ? (option as any).series : [];
+      const providerSeries = this._config?.series ?? [];
+      if (nativeSeries.length && providerSeries.length) {
+        (option as any).series = nativeSeries.map((series: any, index: number) => {
+          const visible = (providerSeries[index] as any)?.visible;
+          return typeof visible === 'boolean' ? { ...series, visible } : series;
+        });
+        applyControlledLegendSelection(option);
+      }
+      return option;
+    }
     const configurator = resolveConfigurator(this._type);
     const commonChart = configurator.buildChartData(this.data, this._config, this._type);
     const base = buildBaseOption(this._config);
@@ -410,14 +422,15 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
 
   exportImage(fileName = 'chart', type?: ChartExportImageType, pixelRatio = 2): void {
     if (!this._chartInstance) return;
-    // Avec le renderer SVG, getDataURL ne peut pas produire un PNG valide.
-    // On choisit automatiquement le bon format selon le renderer actif.
     const effectiveType = type ?? (this.renderer === 'svg' ? 'svg' : 'png');
+    if (this.renderer === 'svg' && (effectiveType === 'png' || effectiveType === 'jpeg')) {
+      const svgUrl = this._chartInstance.getDataURL({ type: 'svg', pixelRatio, backgroundColor: '#fff' });
+      this.exportSvgAsRaster(svgUrl, fileName, effectiveType, pixelRatio);
+      return;
+    }
+
     const url = this._chartInstance.getDataURL({ type: effectiveType, pixelRatio, backgroundColor: '#fff' });
-    const link = document.createElement('a');
-    link.download = `${fileName}.${effectiveType}`;
-    link.href = url;
-    link.click();
+    this.downloadImage(url, `${fileName}.${effectiveType}`);
   }
 
   exportData(fileName = 'data', separator = ';'): void {
@@ -436,6 +449,39 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
+  }
+
+  private exportSvgAsRaster(
+    source: string,
+    fileName: string,
+    type: 'png' | 'jpeg',
+    pixelRatio: number,
+  ): void {
+    const image = new Image();
+    image.onload = () => {
+      const scale = Number.isFinite(pixelRatio) && pixelRatio > 0 ? pixelRatio : 1;
+      const width = Math.max(1, Math.round(this._chartInstance?.getWidth() || image.naturalWidth));
+      const height = Math.max(1, Math.round(this._chartInstance?.getHeight() || image.naturalHeight));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(width * scale);
+      canvas.height = Math.round(height * scale);
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      this.downloadImage(canvas.toDataURL(`image/${type}`), `${fileName}.${type}`);
+    };
+    image.onerror = () => console.error('[jquery-echarts] Impossible de rasteriser le SVG exporté.');
+    image.src = source;
+  }
+
+  private downloadImage(url: string, fileName: string): void {
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = url;
+    link.click();
   }
 
   /** Retourne une copie sérialisable de l'option ECharts actuellement calculée. */

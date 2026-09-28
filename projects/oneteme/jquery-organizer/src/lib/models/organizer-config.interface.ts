@@ -51,6 +51,7 @@ export interface OrganizerChartType {
 export interface OrganizerTemplate {
   id: string;
   label: string;
+  description?: string;
   icon?: string;
   xField?: string;
   yField?: string;

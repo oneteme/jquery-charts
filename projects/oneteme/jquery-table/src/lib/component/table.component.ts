@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
@@ -270,6 +270,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   /** Clés des colonnes visibles du dernier émission columnsChange (pour éviter les émissions dupliquement). */
   private _prevColumnKeys: string[] = [];
+
+  private emitColumnsChangeIfNeeded(): void {
+    const nextKeys = [...this.renderedColumns];
+    if (nextKeys.length === this._prevColumnKeys.length
+      && nextKeys.every((key, index) => key === this._prevColumnKeys[index])) return;
+    this._prevColumnKeys = nextKeys;
+    this.columnsChange.emit(nextKeys);
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     const dataChanged = !!(changes['config'] || changes['data'] || changes['dataSource']);
@@ -565,14 +573,20 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.searchChange.emit(this.searchQuery);
   }
 
-  onGroupByChange(key: string | null): void {
+  private setGroupByAndEmit(key: string | null): void {
+    const previousKey = this._organizer.groupBy.activeKey ?? null;
     this._organizer.setGroupBy(key);
+    const nextKey = this._organizer.groupBy.activeKey ?? null;
+    if (previousKey !== nextKey) this.groupByChange.emit(nextKey);
+  }
+
+  onGroupByChange(key: string | null): void {
+    this.setGroupByAndEmit(key);
     this._groupBy.setDefaultCollapsed(key !== null);
     this._groupBy.reset();
     this._groupBy.groupPageSize = this.resolveDefaultGroupPageSize();
     this.refreshViewModel();
     this.paginator?.firstPage();
-    this.groupByChange.emit(key);
     if (key) {
       const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
       if (colDef?.lazy && this._lazyColumnStatus.get(key) !== 'loaded') {
@@ -903,7 +917,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         const isPx = col.width.trim().toLowerCase().endsWith('px');
         const px = Number.parseFloat(col.width);
         if (isPx && !Number.isNaN(px)) { sum += px; }
-        else { sum += 150; }
       } else {
         sum += 120; // largeur minimale estimée pour une colonne sans largeur explicite
       }
@@ -911,8 +924,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return sum + 'px';
   }
 
-  trackRowFn = (_index: number, row: any): any =>
-    row[GROUP_HEADER_MARKER] ? `__group_${row[ROW_GROUP_KEY]}` : row[ROW_INDEX_KEY] ?? _index;
+  trackRowFn = (_index: number, row: any): any => {
+    if (row[GROUP_HEADER_MARKER]) return `__group_${row[ROW_GROUP_KEY]}`;
+    if (row[ROW_GROUP_KEY] !== undefined) return `__row_${row[ROW_GROUP_KEY]}_${row[ROW_INDEX_KEY] ?? _index}`;
+    return row[ROW_INDEX_KEY] ?? _index;
+  };
 
   getRowClass(row: any): string | string[] | Record<string, boolean> {
     const fn = this.resolvedConfig.rowClass;
@@ -941,6 +957,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       event.dataTransfer.effectAllowed = 'move';
       event.dataTransfer.setData('text/plain', columnKey);
     }
+  }
+
+  onHeaderKeyDown(columnKey: string, event: KeyboardEvent): void {
+    if ((!this.isColumnDragDropEnabled && !this._editMode)
+      || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return;
+
+    const currentIndex = this.activeFields.findIndex(column => column.key === columnKey);
+    const targetIndex = event.key === 'ArrowLeft' ? currentIndex - 1 : currentIndex + 1;
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= this.activeFields.length) return;
+
+    event.preventDefault();
+    const reordered = [...this.activeFields];
+    [reordered[currentIndex], reordered[targetIndex]] = [reordered[targetIndex], reordered[currentIndex]];
+    this._organizer.setActiveFields(reordered);
+    this.refreshViewModel();
   }
 
   onHeaderDragOver(columnKey: string, event: DragEvent): void {
@@ -1139,7 +1170,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (saved.columnWidths) this._columnWidths = { ...saved.columnWidths };
     // Group by
     if (saved.groupBy !== undefined) {
-      this._organizer.setGroupBy(saved.groupBy);
+      this.setGroupByAndEmit(saved.groupBy);
       if (saved.groupBy) {
         this._groupBy.setDefaultCollapsed(true);
         this._groupBy.reset();
@@ -1291,7 +1322,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     if (state.groupBy === null || typeof state.groupBy === 'string') {
       const groupKey = state.groupBy && available.has(state.groupBy) ? state.groupBy : null;
-      this._organizer.setGroupBy(groupKey);
+      this.setGroupByAndEmit(groupKey);
       restored.push('groupBy');
     }
     if (state.columnWidths) {
@@ -1349,12 +1380,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this._groupBy.setDefaultCollapsed(true);
       this._groupBy.reset();
       this._groupBy.groupPageSize = this.resolveDefaultGroupPageSize();
+      this.groupByChange.emit(this._organizer.groupBy.activeKey);
     }
 
     // Synchronise la propriété stable (évite NG0100 — la facade est source de vérité)
     this.activeFields = this._organizer.fields.activeFields;
 
     this.renderedColumns = this.activeFields.map(c => c.key);
+    this.emitColumnsChangeIfNeeded();
 
     this.pageSize = this.paginator?.pageSize || this.resolvePageSize();
     this.pageSizeOptions = this.resolvePageSizeOptions();
@@ -1777,7 +1810,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         const end = pageSize === 0 ? totalCount : Math.min(start + pageSize, totalCount);
         groupRows.slice(start, end).forEach((row, i) => {
           const idx = start + i;
-          const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx };
+          const projected: any = { [ROW_RAW_KEY]: row, [ROW_INDEX_KEY]: idx, [ROW_GROUP_KEY]: groupValue };
           this.activeFields.forEach((col) => {
             projected[col.key] = this.resolveCellValue(col, row, idx);
           });

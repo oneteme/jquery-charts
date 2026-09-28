@@ -86,7 +86,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @HostBinding('class.drilldown-active') get hasActiveDrilldown(): boolean { return this.drilldownIsActive; }
 
   protected _charts: {
-    [key: ChartType]: { possibleType: ChartType[]; canPivot?: boolean };
+    [key: string]: { possibleType: ChartType[]; canPivot?: boolean };
   } = {
     line: { possibleType: ALL_COMPATIBLE_CHARTS, canPivot: true },
     area: { possibleType: ALL_COMPATIBLE_CHARTS, canPivot: true },
@@ -123,7 +123,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
 
   _type: ChartType;
 
-  @Input({ alias: 'type', required: true }) set value(type: ChartType) {
+  @Input({ required: true }) set type(type: ChartType) {
     this._type = type;
   }
   @Input({ required: true }) config!: ChartProvider<X, Y>;
