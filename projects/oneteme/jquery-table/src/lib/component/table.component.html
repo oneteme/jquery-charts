@@ -129,19 +129,21 @@
             [style.width]="getColumnWidth(column.key)"
             [class.edit-mode-cell]="_editMode">
             <ng-container *ngIf="!_editMode; else editModeCellTpl">
-              <ng-container *ngIf="getCellTemplate(column.key) as customTpl; else defaultCellTpl">
-                <ng-container *ngTemplateOutlet="customTpl; context: { $implicit: row[_ROW_RAW_KEY], index: row[_ROW_INDEX_KEY] }"></ng-container>
-              </ng-container>
-              <ng-template #defaultCellTpl>
-                <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">
-                  <span *ngSwitchCase="'loading'" class="lazy-skeleton"></span>
-                  <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="retryLazyColumn(column)" [title]="i18n.lazyErrorTitle">
-                    <span class="lazy-error-icon">⚠</span>
-                    <span class="lazy-error-label">{{ i18n.lazyRetry }}</span>
-                  </button>
-                  <span *ngSwitchDefault class="cell-text" [class.cell-empty]="isCellEmpty(row[column.key])" [title]="asTitle(row[column.key])">{{ isCellEmpty(row[column.key]) ? i18n.cellEmpty : row[column.key] }}</span>
+              <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">
+                <span *ngSwitchCase="'loading'" class="lazy-skeleton"></span>
+                <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="retryLazyColumn(column)" [title]="i18n.lazyErrorTitle">
+                  <span class="lazy-error-icon">⚠</span>
+                  <span class="lazy-error-label">{{ i18n.lazyRetry }}</span>
+                </button>
+                <ng-container *ngSwitchDefault>
+                  <ng-container *ngIf="getCellTemplate(column.key) as customTpl; else defaultCellTpl">
+                    <ng-container *ngTemplateOutlet="customTpl; context: { $implicit: row[_ROW_RAW_KEY], index: row[_ROW_INDEX_KEY], value: row[column.key] }"></ng-container>
+                  </ng-container>
+                  <ng-template #defaultCellTpl>
+                    <span class="cell-text" [class.cell-empty]="isCellEmpty(row[column.key])" [title]="asTitle(row[column.key])">{{ isCellEmpty(row[column.key]) ? i18n.cellEmpty : row[column.key] }}</span>
+                  </ng-template>
                 </ng-container>
-              </ng-template>
+              </ng-container>
             </ng-container>
             <ng-template #editModeCellTpl>
               <span class="cell-text cell-edit-mode" [title]="asTitle(row[column.key])">{{ row[column.key] }}</span>
@@ -169,6 +171,10 @@
               <span class="group-chevron" [class.collapsed]="isGroupCollapsed(row[_ROW_GROUP_KEY])" *ngIf="isNormalGroupRow(row)">›</span>
               <span *ngIf="isNormalGroupRow(row)" class="group-key-label">{{ row[_ROW_GROUP_KEY] }}</span>
               <span *ngIf="isGroupRowLoading(row)" class="lazy-skeleton group-lazy-key-skeleton"></span>
+              <button *ngIf="isGroupRowError(row)" type="button" class="lazy-error-btn" (click)="retryGroupByColumn($event)" [title]="i18n.lazyErrorTitle">
+                <span class="lazy-error-icon">⚠</span>
+                <span class="lazy-error-label">{{ i18n.lazyRetry }}</span>
+              </button>
               <span *ngIf="isGroupRowTooMany(row)" class="group-too-many-label">{{ i18n.groupTooMany(row[_ROW_GROUP_COUNT]) }}</span>
               <span class="group-count-badge">{{ row[_ROW_GROUP_COUNT] }}</span>
               <div class="group-pagination" *ngIf="!isGroupCollapsed(row[_ROW_GROUP_KEY]) && row[_ROW_GROUP_PAGE_COUNT] > 1" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
@@ -182,6 +188,7 @@
         <tr mat-row *matRowDef="let row; columns: [_GROUP_ROW_COLUMN]; when: isGroupHeader"
             class="group-header-row"
             [class.group-header-loading]="isGroupRowLoading(row)"
+            [class.group-header-error]="isGroupRowError(row)"
             [class.group-header-too-many]="isGroupRowTooMany(row)"
             [attr.data-group-key]="row[_ROW_GROUP_KEY]"
           [attr.tabindex]="isNormalGroupRow(row) ? 0 : null"

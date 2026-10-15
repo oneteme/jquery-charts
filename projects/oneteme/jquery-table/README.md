@@ -437,6 +437,9 @@ config: TableProvider<Session> = {
 - Quand `data` change (rafraîchissement), les valeurs déjà chargées sont rattachées aux nouvelles lignes par `rowKey` sans état de chargement, puis rafraîchies en silence ; une erreur de rafraîchissement conserve les valeurs affichées.
 - Une ligne apparue après la requête reste vide jusqu'au rafraîchissement suivant (déclenché automatiquement). Une ligne absente de la réponse reste vide.
 - Préférer, dans `load`, de rejouer les critères de la requête initiale en ajoutant `columnKeys` à la projection plutôt qu'un filtre `id in (keys)` très long.
+- Une colonne lazy utilisée comme Group by (y compris `defaultGroupBy` ou une préférence restaurée), Slice by ou restaurée par un snapshot est chargée même si elle n'est pas affichée ; une erreur affiche un bouton de nouvel essai dans l'entête de groupe.
+- La valeur chargée est la source de vérité pour le tri, la recherche, le Group by et l'export : `value`, `sortValue` et `searchValue` sont ignorés sur une colonne lazy. Le formatage d'affichage se fait avec `jqtCellDef` (variable `value`) ; le serveur peut aussi retourner la valeur déjà calculée.
+- L'export CSV n'écrit jamais d'état de chargement ou d'erreur (cellule vide) et `export.transform` reçoit la ligne enrichie des valeurs lazy chargées ; le snapshot visuel embarque ces valeurs.
 
 ---
 
@@ -459,6 +462,7 @@ config: TableProvider<Session> = {
 Contexte du template :
 - `$implicit`  la ligne brute (`T`)
 - `index`  index global de la ligne
+- `value`  valeur affichée de la cellule ; seul moyen de lire la valeur d'une colonne `lazy`, absente de la ligne brute (`let-value="value"`). Pour une colonne lazy, le template n'est rendu qu'une fois la valeur chargée : le skeleton et le bouton d'erreur sont gérés par le tableau.
 
 ---
 

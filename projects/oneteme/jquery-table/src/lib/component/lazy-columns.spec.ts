@@ -4,6 +4,7 @@ import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { of, Subject } from 'rxjs';
 import { TableComponent } from './table.component';
+import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
 import { TableColumnLoadRequest, TableColumnProvider, TableProvider } from '../jquery-table.model';
 
 interface Row { id: number; name: string; team?: string; details?: string }
@@ -18,9 +19,28 @@ class HostComponent {
   data: Row[] = [];
 }
 
+@Component({
+  standalone: true,
+  imports: [TableComponent, JqtCellDefDirective],
+  template: `
+    <jquery-table [config]="config" [data]="data">
+      <ng-template jqtCellDef="details" let-row let-value="value"><b class="tpl-details">{{ value }}#{{ row.id }}</b></ng-template>
+      <ng-template jqtCellDef="name" let-value="value"><i class="tpl-name">{{ value }}</i></ng-template>
+    </jquery-table>`,
+})
+class TemplateHostComponent extends HostComponent {}
+
 const rows = (...ids: number[]): Row[] => ids.map(id => ({ id, name: `name-${id}` }));
 
-function setup(options: { columns?: TableColumnProvider<Row>[]; data?: Row[]; withLoader?: boolean } = {}) {
+interface SetupOptions {
+  columns?: TableColumnProvider<Row>[];
+  data?: Row[];
+  withLoader?: boolean;
+  withTemplates?: boolean;
+  config?: Partial<TableProvider<Row>>;
+}
+
+function setup(options: SetupOptions = {}) {
   const requests: TableColumnLoadRequest<Row>[] = [];
   const pending: Subject<readonly any[]>[] = [];
   const columns = options.columns ?? [
@@ -33,6 +53,7 @@ function setup(options: { columns?: TableColumnProvider<Row>[]; data?: Row[]; wi
     columns: columns.map(column => ({ ...column })),
     view: { enabled: true, enableColumnRemoval: true },
     pagination: { enabled: true, pageSize: 10, pageSizeOptions: [10] },
+    ...options.config,
     columnLoader: options.withLoader === false ? undefined : {
       rowKey: row => row.id,
       load: request => {
@@ -44,7 +65,9 @@ function setup(options: { columns?: TableColumnProvider<Row>[]; data?: Row[]; wi
     },
   });
 
-  const fixture: ComponentFixture<HostComponent> = TestBed.createComponent(HostComponent);
+  const fixture: ComponentFixture<HostComponent> = options.withTemplates
+    ? TestBed.createComponent(TemplateHostComponent)
+    : TestBed.createComponent(HostComponent);
   const host = fixture.componentInstance;
   host.config = makeConfig();
   host.data = options.data ?? rows(1, 2, 3);
@@ -75,7 +98,7 @@ function setup(options: { columns?: TableColumnProvider<Row>[]; data?: Row[]; wi
 describe('TableComponent — colonnes lazy chargées par clé', () => {
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [HostComponent], providers: [provideNoopAnimations()] });
+    TestBed.configureTestingModule({ imports: [HostComponent, TemplateHostComponent], providers: [provideNoopAnimations()] });
   });
 
   describe('activation depuis Organizer', () => {
@@ -430,6 +453,174 @@ describe('TableComponent — colonnes lazy chargées par clé', () => {
       t.table().onSearchChange();
       await t.settle();
       expect(t.cells('name')).toEqual(['name-2']);
+    });
+  });
+
+  describe('templates de cellule (jqtCellDef) sur une colonne lazy', () => {
+    it('affiche le skeleton pendant le chargement puis le template avec la valeur chargée', async () => {
+      const t = setup({ withTemplates: true });
+      t.activate('details');
+      await t.settle();
+      expect(t.count('td.mat-column-details .lazy-skeleton')).toBe(3);
+      expect(t.count('.tpl-details')).toBe(0);
+
+      t.pending[0].next([{ id: 1, details: 'd1' }, { id: 2, details: 'd2' }, { id: 3, details: 'd3' }]);
+      await t.settle();
+      expect(t.count('td.mat-column-details .lazy-skeleton')).toBe(0);
+      expect(t.cells('details')).toEqual(['d1#1', 'd2#2', 'd3#3']);
+    });
+
+    it('affiche le bouton d\'erreur à la place du template, puis le template après un nouvel essai', async () => {
+      const t = setup({ withTemplates: true });
+      t.activate('details');
+      await t.settle();
+      t.pending[0].error(new Error('boom'));
+      await t.settle();
+      expect(t.count('td.mat-column-details .lazy-error-btn')).toBe(3);
+      expect(t.count('.tpl-details')).toBe(0);
+
+      (t.root().querySelector('td.mat-column-details .lazy-error-btn') as HTMLButtonElement).click();
+      await t.settle();
+      t.pending[1].next([{ id: 1, details: 'd1' }]);
+      await t.settle();
+      expect(t.count('.lazy-error-btn')).toBe(0);
+      expect(t.cells('details')[0]).toBe('d1#1');
+    });
+
+    it('fournit aussi la valeur affichée aux colonnes non lazy', async () => {
+      const t = setup({ withTemplates: true });
+      await t.settle();
+
+      expect(t.cells('name')).toEqual(['name-1', 'name-2', 'name-3']);
+      expect(t.count('.tpl-name')).toBe(3);
+    });
+  });
+
+  describe('colonne lazy utilisée sans être affichée', () => {
+    const groupLabels = (t: ReturnType<typeof setup>) =>
+      Array.from(t.root().querySelectorAll('.group-header-row .group-key-label')).map(e => e.textContent!.trim());
+
+    it('charge la colonne du Group by par défaut puis regroupe', async () => {
+      const t = setup({ config: { defaultGroupBy: 'team' } });
+      await t.settle();
+      expect(t.requests.length).toBe(1);
+      expect(t.requests[0].columnKeys).toEqual(['team']);
+
+      t.pending[0].next([{ id: 1, team: 'A' }, { id: 2, team: 'B' }, { id: 3, team: 'A' }]);
+      await t.settle();
+      expect(groupLabels(t)).toEqual(['A', 'B']);
+    });
+
+    it('affiche une erreur avec nouvel essai quand la colonne du Group by échoue', async () => {
+      const t = setup({ config: { defaultGroupBy: 'team' } });
+      await t.settle();
+      t.pending[0].error(new Error('boom'));
+      await t.settle();
+      expect(t.count('.group-header-error .lazy-error-btn')).toBe(1);
+      expect(t.count('.group-header-loading')).toBe(0);
+
+      (t.root().querySelector('.group-header-error .lazy-error-btn') as HTMLButtonElement).click();
+      await t.settle();
+      expect(t.requests.length).toBe(2);
+      expect(t.requests[1].columnKeys).toEqual(['team']);
+      expect(t.count('.group-header-loading')).toBe(1);
+
+      t.pending[1].next([{ id: 1, team: 'A' }, { id: 2, team: 'A' }, { id: 3, team: 'B' }]);
+      await t.settle();
+      expect(groupLabels(t)).toEqual(['A', 'B']);
+    });
+
+    it('rafraîchit en silence la colonne du Group by quand data change, groupes conservés pendant la requête', async () => {
+      const t = setup({ config: { defaultGroupBy: 'team' } });
+      await t.settle();
+      t.pending[0].next([{ id: 1, team: 'A' }, { id: 2, team: 'B' }, { id: 3, team: 'A' }]);
+      await t.settle();
+
+      t.host.data = rows(1, 2, 3);
+      await t.settle();
+      expect(t.requests.length).toBe(2);
+      expect(groupLabels(t)).toEqual(['A', 'B']);
+
+      t.pending[1].next([{ id: 1, team: 'C' }, { id: 2, team: 'C' }, { id: 3, team: 'C' }]);
+      await t.settle();
+      expect(groupLabels(t)).toEqual(['C']);
+    });
+
+    it('charge une colonne lazy restaurée par un snapshot', async () => {
+      const t = setup();
+      await t.settle();
+
+      t.table().applyVisualSnapshot({
+        type: 'table', label: 'copie', config: {}, state: { columnOrder: ['name', 'details'] }, data: [], warnings: [],
+      } as any);
+      await t.settle();
+      expect(t.requests.length).toBe(1);
+      expect(t.requests[0].columnKeys).toEqual(['details']);
+    });
+  });
+
+  describe('export CSV et snapshot', () => {
+    function captureExport() {
+      let blob: Blob | undefined;
+      spyOn(URL, 'createObjectURL').and.callFake((b: any) => { blob = b; return 'blob:test'; });
+      spyOn(URL, 'revokeObjectURL');
+      spyOn(HTMLAnchorElement.prototype, 'click');
+      return async () => (await blob!.text()).replace('\uFEFF', '').split('\n');
+    }
+
+    it('n\'exporte aucune valeur de statut pendant le chargement ni en erreur', async () => {
+      const t = setup();
+      t.activate('details');
+      await t.settle();
+      const read = captureExport();
+
+      t.table().onExport();
+      expect(await read()).toEqual(['Nom,Détails', 'name-1,', 'name-2,', 'name-3,']);
+
+      t.pending[0].error(new Error('boom'));
+      await t.settle();
+      t.table().onExport();
+      expect(await read()).toEqual(['Nom,Détails', 'name-1,', 'name-2,', 'name-3,']);
+    });
+
+    it('exporte les valeurs chargées', async () => {
+      const t = setup();
+      t.activate('details');
+      await t.settle();
+      t.pending[0].next([{ id: 1, details: 'd1' }, { id: 3, details: 'd3' }]);
+      await t.settle();
+      const read = captureExport();
+
+      t.table().onExport();
+      expect(await read()).toEqual(['Nom,Détails', 'name-1,d1', 'name-2,', 'name-3,d3']);
+    });
+
+    it('transmet les valeurs lazy chargées à export.transform', async () => {
+      const t = setup({
+        config: { export: { enabled: true, transform: row => ({ name: row.name, details: row.details ?? 'absent' }) } },
+      });
+      t.activate('details');
+      await t.settle();
+      const read = captureExport();
+      t.table().onExport();
+      expect((await read())[1]).toBe('name-1,absent');
+
+      t.pending[0].next([{ id: 1, details: 'd1' }]);
+      await t.settle();
+      t.table().onExport();
+      expect((await read())[1]).toBe('name-1,d1');
+    });
+
+    it('inclut les valeurs lazy chargées dans les données du snapshot', async () => {
+      const t = setup();
+      t.activate('details');
+      await t.settle();
+      t.pending[0].next([{ id: 1, details: 'd1' }, { id: 2, details: 'd2' }, { id: 3, details: 'd3' }]);
+      await t.settle();
+
+      const draft = t.table().createVisualSnapshot('copie');
+      expect((draft.data as Row[]).map(row => row.details)).toEqual(['d1', 'd2', 'd3']);
+      expect(t.table()['_resolvedData'][0].details).toBeUndefined();
     });
   });
 

@@ -14,6 +14,9 @@ export const GROUP_HEADER_MARKER = '__groupHeader';
 /** Clé du groupe spéciale « chargement lazy en cours ». */
 export const GROUP_KEY_LAZY_LOADING = '__lazy_loading__';
 
+/** Clé du groupe spéciale « chargement lazy en erreur ». */
+export const GROUP_KEY_LAZY_ERROR = '__lazy_error__';
+
 /** Clé du groupe spéciale « trop de groupes ». */
 export const GROUP_KEY_TOO_MANY = '__too_many_groups__';
 
