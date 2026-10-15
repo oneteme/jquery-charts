@@ -187,7 +187,7 @@ interface TableColumnProvider<T = any> {
   sliceable?: boolean;                 // Disponible comme slice dynamique dans View menu
   searchValue?: DataProvider<string>;  // Valeur utilisée par la recherche texte (si différente de value)
 
-  lazy?: {
+  lazy?: true | {                      // Chargement différé à la première activation de la colonne
     fetchFn: () => Observable<any[]>;  // Retourne un tableau dans le même ordre que les lignes
   };
 }
@@ -410,7 +410,33 @@ columns: [
 ],
 ```
 
-Le composant gère l'état `idle | loading | loaded | error` par colonne, avec possibilité de relancer la requête en cas d'erreur.
+Le composant gère l'état `idle | loading | loaded | error` par colonne, avec possibilité de relancer la requête en cas d'erreur. Une fois chargée, la colonne supporte tri, recherche, Group by et Slice by.
+
+### Chargement par clé de ligne (`lazy: true` + `columnLoader`)
+
+Pour des données qui changent souvent, `fetchFn` est fragile : le tableau retourné doit suivre exactement l'ordre des lignes. `lazy: true` associé à `columnLoader` fusionne les valeurs **par clé de ligne** et regroupe en **une seule requête** toutes les colonnes demandées en même temps. La table ne fait aucun appel réseau : `load` reste à la charge de l'application (jquery ou autre).
+
+```ts
+config: TableProvider<Session> = {
+  columns: [
+    col('name', 'Nom'),
+    col('address', 'Adresse', { optional: true, lazy: true }),
+    col('status',  'Statut',  { optional: true, lazy: true }),
+  ],
+  columnLoader: {
+    rowKey: row => row.id,
+    // columnKeys : colonnes à charger ; keys : clés des lignes affichées.
+    // Retourne des enregistrements { id, address, status } dans n'importe quel ordre.
+    load: ({ columnKeys, keys }) => this.api.fetchColumns(columnKeys, keys),
+  },
+};
+```
+
+- Les colonnes `optional` + `lazy: true` apparaissent dans Organizer > Champs sans être chargées ; la requête part à l'activation (ou si la colonne sert de Group by / Slice by).
+- Un clic sur un champ d'Organizer charge cette colonne ; plusieurs colonnes demandées dans le même tick (affichage initial, restauration de préférences) partent dans un seul `load`.
+- Quand `data` change (rafraîchissement), les valeurs déjà chargées sont rattachées aux nouvelles lignes par `rowKey` sans état de chargement, puis rafraîchies en silence ; une erreur de rafraîchissement conserve les valeurs affichées.
+- Une ligne apparue après la requête reste vide jusqu'au rafraîchissement suivant (déclenché automatiquement). Une ligne absente de la réponse reste vide.
+- Préférer, dans `load`, de rejouer les critères de la requête initiale en ajoutant `columnKeys` à la projection plutôt qu'un filtre `id in (keys)` très long.
 
 ---
 

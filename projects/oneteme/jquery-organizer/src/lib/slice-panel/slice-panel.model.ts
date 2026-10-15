@@ -22,7 +22,7 @@ export interface SliceColumnDef<T = any> {
   header?: string;
   icon?: string;
   value?: DataProvider<any>;
-  lazy?: {
+  lazy?: true | {
     fetchFn: () => Observable<any[]>;
   };
 }

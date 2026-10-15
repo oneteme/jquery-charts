@@ -183,6 +183,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   /** Gestionnaire du cycle de vie des colonnes lazy (fetch, annulation, statuts, données). */
   private _lazy = new LazyFieldManager<TableColumnProvider<T>>();
+  private readonly _pendingKeyedLazy = new Set<TableColumnProvider<T>>();
+  private _keyedLazyFlushQueued = false;
   /** Compatibilité template : retourne la map de statuts lazy. */
   get _lazyColumnStatus() { return this._lazy.status; }
   /** Compatibilité template : retourne la map de données lazy. */
@@ -290,9 +292,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const dataChanged = !!(changes['config'] || changes['data'] || changes['dataSource']);
-    if (dataChanged) {
+    const configChanged = !!changes['config'];
+    const dataChanged = configChanged || !!(changes['data'] || changes['dataSource']);
+    if (configChanged) {
       this._lazy.cancelAll();
+    } else if (dataChanged) {
+      // Les colonnes lazy par clé gardent leurs valeurs : pas de état de chargement entre deux mises à jour.
+      this._lazy.rebind(this.resolveData());
     }
     this.refreshViewModel();
     if (changes['config']) {
@@ -301,7 +307,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this._invalidateOrganizerConfig(); // les colonnes ont pu changer
     }
     if (dataChanged) {
-      this.activeFields.filter(c => c.lazy).forEach(c => this.triggerLazyFetch(c));
+      const lazyColumns = this.activeFields.filter(c => c.lazy);
+      const refreshed = lazyColumns.filter(c => this._isKeyedLazy(c) && this._lazy.getStatus(c.key) === 'loaded');
+      if (refreshed.length) this._fetchKeyedLazy(refreshed, true);
+      lazyColumns.filter(c => !refreshed.includes(c)).forEach(c => this.triggerLazyFetch(c));
     }
   }
 
@@ -650,11 +659,43 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   retryLazyColumn(column: TableColumnProvider<T>): void {
+    const loader = this.resolvedConfig.columnLoader;
+    if (this._isKeyedLazy(column)) {
+      if (loader) this._lazy.retryBatch([column], loader, () => this._resolvedData, this._lazyCallbacks());
+      return;
+    }
     this._lazy.retry(column, this._resolvedData, this._lazyCallbacks());
   }
 
   triggerLazyFetch(column: TableColumnProvider<T>): void {
+    if (this._isKeyedLazy(column)) {
+      this._queueKeyedLazy(column);
+      return;
+    }
     this._lazy.fetch(column, this._resolvedData, this._lazyCallbacks());
+  }
+
+  private _isKeyedLazy(column: TableColumnProvider<T>): boolean {
+    return column.lazy === true;
+  }
+
+  /** Regroupe les colonnes demandées dans le même tick en une seule requête. */
+  private _queueKeyedLazy(column: TableColumnProvider<T>): void {
+    this._pendingKeyedLazy.add(column);
+    if (this._keyedLazyFlushQueued) return;
+    this._keyedLazyFlushQueued = true;
+    queueMicrotask(() => {
+      this._keyedLazyFlushQueued = false;
+      const columns = [...this._pendingKeyedLazy];
+      this._pendingKeyedLazy.clear();
+      if (!this._destroyed) this._fetchKeyedLazy(columns);
+    });
+  }
+
+  private _fetchKeyedLazy(columns: TableColumnProvider<T>[], silent = false): void {
+    const loader = this.resolvedConfig.columnLoader;
+    if (!loader) return;
+    this._lazy.fetchBatch(columns, loader, () => this._resolvedData, this._lazyCallbacks(), silent);
   }
 
   private _lazyCallbacks() {
@@ -876,7 +917,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.refreshViewModel();
 
     if (column.lazy) {
-      this.triggerLazyFetch(column);
+      // Une colonne par clé déjà chargée puis masquée a pu devenir obsolète : elle est rafraîchie sans clignotement.
+      if (this._isKeyedLazy(column) && this._lazy.getStatus(column.key) === 'loaded') {
+        this._fetchKeyedLazy([column], true);
+      } else {
+        this.triggerLazyFetch(column);
+      }
     }
 
     this.addRequested.emit();

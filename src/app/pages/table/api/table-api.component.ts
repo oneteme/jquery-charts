@@ -93,6 +93,7 @@ export class TableApiComponent {
         { name: 'defaultSort / defaultGroupBy', type: 'sort config / string | null', source: 'Wrapper', description: 'Définit le tri et le regroupement initiaux sans les réappliquer à chaque changement de données.', code: "defaultSort: { active: 'updatedAt', direction: 'desc' }" },
         { name: 'labels', type: 'TableLabelsConfig', source: 'Wrapper', description: 'Personnalise les messages vide et chargement du tableau.', code: "labels: { empty: 'Aucun ticket', loading: 'Chargement...' }" },
         { name: 'export', type: 'TableExportConfig<T>', source: 'Wrapper', description: 'Active l’export CSV des lignes filtrées et des colonnes visibles, avec transformation optionnelle.', code: "export: { enabled: true, filename: 'tickets' }" },
+        { name: 'columnLoader', type: 'TableColumnLoader<T>', source: 'Wrapper', description: 'Charge les colonnes `lazy: true` sans appel réseau dans la table : toutes les colonnes demandées en même temps arrivent dans un seul `load`, fusionnées dans les lignes par `rowKey`. Les valeurs sont conservées et rafraîchies en silence quand `data` change.', code: "columnLoader: { rowKey: row => row.id, load: ({ columnKeys }) => api.fetch(columnKeys) }" },
         { name: 'preferences', type: 'TablePreferencesConfig', source: 'Wrapper', description: 'Active le mode édition et la persistance localStorage sous la clé jqt_prefs_<tableId>.', code: "preferences: { enabled: true, tableId: 'tickets' }" },
         { name: 'showActions / onCopyVisual / onToggleFullscreen', type: 'boolean / () => void', source: 'Wrapper', description: 'Expose les actions de copie visuelle et de plein écran dans le menu lorsque les callbacks sont fournis.', code: 'showActions: true' },
         { name: 'rowClass / onRowSelected', type: 'callbacks', source: 'Wrapper', description: 'Calcule les classes de ligne et propose un callback de sélection en complément des outputs Angular.', code: "rowClass: row => ({ 'is-urgent': row.priority === 'Haute' })" },
@@ -114,16 +115,21 @@ export class TableApiComponent {
   {
     key: 'details',
     header: 'Détails',
-    lazy: { fetchFn: () => details$ },
+    lazy: true,
   },
-];`,
+];
+
+columnLoader: {
+  rowKey: row => row.id,
+  load: ({ columnKeys, keys }) => this.api.loadColumns(columnKeys, keys),
+},`,
       entries: [
         { name: 'key / header / icon', type: 'string', source: 'Wrapper', description: 'Identifie la colonne et définit son en-tête et son icône Material éventuelle.', code: "col('reference', 'Référence', { icon: 'fingerprint' })" },
         { name: 'value / sortValue / searchValue', type: 'DataProvider', source: 'Core', description: 'Sépare la valeur affichée, la valeur de tri et la valeur utilisée par la recherche plein texte.', code: "{ value: row => row.duration + ' min', sortValue: row => row.duration }" },
         { name: 'sortable / removable / optional', type: 'boolean', source: 'Wrapper', description: 'Contrôle le tri, la suppression et l’activation initiale de la colonne dans le menu View.', code: '{ sortable: true, optional: true, removable: true }' },
         { name: 'groupable / sliceable', type: 'boolean', source: 'Wrapper', description: 'Rend la colonne disponible respectivement pour Group by ou Slice by dynamique.', code: '{ groupable: true, sliceable: true }' },
         { name: 'width', type: 'string', source: 'Wrapper', description: 'Largeur CSS déclarative. Les largeurs en pixels participent aussi au calcul de la largeur minimale.', code: "{ width: '140px' }" },
-        { name: 'lazy', type: '{ fetchFn: () => Observable<any[]> }', source: 'Wrapper', description: 'Déclenche un chargement différé de valeurs dans le même ordre que les lignes et gère les états idle, loading, loaded et error.', code: "lazy: { fetchFn: () => this.api.loadDetails() }" },
+        { name: 'lazy', type: 'true | { fetchFn: () => Observable<any[]> }', source: 'Wrapper', description: 'Charge la colonne à sa première activation. `true` passe par columnLoader (par clé de ligne, requête groupée) ; `{ fetchFn }` fournit un tableau dans l’ordre des lignes. Une fois chargée, la colonne supporte tri, recherche, Group by et Slice by.', code: "lazy: true" },
         { name: 'col()', type: '(key, header, overrides?) => TableColumnProvider', source: 'Wrapper', description: 'Raccourci exporté pour les colonnes simples ; tous les champs de TableColumnProvider restent surchargeables.', code: "col<Row>('name', 'Nom', { sortable: true })" },
       ],
     },
@@ -258,9 +264,18 @@ providers: [
         header: 'Détails lazy',
         sortable: false,
         optional: true,
-        lazy: { fetchFn: () => of(this.rows.map(row => `${row.team} · ${row.duration} min`)).pipe(delay(500)) },
+        lazy: true,
       },
     ],
+    columnLoader: {
+      rowKey: row => row.id,
+      // Ordre inversé volontaire : la fusion se fait par clé de ligne, jamais par position.
+      load: ({ keys }) => of(
+        [...this.rows].reverse()
+          .filter(row => keys.includes(row.id))
+          .map(row => ({ id: row.id, details: `${row.team} · ${row.duration} min` })),
+      ).pipe(delay(500)),
+    },
   };
 
   readonly demoCode: Record<DemoCodeTab, string> = {

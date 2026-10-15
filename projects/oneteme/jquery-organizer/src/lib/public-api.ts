@@ -66,6 +66,9 @@ export {
   LazyFieldManager,
   LazyFieldDef,
   LazyFieldCallbacks,
+  LazyBatchLoader,
+  LazyBatchRequest,
+  LazyRowKey,
   LAZY_FIELD_LOADING_VALUE,
   LAZY_FIELD_ERROR_VALUE,
 } from './lazy-field-manager/lazy-field-manager';
