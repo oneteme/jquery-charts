@@ -1,5 +1,5 @@
 import { Subject } from 'rxjs';
-import { OrganizerEvent, OrganizerState } from '@oneteme/jquery-core';
+import { ChartOrganizerEvent, ChartOrganizerState } from '@oneteme/jquery-core';
 import { OrganizerFieldDef, OrganizerFieldsState, OrganizerGroupByState, OrganizerPanelConfig, OrganizerSliceByState } from './organizer-facade.types';
 
 export function humanizeKey(key: string): string {
@@ -31,7 +31,7 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
   private _panelConfig: OrganizerPanelConfig<TField> = { fields: [], sliceConfigs: [] };
   private _hiddenStaticKeys = new Set<string>();
 
-  private readonly _events$ = new Subject<OrganizerEvent>();
+  private readonly _events$ = new Subject<ChartOrganizerEvent>();
   readonly events$ = this._events$.asObservable();
 
   get enabled(): boolean {
@@ -196,22 +196,11 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
 
   onDynamicSliceKeysChange(keys: string[]): void {
     const allFields = this._panelConfig.fields ?? [];
-    const staticKeys = new Set(
-      (this._panelConfig.sliceConfigs ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
-    );
-    const dynamicKeySet = new Set(keys);
-    const existingKeys = new Set([...staticKeys, ...dynamicKeySet]);
 
     this.sliceBy.activeDynamicFields = keys
       .map(k => allFields.find(c => c.key === k))
       .filter((c): c is TField => !!c);
-
-    const seen = new Set<string>();
-    this.sliceBy.availableForDynamic = allFields.filter(c => {
-      if (c.sliceable === false || existingKeys.has(c.key) || seen.has(c.key)) return false;
-      seen.add(c.key);
-      return true;
-    });
+    this.sliceBy.availableForDynamic = this._availableForDynamic(new Set(keys));
 
     this._computeSliceLabel();
     this._events$.next({ type: 'dynamicSlicesChanged', keys });
@@ -221,7 +210,7 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return this.sliceBy.activeDynamicFields.some(c => c.key === key);
   }
 
-  toOrganizerState(): OrganizerState {
+  toOrganizerState(): ChartOrganizerState {
     return {
       selectedFieldIds: this.fields.activeFields.map(c => c.key),
       groupByKey: this.groupBy.activeKey,
@@ -240,25 +229,44 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     if (!this.fields.userCustomized || this.fields.activeFields.length === 0) {
       this.fields.activeFields = [...defaultFields];
     } else {
-      const allowedKeys = new Set((this._panelConfig.fields || []).map(c => c.key));
-      this.fields.activeFields = this.fields.activeFields.filter(c => allowedKeys.has(c.key));
+      const current = this._definitionsByKey();
+      this.fields.activeFields = this.fields.activeFields
+        .filter(c => current.has(c.key))
+        .map(c => current.get(c.key)!);
     }
+  }
+
+  /** Première définition de chaque clé dans la config courante. */
+  private _definitionsByKey(): Map<string, TField> {
+    const byKey = new Map<string, TField>();
+    (this._panelConfig.fields || []).forEach(c => { if (!byKey.has(c.key)) byKey.set(c.key, c); });
+    return byKey;
+  }
+
+  private _staticSliceKeys(): Set<string> {
+    return new Set((this._panelConfig.sliceConfigs ?? []).map(s => s.columnKey).filter((k): k is string => !!k));
+  }
+
+  /** Champs proposables en slice dynamique, hors slices statiques et slices déjà actifs. */
+  private _availableForDynamic(activeKeys: Set<string>): TField[] {
+    const staticKeys = this._staticSliceKeys();
+    const seen = new Set<string>();
+    return (this._panelConfig.fields ?? []).filter(c => {
+      if (c.sliceable === false || staticKeys.has(c.key) || activeKeys.has(c.key) || seen.has(c.key)) return false;
+      if (!c.header && c.sliceable !== true) return false;
+      seen.add(c.key);
+      return true;
+    });
   }
 
   private _refreshDynamicSliceMeta(): void {
     const allFields = this._panelConfig.fields ?? [];
-    const staticKeys = new Set(
-      (this._panelConfig.sliceConfigs ?? []).map(s => s.columnKey).filter((k): k is string => !!k)
-    );
+    const staticKeys = this._staticSliceKeys();
+    const current = this._definitionsByKey();
+    this.sliceBy.activeDynamicFields = this.sliceBy.activeDynamicFields.map(c => current.get(c.key) ?? c);
     const activeDynKeys = new Set(this.sliceBy.activeDynamicFields.map(c => c.key));
 
-    const seen1 = new Set<string>();
-    this.sliceBy.availableForDynamic = allFields.filter(c => {
-      if (c.sliceable === false || staticKeys.has(c.key) || activeDynKeys.has(c.key) || seen1.has(c.key)) return false;
-      if (!c.header && c.sliceable !== true) return false;
-      seen1.add(c.key);
-      return true;
-    });
+    this.sliceBy.availableForDynamic = this._availableForDynamic(activeDynKeys);
 
     const seen2 = new Set<string>();
     this.sliceBy.allDynamicFields = allFields.filter(c => {

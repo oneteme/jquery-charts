@@ -1,27 +1,27 @@
 import { Subject } from 'rxjs';
-import { ChartProvider, XaxisType, YaxisType, OrganizerConfig, OrganizerFieldDef, OrganizerState, OrganizerEvent, organizerFieldDefsFromChartSeries, applyOrganizerStateToSeries } from '@oneteme/jquery-core';
+import { ChartProvider, XaxisType, YaxisType, ChartOrganizerConfig, ChartOrganizerFieldDef, ChartOrganizerState, ChartOrganizerEvent, organizerFieldDefsFromChartSeries, applyOrganizerStateToSeries } from '@oneteme/jquery-core';
 
 export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = any> {
 
-  private _config: OrganizerConfig = {};
+  private _config: ChartOrganizerConfig = {};
   private _provider: ChartProvider<X, Y> | null = null;
 
-  viewFields: OrganizerFieldDef[] = [];
+  viewFields: ChartOrganizerFieldDef[] = [];
 
-  readonly state: OrganizerState = {
+  readonly state: ChartOrganizerState = {
     selectedFieldIds: [],
     groupByKey: null,
     dynamicSliceKeys: [],
   };
 
-  private readonly _events$ = new Subject<OrganizerEvent>();
+  private readonly _events$ = new Subject<ChartOrganizerEvent>();
   readonly events$ = this._events$.asObservable();
 
   get enabled(): boolean {
     return this._config.enabled === true;
   }
 
-  update(organizerConfig: OrganizerConfig, provider: ChartProvider<X, Y>): void {
+  update(organizerConfig: ChartOrganizerConfig, provider: ChartProvider<X, Y>): void {
     this._config = organizerConfig ?? {};
     this._provider = provider;
     this.viewFields = organizerFieldDefsFromChartSeries(provider?.series ?? []);
@@ -47,7 +47,7 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     this._events$.next({ type: 'fieldsChanged', fieldIds: [...this.state.selectedFieldIds] });
   }
 
-  setState(state: OrganizerState): void {
+  setState(state: ChartOrganizerState): void {
     const existingIds = new Set(this.viewFields.map(field => field.id));
     this.state.selectedFieldIds = (state.selectedFieldIds ?? []).filter(id => existingIds.has(id));
     this.state.groupByKey = state.groupByKey ?? null;

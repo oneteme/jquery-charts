@@ -1,7 +1,7 @@
 import { ChartProvider, SerieProvider, XaxisType, YaxisType } from './jquery-core.model';
 
 /** Descripteur générique d'un champ disponible dans le panneau Organizer. */
-export interface OrganizerFieldDef {
+export interface ChartOrganizerFieldDef {
   /** Identifiant unique du champ (ex: clé de colonne, nom de série). */
   id: string;
   /** Libellé affiché dans le panneau Organizer. */
@@ -17,7 +17,7 @@ export interface OrganizerFieldDef {
 }
 
 /** Configuration générique du panneau Organizer. */
-export interface OrganizerConfig {
+export interface ChartOrganizerConfig {
   /** Active le bouton et le panneau Organizer. Par défaut : false. */
   enabled?: boolean;
   /** Autorise la suppression de champs non-optionnels via Organizer > Champs. Par défaut : true. */
@@ -27,7 +27,7 @@ export interface OrganizerConfig {
 }
 
 /** Snapshot de l'état courant du panneau Organizer. */
-export interface OrganizerState {
+export interface ChartOrganizerState {
   /** Ids des champs actuellement sélectionnés, dans l'ordre d'affichage. */
   selectedFieldIds: string[];
   /** Id du champ de regroupement actif, null si aucun regroupement. */
@@ -37,30 +37,42 @@ export interface OrganizerState {
 }
 
 /** Union typée des événements émis par la logique Organizer. */
-export type OrganizerEvent =
+export type ChartOrganizerEvent =
   | { type: 'groupByChanged'; key: string | null }
   | { type: 'fieldsChanged'; fieldIds: string[] }
   | { type: 'dynamicSlicesChanged'; keys: string[] };
 
+/**
+ * Anciens noms, identiques à ceux du paquet `@oneteme/jquery-organizer` (contrats différents).
+ * @deprecated Utiliser les noms préfixés par `Chart`.
+ */
+export type OrganizerFieldDef = ChartOrganizerFieldDef;
+/** @deprecated Utiliser `ChartOrganizerConfig`. */
+export type OrganizerConfig = ChartOrganizerConfig;
+/** @deprecated Utiliser `ChartOrganizerState`. */
+export type OrganizerState = ChartOrganizerState;
+/** @deprecated Utiliser `ChartOrganizerEvent`. */
+export type OrganizerEvent = ChartOrganizerEvent;
+
 // ── Helpers purs (sans DOM)
 
-/** Construit un OrganizerFieldDef à partir d'un id et de propriétés optionnelles. */
-export function organizerFieldDef(id: string, partial?: Partial<Omit<OrganizerFieldDef, 'id'>>): OrganizerFieldDef {
+/** Construit un ChartOrganizerFieldDef à partir d'un id et de propriétés optionnelles. */
+export function organizerFieldDef(id: string, partial?: Partial<Omit<ChartOrganizerFieldDef, 'id'>>): ChartOrganizerFieldDef {
   return { id, ...partial };
 }
 
 /** Retourne uniquement les champs utilisables comme critère de regroupement. */
-export function groupableOrganizerFields(fields: OrganizerFieldDef[]): OrganizerFieldDef[] {
+export function groupableOrganizerFields(fields: ChartOrganizerFieldDef[]): ChartOrganizerFieldDef[] {
   return fields.filter(f => f.groupable !== false && (f.label !== undefined || f.groupable === true));
 }
 
 /** Retourne uniquement les champs utilisables comme critère de slice. */
-export function sliceableOrganizerFields(fields: OrganizerFieldDef[]): OrganizerFieldDef[] {
+export function sliceableOrganizerFields(fields: ChartOrganizerFieldDef[]): ChartOrganizerFieldDef[] {
   return fields.filter(f => f.sliceable !== false && (f.label !== undefined || f.sliceable === true));
 }
 
-/** Construit un OrganizerState initial : seuls les champs non-optionnels sont sélectionnés. */
-export function initialOrganizerState(fields: OrganizerFieldDef[]): OrganizerState {
+/** Construit un ChartOrganizerState initial : seuls les champs non-optionnels sont sélectionnés. */
+export function initialOrganizerState(fields: ChartOrganizerFieldDef[]): ChartOrganizerState {
   return {
     selectedFieldIds: fields.filter(f => !f.optional).map(f => f.id),
     groupByKey: null,
@@ -71,24 +83,24 @@ export function initialOrganizerState(fields: OrganizerFieldDef[]): OrganizerSta
 // ── Helpers charts
 
 /**
- * Extrait des OrganizerFieldDef depuis les séries d'un ChartProvider.
+ * Extrait des ChartOrganizerFieldDef depuis les séries d'un ChartProvider.
  * Seules les séries avec un nom statique (string) sont énumérables ; les
  * séries dont le nom est une fonction DataProvider ne peuvent pas être
  * pré-listées sans exécuter les données.
  */
-export function organizerFieldDefsFromChartSeries(series: SerieProvider<any, any>[]): OrganizerFieldDef[] {
+export function organizerFieldDefsFromChartSeries(series: SerieProvider<any, any>[]): ChartOrganizerFieldDef[] {
   return (series ?? [])
     .filter(s => typeof s.name === 'string' && !!s.name)
     .map(s => ({ id: s.name as string, label: s.name as string }));
 }
 
 /**
- * Retourne un ChartProvider modifié avec `visible` appliqué selon le OrganizerState.
+ * Retourne un ChartProvider modifié avec `visible` appliqué selon le ChartOrganizerState.
  * Les séries dont le nom est une fonction DataProvider sont laissées inchangées.
  */
 export function applyOrganizerStateToSeries<X extends XaxisType, Y extends YaxisType>(
   provider: ChartProvider<X, Y>,
-  state: Pick<OrganizerState, 'selectedFieldIds'>
+  state: Pick<ChartOrganizerState, 'selectedFieldIds'>
 ): ChartProvider<X, Y> {
   if (!provider.series?.length) return provider;
   const selected = new Set(state.selectedFieldIds);

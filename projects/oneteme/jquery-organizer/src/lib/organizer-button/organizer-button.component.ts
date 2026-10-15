@@ -1,10 +1,10 @@
-import { Component, Input, Output, EventEmitter, OnInit, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
-import { Subject, isObservable } from 'rxjs';
+import { Subject, Subscription, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState } from '../models';
@@ -20,7 +20,7 @@ import { TemplateManager } from './template-manager.utility';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class OrganizerButtonComponent implements OnInit, OnDestroy {
+export class OrganizerButtonComponent implements OnDestroy {
   @Input() config!: OrganizerConfig;
   @Input() state?: OrganizerState;
   @Input() hideMenuValues = false;
@@ -32,18 +32,12 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   private fieldDataCache = new Map<string, any[]>();
   private destroy$ = new Subject<void>();
   private destroyed = false;
+  private sliceRequestId = 0;
+  private sliceSubscription?: Subscription;
 
   @ViewChild('mainMenuTrigger') mainMenuTrigger?: MatMenuTrigger;
 
   constructor(private cdr: ChangeDetectorRef) {}
-
-  ngOnInit(): void {
-    console.debug('[OrganizerButton] Initialized', {
-      configFields: this.config?.fields?.length ?? 0,
-      hasState: !!this.state,
-      hideMenuValues: this.hideMenuValues
-    });
-  }
 
   ngOnDestroy(): void {
     this.destroyed = true;
@@ -66,29 +60,28 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onFieldToggle(fieldId: string, visible: boolean): void {
-    console.debug('[OrganizerButton] Field toggled', { fieldId, visible });
-    const visibleFields = this.state?.visibleFields || [];
-    const updated = visible
-      ? [...visibleFields, fieldId]
-      : visibleFields.filter(f => f !== fieldId);
+    const current = this.state?.visibleFields
+      ?? (this.config.fields ?? []).filter(f => f.visible !== false).map(f => f.id);
+    let updated: string[];
+    if (visible) {
+      updated = current.includes(fieldId) ? current : [...current, fieldId];
+    } else {
+      updated = current.filter(f => f !== fieldId);
+    }
     this.emitChange('fieldToggled', { visibleFields: updated });
   }
 
   onXFieldSelect(fieldId: string): void {
-    console.debug('[OrganizerButton] X field selected', { fieldId, current: this.state?.selectedX });
     // Évite une requête inutile si le X est déjà sélectionné
     if (this.state?.selectedX === fieldId) {
-      console.debug('[OrganizerButton] X field already selected, skipping emit');
       return;
     }
     this.emitChange('xSelected', { selectedX: fieldId });
   }
 
   onYFieldSelect(fieldId: string): void {
-    console.debug('[OrganizerButton] Y field selected', { fieldId, current: this.state?.selectedY });
     // Évite une requête inutile si le Y est déjà sélectionné
     if (this.state?.selectedY === fieldId) {
-      console.debug('[OrganizerButton] Y field already selected, skipping emit');
       return;
     }
     this.emitChange('ySelected', {
@@ -98,10 +91,8 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onYAggregateSelect(yFieldId: string, aggregateId: string): void {
-    console.debug('[OrganizerButton] Y aggregate selected', { yFieldId, aggregateId, current: this.state?.selectedYAggregate });
     // Évite une requête inutile si l'aggregate est déjà sélectionné
     if (this.state?.selectedYAggregate === aggregateId && this.state?.selectedY === yFieldId) {
-      console.debug('[OrganizerButton] Y aggregate already selected, skipping emit');
       return;
     }
     this.emitChange('ySelected', {
@@ -111,7 +102,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onGroupBySelect(groupId: string): void {
-    console.debug('[OrganizerButton] Group by selected', { groupId });
     const current = this.state?.selectedGroupBy;
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
@@ -123,7 +113,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onTemplateSelect(templateId: string): void {
-    console.debug('[OrganizerButton] Template selected', { templateId });
     if (!this.config.templates?.length) return;
 
     const template = this.config.templates?.find(t => t.id === templateId);
@@ -135,7 +124,6 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   onSliceClick(sliceId?: string): void {
-    console.debug('[OrganizerButton] Slice clicked', { sliceId });
     if (this.config.onSliceClick) {
       this.config.onSliceClick();
     }
@@ -162,6 +150,11 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
   }
 
   private syncSliceState(selectedSlices: string[] | undefined, onLoaded?: () => void): void {
+    // Une nouvelle demande annule la précédente : seule la réponse la plus récente est prise en compte.
+    const requestId = ++this.sliceRequestId;
+    this.sliceSubscription?.unsubscribe();
+    this.sliceSubscription = undefined;
+
     const sliceId = selectedSlices?.[0];
     if (!sliceId || !this.config.onFetchSliceData) {
       this.sliceStateChange.emit(null);
@@ -178,7 +171,7 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
 
     const result = this.config.onFetchSliceData(sliceId);
     const handleData = (tasks: any[]) => {
-      if (this.destroyed) return;
+      if (this.destroyed || requestId !== this.sliceRequestId) return;
       this.sliceStateChange.emit({
         sliceConfigs: [{ title: slice.label ?? sliceId, columnKey: sliceId }],
         tasks,
@@ -187,14 +180,14 @@ export class OrganizerButtonComponent implements OnInit, OnDestroy {
       onLoaded?.();
     };
     const handleError = (error: unknown) => {
-      if (this.destroyed) return;
+      if (this.destroyed || requestId !== this.sliceRequestId) return;
       console.error('[OrganizerButton] Slice data loading failed', error);
       this.sliceStateChange.emit(null);
       onLoaded?.();
     };
 
     if (isObservable(result)) {
-      result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData, error: handleError });
+      this.sliceSubscription = result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData, error: handleError });
     } else {
       void result.then(handleData, handleError);
     }

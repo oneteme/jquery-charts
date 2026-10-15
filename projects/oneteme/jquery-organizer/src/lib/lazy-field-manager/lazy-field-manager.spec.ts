@@ -1,5 +1,5 @@
 import { of, Subject, throwError } from 'rxjs';
-import { LazyBatchLoader, LazyBatchRequest, LazyFieldDef, LazyFieldManager } from '@oneteme/jquery-organizer';
+import { LazyBatchLoader, LazyBatchRequest, LazyFieldDef, LazyFieldManager } from './lazy-field-manager';
 
 interface Row { id: number; name: string }
 

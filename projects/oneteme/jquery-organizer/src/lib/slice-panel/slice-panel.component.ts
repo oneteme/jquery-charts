@@ -66,15 +66,20 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']) {
+      const hadActiveFilters = this._hasActiveFilters();
       this._refreshDynamicSlices();
       this._rebuildCache();
-      const shouldReemitFilter = !!(changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']);
-      const hasActiveFilters = [...this.activeKeysBySlice.values()].some(s => s.size > 0);
-      if (hasActiveFilters && shouldReemitFilter) {
+      const shouldReemitFilter = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']);
+      // Un slice retiré de la config emporte sa sélection : le parent doit en être informé.
+      if (shouldReemitFilter && (hadActiveFilters || this._hasActiveFilters())) {
         this._emitFilter();
       }
       this._cdr.markForCheck();
     }
+  }
+
+  private _hasActiveFilters(): boolean {
+    return [...this.activeKeysBySlice.values()].some(s => s.size > 0);
   }
 
   get showPanel(): boolean {
@@ -194,13 +199,14 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   sliceCategoryCount(sliceIndex: number, categoryKey: string): number {
+    const slice = this._cachedSlices[sliceIndex];
+    if (!slice) return 0;
+    const category = (slice.categories || []).find((c) => c.key === categoryKey);
+    if (category?.count !== undefined) return category.count;
     const cacheKey = `${sliceIndex}:${categoryKey}`;
     if (this._countCache.has(cacheKey)) {
       return this._countCache.get(cacheKey)!;
     }
-    const slice = this._cachedSlices[sliceIndex];
-    if (!slice) return 0;
-    const category = (slice.categories || []).find((c) => c.key === categoryKey);
     const count = category ? (this.data || []).filter((row) => category.filter ? category.filter(row) : true).length : 0;
     this._countCache.set(cacheKey, count);
     return count;
@@ -267,11 +273,11 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
 
   addDynamicSlice(column: SliceColumnDef<T>): void {
     if (this._dynamicSlices.some(slice => slice.key === column.key)) return;
-    const distinctValues = this._computeDistinctValues(column.key);
+    const distinct = this._computeDistinctValues(column.key);
     const newSlice: SliceConfig<T> = {
       title: column.header,
       columnKey: column.key,
-      categories: distinctValues.map((v) => this._buildCategoryFromValue(column.key, v)),
+      categories: this._buildCategories(column.key, distinct),
     };
     this._dynamicSlices = [...this._dynamicSlices, { key: column.key, slice: newSlice }];
     this._rebuildCache();
@@ -283,12 +289,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   removeDynamicSlice(sliceIndex: number): void {
     const dynamicIndex = sliceIndex - this.staticSliceCount;
     if (dynamicIndex < 0) return;
-    const newActiveKeys = new Map<number, Set<string>>();
-    this.activeKeysBySlice.forEach((keys, idx) => {
-      if (idx < sliceIndex) newActiveKeys.set(idx, keys);
-      else if (idx > sliceIndex) newActiveKeys.set(idx - 1, keys);
-    });
-    this.activeKeysBySlice = newActiveKeys;
+    // Les sélections sont rapprochées des slices restants par identité dans _rebuildCache.
     this._dynamicSlices = this._dynamicSlices.filter((_, i) => i !== dynamicIndex);
     this._rebuildCache();
     this.dynamicSliceKeysChange.emit(this._dynamicSlices.map(d => d.key));
@@ -349,33 +350,39 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     if (!slice.columnKey || (slice.categories && slice.categories.length > 0)) {
       return slice;
     }
-    const col = (this.columns || []).find(c => c.key === slice.columnKey);
+    const col = this._column(slice.columnKey);
     const isLazy = !!col?.lazy;
     if (isLazy && this.lazyStatus.get(slice.columnKey!) !== 'loaded') {
       return { ...slice, categories: [] };
     }
     if (slice.bucket) {
-      const distinctValues = [...new Set((this.data || []).map(slice.bucket))].sort();
+      const bucket = slice.bucket;
+      const counts = new Map<string, number>();
+      (this.data || []).forEach(row => { const v = bucket(row); counts.set(v, (counts.get(v) ?? 0) + 1); });
       return {
         ...slice,
-        categories: distinctValues.map((v) => ({
-          key: v, label: v,
-          filter: (row: T) => slice.bucket!(row) === v,
+        categories: [...counts.keys()].sort().map((v) => ({
+          key: v, label: v, count: counts.get(v),
+          filter: (row: T) => bucket(row) === v,
         })),
       };
     }
-    const distinctValues = this._computeDistinctValues(slice.columnKey!);
     return {
       ...slice,
-      categories: distinctValues.map((v) => this._buildCategoryFromValue(slice.columnKey!, v)),
+      categories: this._buildCategories(slice.columnKey!, this._computeDistinctValues(slice.columnKey!)),
     };
   }
 
-  private _buildCategoryFromValue(columnKey: string, v: string): { key: string; label: string; filter: (row: T) => boolean } {
+  private _buildCategories(columnKey: string, distinct: { values: string[]; counts: Map<string, number> }) {
+    return distinct.values.map((v) => this._buildCategoryFromValue(columnKey, v, distinct.counts.get(v)));
+  }
+
+  private _buildCategoryFromValue(columnKey: string, v: string, count?: number): { key: string; label: string; filter: (row: T) => boolean; count?: number } {
     if (v === EMPTY_CATEGORY_KEY) {
       return {
         key: EMPTY_CATEGORY_KEY,
         label: EMPTY_CATEGORY_LABEL,
+        count,
         filter: (row: T) => {
           const val = this._getLazyAwareValue(columnKey, row);
           return val == null || val === '';
@@ -383,23 +390,46 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       };
     }
     return {
-      key: v, label: v,
+      key: v, label: v, count,
       filter: (row: T) => String(this._getLazyAwareValue(columnKey, row) ?? '') === v,
     };
   }
 
-  private _computeDistinctValues(columnKey: string): string[] {
-    const rawValues = (this.data || []).map((row) => {
+  /** Valeurs distinctes (triées, « vide » en dernier) et effectifs, calculés en un seul passage. */
+  private _computeDistinctValues(columnKey: string): { values: string[]; counts: Map<string, number> } {
+    const counts = new Map<string, number>();
+    let empty = 0;
+    (this.data || []).forEach((row) => {
       const val = this._getLazyAwareValue(columnKey, row);
-      return val != null && val !== '' ? String(val) : null;
+      if (val != null && val !== '') {
+        const text = String(val);
+        counts.set(text, (counts.get(text) ?? 0) + 1);
+      } else {
+        empty++;
+      }
     });
-    const distinct = [...new Set(rawValues.filter((v): v is string => v !== null))].sort();
-    if (rawValues.some(v => v === null)) distinct.push(EMPTY_CATEGORY_KEY);
-    return distinct;
+    const values = [...counts.keys()].sort();
+    if (empty > 0) {
+      values.push(EMPTY_CATEGORY_KEY);
+      counts.set(EMPTY_CATEGORY_KEY, empty);
+    }
+    return { values, counts };
+  }
+
+  private _columnsRef?: SliceColumnDef<T>[];
+  private _columnIndex = new Map<string, SliceColumnDef<T>>();
+
+  private _column(key: string | undefined): SliceColumnDef<T> | undefined {
+    if (this._columnsRef !== this.columns) {
+      this._columnsRef = this.columns;
+      this._columnIndex = new Map();
+      (this.columns || []).forEach(c => { if (!this._columnIndex.has(c.key)) this._columnIndex.set(c.key, c); });
+    }
+    return key === undefined ? undefined : this._columnIndex.get(key);
   }
 
   private _getLazyAwareValue(columnKey: string, row: T): any {
-    const colDef = (this.columns || []).find(c => c.key === columnKey);
+    const colDef = this._column(columnKey);
     if (colDef?.lazy) {
       return this.lazyData.get(columnKey)?.get(row) ?? null;
     }
@@ -435,16 +465,10 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   private _refreshDynamicSlices(): void {
-    this._dynamicSlices = this._dynamicSlices.map(({ key, slice }) => {
-      const distinctValues = this._computeDistinctValues(key);
-      return {
-        key,
-        slice: {
-          ...slice,
-          categories: distinctValues.map((v) => this._buildCategoryFromValue(key, v)),
-        },
-      };
-    });
+    this._dynamicSlices = this._dynamicSlices.map(({ key, slice }) => ({
+      key,
+      slice: { ...slice, categories: this._buildCategories(key, this._computeDistinctValues(key)) },
+    }));
   }
 
   private _scrollSliceTitleIntoView(sliceIndex: number): void {

@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild } from '@angular/core';
-import { ChartExportImageType, ChartProvider, ChartType, cloneSerializable, containsFunction, FullscreenManager, OrganizerConfig, OrganizerState, VisualCopyFeedbackConfig, VisualSnapshot, VisualSnapshotApplyResult, VisualSnapshotDraft, VisualSnapshotStorage, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartExportImageType, ChartProvider, ChartType, cloneSerializable, containsFunction, FullscreenManager, ChartOrganizerConfig, ChartOrganizerState, VisualCopyFeedbackConfig, VisualSnapshot, VisualSnapshotApplyResult, VisualSnapshotDraft, VisualSnapshotStorage, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { ChartDirective } from '../directive/chart.directive';
 import { ChartClickEvent, ChartCustomEvent, ChartDrilldownConfig, ChartDrilldownRequest, ChartDrilldownState, ChartRenderError, EChartsOption, GroupSyncMode } from '../directive/utils/types';
 import { ChartViewFacade } from './view/chart-view.facade';
@@ -61,9 +61,9 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Input() drilldown?: ChartDrilldownConfig;
 
   /** Active la gestion de la visibilité des séries via le panneau Organizer. */
-  @Input() organizer?: OrganizerConfig;
+  @Input() organizer?: ChartOrganizerConfig;
   /** Etat Organizer controle par le parent, applique a la visibilite des series. */
-  @Input() organizerState?: OrganizerState;
+  @Input() organizerState?: ChartOrganizerState;
   @Input() copyFeedback: VisualCopyFeedbackConfig = {};
 
   _effectiveConfig!: ChartProvider<X, Y>;

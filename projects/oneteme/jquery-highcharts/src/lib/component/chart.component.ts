@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, ElementRef, EventEmitter, HostBinding, HostListener, Input, OnChanges, OnDestroy, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
-import { ChartClickEvent, ChartDrilldownConfig, ChartDrilldownRequest, ChartDrilldownState, ChartExportImageType, ChartProvider, ChartRenderError, ChartType, cloneSerializable, containsFunction, FullscreenManager, GroupSyncMode, OrganizerConfig, OrganizerState, VisualCopyFeedbackConfig, VisualSnapshot, VisualSnapshotApplyResult, VisualSnapshotDraft, VisualSnapshotStorage, XaxisType, YaxisType } from '@oneteme/jquery-core';
+import { ChartClickEvent, ChartDrilldownConfig, ChartDrilldownRequest, ChartDrilldownState, ChartExportImageType, ChartProvider, ChartRenderError, ChartType, cloneSerializable, containsFunction, FullscreenManager, GroupSyncMode, ChartOrganizerConfig, ChartOrganizerState, VisualCopyFeedbackConfig, VisualSnapshot, VisualSnapshotApplyResult, VisualSnapshotDraft, VisualSnapshotStorage, XaxisType, YaxisType } from '@oneteme/jquery-core';
 import { Highcharts } from '../directive/utils/highcharts-modules';
 import { ChartDirective } from '../directive/chart.directive';
 import { ChartCustomEvent } from '../directive/utils';
@@ -132,8 +132,8 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Input() debug: boolean = false;
   @Input() isLoading: boolean = false;
   @Input() enablePivot: boolean = false;
-  @Input() organizer?: OrganizerConfig;
-  @Input() organizerState?: OrganizerState;
+  @Input() organizer?: ChartOrganizerConfig;
+  @Input() organizerState?: ChartOrganizerState;
   @Input() renderedOption?: Highcharts.Options | null;
   @Input() loadingLabel = 'Chargement des données...';
   @Input() noDataLabel = 'Aucune donnée';

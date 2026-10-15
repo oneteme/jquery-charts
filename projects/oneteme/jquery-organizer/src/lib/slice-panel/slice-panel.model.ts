@@ -5,6 +5,8 @@ export interface SliceCategory<T = any> {
   key: string;
   label: string;
   filter?: (row: T) => boolean;
+  /** Effectif précalculé (rempli par le panneau pour les catégories dérivées d'une colonne). */
+  count?: number;
 }
 
 export interface SliceConfig<T = any> {
