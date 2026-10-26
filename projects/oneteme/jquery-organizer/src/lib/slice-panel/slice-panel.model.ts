@@ -1,5 +1,4 @@
 import { DataProvider } from '@oneteme/jquery-core';
-import { Observable } from 'rxjs';
 
 export interface SliceCategory<T = any> {
   key: string;
@@ -24,7 +23,6 @@ export interface SliceColumnDef<T = any> {
   header?: string;
   icon?: string;
   value?: DataProvider<any>;
-  lazy?: true | {
-    fetchFn: () => Observable<any[]>;
-  };
+  /** Colonne absente de la requête de base : ses valeurs sont dans les lignes une fois chargée (`lazyStatus`). */
+  lazy?: true;
 }

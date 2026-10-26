@@ -17,7 +17,7 @@ const columns = (): SliceColumnDef<Row>[] => [
   { key: 'team', header: 'Équipe', icon: 'group' },
 ];
 
-function setup(inputs: Partial<Record<'sliceConfigs' | 'columns' | 'data' | 'lazyData' | 'lazyStatus' | 'showCounts' | 'showToggle' | 'collapsedByDefault' | 'alwaysShow', unknown>> = {}) {
+function setup(inputs: Partial<Record<'sliceConfigs' | 'columns' | 'data' | 'lazyStatus' | 'showCounts' | 'showToggle' | 'collapsedByDefault' | 'alwaysShow', unknown>> = {}) {
   const fixture: ComponentFixture<SlicePanelComponent<Row>> = TestBed.createComponent(SlicePanelComponent<Row>);
   const panel = fixture.componentInstance;
   const defaults = { sliceConfigs: [{ title: 'Statut', columnKey: 'status' }] as SliceConfig<Row>[], columns: columns(), data: rows() };
@@ -283,7 +283,6 @@ describe('SlicePanelComponent', () => {
 
   describe('colonnes lazy', () => {
     const lazyColumns = (): SliceColumnDef<Row>[] => [{ key: 'team', header: 'Équipe', lazy: true }, { key: 'status', header: 'Statut' }];
-    const lazyData = (data: Row[]) => new Map([['team', new Map(data.map(r => [r, r.team]))]]);
 
     it('affiche un état de chargement et aucune catégorie tant que la colonne n\'est pas chargée', () => {
       const { panel, categoryKeys } = setup({ sliceConfigs: [{ title: 'Équipe', columnKey: 'team' }], columns: lazyColumns() });
@@ -294,10 +293,9 @@ describe('SlicePanelComponent', () => {
       expect(panel.isSliceLoading(0)).toBeTrue();
     });
 
-    it('calcule catégories et filtre à partir des valeurs chargées', () => {
+    it('calcule catégories et filtre à partir des valeurs des lignes une fois la colonne chargée', () => {
       const data = rows();
       const { panel, set, categoryKeys, lastFilter } = setup({ sliceConfigs: [{ title: 'Équipe', columnKey: 'team' }], columns: lazyColumns(), data });
-      set('lazyData', lazyData(data));
       set('lazyStatus', new Map([['team', 'loaded']]));
 
       expect(panel.isSliceLoading(0)).toBeFalse();
@@ -313,21 +311,19 @@ describe('SlicePanelComponent', () => {
       panel.addDynamicSlice(lazyColumns()[0]);
       expect(panel.isSliceLoading(0)).toBeTrue();
 
-      set('lazyData', lazyData(data));
       set('lazyStatus', new Map([['team', 'loaded']]));
       expect(panel.isSliceLoading(0)).toBeFalse();
       expect(categoryKeys(0)).toEqual(['A', 'B']);
     });
 
-    it('réémet le filtre quand les valeurs lazy changent et qu\'une sélection est active', () => {
+    it('réémet le filtre quand le statut lazy change et qu\'une sélection est active', () => {
       const data = rows();
       const { panel, set, filters } = setup({ sliceConfigs: [{ title: 'Équipe', columnKey: 'team' }], columns: lazyColumns(), data });
-      set('lazyData', lazyData(data));
       set('lazyStatus', new Map([['team', 'loaded']]));
       panel.onSliceCategorySelected(0, 'A');
       const before = filters.length;
 
-      set('lazyData', lazyData(data));
+      set('lazyStatus', new Map([['team', 'loaded']]));
       expect(filters.length).toBe(before + 1);
     });
   });

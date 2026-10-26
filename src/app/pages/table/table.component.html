@@ -57,6 +57,7 @@
           [config]="example.config"
           [data]="rows"
           (rowSelected)="onRowSelected($event)"
+          (lazyColumnsRequested)="onLazyColumnsRequested($event)"
         >
           <ng-template jqtCellDef="status" let-row>
             <span class="status-chip" [attr.data-status]="row.status">{{ row.status }}</span>

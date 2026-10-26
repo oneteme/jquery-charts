@@ -6,8 +6,7 @@ import {
   OnInit,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { timer } from 'rxjs';
 import {
   col,
   JqtCellDefDirective,
@@ -30,6 +29,7 @@ interface DemoIntervention {
   priorite:         PrioriteIntervention;
   puissanceKva:     number;
   dateIntervention: string;         // ISO YYYY-MM-DD
+  nbCompteurs?:     number;         // colonne lazy : présente uniquement quand elle a été demandée
 }
 
 // ─── Données de génération ──────────────────────────────────────────────────
@@ -206,10 +206,7 @@ export class TablePresentationComponent implements OnInit {
       {
         key: 'nbCompteurs', header: 'Compteurs affectés', icon: 'electric_meter',
         sortable: true, optional: true,
-        lazy: {
-          fetchFn: () =>
-            of(this.interventions.map((i) => 5 + (i.id * 7) % 200)).pipe(delay(1200)),
-        },
+        lazy: true,
       },
     ],
   };
@@ -360,12 +357,11 @@ export class TablePresentationComponent implements OnInit {
       value: (r) => new Date(r.dateIntervention).toLocaleDateString('fr-FR'),
     },
 
-    // Colonne lazy — données chargées en arrière-plan à la demande
+    // Colonne lazy — absente de la requête de base : la table émet (lazyColumnsRequested)
+    // et attend de nouvelles données qui la contiennent.
     {
       key: 'nbCompteurs', header: 'Compteurs affectés', sortable: true, optional: true,
-      lazy: {
-        fetchFn: () => of(this.interventions.map(i => 5 + (i.id * 7) % 200)).pipe(delay(1200)),
-      },
+      lazy: true,
     },
   ],
 };`;
@@ -464,6 +460,15 @@ export class MyComponent {
   }
 
   // ─── Handlers / helpers ────────────────────────────────────────────────────
+  /** Simule le serveur : la requête complète est relancée avec les colonnes demandées, puis les nouvelles lignes remplacent les anciennes. */
+  onLazyColumnsRequested(columns: string[]): void {
+    timer(1200).subscribe(() => {
+      this.interventions = buildInterventions().map(i =>
+        columns.includes('nbCompteurs') ? { ...i, nbCompteurs: 5 + (i.id * 7) % 200 } : i);
+      this.cdr.markForCheck();
+    });
+  }
+
   onRowSelected(row: DemoIntervention): void {
     this.selectedRow = row;
     this.cdr.markForCheck();

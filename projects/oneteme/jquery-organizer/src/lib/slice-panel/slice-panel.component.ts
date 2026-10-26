@@ -29,7 +29,6 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   @Input() sliceConfigs: SliceConfig<T>[] = [];
   @Input() columns: SliceColumnDef<T>[] = [];
   @Input() data: T[] = [];
-  @Input() lazyData: Map<string, Map<any, any>> = new Map();
   @Input() lazyStatus: Map<string, 'idle' | 'loading' | 'loaded' | 'error'> = new Map();
   @Input() showToggle = true;
   @Input() showCounts = true;
@@ -65,11 +64,11 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']) {
+    if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']) {
       const hadActiveFilters = this._hasActiveFilters();
       this._refreshDynamicSlices();
       this._rebuildCache();
-      const shouldReemitFilter = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyData'] || changes['lazyStatus']);
+      const shouldReemitFilter = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']);
       // Un slice retiré de la config emporte sa sélection : le parent doit en être informé.
       if (shouldReemitFilter && (hadActiveFilters || this._hasActiveFilters())) {
         this._emitFilter();
@@ -430,8 +429,8 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
 
   private _getLazyAwareValue(columnKey: string, row: T): any {
     const colDef = this._column(columnKey);
-    if (colDef?.lazy) {
-      return this.lazyData.get(columnKey)?.get(row) ?? null;
+    if (colDef?.lazy && this.lazyStatus.get(columnKey) !== 'loaded') {
+      return null;
     }
     if (colDef?.value) {
       return (colDef.value as any)(row, 0);

@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { timer } from 'rxjs';
 import { TableColumnProvider, TableComponent, TableProvider, JqtCellDefDirective, col } from '@oneteme/jquery-table';
 import { VisualSnapshot, VisualSnapshotDraft } from '@oneteme/jquery-core';
 
@@ -36,6 +35,7 @@ interface TableApiRow {
   priority: Priority;
   duration: number;
   updatedAt: string;
+  details?: string;
 }
 
 type DemoCodeTab = 'ts' | 'html' | 'scss';
@@ -49,6 +49,8 @@ type DemoCodeTab = 'ts' | 'html' | 'scss';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableApiComponent {
+  private readonly cdr = inject(ChangeDetectorRef);
+
   readonly sections: ApiSection[] = [
     {
       id: 'component',
@@ -68,6 +70,7 @@ export class TableApiComponent {
         { name: 'displayedColumns / columnsConfig', type: 'string[] / TableColumnProvider<T>[]', source: 'Wrapper', description: 'Entrées de compatibilité pour déclarer les colonnes sans passer par config.columns.', code: '<jquery-table [displayedColumns]="columns" [columnsConfig]="columnsConfig"></jquery-table>' },
         { name: 'columnLabels', type: 'Record<string, string>', source: 'Wrapper', description: 'Libellés utilisés par le mode allégé dataSource/displayedColumns.', code: '<jquery-table [columnLabels]="{ id: \'ID\' }" ...></jquery-table>' },
         { name: 'isLoading', type: 'boolean', source: 'Wrapper', description: 'Affiche le message de chargement configuré au-dessus du tableau.', code: '<jquery-table [isLoading]="loading" ...></jquery-table>' },
+        { name: 'lazyError', type: 'boolean', source: 'Wrapper', description: 'À passer à true quand la requête relancée après lazyColumnsRequested échoue : les colonnes lazy en attente affichent « Réessayer ». Repasser à false au nouvel essai.', code: '<jquery-table [lazyError]="lazyFailed" ...></jquery-table>' },
         { name: 'view / clearSearchInput / copyFeedback', type: 'TableViewConfig / string | number | boolean / VisualCopyFeedbackConfig', source: 'Wrapper', description: 'Surcharge le menu View, réinitialise la recherche lorsqu’une valeur truthy change et configure le feedback de snapshot.', code: '<jquery-table [view]="view" [clearSearchInput]="resetToken" [copyFeedback]="feedback"></jquery-table>' },
       ],
     },
@@ -93,7 +96,6 @@ export class TableApiComponent {
         { name: 'defaultSort / defaultGroupBy', type: 'sort config / string | null', source: 'Wrapper', description: 'Définit le tri et le regroupement initiaux sans les réappliquer à chaque changement de données.', code: "defaultSort: { active: 'updatedAt', direction: 'desc' }" },
         { name: 'labels', type: 'TableLabelsConfig', source: 'Wrapper', description: 'Personnalise les messages vide et chargement du tableau.', code: "labels: { empty: 'Aucun ticket', loading: 'Chargement...' }" },
         { name: 'export', type: 'TableExportConfig<T>', source: 'Wrapper', description: 'Active l’export CSV des lignes filtrées et des colonnes visibles, avec transformation optionnelle.', code: "export: { enabled: true, filename: 'tickets' }" },
-        { name: 'columnLoader', type: 'TableColumnLoader<T>', source: 'Wrapper', description: 'Charge les colonnes `lazy: true` sans appel réseau dans la table : toutes les colonnes demandées en même temps arrivent dans un seul `load`, fusionnées dans les lignes par `rowKey`. Les valeurs sont conservées et rafraîchies en silence quand `data` change.', code: "columnLoader: { rowKey: row => row.id, load: ({ columnKeys }) => api.fetch(columnKeys) }" },
         { name: 'preferences', type: 'TablePreferencesConfig', source: 'Wrapper', description: 'Active le mode édition et la persistance localStorage sous la clé jqt_prefs_<tableId>.', code: "preferences: { enabled: true, tableId: 'tickets' }" },
         { name: 'showActions / onCopyVisual / onToggleFullscreen', type: 'boolean / () => void', source: 'Wrapper', description: 'Expose les actions de copie visuelle et de plein écran dans le menu lorsque les callbacks sont fournis.', code: 'showActions: true' },
         { name: 'rowClass / onRowSelected', type: 'callbacks', source: 'Wrapper', description: 'Calcule les classes de ligne et propose un callback de sélection en complément des outputs Angular.', code: "rowClass: row => ({ 'is-urgent': row.priority === 'Haute' })" },
@@ -115,21 +117,21 @@ export class TableApiComponent {
   {
     key: 'details',
     header: 'Détails',
-    lazy: true,
+    lazy: true, // absente de la requête de base
   },
 ];
 
-columnLoader: {
-  rowKey: row => row.id,
-  load: ({ columnKeys, keys }) => this.api.loadColumns(columnKeys, keys),
-},`,
+// (lazyColumnsRequested) : relancez la requête complète avec ces colonnes, puis repassez les nouvelles lignes.
+onLazyColumnsRequested(columns: string[]) {
+  this.api.fetchRows(columns).subscribe(rows => this.rows = rows);
+}`,
       entries: [
         { name: 'key / header / icon', type: 'string', source: 'Wrapper', description: 'Identifie la colonne et définit son en-tête et son icône Material éventuelle.', code: "col('reference', 'Référence', { icon: 'fingerprint' })" },
         { name: 'value / sortValue / searchValue', type: 'DataProvider', source: 'Core', description: 'Sépare la valeur affichée, la valeur de tri et la valeur utilisée par la recherche plein texte.', code: "{ value: row => row.duration + ' min', sortValue: row => row.duration }" },
         { name: 'sortable / removable / optional', type: 'boolean', source: 'Wrapper', description: 'Contrôle le tri, la suppression et l’activation initiale de la colonne dans le menu View.', code: '{ sortable: true, optional: true, removable: true }' },
         { name: 'groupable / sliceable', type: 'boolean', source: 'Wrapper', description: 'Rend la colonne disponible respectivement pour Group by ou Slice by dynamique.', code: '{ groupable: true, sliceable: true }' },
         { name: 'width', type: 'string', source: 'Wrapper', description: 'Largeur CSS déclarative. Les largeurs en pixels participent aussi au calcul de la largeur minimale.', code: "{ width: '140px' }" },
-        { name: 'lazy', type: 'true | { fetchFn: () => Observable<any[]> }', source: 'Wrapper', description: 'Charge la colonne à sa première activation. `true` passe par columnLoader (par clé de ligne, requête groupée) ; `{ fetchFn }` fournit un tableau dans l’ordre des lignes. Une fois chargée, la colonne supporte tri, recherche, Group by et Slice by.', code: "lazy: true" },
+        { name: 'lazy', type: 'true', source: 'Wrapper', description: 'Colonne absente de la requête de base. À sa première activation (View, Group by, Slice by), la table émet lazyColumnsRequested ; un skeleton s’affiche jusqu’à la réception de nouvelles `data`. Ensuite la colonne supporte tri, recherche, Group by et Slice by.', code: "lazy: true" },
         { name: 'col()', type: '(key, header, overrides?) => TableColumnProvider', source: 'Wrapper', description: 'Raccourci exporté pour les colonnes simples ; tous les champs de TableColumnProvider restent surchargeables.', code: "col<Row>('name', 'Nom', { sortable: true })" },
       ],
     },
@@ -151,6 +153,7 @@ columnLoader: {
         { name: 'searchChange', type: 'EventEmitter<string>', source: 'Wrapper', description: 'Émet la valeur de la recherche à chaque frappe.', code: '(searchChange)="query = $event"' },
         { name: 'groupByChange', type: 'EventEmitter<string | null>', source: 'Wrapper', description: 'Émet la clé du regroupement actif ou null lorsque le regroupement est retiré.', code: '(groupByChange)="group = $event"' },
         { name: 'columnsChange', type: 'EventEmitter<string[]>', source: 'Wrapper', description: 'Émet les clés des colonnes visibles dans leur ordre courant.', code: '(columnsChange)="visibleColumns = $event"' },
+        { name: 'lazyColumnsRequested', type: 'EventEmitter<string[]>', source: 'Wrapper', description: 'Émet les clés cumulées des colonnes lazy demandées quand l’une d’elles est activée pour la première fois. L’application relance sa requête complète avec ces colonnes et repasse les nouvelles `data`.', code: '(lazyColumnsRequested)="onLazyColumns($event)"' },
         { name: 'columnAdded / columnRemoved', type: 'EventEmitter<TableColumnProvider<T>>', source: 'Wrapper', description: 'Signale l’ajout ou le retrait d’une colonne depuis View > Champs.', code: '(columnAdded)="onColumnAdded($event)"' },
         { name: 'categorySelected / addRequested', type: 'EventEmitter<string> / EventEmitter<void>', source: 'Wrapper', description: 'Relaye une catégorie de filtre sélectionnée ou la demande d’ajout d’une colonne.', code: '(categorySelected)="category = $event"' },
         { name: 'visualCopied', type: 'EventEmitter<VisualSnapshot>', source: 'Core', description: 'Émet le snapshot persistant créé par copyVisualSnapshot().', code: '(visualCopied)="snapshot = $event"' },
@@ -192,7 +195,7 @@ providers: [
     },
   ];
 
-  readonly rows: TableApiRow[] = [
+  rows: TableApiRow[] = [
     { id: 1, reference: 'INT-2401', team: 'Raccordement', status: 'En cours', priority: 'Haute', duration: 42, updatedAt: '2024-04-08' },
     { id: 2, reference: 'INT-2402', team: 'Maintenance', status: 'Terminé', priority: 'Normale', duration: 18, updatedAt: '2024-04-09' },
     { id: 3, reference: 'INT-2403', team: 'Dépannage', status: 'Ouvert', priority: 'Haute', duration: 73, updatedAt: '2024-04-10' },
@@ -267,15 +270,6 @@ providers: [
         lazy: true,
       },
     ],
-    columnLoader: {
-      rowKey: row => row.id,
-      // Ordre inversé volontaire : la fusion se fait par clé de ligne, jamais par position.
-      load: ({ keys }) => of(
-        [...this.rows].reverse()
-          .filter(row => keys.includes(row.id))
-          .map(row => ({ id: row.id, details: `${row.team} · ${row.duration} min` })),
-      ).pipe(delay(500)),
-    },
   };
 
   readonly demoCode: Record<DemoCodeTab, string> = {
@@ -308,6 +302,7 @@ readonly tableConfig: TableProvider<Row> = {
   [data]="rows"
   [isLoading]="isLoadingDemo"
   (rowSelected)="onRowSelected($event)"
+  (lazyColumnsRequested)="onLazyColumnsRequested($event)"
   (searchChange)="lastSearch = $event">
   <ng-template jqtCellDef="status" let-row>
     <span class="status-chip" [attr.data-status]="row.status">
@@ -354,6 +349,15 @@ readonly tableConfig: TableProvider<Row> = {
 
   toggleLoading(): void {
     this.isLoadingDemo = !this.isLoadingDemo;
+  }
+
+  /** Simule le serveur : la requête complète est relancée avec les colonnes demandées, puis les nouvelles lignes remplacent les anciennes. */
+  onLazyColumnsRequested(columns: string[]): void {
+    if (!columns.includes('details')) return;
+    timer(500).subscribe(() => {
+      this.rows = this.rows.map(row => ({ ...row, details: `${row.team} · ${row.duration} min` }));
+      this.cdr.markForCheck();
+    });
   }
 
   resetSearch(): void {

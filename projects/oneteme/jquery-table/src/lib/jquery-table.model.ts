@@ -1,17 +1,6 @@
 import { DataProvider } from '@oneteme/jquery-core';
-import { Observable } from 'rxjs';
-import { OrganizerConfig, SliceConfig, LazyBatchLoader, LazyBatchRequest, LazyRowKey } from '@oneteme/jquery-organizer';
+import { OrganizerConfig, SliceConfig } from '@oneteme/jquery-organizer';
 export { SliceConfig } from '@oneteme/jquery-organizer';
-
-/** Requête de chargement de colonnes : toutes les colonnes à charger à un instant donné sont groupées. */
-export type TableColumnLoadRequest<T = any> = LazyBatchRequest<T>;
-/** Clé stable d'une ligne. */
-export type TableRowKey = LazyRowKey;
-/**
- * Chargeur de colonnes `lazy: true`, indépendant du système de requêtage : la table n'effectue aucun appel réseau.
- * Les valeurs sont fusionnées dans les lignes déjà affichées par `rowKey`, jamais par position.
- */
-export type TableColumnLoader<T = any> = LazyBatchLoader<T>;
 
 export interface TableColumnProvider<T = any> {
   key: string;
@@ -38,15 +27,11 @@ export interface TableColumnProvider<T = any> {
   /** Rend la colonne disponible comme Slice by dynamique ; `true` par défaut si `header` est défini. */
   sliceable?: boolean;
   /**
-   * Chargement différé de la colonne, déclenché à sa première activation (Organizer, Group by, Slice by).
-   * - `true` : valeurs obtenues via `TableProvider.columnLoader`, par clé de ligne, groupées avec les autres colonnes demandées en même temps.
-   * - `{ fetchFn }` : chargement propre à la colonne ; le tableau retourné doit suivre l'ordre des lignes.
-   * Une fois chargée, la colonne supporte tri, recherche, Group by et Slice by.
+   * Colonne absente de la requête de base. À sa première activation (Organizer, Group by, Slice by), la table émet
+   * `lazyColumnsRequested` : l'application relance sa requête complète avec cette colonne et repasse les nouvelles `data`.
+   * La cellule affiche un skeleton jusqu'à leur réception ; la colonne supporte ensuite tri, recherche, Group by et Slice by.
    */
-  lazy?: true | {
-    /** Fonction appelée pour charger les valeurs de la colonne. Retourne un tableau dans le même ordre que les lignes. */
-    fetchFn: () => Observable<any[]>;
-  };
+  lazy?: true;
 }
 
 /** Configuration de la barre de recherche. */
@@ -202,8 +187,6 @@ export interface TableProvider<T = any> {
   onRowSelected?: (row: T, event: MouseEvent | null) => void;
   /** Configuration de l'export CSV. */
   export?: TableExportConfig<T>;
-  /** Chargeur des colonnes `lazy: true`. */
-  columnLoader?: TableColumnLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */
   preferences?: TablePreferencesConfig;
 }

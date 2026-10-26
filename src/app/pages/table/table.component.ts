@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { timer } from 'rxjs';
 import { JqtCellDefDirective, TableComponent, TableProvider, col } from '@oneteme/jquery-table';
 
 type DemoStatus = 'Ouvert' | 'En cours' | 'Terminé';
@@ -15,6 +14,7 @@ interface DemoRow {
   priority: DemoPriority;
   duration: number;
   updatedAt: string;
+  details?: string;
 }
 
 type CodeTab = 'ts' | 'html' | 'scss';
@@ -45,13 +45,15 @@ interface TableExample {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TableExempleComponent {
+  private readonly cdr = inject(ChangeDetectorRef);
+
   readonly codeTabs: { key: CodeTab; label: string }[] = [
     { key: 'ts', label: 'TS' },
     { key: 'html', label: 'HTML' },
     { key: 'scss', label: 'SCSS' },
   ];
 
-  readonly rows: DemoRow[] = [
+  rows: DemoRow[] = [
     { reference: 'INT-2410', subject: 'Mise en service compteur', team: 'Raccordement', status: 'Terminé', priority: 'Haute', duration: 22, updatedAt: '17 avril 2024' },
     { reference: 'INT-2409', subject: 'Diagnostic armoire', team: 'Dépannage', status: 'Ouvert', priority: 'Normale', duration: 64, updatedAt: '16 avril 2024' },
     { reference: 'INT-2408', subject: 'Contrôle réseau HTA', team: 'Maintenance', status: 'En cours', priority: 'Basse', duration: 47, updatedAt: '15 avril 2024' },
@@ -126,9 +128,7 @@ export class TableExempleComponent {
       {
         key: 'details',
         header: 'Détails chargés',
-        lazy: {
-          fetchFn: () => of(this.rows.map(row => row.duration > 60 ? 'Intervention longue' : 'Intervention standard')).pipe(delay(450)),
-        },
+        lazy: true,
       },
     ],
   };
@@ -232,7 +232,7 @@ export class TableExempleComponent {
       id: 'custom',
       index: '03',
       title: 'Cellules personnalisées et données différées',
-      description: 'Un template Angular personnalise les badges, tandis qu’une colonne lazy simule une donnée chargée après le rendu initial.',
+      description: 'Un template Angular personnalise les badges, tandis qu’une colonne lazy déclenche une nouvelle requête complète à son activation : un skeleton s’affiche jusqu’à l’arrivée des nouvelles données.',
       tags: ['jqtCellDef', 'value / sortValue', 'lazy'],
       config: this.customConfig,
       code: {
@@ -244,12 +244,19 @@ export class TableExempleComponent {
 }, {
   key: 'details',
   header: 'Détails chargés',
-  lazy: { fetchFn: () => details$ },
-}];`,
+  lazy: true, // absente de la requête de base
+}];
+
+// Quand la colonne est activée, la table émet (lazyColumnsRequested) :
+// relancez la requête complète avec ces colonnes et repassez les nouvelles lignes.
+onLazyColumnsRequested(columns: string[]) {
+  this.api.fetchRows(columns).subscribe(rows => this.rows = rows);
+}`,
         html: `<jquery-table
   class="demo-table"
   [config]="config"
-  [data]="rows">
+  [data]="rows"
+  (lazyColumnsRequested)="onLazyColumnsRequested($event)">
   <ng-template jqtCellDef="status" let-row>
     <span class="status-chip">{{ row.status }}</span>
   </ng-template>
@@ -269,6 +276,18 @@ export class TableExempleComponent {
   ];
 
   selectedReference = 'Aucune ligne sélectionnée';
+
+  /** Simule le serveur : la requête complète est relancée avec les colonnes demandées, puis les nouvelles lignes remplacent les anciennes. */
+  onLazyColumnsRequested(columns: string[]): void {
+    if (!columns.includes('details')) return;
+    timer(450).subscribe(() => {
+      this.rows = this.rows.map(row => ({
+        ...row,
+        details: row.duration > 60 ? 'Intervention longue' : 'Intervention standard',
+      }));
+      this.cdr.markForCheck();
+    });
+  }
 
   onRowSelected(row: DemoRow): void {
     this.selectedReference = row.reference;

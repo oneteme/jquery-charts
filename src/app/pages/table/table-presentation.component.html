@@ -33,6 +33,7 @@
       (pageChange)="lastPage = $event"
       (searchChange)="lastSearch = $event"
       (groupByChange)="lastGroupBy = $event"
+      (lazyColumnsRequested)="onLazyColumnsRequested($event)"
     ></jquery-table>
 
     <div class="event-monitor" *ngIf="selectedRow || lastSort || lastPage || lastSearch">
@@ -120,7 +121,7 @@
           <tr><td><code>sortValue</code></td><td><code>(row) =&gt; any</code></td><td>—</td><td>Valeur pour le tri. Utile si <code>value</code> renvoie une chaîne formatée.</td></tr>
           <tr><td><code>searchValue</code></td><td><code>(row) =&gt; string</code></td><td>—</td><td>Valeur pour la recherche (utile avec template custom).</td></tr>
           <tr><td><code>icon</code></td><td><code>string</code></td><td>—</td><td>Icône Material dans l'en-tête.</td></tr>
-          <tr><td><code>lazy</code></td><td><code>&#123; fetchFn: () =&gt; Observable&lt;any[]&gt; &#125;</code></td><td>—</td><td>Chargement différé. Le tableau retourné doit être dans le même ordre que <code>data</code>.</td></tr>
+          <tr><td><code>lazy</code></td><td><code>true</code></td><td>—</td><td>Colonne absente de la requête de base : à son activation, la table émet <code>(lazyColumnsRequested)</code> et affiche un skeleton jusqu'aux nouvelles <code>data</code>.</td></tr>
         </tbody>
       </table>
     </div>
@@ -209,6 +210,7 @@
               <tr><td><code>(searchChange)</code></td><td><code>string</code></td></tr>
               <tr><td><code>(groupByChange)</code></td><td><code>string | null</code></td></tr>
               <tr><td><code>(columnsChange)</code></td><td><code>string[]</code></td></tr>
+              <tr><td><code>(lazyColumnsRequested)</code></td><td><code>string[]</code></td></tr>
             </tbody>
           </table>
         </div>
@@ -366,9 +368,9 @@
         <div>
           <strong>Colonnes lazy out-of-the-box</strong>
           <p>
-            Le champ <code>lazy.fetchFn</code> suffit pour différer le chargement d'une colonne coûteuse.
-            Le composant gère le spinner, l'état d'erreur et l'intégration dans le tri — sans logique
-            supplémentaire dans le parent.
+            Avec <code>lazy: true</code>, la table demande la colonne à son activation via <code>(lazyColumnsRequested)</code> :
+            l'application relance sa requête complète avec cette colonne et repasse les nouvelles <code>data</code>.
+            Le composant affiche le skeleton, gère l'état d'erreur (<code>[lazyError]</code>) et l'intégration dans le tri.
           </p>
         </div>
       </li>

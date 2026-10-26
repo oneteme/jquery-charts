@@ -13,7 +13,7 @@ import { Subject, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
-import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, LazyFieldManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState } from '@oneteme/jquery-organizer';
+import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState } from '@oneteme/jquery-organizer';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
 import { TablePreferencesManager } from './table-preferences.manager';
 import { ExportManager } from './export.manager';
@@ -77,6 +77,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   @Input() columnLabels?: Record<string, string>;
   @Input() isLoading = false;
+  /**
+   * À passer à `true` quand la requête relancée après `lazyColumnsRequested` échoue : les colonnes en attente affichent un bouton
+   * « Réessayer ». Repasser à `false` au nouvel essai.
+   */
+  @Input() lazyError = false;
   @Input() copyFeedback: VisualCopyFeedbackConfig = {};
 
   /** Paramètre de contrôle pour réinitialiser barre de recherche. */
@@ -105,6 +110,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Émis quand la liste des colonnes visibles change (clés dans l’ordre d’affichage). */
   @Output() readonly columnsChange = new EventEmitter<string[]>();
   @Output() readonly visualCopied = new EventEmitter<VisualSnapshot>();
+  /**
+   * Clés de toutes les colonnes `lazy` demandées jusqu'ici (cumul), émises quand l'une d'elles est activée pour la première fois.
+   * L'application relance sa requête complète en les incluant puis repasse les nouvelles `data`.
+   */
+  @Output() readonly lazyColumnsRequested = new EventEmitter<string[]>();
 
   @ViewChild(MatPaginator)
   set paginator(value: MatPaginator | undefined) {
@@ -188,14 +198,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   get groupSortOrder(): 'asc' | 'desc' { return this._groupBy.groupSortOrder; }
   set groupSortOrder(v: 'asc' | 'desc') { this._groupBy.groupSortOrder = v; }
 
-  /** Gestionnaire du cycle de vie des colonnes lazy (fetch, annulation, statuts, données). */
-  private _lazy = new LazyFieldManager<TableColumnProvider<T>>();
-  private readonly _pendingKeyedLazy = new Set<TableColumnProvider<T>>();
-  private _keyedLazyFlushQueued = false;
-  /** Compatibilité template : retourne la map de statuts lazy. */
-  get _lazyColumnStatus() { return this._lazy.status; }
-  /** Compatibilité template : retourne la map de données lazy. */
-  get _lazyColumnData() { return this._lazy.data; }
+  /**
+   * Statut des colonnes `lazy` déjà demandées (absente = pas encore demandée).
+   * `loading` dure jusqu'à la réception de nouvelles `data` ; la référence change à chaque mise à jour (panneau de slices).
+   */
+  _lazyColumnStatus = new Map<string, 'idle' | 'loading' | 'loaded' | 'error'>();
+  private _lazyFlushQueued = false;
   private _cdr = inject(ChangeDetectorRef);
   private _el = inject(ElementRef<HTMLElement>);
   private _ngZone = inject(NgZone);
@@ -224,9 +232,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   retryGroupByColumn(event?: Event): void {
     event?.stopPropagation();
-    const key = this.activeGroupByKey;
-    const column = key ? this._columnMap.get(key) : undefined;
-    if (column?.lazy) this.retryLazyColumn(column);
+    this.retryLazyColumns();
   }
 
   /** Gère le clic sur une ligne d'en-tête de groupe (no-op pour les états spéciaux). */
@@ -239,7 +245,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private readonly _export = new ExportManager<T>(
     () => this._allFilteredRows,
     () => this.activeFields,
-    () => this._exportConfig(),
+    () => this.resolvedConfig.export,
     (col, row, idx) => this._resolveExportValue(col, row, idx),
   );
 
@@ -308,23 +314,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    const configChanged = !!changes['config'];
-    const dataChanged = configChanged || !!(changes['data'] || changes['dataSource']);
-    if (configChanged) {
-      this._lazy.cancelAll();
-    } else if (dataChanged) {
-      // Les colonnes lazy par clé gardent leurs valeurs : pas de état de chargement entre deux mises à jour.
-      this._lazy.rebind(this.resolveData());
-    }
+    // Nouvelles données : la requête relancée avec les colonnes lazy a abouti, les skeletons laissent place aux valeurs.
+    if (changes['data'] || changes['dataSource']) this._settleLazyColumns();
+    if (changes['lazyError']) this._applyLazyError();
     this.refreshViewModel();
     if (changes['config']) {
       this.applyConfigSearchReset();
       this.applyInitialSearchQuery(changes['config'].firstChange);
       this._invalidateOrganizerConfig(); // les colonnes ont pu changer
-    }
-    if (dataChanged) {
-      const loaded = this._usedLazyColumns().filter(c => this._isKeyedLazy(c) && this._lazy.getStatus(c.key) === 'loaded');
-      if (loaded.length) this._fetchKeyedLazy(loaded, true);
     }
   }
 
@@ -660,12 +657,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._groupBy.groupPageSize = this.resolveDefaultGroupPageSize();
     this.refreshViewModel();
     this.paginator?.firstPage();
-    if (key) {
-      const colDef = (this.resolvedConfig.columns || []).find(c => c.key === key);
-      if (colDef?.lazy && this._lazyColumnStatus.get(key) !== 'loaded') {
-        this.triggerLazyFetch(colDef);
-      }
-    } else {
+    if (!key) {
       this._ngZone.runOutsideAngular(() => this._scheduleDeferred(() => {
         this.tableBodyScrollRef?.nativeElement.scrollTo({ top: 0, behavior: 'smooth' });
       }));
@@ -683,32 +675,22 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
-    return this._lazy.getStatus(key);
+    return this._lazyColumnStatus.get(key) ?? 'idle';
   }
 
   getLazyRenderType(rowValue: any): 'loading' | 'error' | 'value' {
-    return this._lazy.getRenderType(rowValue);
+    if (rowValue === LAZY_LOADING_VALUE) return 'loading';
+    if (rowValue === LAZY_ERROR_VALUE) return 'error';
+    return 'value';
   }
 
-  retryLazyColumn(column: TableColumnProvider<T>): void {
-    const loader = this.resolvedConfig.columnLoader;
-    if (this._isKeyedLazy(column)) {
-      if (loader) this._lazy.retryBatch([column], loader, () => this._resolvedData, this._lazyCallbacks());
-      return;
-    }
-    this._lazy.retry(column, this._resolvedData, this._lazyCallbacks());
-  }
-
-  triggerLazyFetch(column: TableColumnProvider<T>): void {
-    if (this._isKeyedLazy(column)) {
-      this._queueKeyedLazy(column);
-      return;
-    }
-    this._lazy.fetch(column, this._resolvedData, this._lazyCallbacks());
-  }
-
-  private _isKeyedLazy(column: TableColumnProvider<T>): boolean {
-    return column.lazy === true;
+  /** Relance la demande des colonnes en erreur : l'application doit refaire sa requête complète. */
+  retryLazyColumns(): void {
+    const failed = [...this._lazyColumnStatus].filter(([, status]) => status === 'error').map(([key]) => key);
+    if (!failed.length) return;
+    this._setLazyStatus(failed, 'loading');
+    this.lazyColumnsRequested.emit([...this._lazyColumnStatus.keys()]);
+    this._scheduleRender();
   }
 
   /** Colonnes lazy dont la valeur est nécessaire : affichées, utilisées en Group by ou en Slice by dynamique. */
@@ -722,37 +704,42 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return [...used.values()];
   }
 
-  /** Quel que soit le chemin d'activation (préférences, snapshot, Group by par défaut...), une colonne lazy utilisée est chargée. */
-  private _requestIdleLazyColumns(): void {
-    this._usedLazyColumns()
-      .filter(c => this._lazy.getStatus(c.key) === 'idle')
-      .forEach(c => this.triggerLazyFetch(c));
-  }
-
-  /** Regroupe les colonnes demandées dans le même tick en une seule requête. */
-  private _queueKeyedLazy(column: TableColumnProvider<T>): void {
-    this._pendingKeyedLazy.add(column);
-    if (this._keyedLazyFlushQueued) return;
-    this._keyedLazyFlushQueued = true;
+  /**
+   * Quel que soit le chemin d'activation (Organizer, Group by, Slice by, préférences...), les colonnes lazy utilisées et pas encore
+   * demandées sont réclamées en un seul événement. Hors cycle de détection, et seulement une fois des lignes affichées :
+   * la première réponse de l'application ne doit pas être prise pour celle qui contient les colonnes.
+   */
+  private _requestLazyColumns(): void {
+    if (this._lazyFlushQueued) return;
+    this._lazyFlushQueued = true;
     queueMicrotask(() => {
-      this._keyedLazyFlushQueued = false;
-      const columns = [...this._pendingKeyedLazy];
-      this._pendingKeyedLazy.clear();
-      if (!this._destroyed) this._fetchKeyedLazy(columns);
+      this._lazyFlushQueued = false;
+      if (this._destroyed || !this._resolvedData.length) return;
+      const idle = this._usedLazyColumns().filter(c => !this._lazyColumnStatus.has(c.key));
+      if (!idle.length) return;
+      this._setLazyStatus(idle.map(c => c.key), 'loading');
+      this.lazyColumnsRequested.emit([...this._lazyColumnStatus.keys()]);
+      this._scheduleRender();
+      this._cdr.markForCheck();
     });
   }
 
-  private _fetchKeyedLazy(columns: TableColumnProvider<T>[], silent = false): void {
-    const loader = this.resolvedConfig.columnLoader;
-    if (!loader) return;
-    this._lazy.fetchBatch(columns, loader, () => this._resolvedData, this._lazyCallbacks(), silent);
+  /** De nouvelles `data` sont arrivées : toutes les colonnes demandées sont considérées comme prêtes. */
+  private _settleLazyColumns(): void {
+    const waiting = [...this._lazyColumnStatus].filter(([, status]) => status !== 'loaded').map(([key]) => key);
+    if (waiting.length) this._setLazyStatus(waiting, 'loaded');
   }
 
-  private _lazyCallbacks() {
-    return {
-      onRefresh: () => this.refreshViewModel(),
-      onMarkForCheck: () => this._cdr.markForCheck(),
-    };
+  private _applyLazyError(): void {
+    const from = this.lazyError ? 'loading' : 'error';
+    const keys = [...this._lazyColumnStatus].filter(([, status]) => status === from).map(([key]) => key);
+    if (keys.length) this._setLazyStatus(keys, this.lazyError ? 'error' : 'loading');
+  }
+
+  private _setLazyStatus(keys: string[], status: 'loading' | 'loaded' | 'error'): void {
+    const next = new Map(this._lazyColumnStatus);
+    keys.forEach(key => next.set(key, status));
+    this._lazyColumnStatus = next;
   }
 
   toggleGroupCollapse(groupKey: string): void {
@@ -883,9 +870,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   addDynamicSlice(column: TableColumnProvider<T>): void {
     this.slicePanelRef?.addDynamicSlice(column);
-    if (column.lazy && this._lazyColumnStatus.get(column.key) !== 'loaded') {
-      this.triggerLazyFetch(column);
-    }
   }
 
   get allDynamicSliceColumns(): TableColumnProvider<T>[] {
@@ -914,6 +898,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   onDynamicSliceKeysChange(keys: string[]): void {
     this._organizer.onDynamicSliceKeysChange(keys);
     this._recomputeShowSlicePanel();
+    this._requestLazyColumns();
     this._cdr.markForCheck();
   }
 
@@ -959,15 +944,6 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._organizer.addField(column);
     this._preservePageIndex = this.paginator?.pageIndex ?? null;
     this.refreshViewModel();
-
-    if (column.lazy) {
-      // Une colonne par clé déjà chargée puis masquée a pu devenir obsolète : elle est rafraîchie sans clignotement.
-      if (this._isKeyedLazy(column) && this._lazy.getStatus(column.key) === 'loaded') {
-        this._fetchKeyedLazy([column], true);
-      } else {
-        this.triggerLazyFetch(column);
-      }
-    }
 
     this.addRequested.emit();
     this.columnAdded.emit(column);
@@ -1412,7 +1388,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         pageIndex: this.paginator?.pageIndex ?? 0,
         pageSize: this.paginator?.pageSize ?? this.pageSize,
       }),
-      data: cloneSerializable(this._allFilteredRows.map(row => this._rowWithLazyValues(row))),
+      data: cloneSerializable(this._allFilteredRows),
       warnings,
     };
   }
@@ -1563,7 +1539,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     this._buildSliceByMenuItems();
 
-    this._requestIdleLazyColumns();
+    this._requestLazyColumns();
     this._scheduleRender();
   }
 
@@ -1991,12 +1967,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
    * Ne passe pas par sortValue (valeur brute de tri) contrairement à getLazyAwareValue.
    */
   private getDisplayValueForSearch(col: TableColumnProvider<T>, row: T): any {
-    if (col.lazy) {
-      const status = this._lazyColumnStatus.get(col.key) ?? 'idle';
-      if (status !== 'loaded') return null;
-      const rowMap = this._lazyColumnData.get(col.key);
-      return normalizeCellValue(rowMap?.get(row) ?? '');
-    }
+    if (col.lazy && this._lazyColumnStatus.get(col.key) !== 'loaded') return null;
     if (col.searchValue) {
       return col.searchValue(row, 0);
     }
@@ -2006,8 +1977,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
 
   private getLazyAwareValue(columnKey: string, row: T): any {
     const colDef = this._columnMap.get(columnKey);
-    if (colDef?.lazy) {
-      return this._lazyColumnData.get(columnKey)?.get(row) ?? null;
+    if (colDef?.lazy && this._lazyColumnStatus.get(columnKey) !== 'loaded') {
+      return null;
     }
     if (colDef?.sortValue) {
       return this._toSortInput(colDef.sortValue(row, 0));
@@ -2029,35 +2000,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return value === LAZY_LOADING_VALUE || value === LAZY_ERROR_VALUE ? '' : value;
   }
 
-  private _exportConfig(): TableExportConfig<T> | undefined {
-    const config = this.resolvedConfig.export;
-    const transform = config?.transform;
-    return transform ? { ...config, transform: row => transform(this._rowWithLazyValues(row)) } : config;
-  }
-
-  /** Ligne enrichie des valeurs des colonnes lazy affichées et chargées ; la ligne d'origine si aucune. */
-  private _rowWithLazyValues(row: T): T {
-    let merged: Record<string, any> | null = null;
-    for (const col of this.activeFields) {
-      if (!col.lazy || this._lazy.getStatus(col.key) !== 'loaded') continue;
-      const values = this._lazyColumnData.get(col.key);
-      if (!values?.has(row)) continue;
-      merged ??= { ...(row as any) };
-      merged[col.key] = values.get(row);
-    }
-    return (merged ?? row) as T;
-  }
-
   private resolveCellValue(col: TableColumnProvider<T>, row: T, index: number): any {
     if (col.lazy) {
-      const status = this._lazyColumnStatus.get(col.key) ?? 'idle';
+      const status = this._lazyColumnStatus.get(col.key);
       if (status === 'loading') return LAZY_LOADING_VALUE;
       if (status === 'error') return LAZY_ERROR_VALUE;
-      if (status === 'loaded') {
-        const rowMap = this._lazyColumnData.get(col.key);
-        return normalizeCellValue(rowMap?.get(row) ?? '');
-      }
-      return '';
+      if (!status) return '';
     }
     const valueProvider = col.value;
     const rawValue = valueProvider ? valueProvider(row, index) : (row as any)?.[col.key];

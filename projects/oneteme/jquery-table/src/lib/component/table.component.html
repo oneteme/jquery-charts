@@ -13,7 +13,6 @@
       [sliceConfigs]="_sliceConfigs"
       [columns]="_sliceColumns"
       [data]="_sliceData"
-      [lazyData]="_lazyColumnData"
       [lazyStatus]="_lazyColumnStatus"
       [showToggle]="_sliceShowToggle"
       [collapsedByDefault]="_slicePanelCollapsed"
@@ -131,7 +130,7 @@
             <ng-container *ngIf="!_editMode; else editModeCellTpl">
               <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">
                 <span *ngSwitchCase="'loading'" class="lazy-skeleton"></span>
-                <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="retryLazyColumn(column)" [title]="i18n.lazyErrorTitle">
+                <button *ngSwitchCase="'error'" type="button" class="lazy-error-btn" (click)="$event.stopPropagation(); retryLazyColumns()" [title]="i18n.lazyErrorTitle">
                   <span class="lazy-error-icon">⚠</span>
                   <span class="lazy-error-label">{{ i18n.lazyRetry }}</span>
                 </button>
