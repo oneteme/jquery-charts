@@ -153,6 +153,11 @@ h1 {
   --jqt-primary-color: #176b72;
 }
 
+.demo-table--tall {
+  height: 560px;
+  min-height: 560px;
+}
+
 .demo-table--styled {
   --jqt-header-bg: #e8f3f1;
   --jqt-header-text-color: #175b61;
@@ -204,6 +209,145 @@ h1 {
 }
 
 .selection-note strong { color: #a84e2f; font-weight: 600; }
+
+// Aperçu de l'onglet Network : thème sombre, comme les outils de développement.
+.network-panel {
+  margin-top: .8rem;
+  border: 1px solid #2b3442;
+  background: #1b222c;
+  color: #cfd8e3;
+  font-size: .76rem;
+}
+
+.network-panel__bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem .9rem;
+  padding: .45rem .7rem;
+  border-bottom: 1px solid #2b3442;
+  background: #232b37;
+}
+
+.network-panel__tab {
+  padding: .15rem .55rem;
+  border-bottom: 2px solid #5aa3f0;
+  color: #fff;
+  font-weight: 700;
+}
+
+.network-panel__filter {
+  padding: .1rem .5rem;
+  border-radius: 10px;
+  background: #34506f;
+  color: #dbe9f9;
+  font-size: .7rem;
+}
+
+.network-panel__hint { color: #8d9bad; font-size: .72rem; }
+
+.network-panel__scroll { overflow-x: auto; }
+
+.network-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+.network-table th {
+  padding: .35rem .7rem;
+  border-bottom: 1px solid #2b3442;
+  background: #232b37;
+  color: #8d9bad;
+  font-size: .68rem;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.network-table td {
+  padding: .35rem .7rem;
+  border-bottom: 1px solid #252e3a;
+  white-space: nowrap;
+}
+
+.network-table tbody tr { cursor: pointer; }
+.network-table tbody tr:hover { background: #222b37; }
+.network-table tbody tr:focus-visible { outline: 1px solid #5aa3f0; outline-offset: -1px; }
+.network-table tbody tr.is-selected { background: #2a4a70; color: #fff; }
+.network-empty td { color: #8d9bad; cursor: default; font-style: italic; }
+
+.network-status[data-status='ok'] { color: #7bd88f; }
+.network-status[data-status='error'] { color: #ff7b72; }
+.network-status[data-status='muted'] { color: #9aa7b5; font-style: italic; }
+.network-table tr.is-selected .network-status { color: inherit; }
+
+.network-detail { border-top: 1px solid #2b3442; }
+
+.network-detail__tabs {
+  display: flex;
+  gap: .1rem;
+  padding: 0 .4rem;
+  border-bottom: 1px solid #2b3442;
+  background: #232b37;
+}
+
+.network-detail__tabs button {
+  padding: .4rem .8rem;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #8d9bad;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.network-detail__tabs button:hover { color: #fff; }
+.network-detail__tabs button.is-active { border-bottom-color: #5aa3f0; color: #fff; }
+
+.network-general {
+  display: grid;
+  gap: .3rem;
+  margin: 0;
+  padding: .6rem .8rem;
+  border-bottom: 1px solid #252e3a;
+}
+
+.network-general div { display: flex; gap: .6rem; min-width: 0; }
+.network-general dt { flex: 0 0 8.5rem; color: #8d9bad; }
+.network-general dd { margin: 0; overflow-wrap: anywhere; font-family: 'Cascadia Code', 'Consolas', monospace; }
+
+.network-legend { margin: 0; padding: .5rem .8rem 0; color: #8d9bad; font-size: .72rem; }
+
+.network-added {
+  border-radius: 2px;
+  background: rgba(123, 216, 143, .2);
+  color: #b8f0c4;
+}
+
+.network-code {
+  max-height: 260px;
+  margin: 0;
+  padding: .6rem .8rem .8rem;
+  overflow: auto;
+  // Les espaces entre éléments (indentation du template) ne doivent pas créer de lignes vides.
+  white-space: normal;
+  background: transparent;
+}
+
+.network-code code {
+  color: #cfd8e3;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: .74rem;
+  line-height: 1.55;
+}
+
+.network-line { display: block; white-space: pre-wrap; }
+.network-line.network-added { border-left: 2px solid #7bd88f; margin-left: -.5rem; padding-left: .45rem; }
+
+.network-empty-response { margin: 0; padding: .8rem; color: #8d9bad; font-style: italic; }
 
 .code-details {
   margin-top: .8rem;

@@ -80,7 +80,7 @@
       <header class="capability-heading">
         <div>
           <p class="capability-index">WRAPPER + ANGULAR MATERIAL</p>
-          <h3>Recherche, View, Group by, slices et colonnes lazy</h3>
+          <h3>Recherche, View, Group by et slices</h3>
           <p>
             Ouvrez le menu View pour masquer une colonne, grouper ou ajouter un Slice by ; la recherche, le tri et la
             pagination mettent ensuite le modèle filtré à jour.
@@ -132,7 +132,6 @@
             (columnRemoved)="onColumnRemoved($event)"
             (categorySelected)="lastCategory = $event"
             (visualCopied)="onSnapshotCreated($event)"
-            (lazyColumnsRequested)="onLazyColumnsRequested($event)"
           >
             <ng-template jqtCellDef="status" let-row>
               <span class="status-chip" [attr.data-status]="row.status">{{ row.status }}</span>
@@ -190,6 +189,90 @@
           </div>
         </div>
         <pre id="table-demo-code" role="tabpanel"><code>{{ demoCode[activeCodeTab] }}</code></pre>
+      </div>
+    </article>
+
+    <article class="capability-card" id="table-lazy-demo">
+      <header class="capability-heading">
+        <div>
+          <p class="capability-index">LAZY + API PUBLIQUE</p>
+          <h3>Colonnes lazy et requête relancée</h3>
+          <p>
+            Une colonne lazy est forcément optionnelle : <code>optional: true</code> est implicite et <code>optional: false</code>
+            lève une erreur. Ouvrez le menu View et ajoutez Capitale, Devise ou Langues (ou groupez par Devise) : la table
+            appelle le <code>lazyLoader</code> de la config, qui relance la requête GraphQL de l’API publique
+            <code>countries.trevorblades.com</code> avec ces champs ; les nouvelles lignes remplacent les anciennes.
+          </p>
+        </div>
+        <span class="capability-kind">lazy: true</span>
+      </header>
+
+      <div class="table-demo-layout">
+        <aside class="event-panel event-panel--lazy" aria-live="polite">
+          <div class="event-panel-heading">
+            <strong>État de la requête</strong>
+            <span>appels du lazyLoader et de l’application</span>
+          </div>
+          <dl>
+            <div><dt>État</dt><dd>{{ countries.state }}</dd></div>
+            <div><dt>Colonnes demandées</dt><dd>{{ countries.requested.length ? countries.requested.join(', ') : 'Aucune' }}</dd></div>
+            <div><dt>Requêtes API</dt><dd>{{ countries.requestCount }}</dd></div>
+            <div><dt>Lignes</dt><dd>{{ countries.rows.length }}</dd></div>
+            <div class="lazy-query"><dt>Dernière requête GraphQL</dt><dd>{{ countries.lastQuery || 'Aucune' }}</dd></div>
+          </dl>
+        </aside>
+
+        <div class="table-demo-surface">
+          <div class="demo-controls">
+            <button type="button" [class.is-active]="countries.failing" (click)="toggleLazyFailure()">
+              {{ countries.failing ? 'Rendre l’API disponible' : 'Simuler une panne de l’API' }}
+            </button>
+            <button type="button" (click)="refreshCountries()">Rafraîchir les données</button>
+          </div>
+
+          <jquery-table
+            class="api-table-component api-table-component--tall"
+            [config]="lazyConfig"
+            [data]="countries.rows"
+            [isLoading]="countries.loading"
+          ></jquery-table>
+        </div>
+      </div>
+
+      <div class="code-panel">
+        <div class="code-panel-heading">
+          <span>Code minimal de la démo</span>
+          <div class="code-tabs" role="tablist" aria-label="Langage du code de la démo lazy">
+            <button
+              type="button"
+              role="tab"
+              class="code-tab"
+              [class.is-active]="lazyCodeTab === 'ts'"
+              [attr.aria-selected]="lazyCodeTab === 'ts'"
+              aria-controls="table-lazy-demo-code"
+              (click)="setLazyCodeTab('ts')"
+            >TS</button>
+            <button
+              type="button"
+              role="tab"
+              class="code-tab"
+              [class.is-active]="lazyCodeTab === 'html'"
+              [attr.aria-selected]="lazyCodeTab === 'html'"
+              aria-controls="table-lazy-demo-code"
+              (click)="setLazyCodeTab('html')"
+            >HTML</button>
+            <button
+              type="button"
+              role="tab"
+              class="code-tab"
+              [class.is-active]="lazyCodeTab === 'scss'"
+              [attr.aria-selected]="lazyCodeTab === 'scss'"
+              aria-controls="table-lazy-demo-code"
+              (click)="setLazyCodeTab('scss')"
+            >SCSS</button>
+          </div>
+        </div>
+        <pre id="table-lazy-demo-code" role="tabpanel"><code>{{ lazyDemoCode[lazyCodeTab] }}</code></pre>
       </div>
     </article>
   </section>

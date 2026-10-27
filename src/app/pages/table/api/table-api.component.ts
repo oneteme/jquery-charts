@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { timer } from 'rxjs';
 import { TableColumnProvider, TableComponent, TableProvider, JqtCellDefDirective, col } from '@oneteme/jquery-table';
 import { VisualSnapshot, VisualSnapshotDraft } from '@oneteme/jquery-core';
+import { CountriesApiService, CountriesLazyDemo, Country } from '../countries-lazy.demo';
 
 type ApiSource = 'Wrapper' | 'Core' | 'Angular Material';
 
@@ -35,7 +35,6 @@ interface TableApiRow {
   priority: Priority;
   duration: number;
   updatedAt: string;
-  details?: string;
 }
 
 type DemoCodeTab = 'ts' | 'html' | 'scss';
@@ -48,8 +47,9 @@ type DemoCodeTab = 'ts' | 'html' | 'scss';
   styleUrls: ['./table-api.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TableApiComponent {
+export class TableApiComponent implements OnInit {
   private readonly cdr = inject(ChangeDetectorRef);
+  readonly countries = new CountriesLazyDemo(inject(CountriesApiService), () => this.cdr.markForCheck());
 
   readonly sections: ApiSection[] = [
     {
@@ -97,6 +97,7 @@ export class TableApiComponent {
         { name: 'labels', type: 'TableLabelsConfig', source: 'Wrapper', description: 'Personnalise les messages vide et chargement du tableau.', code: "labels: { empty: 'Aucun ticket', loading: 'Chargement...' }" },
         { name: 'export', type: 'TableExportConfig<T>', source: 'Wrapper', description: 'Active l’export CSV des lignes filtrées et des colonnes visibles, avec transformation optionnelle.', code: "export: { enabled: true, filename: 'tickets' }" },
         { name: 'preferences', type: 'TablePreferencesConfig', source: 'Wrapper', description: 'Active le mode édition et la persistance localStorage sous la clé jqt_prefs_<tableId>.', code: "preferences: { enabled: true, tableId: 'tickets' }" },
+        { name: 'lazyLoader', type: '(lazyColumns: string[]) => Observable<T[]>', source: 'Wrapper', description: 'Charge les colonnes lazy : appelé à l’activation d’une colonne lazy avec les colonnes demandées (cumul), il retourne les lignes complètes qui remplacent data. Un nouveau data rappelle le chargeur pour les colonnes déjà demandées. La table gère le skeleton, l’erreur et « Réessayer ».', code: 'lazyLoader: columns => this.api.fetchRows(columns)' },
         { name: 'showActions / onCopyVisual / onToggleFullscreen', type: 'boolean / () => void', source: 'Wrapper', description: 'Expose les actions de copie visuelle et de plein écran dans le menu lorsque les callbacks sont fournis.', code: 'showActions: true' },
         { name: 'rowClass / onRowSelected', type: 'callbacks', source: 'Wrapper', description: 'Calcule les classes de ligne et propose un callback de sélection en complément des outputs Angular.', code: "rowClass: row => ({ 'is-urgent': row.priority === 'Haute' })" },
       ],
@@ -117,21 +118,19 @@ export class TableApiComponent {
   {
     key: 'details',
     header: 'Détails',
-    lazy: true, // absente de la requête de base
+    lazy: true, // absente de la requête de base ; lazy implique optional
   },
 ];
 
-// (lazyColumnsRequested) : relancez la requête complète avec ces colonnes, puis repassez les nouvelles lignes.
-onLazyColumnsRequested(columns: string[]) {
-  this.api.fetchRows(columns).subscribe(rows => this.rows = rows);
-}`,
+// lazyLoader (config) : appelé à l'activation avec les colonnes lazy demandées (cumul).
+lazyLoader: columns => this.api.fetchRows(columns),   // retourne les lignes complètes`,
       entries: [
         { name: 'key / header / icon', type: 'string', source: 'Wrapper', description: 'Identifie la colonne et définit son en-tête et son icône Material éventuelle.', code: "col('reference', 'Référence', { icon: 'fingerprint' })" },
         { name: 'value / sortValue / searchValue', type: 'DataProvider', source: 'Core', description: 'Sépare la valeur affichée, la valeur de tri et la valeur utilisée par la recherche plein texte.', code: "{ value: row => row.duration + ' min', sortValue: row => row.duration }" },
-        { name: 'sortable / removable / optional', type: 'boolean', source: 'Wrapper', description: 'Contrôle le tri, la suppression et l’activation initiale de la colonne dans le menu View.', code: '{ sortable: true, optional: true, removable: true }' },
+        { name: 'sortable / removable / optional', type: 'boolean', source: 'Wrapper', description: 'Contrôle le tri, la suppression et l’activation initiale de la colonne dans le menu View. Une colonne lazy est forcément optionnelle : optional: true est implicite et optional: false lève une erreur.', code: '{ sortable: true, optional: true, removable: true }' },
         { name: 'groupable / sliceable', type: 'boolean', source: 'Wrapper', description: 'Rend la colonne disponible respectivement pour Group by ou Slice by dynamique.', code: '{ groupable: true, sliceable: true }' },
         { name: 'width', type: 'string', source: 'Wrapper', description: 'Largeur CSS déclarative. Les largeurs en pixels participent aussi au calcul de la largeur minimale.', code: "{ width: '140px' }" },
-        { name: 'lazy', type: 'true', source: 'Wrapper', description: 'Colonne absente de la requête de base. À sa première activation (View, Group by, Slice by), la table émet lazyColumnsRequested ; un skeleton s’affiche jusqu’à la réception de nouvelles `data`. Ensuite la colonne supporte tri, recherche, Group by et Slice by.', code: "lazy: true" },
+        { name: 'lazy', type: 'true', source: 'Wrapper', description: 'Colonne absente de la requête de base, donc forcément optionnelle (optional est implicite). À sa première activation (View, Group by, Slice by), la table appelle config.lazyLoader, ou émet lazyColumnsRequested sans chargeur ; un skeleton s’affiche jusqu’à la réception des lignes. Ensuite la colonne supporte tri, recherche, Group by et Slice by.', code: "lazy: true" },
         { name: 'col()', type: '(key, header, overrides?) => TableColumnProvider', source: 'Wrapper', description: 'Raccourci exporté pour les colonnes simples ; tous les champs de TableColumnProvider restent surchargeables.', code: "col<Row>('name', 'Nom', { sortable: true })" },
       ],
     },
@@ -195,7 +194,7 @@ providers: [
     },
   ];
 
-  rows: TableApiRow[] = [
+  readonly rows: TableApiRow[] = [
     { id: 1, reference: 'INT-2401', team: 'Raccordement', status: 'En cours', priority: 'Haute', duration: 42, updatedAt: '2024-04-08' },
     { id: 2, reference: 'INT-2402', team: 'Maintenance', status: 'Terminé', priority: 'Normale', duration: 18, updatedAt: '2024-04-09' },
     { id: 3, reference: 'INT-2403', team: 'Dépannage', status: 'Ouvert', priority: 'Haute', duration: 73, updatedAt: '2024-04-10' },
@@ -262,14 +261,26 @@ providers: [
         value: row => new Date(row.updatedAt).toLocaleDateString('fr-FR'),
         sortValue: row => row.updatedAt,
       },
-      {
-        key: 'details',
-        header: 'Détails lazy',
-        sortable: false,
-        optional: true,
-        lazy: true,
-      },
     ],
+  };
+
+  readonly lazyConfig: TableProvider<Country> = {
+    title: 'Pays du monde',
+    search: { enabled: true, searchColumns: ['code', 'name', 'continent', 'capital'] },
+    pagination: { enabled: true, pageSize: 10, pageSizeOptions: [10, 25, 50], pageSizeOptionsGroupBy: [10, 25] },
+    view: { enabled: true, enableColumnRemoval: true },
+    defaultSort: { active: 'name', direction: 'asc' },
+    labels: { empty: 'Aucun pays (API indisponible ?)', loading: 'Chargement des pays...' },
+    slices: [{ title: 'Continent', columnKey: 'continent', multiSelect: true }],
+    columns: [
+      col<Country>('code', 'Code', { sortable: true, width: '90px', groupable: false, sliceable: false }),
+      col<Country>('name', 'Pays', { sortable: true, groupable: false, sliceable: false }),
+      col<Country>('continent', 'Continent', { sortable: true }),
+      col<Country>('capital', 'Capitale', { sortable: true, lazy: true, groupable: false, sliceable: false }),
+      col<Country>('currency', 'Devise', { sortable: true, lazy: true }),
+      col<Country>('languages', 'Langues', { sortable: true, lazy: true, groupable: false, sliceable: false }),
+    ],
+    lazyLoader: this.countries.lazyLoader,
   };
 
   readonly demoCode: Record<DemoCodeTab, string> = {
@@ -302,7 +313,6 @@ readonly tableConfig: TableProvider<Row> = {
   [data]="rows"
   [isLoading]="isLoadingDemo"
   (rowSelected)="onRowSelected($event)"
-  (lazyColumnsRequested)="onLazyColumnsRequested($event)"
   (searchChange)="lastSearch = $event">
   <ng-template jqtCellDef="status" let-row>
     <span class="status-chip" [attr.data-status]="row.status">
@@ -330,8 +340,51 @@ readonly tableConfig: TableProvider<Row> = {
 }`,
   };
 
+  readonly lazyDemoCode: Record<DemoCodeTab, string> = {
+    ts: `import { col, TableProvider } from '@oneteme/jquery-table';
+
+readonly config: TableProvider<Country> = {
+  columns: [
+    col('code', 'Code'),
+    col('name', 'Pays'),
+    col('continent', 'Continent'),
+    // lazy implique optional : la colonne n'est jamais demandée au premier rendu
+    col('capital', 'Capitale', { lazy: true }),
+    col('currency', 'Devise', { lazy: true }),
+  ],
+  // colonnes lazy demandées (cumul) : ['capital'], puis ['capital', 'currency']
+  lazyLoader: columns => this.fetchCountries(columns),   // Observable<Country[]>
+};
+
+const SELECTIONS: Record<string, string> = {
+  capital: 'capital',
+  currency: 'currency',
+  languages: 'languages { name }',
+};
+
+// Requête complète : colonnes de base + sections des colonnes lazy demandées.
+fetchCountries(lazyColumns: string[]) {
+  const lazy = lazyColumns.map(c => SELECTIONS[c]).join(' ');
+  const query = '{ countries { code name continent { name } ' + lazy + ' } }';
+  return this.http.post<Response>(API_URL, { query }).pipe(map(res => res.data.countries));
+}
+
+// [data] : requête de base, sans les colonnes lazy.
+this.fetchCountries([]).subscribe(rows => this.countries = rows);`,
+    html: `<jquery-table
+  [config]="config"
+  [data]="countries">
+</jquery-table>`,
+    scss: `.api-table-component {
+  display: block;
+  height: 560px;
+  min-height: 560px;
+}`,
+  };
+
   isLoadingDemo = false;
   activeCodeTab: DemoCodeTab = 'ts';
+  lazyCodeTab: DemoCodeTab = 'ts';
   clearSearchToken = 0;
   selectedRow: TableApiRow | null = null;
   lastSearch = '';
@@ -343,6 +396,10 @@ readonly tableConfig: TableProvider<Row> = {
   snapshotDraft: VisualSnapshotDraft | null = null;
   lastSnapshot: VisualSnapshot | null = null;
 
+  ngOnInit(): void {
+    this.countries.load();
+  }
+
   setCodeTab(tab: DemoCodeTab): void {
     this.activeCodeTab = tab;
   }
@@ -351,13 +408,17 @@ readonly tableConfig: TableProvider<Row> = {
     this.isLoadingDemo = !this.isLoadingDemo;
   }
 
-  /** Simule le serveur : la requête complète est relancée avec les colonnes demandées, puis les nouvelles lignes remplacent les anciennes. */
-  onLazyColumnsRequested(columns: string[]): void {
-    if (!columns.includes('details')) return;
-    timer(500).subscribe(() => {
-      this.rows = this.rows.map(row => ({ ...row, details: `${row.team} · ${row.duration} min` }));
-      this.cdr.markForCheck();
-    });
+  /** Panne simulée : la prochaine requête du chargeur échoue, la table affiche « Réessayer ». */
+  toggleLazyFailure(): void {
+    this.countries.failing = !this.countries.failing;
+  }
+
+  refreshCountries(): void {
+    this.countries.refresh();
+  }
+
+  setLazyCodeTab(tab: DemoCodeTab): void {
+    this.lazyCodeTab = tab;
   }
 
   resetSearch(): void {

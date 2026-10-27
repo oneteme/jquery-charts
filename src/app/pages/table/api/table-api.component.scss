@@ -90,6 +90,7 @@ pre { font-family: 'Cascadia Code', 'Consolas', monospace; }
 .table-actions button:hover { border-color: #176b72; background: #e5f1ef; color: #0d555b; }
 
 .api-table-component { display: block; height: 420px; min-height: 420px; --jqt-primary: #176b72; }
+.api-table-component--tall { height: 560px; min-height: 560px; }
 .status-chip,
 .priority-chip { display: inline-flex; align-items: center; min-height: 24px; padding: .15rem .45rem; border-radius: 12px; font-size: .73rem; font-weight: 700; }
 .status-chip[data-status='Ouvert'] { background: #f7e9e3; color: #a84e2f; }
@@ -106,6 +107,8 @@ pre { font-family: 'Cascadia Code', 'Consolas', monospace; }
 .event-panel dl div { min-width: 0; }
 .event-panel dt { color: #71878b; font-size: .68rem; font-weight: 700; text-transform: uppercase; }
 .event-panel dd { margin: .12rem 0 0; overflow-wrap: anywhere; color: #314f56; font-family: 'Cascadia Code', 'Consolas', monospace; font-size: .72rem; }
+.event-panel--lazy dl { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.event-panel--lazy .lazy-query { grid-column: 1 / -1; }
 
 .table-actions { margin-top: 1rem; }
 .snapshot-grid { display: grid; gap: .8rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: .8rem; }
@@ -136,4 +139,5 @@ pre { font-family: 'Cascadia Code', 'Consolas', monospace; }
   .capability-heading { flex-direction: column; }
   .official-link { align-self: stretch; text-align: center; }
   .event-panel dl { grid-template-columns: 1fr; }
+  .event-panel--lazy dl { grid-template-columns: 1fr; }
 }
