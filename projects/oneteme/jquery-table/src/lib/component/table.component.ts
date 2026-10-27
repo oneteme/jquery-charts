@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, NgZone, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, TemplateRef, ViewChild } from '@angular/core';
+import { AfterContentInit, AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChildren, ElementRef, EventEmitter, HostBinding, HostListener, inject, Input, isDevMode, NgZone, OnChanges, OnDestroy, Output, QueryList, SimpleChanges, TemplateRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -9,7 +9,7 @@ import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/mat
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { Subject, takeUntil } from 'rxjs';
+import { defer, Subject, Subscription, take, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
@@ -204,6 +204,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
    */
   _lazyColumnStatus = new Map<string, 'idle' | 'loading' | 'loaded' | 'error'>();
   private _lazyFlushQueued = false;
+  /** Lignes retournées par `config.lazyLoader` : elles remplacent `data` jusqu'au prochain `data`. */
+  private _loaderRows: T[] | null = null;
+  private _loaderSub?: Subscription;
+  private _lazyWarned = false;
+  /** Colonnes de la dernière config résolue : évite de reconstruire le tableau (et d'agiter le panneau de slices) à chaque rafraîchissement. */
+  private _columnsSource?: TableColumnProvider<T>[];
+  private _columnsNormalized?: TableColumnProvider<T>[];
+  private readonly _optionalLazyColumns = new WeakMap<object, TableColumnProvider<T>>();
   private _cdr = inject(ChangeDetectorRef);
   private _el = inject(ElementRef<HTMLElement>);
   private _ngZone = inject(NgZone);
@@ -314,8 +322,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Nouvelles données : la requête relancée avec les colonnes lazy a abouti, les skeletons laissent place aux valeurs.
-    if (changes['data'] || changes['dataSource']) this._settleLazyColumns();
+    const dataChanged = !!(changes['data'] || changes['dataSource']);
+    if (dataChanged) this._onNewData();
     if (changes['lazyError']) this._applyLazyError();
     this.refreshViewModel();
     if (changes['config']) {
@@ -323,6 +331,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this.applyInitialSearchQuery(changes['config'].firstChange);
       this._invalidateOrganizerConfig(); // les colonnes ont pu changer
     }
+    if (dataChanged && this._lazyColumnStatus.size && this._resolvedData.length) this._runLazyLoader();
   }
 
   ngAfterContentInit(): void {
@@ -684,12 +693,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return 'value';
   }
 
-  /** Relance la demande des colonnes en erreur : l'application doit refaire sa requête complète. */
+  /** Relance la demande des colonnes en erreur : le chargeur est rappelé, ou l'application refait sa requête complète. */
   retryLazyColumns(): void {
     const failed = [...this._lazyColumnStatus].filter(([, status]) => status === 'error').map(([key]) => key);
     if (!failed.length) return;
     this._setLazyStatus(failed, 'loading');
     this.lazyColumnsRequested.emit([...this._lazyColumnStatus.keys()]);
+    this._runLazyLoader();
     this._scheduleRender();
   }
 
@@ -717,11 +727,56 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       if (this._destroyed || !this._resolvedData.length) return;
       const idle = this._usedLazyColumns().filter(c => !this._lazyColumnStatus.has(c.key));
       if (!idle.length) return;
+      this._warnIfNoLazySource(idle);
       this._setLazyStatus(idle.map(c => c.key), 'loading');
       this.lazyColumnsRequested.emit([...this._lazyColumnStatus.keys()]);
+      this._runLazyLoader();
       this._scheduleRender();
       this._cdr.markForCheck();
     });
+  }
+
+  /** Appelle `config.lazyLoader` avec toutes les colonnes lazy demandées ; sa réponse remplace `data`. */
+  private _runLazyLoader(): void {
+    const loader = this.resolvedConfig.lazyLoader;
+    if (!loader) return;
+    this._loaderSub?.unsubscribe();
+    const columns = [...this._lazyColumnStatus.keys()];
+    this._loaderSub = defer(() => loader(columns)).pipe(take(1), takeUntil(this._destroy$)).subscribe({
+      next: rows => {
+        this._loaderRows = rows;
+        this._settleLazyColumns();
+        this.refreshViewModel();
+        this._cdr.markForCheck();
+      },
+      error: () => {
+        const loading = [...this._lazyColumnStatus].filter(([, status]) => status === 'loading').map(([key]) => key);
+        this._setLazyStatus(loading, 'error');
+        this._scheduleRender();
+        this._cdr.markForCheck();
+      },
+    });
+  }
+
+  /** Nouveau `data` : il l'emporte sur les lignes du chargeur. Avec un chargeur, les colonnes déjà demandées sont rechargées. */
+  private _onNewData(): void {
+    this._loaderSub?.unsubscribe();
+    this._loaderRows = null;
+    if (this.config?.lazyLoader && this._lazyColumnStatus.size) {
+      this._setLazyStatus([...this._lazyColumnStatus.keys()], 'loading');
+    } else {
+      this._settleLazyColumns();
+    }
+  }
+
+  /** Sans chargeur ni écouteur, la colonne demandée resterait en skeleton sans que rien ne l'explique. */
+  private _warnIfNoLazySource(columns: TableColumnProvider<T>[]): void {
+    if (this._lazyWarned || this.resolvedConfig.lazyLoader || this.lazyColumnsRequested.observed || !isDevMode()) return;
+    this._lazyWarned = true;
+    console.warn(
+      `[jquery-table] Colonne lazy activée (${columns.map(c => c.key).join(', ')}) mais ni config.lazyLoader ni (lazyColumnsRequested) ne sont définis : `
+      + 'aucune requête n\'est lancée et le skeleton restera affiché.',
+    );
   }
 
   /** De nouvelles `data` sont arrivées : toutes les colonnes demandées sont considérées comme prêtes. */
@@ -1660,10 +1715,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const config = this.config || {};
     const rows = this._resolvedData;
 
-    const columns =
+    const columns = this._normalizeColumns(
       config.columns ||
       this.columnsConfig ||
-      this.resolveColumnsFromCompat(rows);
+      this.resolveColumnsFromCompat(rows),
+    );
 
     // Mode HTML : [view] prend le dessus sur config.view si fourni (Phase 3).
     const view = this.view ?? config.view;
@@ -1690,6 +1746,33 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       export: exportConfig,
       preferences: prefsConfig,
     };
+  }
+
+  /** Une colonne lazy est forcément optionnelle : `optional` est implicite, et `optional: false` est refusé. */
+  private _normalizeColumns(columns: TableColumnProvider<T>[]): TableColumnProvider<T>[] {
+    if (columns === this._columnsSource) return this._columnsNormalized!;
+    const normalized = columns.map(column => this._withImpliedOptional(column));
+    const result = normalized.some((column, index) => column !== columns[index]) ? normalized : columns;
+    this._columnsSource = columns;
+    this._columnsNormalized = result;
+    return result;
+  }
+
+  private _withImpliedOptional(column: TableColumnProvider<T>): TableColumnProvider<T> {
+    if (!column.lazy || column.optional) return column;
+    if ((column as { optional?: boolean }).optional === false) {
+      throw new Error(
+        `[jquery-table] La colonne '${column.key}' est lazy : elle est forcément optionnelle (optional: true est implicite). `
+        + 'optional: false la ferait demander dès le premier rendu, soit une requête de plus pour rien. '
+        + 'Retirez optional: false, ou lazy: true si la colonne doit toujours être affichée.',
+      );
+    }
+    let implied = this._optionalLazyColumns.get(column);
+    if (!implied) {
+      implied = { ...column, optional: true };
+      this._optionalLazyColumns.set(column, implied);
+    }
+    return implied;
   }
 
   private applyConfigSearchReset(): void {
@@ -1733,6 +1816,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   private resolveData(): T[] {
+    if (this._loaderRows) {
+      return this._loaderRows;
+    }
+
     if (Array.isArray(this.data)) {
       return this.data;
     }

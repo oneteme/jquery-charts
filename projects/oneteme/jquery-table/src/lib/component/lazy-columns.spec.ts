@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { Subject } from 'rxjs';
 import { TableComponent } from './table.component';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
 import { TableColumnProvider, TableProvider } from '../jquery-table.model';
@@ -31,6 +32,16 @@ class HostComponent {
 })
 class TemplateHostComponent extends HostComponent {}
 
+@Component({
+  standalone: true,
+  imports: [TableComponent],
+  template: `<jquery-table [config]="config" [data]="data"></jquery-table>`,
+})
+class BareHostComponent {
+  config!: TableProvider<Row>;
+  data: Row[] = [];
+}
+
 const rows = (...ids: number[]): Row[] => ids.map(id => ({ id, name: `name-${id}` }));
 const withValues = (key: 'details' | 'team', values: Record<number, string>, ids = [1, 2, 3]): Row[] =>
   ids.map(id => ({ id, name: `name-${id}`, [key]: values[id] }));
@@ -45,8 +56,8 @@ interface SetupOptions {
 function setup(options: SetupOptions = {}) {
   const columns = options.columns ?? [
     { key: 'name', header: 'Nom' },
-    { key: 'details', header: 'Détails', optional: true, lazy: true },
-    { key: 'team', header: 'Équipe', optional: true, lazy: true },
+    { key: 'details', header: 'Détails', lazy: true },
+    { key: 'team', header: 'Équipe', lazy: true },
   ];
 
   const makeConfig = (): TableProvider<Row> => ({
@@ -65,7 +76,7 @@ function setup(options: SetupOptions = {}) {
   fixture.detectChanges();
 
   const table = (): TableComponent<Row> => fixture.debugElement.query(By.directive(TableComponent)).componentInstance;
-  const column = (key: string): TableColumnProvider<Row> => host.config.columns!.find(c => c.key === key)!;
+  const column = (key: string): TableColumnProvider<Row> => table()['resolvedConfig'].columns!.find(c => c.key === key)!;
   const settle = async () => {
     // Le rendu est différé par setTimeout(0) et peut en replanifier un autre : on laisse passer plusieurs tours.
     for (let round = 0; round < 4; round++) {
@@ -91,7 +102,7 @@ function setup(options: SetupOptions = {}) {
 describe('TableComponent — colonnes lazy (requête relancée par l\'application)', () => {
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ imports: [HostComponent, TemplateHostComponent], providers: [provideNoopAnimations()] });
+    TestBed.configureTestingModule({ imports: [HostComponent, TemplateHostComponent, BareHostComponent], providers: [provideNoopAnimations()] });
   });
 
   describe('activation depuis Organizer', () => {
@@ -169,28 +180,36 @@ describe('TableComponent — colonnes lazy (requête relancée par l\'applicatio
     });
   });
 
-  describe('colonnes visibles par défaut', () => {
-    const visibleLazy: TableColumnProvider<Row>[] = [
-      { key: 'name', header: 'Nom' },
-      { key: 'details', header: 'Détails', lazy: true },
-      { key: 'team', header: 'Équipe', lazy: true },
-    ];
-
-    it('demande toutes les colonnes lazy visibles en un seul événement', async () => {
-      const t = setup({ columns: visibleLazy });
+  describe('lazy implique optional', () => {
+    it('une colonne lazy sans optional n\'est ni affichée ni demandée au premier rendu', async () => {
+      const t = setup();
       await t.settle();
 
-      expect(t.host.requested).toEqual([['details', 'team']]);
+      expect(t.count('th.mat-column-details')).toBe(0);
+      expect(t.host.requested).toEqual([]);
     });
 
-    it('n\'émet rien tant que le tableau est vide, puis demande les colonnes à l\'arrivée des lignes', async () => {
-      const t = setup({ columns: visibleLazy, data: [] });
+    it('elle est proposée parmi les champs optionnels du menu View', async () => {
+      const t = setup();
+      await t.settle();
+
+      expect(t.table()._organizer.menuOptionalFields.map(column => column.key)).toEqual(['details', 'team']);
+    });
+
+    it('optional: false est refusé avec un message explicite', () => {
+      const refused = [{ key: 'name', header: 'Nom' }, { key: 'details', header: 'Détails', lazy: true, optional: false } as any];
+
+      expect(() => setup({ columns: refused })).toThrowError(/'details' est lazy.*optional: false/s);
+    });
+
+    it('n\'émet rien tant que le tableau est vide, puis demande la colonne du Group by à l\'arrivée des lignes', async () => {
+      const t = setup({ data: [], config: { defaultGroupBy: 'team' } });
       await t.settle();
       expect(t.host.requested).toEqual([]);
 
       t.host.data = rows(1, 2);
       await t.settle();
-      expect(t.host.requested).toEqual([['details', 'team']]);
+      expect(t.host.requested).toEqual([['team']]);
     });
   });
 
@@ -455,6 +474,161 @@ describe('TableComponent — colonnes lazy (requête relancée par l\'applicatio
 
       expect(t.cells('name')).toEqual(['name-1', 'name-2', 'name-3']);
       expect(t.count('.tpl-name')).toBe(3);
+    });
+  });
+
+  describe('config.lazyLoader', () => {
+    function withLoader(extra: Partial<SetupOptions> = {}) {
+      const calls: string[][] = [];
+      const pending: Subject<Row[]>[] = [];
+      const lazyLoader = (columns: string[]) => {
+        calls.push([...columns]);
+        const response = new Subject<Row[]>();
+        pending.push(response);
+        return response;
+      };
+      const t = setup({ ...extra, config: { ...extra.config, lazyLoader } });
+      return { t, calls, pending };
+    }
+
+    it('appelle le chargeur à l\'activation, puis remplace les lignes par sa réponse sans toucher à data', async () => {
+      const { t, calls, pending } = withLoader();
+      await t.settle();
+      expect(calls).toEqual([]);
+
+      t.activate('details');
+      await t.settle();
+      expect(calls).toEqual([['details']]);
+      expect(t.count('td.mat-column-details .lazy-skeleton')).toBe(3);
+
+      pending[0].next(withValues('details', { 1: 'd1', 2: 'd2', 3: 'd3' }));
+      await t.settle();
+      expect(t.cells('details')).toEqual(['d1', 'd2', 'd3']);
+      expect(t.count('.lazy-skeleton')).toBe(0);
+      expect(t.host.data[0].details).toBeUndefined();
+    });
+
+    it('cumule les colonnes déjà demandées quand une autre est activée plus tard', async () => {
+      const { t, calls, pending } = withLoader();
+      t.activate('details');
+      await t.settle();
+      pending[0].next(withValues('details', { 1: 'd1', 2: 'd2', 3: 'd3' }));
+      await t.settle();
+
+      t.activate('team');
+      await t.settle();
+      expect(calls).toEqual([['details'], ['details', 'team']]);
+    });
+
+    it('affiche « Réessayer » quand le chargeur échoue, sans lazyError, puis recharge au clic', async () => {
+      const { t, calls, pending } = withLoader();
+      t.activate('details');
+      await t.settle();
+      pending[0].error(new Error('boom'));
+      await t.settle();
+      expect(t.count('td.mat-column-details .lazy-error-btn')).toBe(3);
+      expect(t.count('.lazy-skeleton')).toBe(0);
+
+      (t.root().querySelector('td.mat-column-details .lazy-error-btn') as HTMLButtonElement).click();
+      await t.settle();
+      expect(calls).toEqual([['details'], ['details']]);
+      expect(t.count('td.mat-column-details .lazy-skeleton')).toBe(3);
+
+      pending[1].next(withValues('details', { 1: 'd1', 2: 'd2', 3: 'd3' }));
+      await t.settle();
+      expect(t.cells('details')).toEqual(['d1', 'd2', 'd3']);
+      expect(t.count('.lazy-error-btn')).toBe(0);
+    });
+
+    it('un nouveau data l\'emporte sur les lignes du chargeur et recharge les colonnes déjà demandées', async () => {
+      const { t, calls, pending } = withLoader();
+      t.activate('details');
+      await t.settle();
+      pending[0].next(withValues('details', { 1: 'd1', 2: 'd2', 3: 'd3' }));
+      await t.settle();
+
+      t.host.data = rows(1, 2, 3, 4);
+      await t.settle();
+      expect(calls).toEqual([['details'], ['details']]);
+      expect(t.count('td.mat-column-details .lazy-skeleton')).toBe(4);
+
+      pending[1].next(withValues('details', { 1: 'x1', 2: 'x2', 3: 'x3', 4: 'x4' }, [1, 2, 3, 4]));
+      await t.settle();
+      expect(t.cells('details')).toEqual(['x1', 'x2', 'x3', 'x4']);
+    });
+
+    it('un nouveau data ignore la réponse encore en cours de l\'ancien appel', async () => {
+      const { t, calls, pending } = withLoader();
+      t.activate('details');
+      await t.settle();
+
+      t.host.data = rows(1, 2, 3);
+      await t.settle();
+      expect(calls.length).toBe(2);
+
+      pending[0].next(withValues('details', { 1: 'old1', 2: 'old2', 3: 'old3' }));
+      await t.settle();
+      expect(t.count('td.mat-column-details .lazy-skeleton')).toBe(3);
+
+      pending[1].next(withValues('details', { 1: 'new1', 2: 'new2', 3: 'new3' }));
+      await t.settle();
+      expect(t.cells('details')).toEqual(['new1', 'new2', 'new3']);
+    });
+
+    it('n\'appelle pas le chargeur tant que le tableau est vide', async () => {
+      const { t, calls } = withLoader({ data: [], config: { defaultGroupBy: 'team' } });
+      await t.settle();
+      expect(calls).toEqual([]);
+
+      t.host.data = rows(1, 2);
+      await t.settle();
+      expect(calls).toEqual([['team']]);
+    });
+  });
+
+  describe('avertissement de développement', () => {
+    const warning = jasmine.stringMatching(/lazyLoader.*lazyColumnsRequested/s);
+
+    async function activateOnBareHost() {
+      const fixture = TestBed.createComponent(BareHostComponent);
+      fixture.componentInstance.config = {
+        columns: [{ key: 'name', header: 'Nom' }, { key: 'details', header: 'Détails', lazy: true }],
+        view: { enabled: true, enableColumnRemoval: true },
+      };
+      fixture.componentInstance.data = rows(1, 2, 3);
+      fixture.detectChanges();
+      const table: TableComponent<Row> = fixture.debugElement.query(By.directive(TableComponent)).componentInstance;
+      table.onColumnVisibilityChange(table['resolvedConfig'].columns!.find(c => c.key === 'details')!, true);
+      for (let round = 0; round < 3; round++) {
+        fixture.detectChanges();
+        await new Promise(resolve => setTimeout(resolve, 0));
+      }
+    }
+
+    it('prévient quand une colonne lazy est activée sans chargeur ni écouteur', async () => {
+      const warn = spyOn(console, 'warn');
+      await activateOnBareHost();
+
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn).toHaveBeenCalledWith(warning);
+    });
+
+    it('reste silencieux avec un écouteur', async () => {
+      const warn = spyOn(console, 'warn');
+      const t = setup();
+      t.activate('details');
+      await t.settle();
+
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('reste silencieux avec un chargeur', async () => {
+      const warn = spyOn(console, 'warn');
+      const t = setup({ config: { lazyLoader: () => new Subject<Row[]>() } });
+      t.activate('details');
+      await t.settle();
+
+      expect(warn).not.toHaveBeenCalled();
     });
   });
 
