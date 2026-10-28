@@ -365,16 +365,17 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       }
       return option;
     }
+    const config = this._resolveTypedConfig();
     const configurator = resolveConfigurator(this._type);
-    const commonChart = configurator.buildChartData(this.data, this._config, this._type);
-    const base = buildBaseOption(this._config);
-    const typeSpecific = configurator.buildOption(commonChart, this._type, this._config);
+    const commonChart = configurator.buildChartData(this.data, config, this._type);
+    const base = buildBaseOption(config);
+    const typeSpecific = configurator.buildOption(commonChart, this._type, config);
     const tooltipOverride: EChartsOption = {
       tooltip: buildTooltipOption(configurator.tooltipTrigger, this.el.nativeElement),
     };
     const merged = applyCommonConfig(
       mergeDeep({}, base, typeSpecific, tooltipOverride),
-      this._config
+      config
     );
     if (this._group && this._syncs('datazoom') && !(merged as any).dataZoom && (merged as any).xAxis) {
       (merged as any).dataZoom = [
@@ -383,6 +384,13 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       ];
     }
     return merged;
+  }
+
+  /** Fusionne `optionsByType[type]` après `options` : la config du type actif l'emporte. */
+  private _resolveTypedConfig(): ChartProvider<X, Y> {
+    const typeOptions = this._config.optionsByType?.[this._type];
+    if (!typeOptions) return this._config;
+    return { ...this._config, options: mergeDeep({}, this._config.options, typeOptions) };
   }
 
   private _syncs(action: 'datazoom' | 'tooltip'): boolean {

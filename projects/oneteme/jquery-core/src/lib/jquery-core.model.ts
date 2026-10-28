@@ -318,6 +318,7 @@ export interface ChartProvider<X extends XaxisType, Y extends YaxisType> {
   xorder?: Sort;
   series?: SerieProvider<X, Y>[];
   options?: any;
+  optionsByType?: Partial<Record<ChartType, any>>; // options fusionnées après `options`, pour le type actif
   showToolbar?: boolean;
   group?: string; // groupe de synchronisation inter-graphiques
   groupSync?: GroupSyncMode; // ce qui est synchronisé dans le groupe

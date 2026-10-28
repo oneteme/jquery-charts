@@ -34,11 +34,19 @@ export class TablePreferencesManager {
 
   /** Supprime la configuration sauvegardée. */
   clear(): void {
-    localStorage.removeItem(this.key);
+    try {
+      localStorage.removeItem(this.key);
+    } catch {
+      // stockage indisponible : rien à effacer
+    }
   }
 
   /** Indique si une configuration est actuellement sauvegardée. */
   hasSaved(): boolean {
-    return localStorage.getItem(this.key) !== null;
+    try {
+      return localStorage.getItem(this.key) !== null;
+    } catch {
+      return false;
+    }
   }
 }

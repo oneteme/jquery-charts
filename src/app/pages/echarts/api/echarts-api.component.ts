@@ -11,8 +11,8 @@ import {
 } from '@oneteme/jquery-echarts';
 import {
   ChartProvider,
-  OrganizerConfig as ChartOrganizerConfig,
-  OrganizerState as ChartOrganizerState,
+  ChartOrganizerConfig,
+  ChartOrganizerState,
   VisualSnapshot,
   VisualSnapshotDraft,
   field,
@@ -85,7 +85,7 @@ export class EChartsApiComponent {
         { name: 'theme / renderer', type: 'string / \'svg\' | \'canvas\'', source: 'Wrapper', description: 'theme accepte un nom de thème ECharts enregistré ; light est le thème intégré le plus simple. renderer choisit le moteur de rendu SVG ou Canvas.', code: '<chart theme="light" renderer="svg" ...></chart>', types: 'Tous' },
         { name: 'group', type: 'string | null', source: 'Wrapper', description: 'Sert à relier plusieurs graphiques qui affichent des informations liées. Par exemple, un graphique des ventes et un graphique de la marge peuvent suivre la même période : sans le même group, chacun réagit seul ; avec group="sales-dashboard", ils peuvent être synchronisés.', code: '<chart group="sales-dashboard" ...></chart>\n<chart group="sales-dashboard" ...></chart>', types: 'Tous' },
         { name: 'groupSync', type: 'GroupSyncMode', source: 'Wrapper', description: 'Indique quelles interactions doivent être transmises entre les graphiques portant le même group. Utilisez "tooltip" pour déplacer le survol ensemble, "datazoom" pour conserver la même période zoomée, ou "all" pour les deux (valeur par défaut). groupSync ne relie pas les graphiques : il règle seulement ce qui circule entre eux.', code: '<chart group="sales-dashboard" groupSync="tooltip" ...></chart>\n<chart group="sales-dashboard" groupSync="tooltip" ...></chart>', types: 'Tous' },
-        { name: 'organizer', type: 'OrganizerConfig', source: 'Wrapper', description: 'Active la gestion interne de la visibilité des séries nommées avec enabled: true. Le composant <chart> ne rend pas lui-même un bouton ou un panneau : l’interface Organizer doit être intégrée séparément.', code: '<chart [organizer]="{ enabled: true }" ...></chart>', types: 'Tous' },
+        { name: 'organizer', type: 'ChartOrganizerConfig', source: 'Wrapper', description: 'Active la gestion interne de la visibilité des séries nommées avec enabled: true. Le composant <chart> ne rend pas lui-même un bouton ou un panneau : l’interface Organizer doit être intégrée séparément.', code: '<chart [organizer]="{ enabled: true }" ...></chart>', types: 'Tous' },
         { name: 'drilldown', type: 'ChartDrilldownConfig', source: 'Wrapper', description: 'Ajoute un breadcrumb et une navigation entre plusieurs niveaux de données. L’application reste responsable de charger les données et de mettre à jour activeLevel.', code: '<chart [drilldown]="drilldown" (drilldownNavigate)="onNavigate($event)" ...></chart>', types: 'Tous' },
         { name: 'copyFeedback', type: 'VisualCopyFeedbackConfig', source: 'Wrapper', description: 'Configure le message affiché après une copie visuelle.', code: '<chart [copyFeedback]="{ enabled: true }" ...></chart>', types: 'Tous' },
       ],

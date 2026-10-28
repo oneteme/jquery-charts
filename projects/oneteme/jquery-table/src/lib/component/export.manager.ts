@@ -19,7 +19,8 @@ export class ExportManager<T> {
     if (!cfg?.enabled) return;
     const rows    = this.getRows();
     const columns = this.getColumns();
-    const filename = (cfg.filename || 'export') + '.csv';
+    const baseName = cfg.filename || 'export';
+    const filename = baseName.toLowerCase().endsWith('.csv') ? baseName : baseName + '.csv';
 
     const header = columns.map(c => this._csvEscape(c.header || c.key)).join(',');
     const lines = rows.map((row, idx) => {
@@ -35,7 +36,7 @@ export class ExportManager<T> {
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
     a.href = url;
-    a.download = filename.endsWith('.csv') ? filename : filename + '.csv';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   }

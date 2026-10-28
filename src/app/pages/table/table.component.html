@@ -5,8 +5,8 @@
       <p class="eyebrow">jquery-table / exemples</p>
       <h1>Des tableaux configurables, pensés pour vos usages métier.</h1>
       <p class="subtitle">
-        Trois situations courantes pour voir le wrapper en action : du tableau simple aux vues métier avec filtres,
-        regroupement et cellules personnalisées.
+        Quatre situations courantes pour voir le wrapper en action : du tableau simple aux vues métier avec filtres,
+        regroupement, cellules personnalisées et colonnes chargées à la demande depuis une API.
       </p>
     </div>
     <a class="api-link" routerLink="/api/table">Consulter la référence API ↗</a>
@@ -54,8 +54,10 @@
         <jquery-table
           class="demo-table"
           [class.demo-table--styled]="example.id === 'overview'"
+          [class.demo-table--tall]="!!example.lazy"
           [config]="example.config"
-          [data]="rows"
+          [data]="example.lazy ? example.lazy.rows : rows"
+          [isLoading]="!!example.lazy?.loading"
           (rowSelected)="onRowSelected($event)"
         >
           <ng-template jqtCellDef="status" let-row>
@@ -65,6 +67,94 @@
             <span class="priority-chip" [attr.data-priority]="row.priority">{{ row.priority }}</span>
           </ng-template>
         </jquery-table>
+
+        <section *ngIf="example.lazy as demo" class="network-panel" aria-label="Aperçu de l’onglet Network du navigateur">
+          <header class="network-panel__bar">
+            <span class="network-panel__tab">Network</span>
+            <span class="network-panel__filter">Fetch/XHR</span>
+            <span class="network-panel__hint">
+              Les appels réels de cet exemple. Ajoutez une colonne lazy dans le menu View : une nouvelle requête apparaît,
+              avec le champ ajouté en surbrillance.
+            </span>
+          </header>
+
+          <div class="network-panel__scroll">
+            <table class="network-table">
+              <thead>
+                <tr>
+                  <th>Nom</th>
+                  <th>Méthode</th>
+                  <th>Statut</th>
+                  <th>Type</th>
+                  <th>Taille</th>
+                  <th>Temps</th>
+                  <th>Déclencheur</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  *ngFor="let call of demo.calls"
+                  tabindex="0"
+                  [class.is-selected]="call.id === demo.selectedId"
+                  (click)="demo.select(call.id)"
+                  (keydown.enter)="demo.select(call.id)"
+                >
+                  <td>graphql</td>
+                  <td>{{ call.method }}</td>
+                  <td class="network-status" [attr.data-status]="demo.statusKind(call)">{{ demo.statusLabel(call) }}</td>
+                  <td>fetch</td>
+                  <td>{{ demo.sizeLabel(call) }}</td>
+                  <td>{{ demo.timeLabel(call) }}</td>
+                  <td>{{ call.trigger }}</td>
+                </tr>
+                <tr *ngIf="!demo.calls.length" class="network-empty">
+                  <td colspan="7">Aucune requête pour le moment</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div *ngIf="demo.selectedCall as call" class="network-detail">
+            <div class="network-detail__tabs" role="tablist" aria-label="Détail de la requête">
+              <button
+                type="button"
+                role="tab"
+                [class.is-active]="demo.networkTab === 'payload'"
+                [attr.aria-selected]="demo.networkTab === 'payload'"
+                (click)="demo.networkTab = 'payload'">Payload</button>
+              <button
+                type="button"
+                role="tab"
+                [class.is-active]="demo.networkTab === 'response'"
+                [attr.aria-selected]="demo.networkTab === 'response'"
+                (click)="demo.networkTab = 'response'">Réponse</button>
+            </div>
+
+            <dl class="network-general">
+              <div><dt>Request URL</dt><dd>{{ call.url }}</dd></div>
+              <div><dt>Request Method</dt><dd>{{ call.method }}</dd></div>
+              <div><dt>Status Code</dt><dd class="network-status" [attr.data-status]="demo.statusKind(call)">{{ demo.statusDetail(call) }}</dd></div>
+              <div><dt>Déclencheur</dt><dd>{{ call.trigger }}</dd></div>
+            </dl>
+
+            <p *ngIf="demo.hasAdded(call)" class="network-legend">
+              <span class="network-added">Surligné</span> : champ ajouté par la colonne lazy qui vient d’être demandée.
+            </p>
+
+            <pre *ngIf="demo.networkTab === 'payload'" class="network-code"><code>
+              <span class="network-line">&#123;</span>
+              <span class="network-line">  "query": "<span *ngFor="let segment of call.querySegments" [class.network-added]="segment.added">{{ segment.text }}</span>"</span>
+              <span class="network-line">&#125;</span>
+            </code></pre>
+
+            <pre *ngIf="demo.networkTab === 'response' && call.responseLines.length" class="network-code"><code>
+              <span *ngFor="let line of call.responseLines" class="network-line" [class.network-added]="line.added">{{ line.text }}</span>
+            </code></pre>
+            <p *ngIf="demo.networkTab === 'response' && !call.responseLines.length" class="network-empty-response">
+              Aucune réponse : requête en attente, annulée ou en échec.
+            </p>
+          </div>
+        </section>
 
         <div class="selection-note">
           <span>Événement <code>rowSelected</code></span>

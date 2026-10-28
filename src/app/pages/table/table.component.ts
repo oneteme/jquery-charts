@@ -1,8 +1,7 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit } from '@angular/core';
 import { JqtCellDefDirective, TableComponent, TableProvider, col } from '@oneteme/jquery-table';
+import { CountriesApiService, CountriesLazyDemo, Country } from './countries-lazy.demo';
 
 type DemoStatus = 'Ouvert' | 'En cours' | 'Terminé';
 type DemoPriority = 'Haute' | 'Normale' | 'Basse';
@@ -31,7 +30,9 @@ interface TableExample {
   title: string;
   description: string;
   tags: string[];
-  config: TableProvider<DemoRow>;
+  config: TableProvider<any>;
+  /** Exemple alimenté par sa propre source de données (colonnes lazy) plutôt que par `rows`. */
+  lazy?: CountriesLazyDemo;
   code: ExampleCode;
   activeCodeTab: CodeTab;
 }
@@ -44,7 +45,10 @@ interface TableExample {
   styleUrls: ['./table.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TableExempleComponent {
+export class TableExempleComponent implements OnInit {
+  private readonly cdr = inject(ChangeDetectorRef);
+  readonly countries = new CountriesLazyDemo(inject(CountriesApiService), () => this.cdr.markForCheck());
+
   readonly codeTabs: { key: CodeTab; label: string }[] = [
     { key: 'ts', label: 'TS' },
     { key: 'html', label: 'HTML' },
@@ -110,7 +114,7 @@ export class TableExempleComponent {
   };
 
   readonly customConfig: TableProvider<DemoRow> = {
-    title: 'Cellules personnalisées et colonne différée',
+    title: 'Cellules personnalisées',
     pagination: { enabled: true, pageSize: 5, pageSizeOptions: [5, 10] },
     columns: [
       col<DemoRow>('reference', 'Référence', { sortable: true, width: '130px' }),
@@ -123,14 +127,28 @@ export class TableExempleComponent {
         value: row => `${row.duration} min`,
         sortValue: row => row.duration,
       },
-      {
-        key: 'details',
-        header: 'Détails chargés',
-        lazy: {
-          fetchFn: () => of(this.rows.map(row => row.duration > 60 ? 'Intervention longue' : 'Intervention standard')).pipe(delay(450)),
-        },
-      },
     ],
+  };
+
+  readonly lazyConfig: TableProvider<Country> = {
+    title: 'Pays du monde',
+    search: { enabled: true, searchColumns: ['code', 'name', 'continent', 'capital'] },
+    pagination: { enabled: true, pageSize: 10, pageSizeOptions: [10, 25, 50], pageSizeOptionsGroupBy: [10, 25] },
+    view: { enabled: true, enableColumnRemoval: true },
+    export: { enabled: true, filename: 'pays' },
+    labels: { empty: 'Aucun pays (API indisponible ?)', loading: 'Chargement des pays…' },
+    defaultSort: { active: 'name', direction: 'asc' },
+    columns: [
+      col<Country>('code', 'Code', { sortable: true, width: '90px', groupable: false, sliceable: false }),
+      col<Country>('name', 'Pays', { sortable: true, groupable: false, sliceable: false }),
+      col<Country>('continent', 'Continent', { sortable: true }),
+      // Colonnes lazy : absentes de la requête de base, demandées à l’activation. Une colonne lazy est forcément
+      // optionnelle (`optional: true` est implicite, `optional: false` lève une erreur) : aucun `optional` ici.
+      col<Country>('capital', 'Capitale', { sortable: true, lazy: true, groupable: false, sliceable: false }),
+      col<Country>('currency', 'Devise', { sortable: true, lazy: true }),
+      col<Country>('languages', 'Langues', { sortable: true, lazy: true, groupable: false, sliceable: false }),
+    ],
+    lazyLoader: this.countries.lazyLoader,
   };
 
   readonly examples: TableExample[] = [
@@ -231,9 +249,9 @@ export class TableExempleComponent {
     {
       id: 'custom',
       index: '03',
-      title: 'Cellules personnalisées et données différées',
-      description: 'Un template Angular personnalise les badges, tandis qu’une colonne lazy simule une donnée chargée après le rendu initial.',
-      tags: ['jqtCellDef', 'value / sortValue', 'lazy'],
+      title: 'Cellules personnalisées',
+      description: 'Un template Angular personnalise les badges, tandis que `value` et `sortValue` séparent la valeur affichée de la valeur utilisée par le tri.',
+      tags: ['jqtCellDef', 'value / sortValue'],
       config: this.customConfig,
       code: {
         ts: `columns: [{
@@ -241,10 +259,6 @@ export class TableExempleComponent {
   header: 'Durée',
   value: row => row.duration + ' min',
   sortValue: row => row.duration,
-}, {
-  key: 'details',
-  header: 'Détails chargés',
-  lazy: { fetchFn: () => details$ },
 }];`,
         html: `<jquery-table
   class="demo-table"
@@ -266,12 +280,57 @@ export class TableExempleComponent {
       },
       activeCodeTab: 'ts',
     },
+    {
+      id: 'lazy',
+      index: '04',
+      title: 'Colonnes lazy sur une API publique',
+      description: 'Capitale, Devise et Langues sont absentes de la requête de base : une colonne lazy est forcément optionnelle (optional: true est implicite, optional: false lève une erreur). À son activation dans le menu View (ou en Group by), la table appelle le lazyLoader de la config, qui relance la requête GraphQL complète de countries.trevorblades.com avec ces champs ; un skeleton s’affiche jusqu’à la réponse, puis les nouvelles lignes remplacent les anciennes.',
+      tags: ['lazy', 'lazyLoader', 'API publique', 'group by'],
+      config: this.lazyConfig,
+      lazy: this.countries,
+      code: {
+        ts: `readonly config: TableProvider<Country> = {
+  columns: [
+    col('code', 'Code'),
+    col('name', 'Pays'),
+    col('continent', 'Continent'),
+    // lazy implique optional : la colonne n’est jamais demandée au premier rendu
+    col('capital', 'Capitale', { lazy: true }),
+    col('currency', 'Devise', { lazy: true }),
+  ],
+  // colonnes lazy demandées (cumul) : ['capital'], puis ['capital', 'currency']
+  lazyLoader: columns => this.api.fetchCountries(columns),   // Observable<Country[]>
+};
+
+// [data] : requête de base, sans les colonnes lazy
+this.api.fetchCountries([]).subscribe(rows => this.countries = rows);`,
+        html: `<jquery-table
+  class="demo-table"
+  [config]="config"
+  [data]="countries">
+</jquery-table>`,
+        scss: `:host {
+  display: block;
+  height: 560px;
+}
+
+.demo-table {
+  display: block;
+  height: 100%;
+}`,
+      },
+      activeCodeTab: 'ts',
+    },
   ];
 
   selectedReference = 'Aucune ligne sélectionnée';
 
-  onRowSelected(row: DemoRow): void {
-    this.selectedReference = row.reference;
+  ngOnInit(): void {
+    this.countries.load();
+  }
+
+  onRowSelected(row: any): void {
+    this.selectedReference = row.reference ?? `${row.code} · ${row.name}`;
   }
 
   selectCodeTab(example: TableExample, tab: CodeTab): void {

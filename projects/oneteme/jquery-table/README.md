@@ -24,7 +24,7 @@ Bibliothèque Angular qui encapsule Angular Material Table avec une API orienté
 - Pagination standard et pagination par groupe
 - **Group by** : regroupement des lignes par colonne, groupes pliables/dépliables, pagination indépendante par groupe
 - **Slice panel** : filtres catégoriels latéraux, statiques (prédéfinis) ou dynamiques (colonne  valeurs uniques), multi-sélection configurable
-- **Chargement paresseux** (lazy) de cellules via Observable par colonne
+- **Chargement paresseux** (lazy) de colonnes : `lazy: true` + `lazyLoader` dans la config (la colonne n'est demandée qu'à son activation)
 - Rendus de cellule personnalisés via directive `jqtCellDef`
 - État de chargement (`isLoading`) et état vide configurable
 - Événement de clic sur ligne (`rowSelected`)
@@ -119,6 +119,7 @@ Le `config` complet reste disponible pour activer les fonctionnalités avancées
 | `columnsConfig` | `TableColumnProvider<T>[]` | Configuration des colonnes (remplace `config.columns`) |
 | `columnLabels` | `Record<string, string>` | Labels des colonnes pour le mode allégé |
 | `isLoading` | `boolean` | Affiche l'état de chargement (défaut : `false`) |
+| `lazyError` | `boolean` | `true` quand la requête relancée après `lazyColumnsRequested` échoue : les colonnes lazy en attente affichent « Réessayer » (voir colonnes lazy) |
 | `view` | `TableViewConfig` | Surcharge `config.view` si défini (mode HTML) |
 
 ### Outputs
@@ -131,6 +132,7 @@ Le `config` complet reste disponible pour activer les fonctionnalités avancées
 | `searchChange` | `string` | Frappe dans la barre de recherche |
 | `groupByChange` | `string \| null` | Group by activé (clé) ou désactivé (`null`) |
 | `columnsChange` | `string[]` | Colonnes visibles modifiées (clés dans l'ordre d'affichage) |
+| `lazyColumnsRequested` | `string[]` | Clés cumulées des colonnes `lazy` demandées, émises à l'activation d'une nouvelle colonne (voir colonnes lazy) |
 | `columnAdded` | `TableColumnProvider<T>` | Colonne ajoutée aux colonnes actives |
 | `columnRemoved` | `TableColumnProvider<T>` | Colonne retirée des colonnes actives |
 | `categorySelected` | `string` | Catégorie de slice sélectionnée |
@@ -153,6 +155,7 @@ interface TableProvider<T = any> {
   view?:         TableViewConfig;
   labels?:       TableLabelsConfig;
   export?:       TableExportConfig<T>;
+  lazyLoader?:   (lazyColumns: string[]) => Observable<T[]>;  // Charge les colonnes lazy (lignes complètes)
   preferences?:  TablePreferencesConfig;  // Sauvegarde dans localStorage
 
   defaultSort?:    { active: string; direction: 'asc' | 'desc' };
@@ -180,16 +183,14 @@ interface TableColumnProvider<T = any> {
   width?:     string;                  // Largeur CSS en px uniquement pour le calcul min-width (ex: '120px')
                                        // Les unités %, em, rem sont ignorées dans le calcul de tableMinWidth
 
-  optional?:  boolean;                 // Colonne masquée par défaut, ajoutables via View menu
+  optional?:  boolean;                 // Colonne masquée par défaut, ajoutables via View menu (implicite pour une colonne lazy)
   removable?: boolean;                 // Peut être retirée manuellement
 
   groupable?: boolean;                 // Disponible comme critère de regroupement dans View menu
   sliceable?: boolean;                 // Disponible comme slice dynamique dans View menu
   searchValue?: DataProvider<string>;  // Valeur utilisée par la recherche texte (si différente de value)
 
-  lazy?: {
-    fetchFn: () => Observable<any[]>;  // Retourne un tableau dans le même ordre que les lignes
-  };
+  lazy?: true;                         // Absente de la requête de base, forcément optionnelle : demandée à sa première activation
 }
 ```
 
@@ -398,19 +399,70 @@ interface SliceCategory<T = any> {
 
 ## Fonctionnalité — lazy columns
 
+Une colonne `lazy: true` est absente de la requête de base : elle réduit la réponse du premier rendu et n'est demandée que si l'utilisateur l'affiche. Elle est donc **forcément optionnelle** : `optional: true` est implicite (inutile de l'écrire) et `optional: false` lève une erreur explicite, car la colonne serait demandée dès le premier rendu, soit une requête de plus pour rien. Le type refuse aussi cette combinaison à la compilation.
+
+### Avec `lazyLoader` (le plus simple)
+
+`[data]` reste la requête de base de l'application. Le chargeur de la config est appelé à l'activation d'une colonne lazy et retourne les **lignes complètes** (colonnes de base + colonnes lazy demandées) :
+
 ```ts
-columns: [
-  {
-    key:    'details',
-    header: 'Détails',
-    lazy: {
-      fetchFn: () => this.api.getDetails(),
-    },
-  },
-],
+config: TableProvider<Country> = {
+  columns: [
+    col('code', 'Code'),
+    col('name', 'Pays'),
+    col('capital',  'Capitale', { lazy: true }),
+    col('currency', 'Devise',   { lazy: true }),
+  ],
+  // colonnes lazy demandées (cumul) : ['capital'], puis ['capital', 'currency']
+  lazyLoader: columns => this.api.fetchCountries(columns),   // Observable<Country[]>
+};
 ```
 
-Le composant gère l'état `idle | loading | loaded | error` par colonne, avec possibilité de relancer la requête en cas d'erreur.
+```html
+<jquery-table [config]="config" [data]="countries"></jquery-table>
+```
+
+La table appelle `lazyLoader`, affiche le skeleton, remplace ses lignes par la réponse, gère l'erreur et le bouton « Réessayer » (sans `[lazyError]`), et annule l'appel en cours si une nouvelle demande arrive.
+
+- Un nouveau `[data]` (rafraîchissement de l'application) l'emporte sur les lignes du chargeur : si des colonnes lazy ont déjà été demandées, la table rappelle `lazyLoader` avec ce cumul (le skeleton réapparaît le temps de la requête). Pour une page rafraîchie en continu, préférer le mode événement ci-dessous afin d'éviter cette seconde requête.
+- Rien n'est appelé tant que le tableau n'a aucune ligne.
+
+### Avec l'événement `lazyColumnsRequested` (l'application garde la main)
+
+Sans `lazyLoader`, la table émet `(lazyColumnsRequested)` ; l'application **relance sa requête complète en incluant ces colonnes** et repasse les nouvelles `data`. Tant qu'elles ne sont pas arrivées, la colonne affiche un skeleton ; à leur arrivée, elles remplacent les anciennes lignes.
+
+```ts
+config: TableProvider<Session> = {
+  columns: [
+    col('name', 'Nom'),
+    col('address', 'Adresse', { lazy: true }),
+    col('status',  'Statut',  { lazy: true }),
+  ],
+};
+```
+
+```html
+<jquery-table [config]="config" [data]="rows" [lazyError]="lazyFailed" (lazyColumnsRequested)="onLazyColumns($event)"></jquery-table>
+```
+
+```ts
+onLazyColumns(columns: string[]) {          // ex. ['address'], puis ['address', 'status']
+  this.lazyFailed = false;
+  this.api.fetchRows(columns).subscribe({    // même requête que la base + ces colonnes
+    next: rows => this.rows = rows,
+    error: () => this.lazyFailed = true,
+  });
+}
+```
+
+- `lazyColumnsRequested` émet **toutes** les colonnes lazy demandées depuis le début (cumul) : la requête complète peut être reconstruite à partir de cette seule liste, y compris lors d'un rafraîchissement périodique.
+- Les colonnes `lazy: true` apparaissent dans Organizer > Champs sans être demandées ; l'événement part à l'activation (ou si la colonne sert de Group by / Slice by, y compris `defaultGroupBy`, une préférence restaurée ou un snapshot). Plusieurs colonnes activées dans le même tick partent dans un seul événement.
+- Rien n'est émis tant que le tableau n'a aucune ligne : la première réponse de l'application ne doit pas être prise pour celle qui contient les colonnes.
+- Les nouvelles `data` (changement de `[data]` ou `[dataSource]`) marquent toutes les colonnes demandées comme prêtes. Les données fournies ensuite (rafraîchissement, changement de `config`) doivent donc déjà contenir les colonnes demandées : la table ne les redemande pas.
+- Pour garder le tableau visible pendant la requête, ne pas passer `isLoading` à `true` : seul le skeleton de la colonne apparaît. Annuler la requête précédente (`switchMap`) évite qu'une réponse périmée soit prise pour la bonne.
+- En cas d'échec, passer `[lazyError]` à `true` : les colonnes en attente affichent « Réessayer » (cellule, ou en-tête de groupe si la colonne sert de Group by). Le clic réémet `lazyColumnsRequested` ; repasser `lazyError` à `false` au nouvel essai.
+- Sans `lazyLoader` ni écouteur, une colonne lazy activée resterait en skeleton : en développement, la table l'indique par un avertissement dans la console.
+- Une fois reçue, la colonne se comporte comme une colonne ordinaire : tri, recherche, Group by, Slice by, `value`, `sortValue`, `searchValue`, `jqtCellDef` et export CSV. L'export n'écrit jamais d'état de chargement ou d'erreur (cellule vide).
 
 ---
 
@@ -433,6 +485,7 @@ Le composant gère l'état `idle | loading | loaded | error` par colonne, avec p
 Contexte du template :
 - `$implicit`  la ligne brute (`T`)
 - `index`  index global de la ligne
+- `value`  valeur affichée de la cellule ; seul moyen de lire la valeur d'une colonne `lazy`, absente de la ligne brute (`let-value="value"`). Pour une colonne lazy, le template n'est rendu qu'une fois la valeur chargée : le skeleton et le bouton d'erreur sont gérés par le tableau.
 
 ---
 
@@ -473,8 +526,7 @@ config: TableProvider<Row> = {
 | `sliceConfigs` | `SliceConfig<T>[]` | Configurations des slices |
 | `columns` | `SliceColumnDef<T>[]` | Définitions des colonnes pour la résolution des valeurs |
 | `data` | `T[]` | Données source |
-| `lazyData` | `Map<string, Map<any,any>>` | Valeurs lazy chargées |
-| `lazyStatus` | `Map<string, 'idle'\|'loading'\|'loaded'\|'error'>` | État par colonne lazy |
+| `lazyStatus` | `Map<string, 'idle'\|'loading'\|'loaded'\|'error'>` | État par colonne lazy (leurs valeurs sont lues dans les lignes de `data`) |
 | `showToggle` | `boolean` | Affiche le bouton collapse du panel (défaut : `true`) |
 | `showCounts` | `boolean` | Affiche le nombre de lignes par catégorie (défaut : `true`) |
 | `collapsedByDefault` | `boolean` | Les slices démarrent repliés (défaut : `false`) |

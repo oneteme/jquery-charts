@@ -558,6 +558,8 @@
 
 :host ::ng-deep .group-header-loading td,
 :host ::ng-deep .group-header-loading:hover td,
+:host ::ng-deep .group-header-error td,
+:host ::ng-deep .group-header-error:hover td,
 :host ::ng-deep .group-header-too-many td,
 :host ::ng-deep .group-header-too-many:hover td {
   cursor: default;

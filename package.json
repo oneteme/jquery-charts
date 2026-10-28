@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-charts",
-  "version": "0.0.53",
+  "version": "0.0.54",
   "description": "jquery charts project",
   "private": false,
   "homepage": "https://github.com/oneteme/jquery-charts",
@@ -23,6 +23,7 @@
   ],
   "scripts": {
     "ng": "ng",
+    "lock:clean": "node scripts/sanitize-lockfile.mjs",
     "start": "ng serve",
     "b1": "ng build @oneteme/jquery-highcharts",
     "cb1": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-highcharts\"",

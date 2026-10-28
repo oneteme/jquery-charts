@@ -3,7 +3,8 @@ import { Observable } from 'rxjs';
 import { OrganizerConfig, SliceConfig } from '@oneteme/jquery-organizer';
 export { SliceConfig } from '@oneteme/jquery-organizer';
 
-export interface TableColumnProvider<T = any> {
+/** Propriétés communes à toutes les colonnes ; voir `TableColumnProvider`. */
+export interface TableColumnBase<T = any> {
   key: string;
   /** Libellé affiché dans l'en-tête de colonne. Optionnel si la colonne utilise un template custom. */
   header?: string;
@@ -21,18 +22,35 @@ export interface TableColumnProvider<T = any> {
   /** Active le tri ; `true` par défaut. */
   sortable?: boolean;
   removable?: boolean;
-  optional?: boolean;
   width?: string;
   /** Rend la colonne disponible dans Group by ; `true` par défaut si `header` est défini. */
   groupable?: boolean;
   /** Rend la colonne disponible comme Slice by dynamique ; `true` par défaut si `header` est défini. */
   sliceable?: boolean;
-  /** Chargement différé : la présence de cet objet active le mode lazy. */
-  lazy?: {
-    /** Fonction appelée pour charger les valeurs de la colonne. Retourne un tableau dans le même ordre que les lignes. */
-    fetchFn: () => Observable<any[]>;
-  };
 }
+
+/**
+ * Colonne du tableau.
+ *
+ * - `optional: true` : masquée par défaut, ajoutable depuis le menu View.
+ * - `lazy: true` : absente de la requête de base, demandée à sa première activation (Organizer, Group by, Slice by).
+ *   Une colonne lazy est forcément optionnelle : `optional: true` est implicite et `optional: false` est refusé
+ *   (la colonne serait demandée dès le premier rendu, soit une requête de plus pour rien).
+ *   Le chargement passe par `TableProvider.lazyLoader`, ou par l'événement `lazyColumnsRequested` si l'application
+ *   préfère relancer elle-même sa requête. La cellule affiche un skeleton jusqu'à la réception des lignes complètes ;
+ *   la colonne supporte ensuite tri, recherche, Group by et Slice by.
+ */
+export type TableColumnMode =
+  | { lazy?: undefined; optional?: boolean }
+  | { lazy: true; optional?: true };
+
+export type TableColumnProvider<T = any> = TableColumnBase<T> & TableColumnMode;
+
+/**
+ * Charge les colonnes `lazy` : reçoit les clés des colonnes lazy demandées jusqu'ici (cumul) et retourne les lignes complètes,
+ * qui remplacent `data` ; la requête est celle de l'application, la table ne connaît pas la source.
+ */
+export type TableLazyLoader<T = any> = (lazyColumns: string[]) => Observable<T[]>;
 
 /** Configuration de la barre de recherche. */
 export interface TableSearchConfig {
@@ -96,7 +114,7 @@ export interface TableOrganizerConfig {
 export function col<T = any>(
   key: string,
   header: string,
-  overrides?: Partial<TableColumnProvider<T>>,
+  overrides?: Partial<TableColumnBase<T>> & TableColumnMode,
 ): TableColumnProvider<T> {
   return { key, header, ...overrides };
 }
@@ -187,6 +205,11 @@ export interface TableProvider<T = any> {
   onRowSelected?: (row: T, event: MouseEvent | null) => void;
   /** Configuration de l'export CSV. */
   export?: TableExportConfig<T>;
+  /**
+   * Chargeur des colonnes `lazy` : appelé à l'activation d'une colonne lazy (et après chaque nouveau `data` si des colonnes
+   * ont déjà été demandées). Sans chargeur, la table émet seulement `lazyColumnsRequested`.
+   */
+  lazyLoader?: TableLazyLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */
   preferences?: TablePreferencesConfig;
 }

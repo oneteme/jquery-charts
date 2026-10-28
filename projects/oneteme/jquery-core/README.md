@@ -48,7 +48,7 @@ const config: ChartProvider<string, number> = {
 };
 ```
 
-Les propriétés principales de `ChartProvider` sont `title`, `subtitle`, `xtitle`, `ytitle`, `stacked`, `pivot`, `continue`, `xorder`, `series`, `options`, `group`, `groupSync` et `yUnit`. Une `SerieProvider` peut aussi définir `name`, `stack`, `color`, `type`, `visible`, `unit`, `yAxisIndex` et `yAxisConfig`.
+Les propriétés principales de `ChartProvider` sont `title`, `subtitle`, `xtitle`, `ytitle`, `stacked`, `pivot`, `continue`, `xorder`, `series`, `options`, `optionsByType` (pris en compte par `jquery-echarts`), `group`, `groupSync` et `yUnit`. Une `SerieProvider` peut aussi définir `name`, `stack`, `color`, `type`, `visible`, `unit`, `yAxisIndex` et `yAxisConfig`.
 
 ### Coordonnees et persistance JSON
 

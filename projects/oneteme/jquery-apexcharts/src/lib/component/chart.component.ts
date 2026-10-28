@@ -27,8 +27,8 @@ import {
   containsFunction,
   FullscreenManager,
   GroupSyncMode,
-  OrganizerConfig,
-  OrganizerState,
+  ChartOrganizerConfig,
+  ChartOrganizerState,
   VisualCopyFeedbackConfig,
   VisualSnapshot,
   VisualSnapshotApplyResult,
@@ -113,10 +113,10 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
   @Input() theme: Record<string, unknown> | null = null;
   @Input() group: string | null = null;
   @Input() groupSync: GroupSyncMode | null = null;
-  @Input() organizer?: OrganizerConfig;
+  @Input() organizer?: ChartOrganizerConfig;
   /** Alias historique conservé pour les consommateurs existants. */
-  @Input() view?: OrganizerConfig;
-  @Input() organizerState?: OrganizerState;
+  @Input() view?: ChartOrganizerConfig;
+  @Input() organizerState?: ChartOrganizerState;
   @Input() drilldown?: ChartDrilldownConfig;
   @Input() copyFeedback: VisualCopyFeedbackConfig = {};
 

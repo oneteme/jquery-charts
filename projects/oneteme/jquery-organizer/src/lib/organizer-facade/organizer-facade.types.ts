@@ -1,5 +1,5 @@
 import { SliceConfig } from '../slice-panel/slice-panel.model';
-import { OrganizerConfig } from '@oneteme/jquery-core';
+import { ChartOrganizerConfig } from '@oneteme/jquery-core';
 
 export interface OrganizerFieldDef {
   key: string;
@@ -10,7 +10,7 @@ export interface OrganizerFieldDef {
   sliceable?: boolean;
 }
 export interface OrganizerPanelConfig<TField extends OrganizerFieldDef = OrganizerFieldDef> {
-  config?: OrganizerConfig;
+  config?: ChartOrganizerConfig;
   fields: TField[];
   sliceConfigs: SliceConfig<any>[];
   noneLabel?: string;

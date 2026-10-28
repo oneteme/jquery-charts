@@ -57,6 +57,7 @@ export class GroupByManager {
   }
 
   groupPageForward(groupKey: string, totalCount: number): void {
+    if (this.groupPageSize <= 0) return;
     const maxPage = Math.ceil(totalCount / this.groupPageSize) - 1;
     const current = this._groupPages.get(groupKey) ?? 0;
     if (current < maxPage) {

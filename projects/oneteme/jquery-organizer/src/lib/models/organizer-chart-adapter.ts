@@ -50,15 +50,8 @@ export function chartConfigToOrganizer(
   options: OrganizerChartBridgeOptions = {}
 ): OrganizerConfig {
   if (!chartConfig) {
-    console.debug('[OrganizerChartAdapter] Empty chart config, returning empty organizer config');
     return {};
   }
-
-  console.debug('[OrganizerChartAdapter] Converting chart config to organizer', {
-    hasGroups: !!chartConfig.groups,
-    indicatorCount: chartConfig.indicators?.items?.length ?? 0,
-    filterCount: chartConfig.filters?.items?.length ?? 0
-  });
 
   const { onFetchSliceData, onExportVisual, onExportData, switchView } = options;
   const indicators = getIndicatorItems(chartConfig);
@@ -100,7 +93,6 @@ export function chartConfigToOrganizer(
 
 export function chartConfigToState(chartConfig: OrganizerChartConfig | null | undefined): OrganizerState {
   if (!chartConfig) {
-    console.debug('[OrganizerChartAdapter] Empty chart config for state conversion');
     return {};
   }
 
@@ -110,13 +102,6 @@ export function chartConfigToState(chartConfig: OrganizerChartConfig | null | un
   const activeGroup = getGroupItems(chartConfig).find(g => g.selected);
   const activeSlices = getFilterItems(chartConfig).filter(f => f.selected);
   const indicatorGroup = activeIndicator?.group;
-
-  console.debug('[OrganizerChartAdapter] Current chart state', {
-    activeGroup: activeGroup?.key,
-    activeIndicator: activeIndicator?.key,
-    activeStack: activeStack?.key,
-    sliceCount: activeSlices.length
-  });
 
   const state = {
     selectedX: activeGroup?.key,
@@ -159,11 +144,8 @@ export function applyOrganizerEventToChart(
   chartConfig: OrganizerChartConfig | null | undefined
 ): void {
   if (!chartConfig) {
-    console.debug('[OrganizerChartAdapter] Cannot apply event to empty chart config');
     return;
   }
-
-  console.debug('[OrganizerChartAdapter] Applying organizer event', { eventType: event.type, state: event.state });
 
   const state = event.state;
   _cleanSynthetics(chartConfig);
@@ -181,8 +163,6 @@ export function handleOrganizerChartEvent(
   currentBinding: OrganizerChartBinding | undefined,
   options: OrganizerChartBridgeOptions = {}
 ): OrganizerChartEventResult {
-  console.debug('[OrganizerChartAdapter] Handling organizer event', { eventType: event.type });
-
   if (event.type === 'viewSwitched') {
     return {
       binding: {

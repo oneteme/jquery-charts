@@ -10,8 +10,8 @@ import {
   GroupSyncAction,
   Interval,
   IntervalStrategy,
-  OrganizerFieldDef,
-  OrganizerState,
+  ChartOrganizerFieldDef,
+  ChartOrganizerState,
   PivotRow,
   VisualSnapshot,
   VisualSnapshotDraft,
@@ -245,10 +245,10 @@ export class CoreApiComponent implements OnDestroy {
         { name: 'isObject() / mergeDeep()', type: 'boolean / object', source: 'Core', description: 'Teste un objet simple et fusionne récursivement des objets de configuration.', code: "mergeDeep({}, { chart: { type: 'line' } }, { chart: { title: 'Ventes' } })" },
         { name: 'cloneSerializable()', type: 'T', source: 'Core', description: 'Retourne une copie JSON en supprimant les fonctions non transportables.', code: 'cloneSerializable({ data, formatter })' },
         { name: 'containsFunction()', type: 'boolean', source: 'Core', description: 'Détecte une fonction dans un graphe d’objet, y compris dans les objets imbriqués.', code: 'containsFunction(config)' },
-        { name: 'organizerFieldDef()', type: 'OrganizerFieldDef', source: 'Core', description: 'Décrit un champ affichable dans un Organizer.', code: "organizerFieldDef('Ventes', { optional: false })" },
-        { name: 'groupableOrganizerFields() / sliceableOrganizerFields()', type: 'OrganizerFieldDef[]', source: 'Core', description: 'Filtre les champs utilisables pour un regroupement ou une slice.', code: 'groupableOrganizerFields(fields)' },
-        { name: 'initialOrganizerState()', type: 'OrganizerState', source: 'Core', description: 'Sélectionne initialement les champs non optionnels.', code: 'initialOrganizerState(fields)' },
-        { name: 'organizerFieldDefsFromChartSeries()', type: 'OrganizerFieldDef[]', source: 'Core', description: 'Dérive les champs Organizer à partir des séries nommées d’un ChartProvider.', code: 'organizerFieldDefsFromChartSeries(provider.series ?? [])' },
+        { name: 'organizerFieldDef()', type: 'ChartOrganizerFieldDef', source: 'Core', description: 'Décrit un champ affichable dans un Organizer.', code: "organizerFieldDef('Ventes', { optional: false })" },
+        { name: 'groupableOrganizerFields() / sliceableOrganizerFields()', type: 'ChartOrganizerFieldDef[]', source: 'Core', description: 'Filtre les champs utilisables pour un regroupement ou une slice.', code: 'groupableOrganizerFields(fields)' },
+        { name: 'initialOrganizerState()', type: 'ChartOrganizerState', source: 'Core', description: 'Sélectionne initialement les champs non optionnels.', code: 'initialOrganizerState(fields)' },
+        { name: 'organizerFieldDefsFromChartSeries()', type: 'ChartOrganizerFieldDef[]', source: 'Core', description: 'Dérive les champs Organizer à partir des séries nommées d’un ChartProvider.', code: 'organizerFieldDefsFromChartSeries(provider.series ?? [])' },
         { name: 'applyOrganizerStateToSeries()', type: 'ChartProvider', source: 'Core', description: 'Retourne un provider où la propriété visible suit l’état sélectionné sans muter la source.', code: 'applyOrganizerStateToSeries(provider, state)' },
       ],
     },
@@ -447,12 +447,12 @@ publishChartGroupSync({
     { month: 'Mar', metric: 'Prévision', value: 150 },
   ];
 
-  readonly organizerFields: OrganizerFieldDef[] = [
+  readonly organizerFields: ChartOrganizerFieldDef[] = [
     organizerFieldDef('Ventes', { label: 'Ventes', groupable: true, sliceable: true }),
     organizerFieldDef('Prévision', { label: 'Prévision', groupable: true, sliceable: true }),
     organizerFieldDef('Marge', { label: 'Marge', optional: true, groupable: false, sliceable: true }),
   ];
-  organizerState: OrganizerState = initialOrganizerState(this.organizerFields);
+  organizerState: ChartOrganizerState = initialOrganizerState(this.organizerFields);
 
   snapshotLabel = 'Démonstration Core';
   snapshotFeedback = 'Aucun snapshot créé';
@@ -694,15 +694,15 @@ publishChartGroupSync({
     };
   }
 
-  get organizerSeriesFromProvider(): OrganizerFieldDef[] {
+  get organizerSeriesFromProvider(): ChartOrganizerFieldDef[] {
     return organizerFieldDefsFromChartSeries(this.providerConfig.series ?? []);
   }
 
-  get groupableFields(): OrganizerFieldDef[] {
+  get groupableFields(): ChartOrganizerFieldDef[] {
     return groupableOrganizerFields(this.organizerFields);
   }
 
-  get sliceableFields(): OrganizerFieldDef[] {
+  get sliceableFields(): ChartOrganizerFieldDef[] {
     return sliceableOrganizerFields(this.organizerFields);
   }
 

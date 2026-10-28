@@ -17,6 +17,7 @@ This library provides an Angular component and directive to render interactive c
 - **Renderer configurable** : SVG par défaut, ou Canvas via `[renderer]`.
 - **Thème ECharts** : le thème est fourni à la création de l'instance via `[theme]`.
 - **Options natives** : `[renderedOption]` permet de fournir une option ECharts déjà construite ; les événements et états du wrapper restent actifs.
+- **Options par type** : `config.optionsByType[type]` est fusionné après `config.options` pour le type de graphique actif.
 - **Synchronisation** : `[group]` et `[groupSync]` synchronisent le tooltip et/ou le zoom avec d'autres graphiques, y compris avec les renderers de la suite.
 - **Organizer contrôlé** : `[organizer]` et `[organizerState]` pilotent la visibilité des séries sans coupler le composant à l'interface Organizer.
 - **Drilldown, export et snapshots** : les événements de navigation, `exportImage`, `exportData`, `createVisualSnapshot` et `applyVisualSnapshot` sont disponibles sur `ChartComponent`.

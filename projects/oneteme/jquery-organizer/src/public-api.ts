@@ -34,11 +34,3 @@ export {
 } from './lib/organizer-facade/organizer-facade.types';
 
 export { GroupByManager } from './lib/group-by-manager/group-by-manager';
-
-export {
-  LazyFieldManager,
-  LazyFieldDef,
-  LazyFieldCallbacks,
-  LAZY_FIELD_LOADING_VALUE,
-  LAZY_FIELD_ERROR_VALUE,
-} from './lib/lazy-field-manager/lazy-field-manager';
