@@ -24,7 +24,6 @@
   "scripts": {
     "ng": "ng",
     "lock:clean": "node scripts/sanitize-lockfile.mjs",
-    "lock:check": "node scripts/sanitize-lockfile.mjs --check",
     "start": "ng serve",
     "b1": "ng build @oneteme/jquery-highcharts",
     "cb1": "ng build \"@oneteme/jquery-core\" && ng build \"@oneteme/jquery-highcharts\"",
