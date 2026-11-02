@@ -262,6 +262,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   pageSize = 5;
   pageSizeOptions: number[] = [5, 10, 20];
   pageSizeOptionsGroupBy: number[] = [5, 10, 20];
+  /** Taille de page choisie par l'utilisateur ou restaurée des préférences ; prioritaire sur la config tant que le paginator est absent (mode Group by). */
+  private _userPageSize: number | null = null;
 
   draggedColumnKey: string | null = null;
   dragOverColumnKey: string | null = null;
@@ -1246,6 +1248,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       groupBy:             this.activeGroupByKey,
       columnOrder:         this.activeFields.map(c => c.key),
       visibleColumns:      this.activeFields.map(c => c.key),
+      pageSize:            this.paginator?.pageSize ?? this.pageSize,
+      groupPageSize:       this.groupPageSize,
       columnWidths:        Object.keys(this._columnWidths).length ? { ...this._columnWidths } : undefined,
       slicePanelCollapsed: this._slicePanelCollapsed,
       hiddenSliceKeys:     [...this._staticSliceHiddenKeys],
@@ -1277,6 +1281,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     this._groupBy.reset();
     this._groupBy.setDefaultCollapsed(false);
+    this._userPageSize = null;
+    this.pageSize = this.resolvePageSize();
+    if (this.paginator) this.paginator.pageSize = this.pageSize;
+    this.groupPageSize = this.resolveDefaultGroupPageSize();
 
     // Slices statiques : revenir aux seules celles cachées par la config (pas par l'utilisateur)
     this._staticSliceHiddenKeys = new Set(this._configHiddenKeys);
@@ -1331,6 +1339,16 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         this._groupBy.setDefaultCollapsed(true);
         this._groupBy.reset();
       }
+    }
+    // Nombre de lignes : valeurs ignorées si elles ne figurent plus dans les options de la config
+    if (typeof saved.pageSize === 'number' && this.pageSizeOptions.includes(saved.pageSize)) {
+      this._userPageSize = saved.pageSize;
+      this.pageSize = saved.pageSize;
+      if (this.paginator) this.paginator.pageSize = saved.pageSize;
+    }
+    if (typeof saved.groupPageSize === 'number'
+        && (saved.groupPageSize === 0 || this.pageSizeOptionsGroupBy.includes(saved.groupPageSize))) {
+      this.groupPageSize = saved.groupPageSize;
     }
     // État panneau slice
     if (saved.slicePanelCollapsed !== undefined) this._slicePanelCollapsed = saved.slicePanelCollapsed;
@@ -2100,7 +2118,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   private resolvePageSize(): number {
-    return Math.max(1, this.resolvedConfig.pagination?.pageSize || this.pageSize || 5);
+    return Math.max(1, this._userPageSize || this.resolvedConfig.pagination?.pageSize || this.pageSize || 5);
   }
 
   private resolvePageSizeOptions(): number[] {
@@ -2155,6 +2173,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this._paginatorSubscribed = this.paginator;
       this.paginator.page.pipe(takeUntil(this._destroy$)).subscribe(() => {
         this.pageSize = this.paginator!.pageSize;
+        this._userPageSize = this.pageSize;
         this.pageChange.emit({ pageIndex: this.paginator!.pageIndex, pageSize: this.paginator!.pageSize });
         if (this._pendingRender !== null) return;
         this._projectCurrentPage();

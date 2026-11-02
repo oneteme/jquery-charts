@@ -648,7 +648,7 @@ import { normalizeCellValue, humanizeKey, getFrenchPaginatorIntl } from '@onetem
 
 Ajoute un sous-menu **Préférences** dans le menu View permettant :
 - **Mode édition** : redimensionner et réordonner les colonnes à la souris
-- **Enregistrer** : persiste la configuration dans le `localStorage` (colonnes visibles, ordre, largeurs, tri, group by, filtres slice)
+- **Enregistrer** : persiste la configuration dans le `localStorage` (colonnes visibles, ordre, largeurs, tri, group by, filtres slice, nombre de lignes par page et par groupe)
 - **Effacer** : supprime la configuration sauvegardée
 
 ```ts
@@ -671,6 +671,8 @@ interface TablePreferencesConfig {
 ```
 
 La configuration est persistée sous la clé `jqt_prefs_<tableId>` et restaurée automatiquement au chargement suivant.
+
+Le nombre de lignes (`pageSize` en mode normal, `groupPageSize` en mode Group by, `0` = tout afficher) est restauré uniquement s'il figure encore dans `pagination.pageSizeOptions` / `pageSizeOptionsGroupBy` ; sinon la valeur de la config est conservée. L'index de page n'est pas sauvegardé.
 
 ---
 
