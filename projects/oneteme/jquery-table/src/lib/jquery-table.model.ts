@@ -160,6 +160,10 @@ export interface SavedTableConfig {
   search?: string;
   /** Clé de la colonne utilisée pour le group by. `null` = aucun. */
   groupBy?: string | null;
+  /** Nombre de lignes par page (mode normal). */
+  pageSize?: number;
+  /** Nombre de lignes par groupe (mode Group by). `0` = tout afficher. */
+  groupPageSize?: number;
   /** Ordre des clés de colonnes (position). */
   columnOrder?: string[];
   /** Clés des colonnes visibles. */

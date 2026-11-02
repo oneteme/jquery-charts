@@ -549,6 +549,97 @@ describe('TableComponent', () => {
       expect(restored.table().hasSavedPreferences).toBeTrue();
     });
 
+    it('sauvegarde et restaure le nombre de lignes par page', async () => {
+      const t = setup();
+      await t.settle();
+      t.table().paginator!.pageSize = 10;
+      t.table().paginator!.page.emit({ pageIndex: 0, pageSize: 10, length: 12 });
+      await t.settle();
+      expect(t.cells('name').length).toBe(10);
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!).pageSize).toBe(10);
+      t.fixture.destroy();
+
+      const restored = setup();
+      await restored.settle();
+      expect(restored.cells('name').length).toBe(10);
+      expect(restored.table().paginator!.pageSize).toBe(10);
+    });
+
+    it('conserve le nombre de lignes restauré après un group by puis un retour au tableau normal', async () => {
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ pageSize: 10, groupBy: 'team' }));
+      const t = setup();
+      await t.settle();
+      expect(t.groupLabels()).toEqual(['Alpha', 'Beta', 'Gamma']);
+
+      t.table().onGroupByChange(null);
+      await t.settle();
+      expect(t.cells('name').length).toBe(10);
+
+      t.host.data = makeRows(12);
+      await t.settle();
+      expect(t.cells('name').length).toBe(10);
+    });
+
+    it('sauvegarde et restaure le nombre de lignes par groupe, y compris « tout afficher »', async () => {
+      const t = setup();
+      await t.settle();
+      t.table().onGroupByChange('team');
+      t.table().onGroupPageSizeChange(2);
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!).groupPageSize).toBe(2);
+      t.fixture.destroy();
+
+      const restored = setup();
+      await restored.settle();
+      expect(restored.table().groupPageSize).toBe(2);
+      (restored.root().querySelector('tr.group-header-row') as HTMLElement).click();
+      await restored.settle();
+      expect(restored.cells('name').length).toBe(2);
+      restored.table().onGroupPageSizeChange(0);
+      restored.table().savePreferences();
+      restored.fixture.destroy();
+
+      const all = setup();
+      await all.settle();
+      expect(all.table().groupPageSize).toBe(0);
+      (all.root().querySelector('tr.group-header-row') as HTMLElement).click();
+      await all.settle();
+      expect(all.cells('name').length).toBe(4);
+    });
+
+    it('ignore un nombre de lignes absent des options de la config', async () => {
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ pageSize: 7, groupPageSize: 9, groupBy: 'team' }));
+      const t = setup();
+      await t.settle();
+      expect(t.table().groupPageSize).not.toBe(9);
+      t.table().onGroupByChange(null);
+      await t.settle();
+      expect(t.cells('name').length).toBe(5);
+    });
+
+    it('une ancienne sauvegarde sans nombre de lignes garde les valeurs de la config', async () => {
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ groupBy: null }));
+      const t = setup();
+      await t.settle();
+      expect(t.cells('name').length).toBe(5);
+    });
+
+    it('clearPreferences remet le nombre de lignes de la config', async () => {
+      const t = setup();
+      await t.settle();
+      t.table().paginator!.pageSize = 10;
+      t.table().paginator!.page.emit({ pageIndex: 0, pageSize: 10, length: 12 });
+      await t.settle();
+      t.table().onGroupPageSizeChange(5);
+      t.table().savePreferences();
+
+      t.table().clearPreferences();
+      await t.settle();
+      expect(t.cells('name').length).toBe(5);
+      expect(t.table().groupPageSize).toBe(2);
+    });
+
     it('clearPreferences restaure l\'état par défaut et supprime la sauvegarde', async () => {
       const t = setup();
       await t.settle();

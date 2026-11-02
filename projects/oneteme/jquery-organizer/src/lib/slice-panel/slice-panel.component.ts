@@ -1,10 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
-import { SliceColumnDef, SliceConfig } from './slice-panel.model';
-
-const EMPTY_CATEGORY_KEY = '__empty__';
-const EMPTY_CATEGORY_LABEL = 'Vide';
+import { SliceCategory, SliceColumnDef, SliceConfig } from './slice-panel.model';
+import { buildCategoriesFromRows } from './slice-categories';
 
 const I18N = {
   expandFilterTitle: 'Déplier le filtre',
@@ -272,11 +270,10 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
 
   addDynamicSlice(column: SliceColumnDef<T>): void {
     if (this._dynamicSlices.some(slice => slice.key === column.key)) return;
-    const distinct = this._computeDistinctValues(column.key);
     const newSlice: SliceConfig<T> = {
       title: column.header,
       columnKey: column.key,
-      categories: this._buildCategories(column.key, distinct),
+      categories: this._categoriesOf(column.key),
     };
     this._dynamicSlices = [...this._dynamicSlices, { key: column.key, slice: newSlice }];
     this._rebuildCache();
@@ -368,51 +365,12 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
     }
     return {
       ...slice,
-      categories: this._buildCategories(slice.columnKey!, this._computeDistinctValues(slice.columnKey!)),
+      categories: this._categoriesOf(slice.columnKey!),
     };
   }
 
-  private _buildCategories(columnKey: string, distinct: { values: string[]; counts: Map<string, number> }) {
-    return distinct.values.map((v) => this._buildCategoryFromValue(columnKey, v, distinct.counts.get(v)));
-  }
-
-  private _buildCategoryFromValue(columnKey: string, v: string, count?: number): { key: string; label: string; filter: (row: T) => boolean; count?: number } {
-    if (v === EMPTY_CATEGORY_KEY) {
-      return {
-        key: EMPTY_CATEGORY_KEY,
-        label: EMPTY_CATEGORY_LABEL,
-        count,
-        filter: (row: T) => {
-          const val = this._getLazyAwareValue(columnKey, row);
-          return val == null || val === '';
-        },
-      };
-    }
-    return {
-      key: v, label: v, count,
-      filter: (row: T) => String(this._getLazyAwareValue(columnKey, row) ?? '') === v,
-    };
-  }
-
-  /** Valeurs distinctes (triées, « vide » en dernier) et effectifs, calculés en un seul passage. */
-  private _computeDistinctValues(columnKey: string): { values: string[]; counts: Map<string, number> } {
-    const counts = new Map<string, number>();
-    let empty = 0;
-    (this.data || []).forEach((row) => {
-      const val = this._getLazyAwareValue(columnKey, row);
-      if (val != null && val !== '') {
-        const text = String(val);
-        counts.set(text, (counts.get(text) ?? 0) + 1);
-      } else {
-        empty++;
-      }
-    });
-    const values = [...counts.keys()].sort();
-    if (empty > 0) {
-      values.push(EMPTY_CATEGORY_KEY);
-      counts.set(EMPTY_CATEGORY_KEY, empty);
-    }
-    return { values, counts };
+  private _categoriesOf(columnKey: string): SliceCategory<T>[] {
+    return buildCategoriesFromRows(this.data, row => this._getLazyAwareValue(columnKey, row));
   }
 
   private _columnsRef?: SliceColumnDef<T>[];
@@ -466,7 +424,7 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   private _refreshDynamicSlices(): void {
     this._dynamicSlices = this._dynamicSlices.map(({ key, slice }) => ({
       key,
-      slice: { ...slice, categories: this._buildCategories(key, this._computeDistinctValues(key)) },
+      slice: { ...slice, categories: this._categoriesOf(key) },
     }));
   }
 

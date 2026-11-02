@@ -4,11 +4,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
-import { Subject, Subscription, isObservable } from 'rxjs';
+import { Subject, Subscription, combineLatest, from, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState } from '../models';
+import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, OrganizerViewSlice } from '../models';
 import { normalizeOrganizerState, resolveMatchingTemplateId } from '../models/organizer-utils';
+import { buildCategoriesFromRows } from '../slice-panel/slice-categories';
 import { TemplateManager } from './template-manager.utility';
 
 @Component({
@@ -155,26 +156,33 @@ export class OrganizerButtonComponent implements OnDestroy {
     this.sliceSubscription?.unsubscribe();
     this.sliceSubscription = undefined;
 
-    const sliceId = selectedSlices?.[0];
-    if (!sliceId || !this.config.onFetchSliceData) {
+    const onFetchSliceData = this.config.onFetchSliceData;
+    const slices = (selectedSlices ?? [])
+      .map(id => this.config.slices?.find(s => s.id === id))
+      .filter((s): s is OrganizerViewSlice => !!s);
+    if (!slices.length || !onFetchSliceData) {
       this.sliceStateChange.emit(null);
       onLoaded?.();
       return;
     }
 
-    const slice = this.config.slices?.find(s => s.id === sliceId);
-    if (!slice) {
-      this.sliceStateChange.emit(null);
-      onLoaded?.();
-      return;
-    }
-
-    const result = this.config.onFetchSliceData(sliceId);
-    const handleData = (tasks: any[]) => {
+    const requests = slices.map(s => {
+      const response = onFetchSliceData(s.id);
+      return isObservable(response) ? response : from(response);
+    });
+    const result = combineLatest(requests);
+    const handleData = (results: any[][]) => {
       if (this.destroyed || requestId !== this.sliceRequestId) return;
+      // Un slice : le panneau déduit les catégories des lignes. Plusieurs slices : chaque requête ne renvoie que sa colonne,
+      // les catégories sont donc construites ici et les lignes simplement concaténées.
+      const single = slices.length === 1;
       this.sliceStateChange.emit({
-        sliceConfigs: [{ title: slice.label ?? sliceId, columnKey: sliceId }],
-        tasks,
+        sliceConfigs: slices.map((s, i) => ({
+          title: s.label ?? s.id,
+          columnKey: s.id,
+          ...(single ? {} : { categories: buildCategoriesFromRows(results[i], row => row?.[s.id]) })
+        })),
+        tasks: results.flat(),
         filterApplied: false  // Panel vient d'être ouvert, pas de filtre sélectionné encore
       });
       onLoaded?.();
@@ -186,11 +194,7 @@ export class OrganizerButtonComponent implements OnDestroy {
       onLoaded?.();
     };
 
-    if (isObservable(result)) {
-      this.sliceSubscription = result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData, error: handleError });
-    } else {
-      void result.then(handleData, handleError);
-    }
+    this.sliceSubscription = result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData, error: handleError });
   }
 
   async loadFieldData(fieldId: string): Promise<void> {

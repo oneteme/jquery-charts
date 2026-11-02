@@ -1,6 +1,6 @@
 {
   "name": "@oneteme/jquery-table",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "jquery table lib",
   "homepage": "https://github.com/oneteme/jquery-charts",
   "bugs": "https://github.com/oneteme/jquery-charts/issues",
@@ -14,7 +14,7 @@
     "@angular/material": "^16.1.0",
     "@angular/cdk": "^16.1.0",
     "@oneteme/jquery-core": "^0.0.38",
-    "@oneteme/jquery-organizer": "^0.0.7"
+    "@oneteme/jquery-organizer": "^0.0.8"
   },
   "dependencies": {
     "tslib": "^2.3.0"

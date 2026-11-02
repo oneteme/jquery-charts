@@ -202,6 +202,55 @@ describe('OrganizerButtonComponent', () => {
       expect(last().state.selectedSlices).toEqual(['ko']);
     });
 
+    it('charge les données de tous les slices sélectionnés et construit une catégorie par colonne', () => {
+      const onFetchSliceData = jasmine.createSpy('onFetchSliceData').and.callFake((key: string) =>
+        of(key === 'ok' ? [{ ok: 'a' }, { ok: 'b' }] : [{ ko: 'x' }, { ko: null }]));
+      const { component, sliceStates } = setup({ ...baseConfig(), onFetchSliceData }, { selectedSlices: ['ok'] });
+
+      component.onSliceClick('ko');
+      expect(onFetchSliceData).toHaveBeenCalledWith('ok');
+      expect(onFetchSliceData).toHaveBeenCalledWith('ko');
+      const state = sliceStates.at(-1)!;
+      expect(state.sliceConfigs.map(s => s.columnKey)).toEqual(['ok', 'ko']);
+      expect(state.sliceConfigs[0].categories!.map(c => c.key)).toEqual(['a', 'b']);
+      expect(state.sliceConfigs[1].categories!.map(c => c.key)).toEqual(['x', '__empty__']);
+      expect(state.tasks.length).toBe(4);
+    });
+
+    it('multi-slices : accepte aussi les promesses et conserve l\'ordre de sélection', async () => {
+      const onFetchSliceData = (key: string) => Promise.resolve([{ [key]: key === 'ok' ? 'a' : 'x' }]);
+      const { component, sliceStates } = setup({ ...baseConfig(), onFetchSliceData }, { selectedSlices: ['ko'] });
+
+      component.onSliceClick('ok');
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(sliceStates.at(-1)!.sliceConfigs.map(s => s.columnKey)).toEqual(['ko', 'ok']);
+      expect(sliceStates.at(-1)!.tasks).toEqual([{ ko: 'x' }, { ok: 'a' }]);
+    });
+
+    it('multi-slices : l\'échec d\'une requête ferme le panneau sans bloquer la sélection', () => {
+      const onFetchSliceData = (key: string) => key === 'ko' ? throwError(() => new Error('boom')) as Observable<any[]> : of([{ ok: 'a' }]);
+      const { component, last, sliceStates } = setup({ ...baseConfig(), onFetchSliceData }, { selectedSlices: ['ok'] });
+      spyOn(console, 'error');
+
+      component.onSliceClick('ko');
+
+      expect(sliceStates.at(-1)).toBeNull();
+      expect(last().state.selectedSlices).toEqual(['ok', 'ko']);
+    });
+
+    it('multi-slices : retirer un slice recharge uniquement ceux restants', () => {
+      const onFetchSliceData = jasmine.createSpy('onFetchSliceData').and.callFake((key: string) => of([{ [key]: key }]));
+      const { component, sliceStates } = setup({ ...baseConfig(), onFetchSliceData }, { selectedSlices: ['ok', 'ko'] });
+
+      component.onSliceClick('ko');
+
+      expect(onFetchSliceData.calls.allArgs()).toEqual([['ok']]);
+      expect(sliceStates.at(-1)!.sliceConfigs.map(s => s.columnKey)).toEqual(['ok']);
+      expect(sliceStates.at(-1)!.sliceConfigs[0].categories).toBeUndefined();
+    });
+
     it('accepte une promesse et signale une erreur de chargement sans bloquer la sélection', async () => {
       const failing = setup({ ...baseConfig(), onFetchSliceData: () => Promise.reject(new Error('boom')) });
       spyOn(console, 'error');

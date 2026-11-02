@@ -1,5 +1,8 @@
 import { DataProvider } from '@oneteme/jquery-core';
 
+export const EMPTY_CATEGORY_KEY = '__empty__';
+export const EMPTY_CATEGORY_LABEL = 'Vide';
+
 export interface SliceCategory<T = any> {
   key: string;
   label: string;

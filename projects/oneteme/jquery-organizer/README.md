@@ -124,7 +124,7 @@ Composant standalone qui affiche un bouton ouvrant un menu Material. Le menu exp
 | `[config]` | `OrganizerConfig` | Configuration du bouton et menu |
 | `[state]` | `OrganizerState` | État courant des sélections |
 | `(viewChange)` | `EventEmitter<OrganizerEvent>` | Émis à chaque interaction utilisateur |
-| `(sliceStateChange)` | `EventEmitter<OrganizerSliceState \| null>` | Données de filtre après fetch |
+| `(sliceStateChange)` | `EventEmitter<OrganizerSliceState \| null>` | Données de filtre après fetch. Avec plusieurs slices sélectionnés, `onFetchSliceData` est appelé pour chacun : `sliceConfigs` contient un slice par filtre (avec ses `categories`) et `tasks` la concaténation des lignes. À exploiter via `(activeKeysChange)` du `slice-panel` (filtrage côté serveur) ; le prédicat `(filterChange)` n'a pas de sens ici, les lignes provenant de requêtes distinctes |
 
 ### OrganizerConfig
 

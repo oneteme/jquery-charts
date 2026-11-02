@@ -92,7 +92,7 @@
           <tr><td><code>slices</code></td><td><code>SliceConfig[]</code></td><td><code>[]</code></td><td>Panneaux de filtre latéraux.</td></tr>
           <tr><td><code>enableSliceToggle</code></td><td><code>boolean</code></td><td><code>true</code></td><td>Bouton replier/déplier le panneau slice.</td></tr>
           <tr><td><code>export</code></td><td><code>TableExportConfig</code></td><td>—</td><td>Export CSV depuis la toolbar.</td></tr>
-          <tr><td><code>preferences</code></td><td><code>TablePreferencesConfig</code></td><td>—</td><td>Persistance localStorage (mode édition, save, clear).</td></tr>
+          <tr><td><code>preferences</code></td><td><code>TablePreferencesConfig</code></td><td>—</td><td>Persistance localStorage (mode édition, save, clear ; sauvegarde aussi le nombre de lignes).</td></tr>
           <tr><td><code>defaultSort</code></td><td><code>&#123; active, direction &#125;</code></td><td>—</td><td>Tri initial (non réinitialisé lors du rechargement des données).</td></tr>
           <tr><td><code>defaultGroupBy</code></td><td><code>string | null</code></td><td>—</td><td>Group by initial.</td></tr>
           <tr><td><code>rowClass</code></td><td><code>(row, index?) =&gt; string | string[] | Record&lt;string, boolean&gt;</code></td><td>—</td><td>Classes CSS dynamiques sur les <code>&lt;tr&gt;</code>.</td></tr>
@@ -196,6 +196,7 @@
             </tbody>
           </table>
         </div>
+        <p class="ref-plain-intro">Le nombre de lignes sauvegardé (<code>pageSize</code>, <code>groupPageSize</code>) n'est restauré que s'il figure encore dans <code>pageSizeOptions</code> / <code>pageSizeOptionsGroupBy</code>.</p>
       </div>
 
       <div>
@@ -357,7 +358,7 @@
           <strong>Préférences utilisateur persistées sans effort</strong>
           <p>
             Un seul champ <code>preferences: &#123; tableId: '...' &#125;</code> active la persistance complète :
-            ordre des colonnes, largeurs, group by, filtres slice — tout est restauré au rechargement, sans écrire
+            ordre des colonnes, largeurs, group by, filtres slice, nombre de lignes par page et par groupe — tout est restauré au rechargement, sans écrire
             une ligne de localStorage.
           </p>
         </div>
