@@ -342,7 +342,7 @@ export class ChartDirective<X extends XaxisType, Y extends YaxisType>
       if (isInitialRender || isTypeChange) {
         this._chartInstance.setOption(option, { notMerge: true, lazyUpdate: false });
       } else {
-        this._chartInstance.setOption(option, { notMerge: false, replaceMerge: ['series', 'xAxis', 'yAxis', 'legend', 'graphic'], lazyUpdate: false });
+        this._chartInstance.setOption(option, { notMerge: false, replaceMerge: ['series', 'xAxis', 'yAxis', 'polar', 'angleAxis', 'radiusAxis', 'legend', 'graphic'], lazyUpdate: false });
       }
       this._showingNoData = false;
     } catch (e) {

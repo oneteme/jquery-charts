@@ -10,7 +10,21 @@ Angular renderer for [Apache ECharts](https://echarts.apache.org/), built on top
 
 This library provides an Angular component and directive to render interactive charts using Apache ECharts, with full integration with the `@oneteme/jquery-core` data model.
 
-**Supported chart types:** `bar`, `column`, `columnpyramid`, `line`, `spline`, `area`, `areaspline`, `mixed`, `pie`, `donut`, `scatter`, `bubble`, `heatmap`, `radar`, `radarArea`, `treemap`, `funnel`, `pyramid`, `rangeBar`, `rangeColumn`, `arearange`, `areasplinerange`, `columnrange`
+**Supported chart types:** `bar`, `column`, `columnpyramid`, `line`, `spline`, `area`, `areaspline`, `mixed`, `pie`, `donut`, `rose`, `scatter`, `bubble`, `heatmap`, `radar`, `radarArea`, `radialBar`, `treemap`, `funnel`, `pyramid`, `gauge`, `sankey`, `boxplot`, `rangeBar`, `rangeColumn`, `rangeArea`, `arearange`, `areasplinerange`, `columnrange`
+
+## Mapping des données des nouveaux types
+
+| Type | Axe X | Axe Y | Série (`name`) | Remarques |
+|------|-------|-------|----------------|-----------|
+| `columnpyramid` | catégorie | valeur | série | Un triangle par point, pointe à la valeur. Pas de `stack`. |
+| `rose` | catégorie | valeur | série | Pie avec `roseType: 'area'`. |
+| `rangeArea` | catégorie | `[min, max]` | série | Aire entre min et max, comme `arearange`. |
+| `radialBar` | catégorie (axe radial) | valeur (axe angulaire) | série | Une barre par catégorie. Plusieurs séries se superposent. |
+| `gauge` | catégorie | valeur | série | Une jauge par (série × catégorie). Min/max par série via `min` / `max` (défaut 0 → 100), unité via `unit`. |
+| `sankey` | source | valeur (≥ 0) | cible, évaluée par ligne | Les liens identiques sont additionnés. Les boucles (source = cible) sont ignorées. |
+| `boxplot` | catégorie | valeur | série | Une boîte par (série × catégorie), calculée sur toutes les lignes brutes. Moustaches de Tukey (1,5 × IQR), valeurs aberrantes dans une série `scatter` `"<nom> (valeurs aberrantes)"`. Catégorie sans valeur : absente. |
+
+Pour `gauge`, `sankey` et `boxplot`, les lignes ne sont pas agrégées par `buildChart` (qui garde la dernière valeur par catégorie) : elles sont lues brutes.
 
 ## Fonctionnalités intégrées
 

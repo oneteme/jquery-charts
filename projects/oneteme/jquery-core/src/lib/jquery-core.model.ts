@@ -1,6 +1,6 @@
 import type { GroupSyncMode } from './chart-capabilities.model';
 
-export declare type ChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'mixed' | 'map' | string;
+export declare type ChartType = 'pie' | 'donut' | 'rose' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'gauge' | 'sankey' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'mixed' | 'map' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
   return (o, idx) => {

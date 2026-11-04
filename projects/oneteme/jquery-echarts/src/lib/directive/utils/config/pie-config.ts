@@ -2,7 +2,7 @@ import { buildSingleSerieChart, ChartProvider, ChartType, CommonChart } from '@o
 import { EChartsOption } from '../types';
 import { EChartTypeConfigurator } from './chart-config-registry';
 
-const PIE_TYPES: ChartType[] = ['pie', 'donut'];
+const PIE_TYPES: ChartType[] = ['pie', 'donut', 'rose'];
 
 function buildPieOption(
   chart: CommonChart<string, number>,
@@ -10,6 +10,7 @@ function buildPieOption(
   config: ChartProvider<any, any>
 ): EChartsOption {
   const isDonut = type === 'donut';
+  const isRose = type === 'rose';
 
   // Aplatit toutes les séries en une liste {name, value}
   const data = chart.series.flatMap((s) =>
@@ -39,6 +40,7 @@ function buildPieOption(
         radius: isDonut ? ['40%', '70%'] : '70%',
         center: ['50%', '50%'],
         avoidLabelOverlap: !isDonut,
+        ...(isRose ? { roseType: 'area' as const } : {}),
         data,
         label: isDonut ? { show: false, position: 'center' } : { show: false },
         labelLine: { show: false },

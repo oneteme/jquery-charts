@@ -3,7 +3,7 @@ import { EChartsOption } from '../types';
 import { getXAxisType } from '../chart-utils';
 import { EChartTypeConfigurator } from './chart-config-registry';
 
-const RANGE_TYPES: ChartType[] = ['rangeBar', 'rangeColumn', 'arearange', 'areasplinerange', 'columnrange'];
+const RANGE_TYPES: ChartType[] = ['rangeBar', 'rangeColumn', 'rangeArea', 'arearange', 'areasplinerange', 'columnrange'];
 
 /**
  * Implémentation des graphiques Range via deux séries "bar" empilées :
@@ -21,7 +21,7 @@ function buildRangeOption(
   config: ChartProvider<any, any>
 ): EChartsOption {
   const isHorizontal = type === 'rangeBar';
-  const isArea = type === 'arearange' || type === 'areasplinerange';
+  const isArea = type === 'arearange' || type === 'areasplinerange' || type === 'rangeArea';
   const isSmooth = type === 'areasplinerange';
   const isContinue = !!config.continue;
 
