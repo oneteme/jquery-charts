@@ -22,9 +22,10 @@ export function selectBestScale(unitConfig: UnitConfig, values: readonly number[
   return { scale: selected.scale, unit: selected.unit, formatter: unitConfig.formatter };
 }
 
-/** Consistent compact formatting used by chart axes and tooltips. */
+/** Consistent compact formatting used by chart axes and tooltips. Non-finite values render as `–`. */
 export function formatChartValue(value: number, precision?: number): string {
-  if (!Number.isFinite(value) || value === 0) return '0';
+  if (!Number.isFinite(value)) return '–';
+  if (value === 0) return '0';
   if (precision !== undefined) {
     return value.toLocaleString('fr-FR', { maximumFractionDigits: precision, minimumFractionDigits: precision });
   }

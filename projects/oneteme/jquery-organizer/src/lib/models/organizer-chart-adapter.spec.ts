@@ -238,6 +238,100 @@ describe('organizer-chart-adapter', () => {
       const result = handleOrganizerChartEvent(event('xSelected', { selectedX: 'app', selectedY: 'count' }), chart, current);
       expect(result.binding.config).toBe(current.config);
     });
+
+    it('xSelected avec une nouvelle selectedXOption reconstruit la config (libellés des tranches recalculés)', () => {
+      let granularity = 'hour';
+      const opts = { resolveSliceDisplay: (key: string) => key === 'ko' ? { formatLabel: (raw: string) => `${granularity}:${raw}` } : undefined };
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart, opts);
+      granularity = 'dateHour';
+      const result = handleOrganizerChartEvent(
+        event('xSelected', { selectedX: 'day', selectedY: 'count', selectedXOption: 'dateHour' }), chart, current, opts,
+      );
+      expect(result.binding.config).not.toBe(current.config);
+      expect(result.binding.config.slices?.find(s => s.id === 'ko')?.formatLabel?.('11-03 13')).toBe('dateHour:11-03 13');
+    });
+  });
+
+  describe('options de l\'axe X', () => {
+    const dayOptions = [{ id: 'auto', label: 'Automatique' }, { id: 'date', label: 'Jour' }];
+    const opts = { resolveXOptions: (groupKey: string) => (groupKey === 'day' ? dayOptions : undefined) };
+
+    it('chartConfigToOrganizer ajoute options uniquement aux X qui en ont', () => {
+      const xFields = chartConfigToOrganizer(makeChart(), opts).xFields ?? [];
+      expect(xFields.find(f => f.id === 'day')).toEqual({ id: 'day', label: 'Jour', options: dayOptions });
+      expect(xFields.find(f => f.id === 'app')).toEqual({ id: 'app', label: 'Application' });
+      expect(xFields.filter(f => 'options' in f).map(f => f.id)).toEqual(['day']);
+    });
+
+    it('chartConfigToOrganizer sans resolveXOptions ne produit aucune option', () => {
+      const config = chartConfigToOrganizer(makeChart());
+      expect(config.xFields?.every(f => !('options' in f))).toBeTrue();
+    });
+
+    it('ySelected conserve selectedXOption s\'il appartient aux options du X', () => {
+      const chart = makeChart();
+      const result = handleOrganizerChartEvent(
+        event('ySelected', { selectedX: 'day', selectedY: 'latency', selectedYAggregate: 'max', selectedXOption: 'date' }),
+        chart, undefined, opts,
+      );
+      expect(result.binding.state.selectedXOption).toBe('date');
+    });
+
+    it('ySelected écarte un selectedXOption inconnu', () => {
+      const chart = makeChart();
+      const result = handleOrganizerChartEvent(
+        event('ySelected', { selectedX: 'day', selectedY: 'count', selectedXOption: 'ghost' }),
+        chart, undefined, opts,
+      );
+      expect(result.binding.state.selectedXOption).toBeUndefined();
+    });
+
+    it('templateSelected réinitialise selectedXOption', () => {
+      const chart = makeChart();
+      const result = handleOrganizerChartEvent(
+        event('templateSelected', { selectedX: 'app', selectedY: 'count', selectedTemplate: 't-app', selectedXOption: 'date' }),
+        chart, undefined, opts,
+      );
+      expect(result.binding.state.selectedXOption).toBeUndefined();
+    });
+
+    it('xSelected transmet selectedXOption dans le binding', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart, opts);
+      const result = handleOrganizerChartEvent(
+        event('xSelected', { selectedX: 'day', selectedY: 'count', selectedXOption: 'date' }),
+        chart, current, opts,
+      );
+      expect(result.shouldRefetch).toBeTrue();
+      expect(result.binding.state.selectedXOption).toBe('date');
+    });
+  });
+
+  describe('remappage des tranches', () => {
+    it('xSelected avec tranches conservées ne recharge pas le graphique (le remappage s\'en charge)', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart);
+      const kept = handleOrganizerChartEvent(
+        event('xSelected', { selectedX: 'day', selectedY: 'count', selectedXOption: 'date', selectedSlices: ['ok'] }), chart, current,
+      );
+      expect(kept.shouldRefetch).toBeFalse();
+    });
+
+    it('xSelected sans tranche sélectionnée recharge toujours le graphique', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart);
+      const result = handleOrganizerChartEvent(
+        event('xSelected', { selectedX: 'day', selectedY: 'count', selectedXOption: 'date', selectedSlices: [] }), chart, current,
+      );
+      expect(result.shouldRefetch).toBeTrue();
+    });
+
+    it('remapSliceSelection est transmis à la config organizer uniquement s\'il est fourni', () => {
+      const remapSliceSelection = jasmine.createSpy('remapSliceSelection');
+      expect(chartConfigToOrganizer(makeChart(), { remapSliceSelection }).remapSliceSelection).toBe(remapSliceSelection);
+      expect('remapSliceSelection' in chartConfigToOrganizer(makeChart())).toBeFalse();
+    });
   });
 
   describe('resolveYUnit', () => {

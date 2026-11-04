@@ -11,10 +11,21 @@ export interface OrganizerViewField {
   state?: FieldState;
 }
 
+export interface OrganizerXOption {
+  id: string;
+  label: string;
+  disabled?: boolean;
+}
+
 export interface OrganizerXField {
   id: string;
   label: string;
   disabled?: boolean;
+  /**
+   * Sous-menu de variantes pour cet axe (ex. découpage d'une date). La première option est la valeur par défaut
+   * lorsque `selectedXOption` n'est pas défini.
+   */
+  options?: OrganizerXOption[];
 }
 
 export interface OrganizerYAggregate {
@@ -86,6 +97,12 @@ export interface OrganizerConfig {
 
   onFetchFieldData?: (fieldId: string) => Promise<string[] | Record<string, any>[]>;
   onFetchSliceData?: (filterKey: string) => Observable<any[]> | Promise<any[]>;
+  /**
+   * Convertit la sélection de clés d'un slice lorsque la variante de l'axe X change (ex. jour → heure).
+   * Reçoit la sélection actuelle, les clés de l'ancienne liste et celles de la nouvelle ; renvoie
+   * la sélection équivalente, ou `null` si elle ne peut pas être conservée (le panneau est alors fermé).
+   */
+  remapSliceSelection?: (selectedKeys: string[], previousKeys: string[], nextKeys: string[]) => string[] | null;
   onSliceClick?: () => void;
 
   showExport?: boolean;
@@ -123,6 +140,8 @@ export interface OrganizerSliceState {
   sliceConfigs: SliceConfig<any>[];
   tasks: any[];
   filterApplied?: boolean;
+  /** Clés à réappliquer par slice (alignées sur sliceConfigs), ex. après un changement de granularité. */
+  selectedKeys?: string[][];
 }
 
 export interface OrganizerState {
@@ -133,6 +152,8 @@ export interface OrganizerState {
   selectedChartType?: string;
 
   selectedX?: string;
+  /** Variante choisie dans le sous-menu de `selectedX` ; absent = première option. */
+  selectedXOption?: string;
   selectedY?: string;
   selectedYAggregate?: string;
 

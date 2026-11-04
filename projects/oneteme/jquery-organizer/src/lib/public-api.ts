@@ -16,6 +16,7 @@ export {
   OrganizerViewSlice,
   FieldState,
   OrganizerXField,
+  OrganizerXOption,
   OrganizerYField,
   OrganizerYAggregate,
   OrganizerTemplate,

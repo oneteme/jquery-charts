@@ -13,11 +13,13 @@ import {
 export class VisualSnapshotStorage {
   private readonly storage: Storage | null;
   private readonly storageKey: string;
+  private readonly backupKey: string;
   private readonly maxBytes: number;
 
   constructor(options: VisualSnapshotStorageOptions = {}) {
     this.storage = options.storage ?? getBrowserStorage();
     this.storageKey = options.storageKey ?? VISUAL_SNAPSHOT_STORAGE_KEY;
+    this.backupKey = `${this.storageKey}.backup`;
     this.maxBytes = options.maxBytes ?? VISUAL_SNAPSHOT_DEFAULT_MAX_BYTES;
   }
 
@@ -98,17 +100,35 @@ export class VisualSnapshotStorage {
 
   private readCollection(): VisualSnapshotCollection {
     if (!this.storage) return emptyCollection();
+    let raw: string | null;
     try {
-      const raw = this.storage.getItem(this.storageKey);
-      if (!raw) return emptyCollection();
-      const parsed: unknown = JSON.parse(raw);
-      if (!isCollection(parsed)) {
-        this.clear();
-        return emptyCollection();
-      }
-      return parsed;
+      raw = this.storage.getItem(this.storageKey);
     } catch {
       return emptyCollection();
+    }
+    if (!raw) return emptyCollection();
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (isCollection(parsed)) return parsed;
+    } catch {
+      // JSON invalide : traité comme donnée illisible ci-dessous.
+    }
+    this.preserveUnreadable(raw);
+    return emptyCollection();
+  }
+
+  /**
+   * Copies an unreadable payload (invalid JSON or another schema version) to the backup key
+   * before freeing the active key, so no user data is lost. If the backup cannot be written,
+   * the active key is left untouched.
+   */
+  private preserveUnreadable(raw: string): void {
+    if (!this.storage) return;
+    try {
+      this.storage.setItem(this.backupKey, raw);
+      this.storage.removeItem(this.storageKey);
+    } catch {
+      // Stockage indisponible : les données restent dans la clé active.
     }
   }
 

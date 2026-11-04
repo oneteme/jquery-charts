@@ -171,7 +171,7 @@ const categories = intervalCategories(intervals, row => row.duration);
 
 ## Utilitaires de donnees de graphiques
 
-Les utilitaires de donnees sont purs et ne dependent pas du navigateur. Les dates utilisent `Intl.DateTimeFormat` avec une locale et un fuseau configurables ; le fuseau par defaut est `UTC` pour eviter une dependance implicite a l'environnement.
+Les utilitaires de donnees sont purs et ne dependent pas du navigateur. Les dates et nombres utilisent `Intl` avec une locale configurable ; la locale par defaut est `fr-FR` (comme pour les durees et libelles de periode). Le fuseau par defaut des dates est `UTC` pour eviter une dependance implicite a l'environnement.
 
 ```typescript
 import {
@@ -223,7 +223,11 @@ formatDuration(185_000);    // '3 min 05 s'
 formatDuration(8_100_000);  // '2 h 15 min'
 ```
 
-`ChartPeriodGranularity` accepte `hour`, `monthDay`, `yearWeek`, `yearMonth` et `year`. Les heures et jours sont affichés tels que fournis par le serveur (UTC) ; `sortPeriodLabels` ne modifie pas le tableau d'origine.
+`ChartPeriodGranularity` accepte `hour`, `date` (jour complet, ex. `'2026-11-03'` → `'3 nov. 2026'`), `monthDay`, `monthDayHour` (valeur composée `MM-dd HH`, ex. `'11-03 14'` → `'3 nov. 14:00'`), `yearWeek`, `yearMonth` et `year`. Les heures et jours sont affichés tels que fournis par le serveur (UTC) ; `sortPeriodLabels` ne modifie pas le tableau d'origine.
+
+`buildPeriodOptions()` fournit les découpages à proposer à l'utilisateur (ex. sous-menu d'un axe « Date ») : `Automatique` (`PERIOD_AUTO_OPTION_ID`, `'auto'`), puis `Heure` (`monthDayHour`), `Jour`, `Semaine`, `Mois` et `Année`. Les identifiants sont des granularités, donc une application peut les mapper vers ses propres paramètres serveur.
+
+Lors d'un changement de granularité, `remapSliceKeys(selected, previousKeys, nextKeys)` recalcule la sélection du panneau. `convertPeriodSelection` ne convertit que les conversions exactes : jour → heures (toutes les heures de chaque jour sélectionné) et heures → jour (seulement si toutes les heures **affichées** de ce jour sont sélectionnées ; les heures absentes de la base ne bloquent pas la conversion). Pour une fenêtre d'un seul jour, le serveur renvoie des heures simples (`'13'`, sans date) : la conversion jour ↔ heure simple s'appuie alors sur la liste à jour unique. Dans les autres cas, `null` signale qu'il faut fermer le panneau.
 
 ## Organizer
 
@@ -272,7 +276,7 @@ storage.rename(snapshot.id, 'Consommation');
 storage.remove(snapshot.id);
 ```
 
-Les méthodes disponibles sont `list`, `get`, `create`, `replace`, `rename`, `remove`, `clear` et `isLabelAvailable`. `DuplicateVisualSnapshotLabelError` signale un libellé déjà utilisé. Le format est versionné avec `schemaVersion: 1`; `isVisualSnapshot` permet de valider une donnée restaurée.
+Les méthodes disponibles sont `list`, `get`, `create`, `replace`, `rename`, `remove`, `clear` et `isLabelAvailable`. `DuplicateVisualSnapshotLabelError` signale un libellé déjà utilisé. Le format est versionné avec `schemaVersion: 1`; `isVisualSnapshot` permet de valider une donnée restaurée. Une donnée illisible (JSON invalide ou autre version de schéma) est copiée dans la clé `<storageKey>.backup` avant d'être retirée de la clé active, afin de ne pas perdre les snapshots existants ; si cette copie échoue, la clé active est conservée.
 
 ## Plein écran et sérialisation
 

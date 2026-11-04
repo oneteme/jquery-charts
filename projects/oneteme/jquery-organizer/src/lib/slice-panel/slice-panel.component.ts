@@ -32,6 +32,8 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   @Input() showCounts = true;
   @Input() collapsedByDefault = false;
   @Input() alwaysShow = false;
+  /** Clés à sélectionner par slice (alignées sur sliceConfigs), appliquées à chaque nouvelle valeur. */
+  @Input() presetKeys: string[][] | null = null;
 
   @Output() filterChange = new EventEmitter<(row: T) => boolean>();
   @Output() activeKeysChange = new EventEmitter<string[][]>();
@@ -62,15 +64,24 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']) {
+    const structuralChange = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']);
+    if (structuralChange) {
       const hadActiveFilters = this._hasActiveFilters();
       this._refreshDynamicSlices();
       this._rebuildCache();
-      const shouldReemitFilter = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']);
+      // Les clés préréglées remplacent la sélection courante et sont émises une seule fois, sans ré-émission en double.
+      const presetApplied = !!changes['presetKeys'] && !!this.presetKeys;
+      if (presetApplied) {
+        this._applyPresetKeys(this.presetKeys!);
+        this._emitFilter();
       // Un slice retiré de la config emporte sa sélection : le parent doit en être informé.
-      if (shouldReemitFilter && (hadActiveFilters || this._hasActiveFilters())) {
+      } else if (hadActiveFilters || this._hasActiveFilters()) {
         this._emitFilter();
       }
+      this._cdr.markForCheck();
+    } else if (changes['presetKeys'] && this.presetKeys) {
+      this._applyPresetKeys(this.presetKeys);
+      this._emitFilter();
       this._cdr.markForCheck();
     }
   }
@@ -416,6 +427,17 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       const availableKeys = new Set((slice.categories || []).map((c) => c.key));
       const matchingKeys = [...previousKeys].filter((key) => availableKeys.has(key));
       if (matchingKeys.length > 0) nextActiveKeys.set(index, new Set(matchingKeys));
+    });
+    this.activeKeysBySlice = nextActiveKeys;
+    this._countCache.clear();
+  }
+
+  private _applyPresetKeys(presetKeys: string[][]): void {
+    const nextActiveKeys = new Map<number, Set<string>>();
+    this._cachedSlices.forEach((slice, index) => {
+      const availableKeys = new Set((slice.categories || []).map((c) => c.key));
+      const keys = (presetKeys[index] ?? []).filter((key) => availableKeys.has(key));
+      if (keys.length > 0) nextActiveKeys.set(index, new Set(keys));
     });
     this.activeKeysBySlice = nextActiveKeys;
     this._countCache.clear();

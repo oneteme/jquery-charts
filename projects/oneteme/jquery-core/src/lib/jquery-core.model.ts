@@ -423,10 +423,6 @@ export function naturalComparator<T>(sens: Sort): (o1: T, o2: T) => number {
   return (a: T, b: T) => (a > b ? v : a < b ? -v : 0);
 }
 
-export function groupByFiled<T>(arr: [], name: string): { [key: string]: T[] } {
-  return groupBy(arr, field(name));
-}
-
 export function groupBy<T>(
   arr: [],
   fn: DataProvider<string>

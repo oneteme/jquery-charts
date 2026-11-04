@@ -1,4 +1,4 @@
-﻿import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField } from './organizer-config.interface';
+import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField, OrganizerXOption } from './organizer-config.interface';
 import { buildYFields, normalizeOrganizerState, resolveYKey } from './organizer-utils';
 import { UnitConfig } from '@oneteme/jquery-core';
 import { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
@@ -35,6 +35,10 @@ export interface OrganizerChartBridgeOptions {
   switchView?: OrganizerConfig['switchView'];
   /** Formatage optionnel des valeurs d'un slice, résolu à partir de la clé du filtre. */
   resolveSliceDisplay?: (filterKey: string) => Pick<OrganizerViewSlice, 'formatLabel' | 'compareKeys'> | undefined;
+  /** Variantes optionnelles de l'axe X (sous-menu), résolues à partir de la clé du groupe. */
+  resolveXOptions?: (groupKey: string) => OrganizerXOption[] | undefined;
+  /** Conversion des sélections de slices lors d'un changement de variante de l'axe X. */
+  remapSliceSelection?: OrganizerConfig['remapSliceSelection'];
 }
 
 export interface OrganizerChartBinding {
@@ -55,14 +59,21 @@ export function chartConfigToOrganizer(
     return {};
   }
 
-  const { onFetchSliceData, onExportVisual, onExportData, switchView, resolveSliceDisplay } = options;
+  const { onFetchSliceData, onExportVisual, onExportData, switchView, resolveSliceDisplay, resolveXOptions, remapSliceSelection } = options;
 
   const indicators = getIndicatorItems(chartConfig);
   const activeIndicator = indicators.find(i => i.selected);
 
   const baseXFields: OrganizerXField[] = getGroupItems(chartConfig)
     .filter(g => !_isSynthetic(g))
-    .map(g => ({ id: g.key, label: g.menu.label || g.key }));
+    .map(g => {
+      const xOptions = resolveXOptions?.(g.key);
+      return {
+        id: g.key,
+        label: g.menu.label || g.key,
+        ...(xOptions?.length ? { options: xOptions } : {}),
+      };
+    });
 
   const yFields = buildYFields(
     indicators.map(i => ({ id: i.key, label: i.menu.label || i.key, group: i.group }))
@@ -91,6 +102,7 @@ export function chartConfigToOrganizer(
     templates: chartConfig.templates,
     showReset: false,
     onFetchSliceData,
+    ...(remapSliceSelection ? { remapSliceSelection } : {}),
     showExport: !!(onExportVisual || onExportData),
     onExportVisual,
     onExportData,
@@ -183,18 +195,27 @@ export function handleOrganizerChartEvent(
   applyOrganizerEventToChart(event, chartConfig);
 
   if (event.type === 'ySelected' || event.type === 'templateSelected') {
-    return {
-      binding: buildOrganizerChartBinding(chartConfig, options),
-      shouldRefetch: true
-    };
+    const binding = buildOrganizerChartBinding(chartConfig, options);
+    if (event.type === 'ySelected') {
+      binding.state = normalizeOrganizerState(
+        { ...binding.state, selectedXOption: event.state.selectedXOption },
+        binding.config
+      );
+    }
+    return { binding, shouldRefetch: true };
   }
 
+  // Une nouvelle option de l'axe X peut changer l'affichage des tranches (libellés, tri) : la config est alors recalculée.
+  const xOptionChanged = event.type === 'xSelected' && event.state.selectedXOption !== currentBinding?.state.selectedXOption;
+  const keepConfig = !xOptionChanged && !!currentBinding?.config;
+  // Les tranches conservées (remappées) déclenchent elles-mêmes le rechargement via le panneau, une fois la sélection convertie.
+  const slicesKept = event.type === 'xSelected' && !!event.state.selectedSlices?.length;
   return {
     binding: {
-      config: currentBinding?.config ?? chartConfigToOrganizer(chartConfig, options),
+      config: keepConfig ? currentBinding!.config : chartConfigToOrganizer(chartConfig, options),
       state: event.state
     },
-    shouldRefetch: event.type !== 'sliceSelected'
+    shouldRefetch: event.type !== 'sliceSelected' && !slicesKept
   };
 }
 

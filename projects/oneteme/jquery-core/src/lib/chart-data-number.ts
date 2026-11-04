@@ -19,7 +19,7 @@ export interface ChartNumberFormatOptions {
   invalidNumber?: InvalidChartNumberPolicy;
 }
 
-const DEFAULT_LOCALE = 'en-US';
+const DEFAULT_LOCALE = 'fr-FR';
 
 /**
  * Formats one numeric chart value without relying on browser APIs.

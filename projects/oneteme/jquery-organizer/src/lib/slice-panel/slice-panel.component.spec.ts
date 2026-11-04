@@ -177,6 +177,47 @@ describe('SlicePanelComponent', () => {
     });
   });
 
+  describe('clés préréglées (presetKeys)', () => {
+    it('applique les clés préréglées et filtre les lignes correspondantes', () => {
+      const { set, activeKeys, lastFilter, matching } = setup();
+      set('presetKeys', [['KO']]);
+      expect(activeKeys.at(-1)).toEqual([['KO']]);
+      expect(matching(lastFilter())).toEqual([2]);
+    });
+
+    it('émet une seule fois par préréglage', () => {
+      const { set, activeKeys } = setup();
+      const before = activeKeys.length;
+      set('presetKeys', [['OK']]);
+      expect(activeKeys.length).toBe(before + 1);
+    });
+
+    it('ignore les clés absentes des catégories', () => {
+      const { set, activeKeys } = setup();
+      set('presetKeys', [['KO', 'ghost']]);
+      expect(activeKeys.at(-1)).toEqual([['KO']]);
+    });
+
+    it('un préréglage vide émet quand même (le graphique doit être rechargé sans filtre)', () => {
+      const { set, activeKeys } = setup();
+      set('presetKeys', [['OK']]);
+      const before = activeKeys.length;
+      set('presetKeys', [[]]);
+      expect(activeKeys.length).toBe(before + 1);
+      expect(activeKeys.at(-1)).toEqual([[]]);
+    });
+
+    it('avec un changement de données simultané, le préréglage remplace la sélection et n\'émet qu\'une fois', () => {
+      const { fixture, activeKeys } = setup();
+      const before = activeKeys.length;
+      fixture.componentRef.setInput('data', rows());
+      fixture.componentRef.setInput('presetKeys', [['KO']]);
+      fixture.detectChanges();
+      expect(activeKeys.length).toBe(before + 1);
+      expect(activeKeys.at(-1)).toEqual([['KO']]);
+    });
+  });
+
   describe('persistance des filtres', () => {
     it('exporte les filtres par clé de colonne ou par index et les restaure', () => {
       const config: SliceConfig<Row>[] = [
