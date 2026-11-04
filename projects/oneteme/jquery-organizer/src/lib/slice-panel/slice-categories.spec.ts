@@ -29,4 +29,21 @@ describe('buildCategoriesFromRows', () => {
     expect(buildCategoriesFromRows([], read)).toEqual([]);
     expect(buildCategoriesFromRows(undefined, read)).toEqual([]);
   });
+
+  it('formate le libellé sans changer la clé de filtre', () => {
+    const rows = [{ s: '13' }, { s: '9' }];
+    const categories = buildCategoriesFromRows(rows, read, { formatLabel: v => `${v}:00` });
+
+    expect(categories.map(c => [c.key, c.label])).toEqual([['13', '13:00'], ['9', '9:00']]);
+    expect(categories[0].filter!({ s: '13' })).toBeTrue();
+    expect(categories[0].filter!({ s: '9' })).toBeFalse();
+  });
+
+  it('trie avec le comparateur fourni (ex. heures numériques)', () => {
+    const rows = [{ s: '13' }, { s: '9' }, { s: '10' }];
+    const numeric = (a: string, b: string) => Number(a) - Number(b);
+
+    expect(buildCategoriesFromRows(rows, read).map(c => c.key)).toEqual(['10', '13', '9']);
+    expect(buildCategoriesFromRows(rows, read, { compareKeys: numeric }).map(c => c.key)).toEqual(['9', '10', '13']);
+  });
 });

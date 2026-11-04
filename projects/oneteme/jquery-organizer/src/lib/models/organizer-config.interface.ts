@@ -39,6 +39,10 @@ export interface OrganizerViewSlice {
   id: string;
   label: string;
   icon?: string;
+  /** Libellé affiché pour une valeur de slice ; la clé brute reste utilisée pour le filtrage. */
+  formatLabel?: (raw: string) => string;
+  /** Ordre d'affichage des valeurs de slice ; par défaut, tri natif des clés. */
+  compareKeys?: (a: string, b: string) => number;
 }
 
 export interface OrganizerChartType {

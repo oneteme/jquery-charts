@@ -180,7 +180,9 @@ export class OrganizerButtonComponent implements OnDestroy {
         sliceConfigs: slices.map((s, i) => ({
           title: s.label ?? s.id,
           columnKey: s.id,
-          ...(single ? {} : { categories: buildCategoriesFromRows(results[i], row => row?.[s.id]) })
+          ...(s.formatLabel ? { formatLabel: s.formatLabel } : {}),
+          ...(s.compareKeys ? { compareKeys: s.compareKeys } : {}),
+          ...(single ? {} : { categories: buildCategoriesFromRows(results[i], row => row?.[s.id], s) })
         })),
         tasks: results.flat(),
         filterApplied: false  // Panel vient d'être ouvert, pas de filtre sélectionné encore

@@ -33,6 +33,8 @@ export interface OrganizerChartBridgeOptions {
   onExportVisual?: () => void;
   onExportData?: () => void;
   switchView?: OrganizerConfig['switchView'];
+  /** Formatage optionnel des valeurs d'un slice, résolu à partir de la clé du filtre. */
+  resolveSliceDisplay?: (filterKey: string) => Pick<OrganizerViewSlice, 'formatLabel' | 'compareKeys'> | undefined;
 }
 
 export interface OrganizerChartBinding {
@@ -53,7 +55,8 @@ export function chartConfigToOrganizer(
     return {};
   }
 
-  const { onFetchSliceData, onExportVisual, onExportData, switchView } = options;
+  const { onFetchSliceData, onExportVisual, onExportData, switchView, resolveSliceDisplay } = options;
+
   const indicators = getIndicatorItems(chartConfig);
   const activeIndicator = indicators.find(i => i.selected);
 
@@ -80,7 +83,11 @@ export function chartConfigToOrganizer(
     xFields: mergedGroupFields,
     yFields,
     groups: mergedGroupFields,
-    slices: getFilterItems(chartConfig).map(f => ({ id: f.key, label: f.menu.label || f.key }) as OrganizerViewSlice),
+    slices: getFilterItems(chartConfig).map(f => ({
+      id: f.key,
+      label: f.menu.label || f.key,
+      ...resolveSliceDisplay?.(f.key)
+    }) as OrganizerViewSlice),
     templates: chartConfig.templates,
     showReset: false,
     onFetchSliceData,

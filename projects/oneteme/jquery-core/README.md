@@ -201,6 +201,30 @@ const convertedValues = convertChartDataValues(rows, ['value'], units, 'm', 'km'
 
 `normalizeChartDate`, `formatChartDate` et `formatChartNumber` traitent les valeurs nulles en les conservant. Les dates, nombres invalides et valeurs non finies lèvent une erreur par défaut ; les options `invalidDate: 'null'` et `invalidNumber: 'null'` permettent un comportement explicite. `convertChartDataValues` exige des unites enregistrees et des nombres finis : une unite inconnue ne declenche aucun fallback silencieux. Les transformations retournent un nouveau tableau et de nouvelles lignes superficielles.
 
+### Periodes et durees
+
+Ces utilitaires servent à afficher les libellés de regroupement temporel (valeurs brutes renvoyées par le serveur) et les durées, en français par défaut. Ils sont volontairement tolérants : une valeur illisible est renvoyée telle quelle au lieu de lever une erreur, car ce sont des libellés d'affichage.
+
+```typescript
+import { formatDuration, formatPeriodLabel, sortPeriodLabels } from '@oneteme/jquery-core';
+
+formatPeriodLabel('14', 'hour');        // '14:00'
+formatPeriodLabel('11-03', 'monthDay'); // '3 nov.'
+formatPeriodLabel('2026-W30', 'yearWeek'); // 'S30 2026'
+formatPeriodLabel('2026-11', 'yearMonth'); // 'nov. 2026'
+formatPeriodLabel('2026', 'year');      // '2026'
+
+sortPeriodLabels(['9', '17', '10'], 'hour'); // ['9', '10', '17'] (tri numérique)
+sortPeriodLabels(['12-30', '01-02'], 'monthDay', new Date('2025-12-29')); // ['12-30', '01-02']
+
+formatDuration(850);        // '850 ms'
+formatDuration(42_000);     // '42 s'
+formatDuration(185_000);    // '3 min 05 s'
+formatDuration(8_100_000);  // '2 h 15 min'
+```
+
+`ChartPeriodGranularity` accepte `hour`, `monthDay`, `yearWeek`, `yearMonth` et `year`. Les heures et jours sont affichés tels que fournis par le serveur (UTC) ; `sortPeriodLabels` ne modifie pas le tableau d'origine.
+
 ## Organizer
 
 Les contrats Organizer sont indépendants des composants visuels. Ils servent à décrire les champs disponibles et à appliquer la visibilité de séries de manière immuable.

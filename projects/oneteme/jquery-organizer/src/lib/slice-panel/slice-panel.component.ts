@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { SliceCategory, SliceColumnDef, SliceConfig } from './slice-panel.model';
-import { buildCategoriesFromRows } from './slice-categories';
+import { buildCategoriesFromRows, CategoryDisplayOptions } from './slice-categories';
 
 const I18N = {
   expandFilterTitle: 'Déplier le filtre',
@@ -357,20 +357,20 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       (this.data || []).forEach(row => { const v = bucket(row); counts.set(v, (counts.get(v) ?? 0) + 1); });
       return {
         ...slice,
-        categories: [...counts.keys()].sort().map((v) => ({
-          key: v, label: v, count: counts.get(v),
+        categories: [...counts.keys()].sort(slice.compareKeys).map((v) => ({
+          key: v, label: slice.formatLabel ? slice.formatLabel(v) : v, count: counts.get(v),
           filter: (row: T) => bucket(row) === v,
         })),
       };
     }
     return {
       ...slice,
-      categories: this._categoriesOf(slice.columnKey!),
+      categories: this._categoriesOf(slice.columnKey!, slice),
     };
   }
 
-  private _categoriesOf(columnKey: string): SliceCategory<T>[] {
-    return buildCategoriesFromRows(this.data, row => this._getLazyAwareValue(columnKey, row));
+  private _categoriesOf(columnKey: string, display?: CategoryDisplayOptions): SliceCategory<T>[] {
+    return buildCategoriesFromRows(this.data, row => this._getLazyAwareValue(columnKey, row), display);
   }
 
   private _columnsRef?: SliceColumnDef<T>[];

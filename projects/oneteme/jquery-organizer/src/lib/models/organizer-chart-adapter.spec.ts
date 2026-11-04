@@ -86,6 +86,20 @@ describe('organizer-chart-adapter', () => {
       expect(organizer.showExport).toBeTrue();
       expect(organizer.onExportData).toBe(onExportData);
     });
+
+    it('applique le formatage de slice résolu par clé de filtre', () => {
+      const formatLabel = (raw: string) => `[${raw}]`;
+      const compareKeys = (a: string, b: string) => a.localeCompare(b);
+      const organizer = chartConfigToOrganizer(makeChart(), {
+        resolveSliceDisplay: key => key === 'ok' ? { formatLabel, compareKeys } : undefined
+      });
+      const ok = organizer.slices?.find(s => s.id === 'ok');
+      const ko = organizer.slices?.find(s => s.id === 'ko');
+      expect(ok?.formatLabel).toBe(formatLabel);
+      expect(ok?.compareKeys).toBe(compareKeys);
+      expect(ko?.formatLabel).toBeUndefined();
+      expect(ko?.label).toBe('KO');
+    });
   });
 
   describe('chartConfigToState', () => {
