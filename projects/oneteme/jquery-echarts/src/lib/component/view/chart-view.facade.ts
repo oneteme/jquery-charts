@@ -16,12 +16,19 @@ import {
  *   _organizerFacade.update(config ?? {}, provider);
  *   getEffectiveProvider() → ChartProvider avec les flags visible appliqués.
  */
+function haveSameIds(a: string[], b: string[]): boolean {
+  const setA = new Set(a);
+  const setB = new Set(b);
+  return setA.size === setB.size && [...setB].every(id => setA.has(id));
+}
+
 export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = any> {
 
   // ── État
 
   private _config: ChartOrganizerConfig = {};
   private _provider: ChartProvider<X, Y> | null = null;
+  private _initialized = false;
 
   /** Champs (séries) disponibles, déduits des noms statiques du provider. */
   viewFields: ChartOrganizerFieldDef[] = [];
@@ -53,20 +60,25 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
   update(organizerConfig: ChartOrganizerConfig, provider: ChartProvider<X, Y>): void {
     this._config = organizerConfig ?? {};
     this._provider = provider;
+    const previousIds = new Set(this.viewFields.map(f => f.id));
     this.viewFields = organizerFieldDefsFromChartSeries(provider?.series ?? []);
-
     const existingIds = new Set(this.viewFields.map(f => f.id));
+    const selectedBefore = [...this.state.selectedFieldIds];
 
-    if (this.state.selectedFieldIds.length === 0) {
-      // Initialisation : toutes les séries sont visibles
+    if (!this._initialized) {
+      // Première mise à jour : toutes les séries sont visibles
       this.state.selectedFieldIds = [...existingIds];
+      this._initialized = true;
     } else {
-      // Màj incrémentale : conserver les sélections existantes + ajouter les nouvelles
+      // Les choix de l'utilisateur sont conservés (y compris « tout désélectionner ») ;
+      // seules les séries absentes de la mise à jour précédente deviennent visibles.
       const kept = this.state.selectedFieldIds.filter(id => existingIds.has(id));
-      const added = this.viewFields
-        .filter(f => !this.state.selectedFieldIds.includes(f.id) && existingIds.has(f.id))
-        .map(f => f.id);
+      const added = [...existingIds].filter(id => !previousIds.has(id));
       this.state.selectedFieldIds = [...kept, ...added];
+    }
+
+    if (!haveSameIds(selectedBefore, this.state.selectedFieldIds)) {
+      this._events$.next({ type: 'fieldsChanged', fieldIds: [...this.state.selectedFieldIds] });
     }
   }
 
@@ -99,9 +111,10 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
   /**
    * Retourne le ChartProvider avec les flags `visible` appliqués selon l'état courant.
    * Si Organizer n'est pas activé, retourne le provider inchangé.
+   * Retourne null tant qu'aucun provider n'a été fourni via update().
    */
-  getEffectiveProvider(applyState = false): ChartProvider<X, Y> {
-    if (!this._provider) return null as any;
+  getEffectiveProvider(applyState = false): ChartProvider<X, Y> | null {
+    if (!this._provider) return null;
     if (!this.enabled && !applyState) return this._provider;
     return applyOrganizerStateToSeries(this._provider, this.state);
   }

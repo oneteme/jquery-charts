@@ -92,8 +92,11 @@ export const gaugeConfigurator: EChartTypeConfigurator<GaugeModel> = {
     const items: GaugeItem[] = [];
 
     groups.forEach((group) => {
-      const lastValue = new Map<any, number | undefined>();
-      group.points.forEach((p) => lastValue.set(p.x, toNumber(p.y)));
+      const lastValue = new Map<any, number>();
+      group.points.forEach((p) => {
+        const value = toNumber(p.y);
+        if (value !== undefined) lastValue.set(p.x, value);
+      });
 
       categories.forEach((category) => {
         const value = lastValue.get(category);

@@ -81,6 +81,15 @@ describe('gaugeConfigurator', () => {
     expect(model.items.map((i) => i.name)).toEqual(['C']);
   });
 
+  it('une valeur invalide sur une ligne ultérieure ne doit pas effacer la dernière valeur valide', () => {
+    const later: any[] = [
+      { cat: 'A', val: 10 },
+      { cat: 'A', val: null },
+    ];
+    const model = gaugeConfigurator.buildChartData(later, config, 'gauge');
+    expect(model.items.map((i) => [i.name, i.value])).toEqual([['A', 10]]);
+  });
+
   it('préfixe le nom de la série quand il y a plusieurs séries', () => {
     const multi: any = {
       series: [

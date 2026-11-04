@@ -98,6 +98,11 @@ export function groupByName(points: RawPoint[]): RawGroup[] {
   return [...groups.values()];
 }
 
+/**
+ * Convertit en nombre fini. Accepte les nombres et les chaînes numériques (comme `buildChart`) ;
+ * une chaîne vide ou blanche n'est pas une valeur (sans ce garde-fou, `Number('')` vaudrait 0).
+ */
 export function toNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+  const parsed = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
+  return typeof parsed === 'number' && Number.isFinite(parsed) ? parsed : undefined;
 }

@@ -10,11 +10,12 @@ function buildHeatmapOption(
   const xCategories = chart.categories.map(String);
   const yCategories = chart.series.map((s) => s.name ?? '');
 
-  // Convertit les séries en tableau [xIndex, yIndex, value]
+  // Convertit les séries en tableau [xIndex, yIndex, value] ; une cellule vide n'est pas dessinée
   const data: [number, number, number][] = [];
   chart.series.forEach((s, yi) => {
     s.data.forEach((val, xi) => {
-      data.push([xi, yi, val ?? 0]);
+      if (val == null) return;
+      data.push([xi, yi, val]);
     });
   });
 

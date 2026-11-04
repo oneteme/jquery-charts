@@ -104,7 +104,7 @@ handleChartError(event: ChartRenderError): void {
 }
 ```
 
-Pour les configurations persistees, les coordonnees peuvent aussi etre definies sans fonction : `data: { xField: 'month', yField: 'revenue' }`.
+Pour les configurations persistees, les coordonnees peuvent aussi etre definies sans fonction : `data: { xField: 'month', yField: 'revenue' }`. Pour un graphique `bubble`, ajouter `zField: 'size'` (ou une fonction `z`) pour dimensionner chaque bulle.
 
 ### Inputs
 

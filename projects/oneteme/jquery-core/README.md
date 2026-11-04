@@ -60,9 +60,13 @@ data: { x: field('month'), y: field('revenue') }
 
 // Configuration sérialisable, pour une API ou localStorage.
 data: { xField: 'month', yField: 'revenue' }
+
+// Bulles : z (taille) est optionnel, en fonction ou en champ.
+data: { x: field('month'), y: field('revenue'), z: (o) => o.size }
+data: { xField: 'month', yField: 'revenue', zField: 'size' }
 ```
 
-`xField` et `yField` doivent être des chaînes non vides. Elles sont transformées en providers au moment de construire le graphique. Les fonctions ne doivent pas être enregistrées avec `JSON.stringify` : elles sont supprimées pendant la sérialisation.
+`xField` et `yField` doivent être des chaînes non vides ; `zField` est optionnel, mais s'il est présent il doit aussi être une chaîne non vide. Elles sont transformées en providers au moment de construire le graphique. Les fonctions ne doivent pas être enregistrées avec `JSON.stringify` : elles sont supprimées pendant la sérialisation.
 
 ### Providers de données
 

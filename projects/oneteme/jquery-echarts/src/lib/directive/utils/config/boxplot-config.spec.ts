@@ -31,6 +31,11 @@ describe('computeBoxplotBox', () => {
     expect(outliers).toEqual([-100]);
     expect((box as number[])[0]).toBe(1);
   });
+
+  it('ne doit pas lever de RangeError sur un très grand tableau (boucle au lieu du spread de Math.min/max)', () => {
+    const values = Array.from({ length: 200000 }, (_, i) => i % 1000);
+    expect(() => computeBoxplotBox(values)).not.toThrow();
+  });
 });
 
 describe('buildBoxplotModel', () => {

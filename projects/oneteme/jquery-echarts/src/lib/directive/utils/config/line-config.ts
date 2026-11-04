@@ -46,7 +46,7 @@ function buildLineOption(
       // Le type d'une série sans type explicite hérite du type du chart (ex: area, spline...)
       const serieType: ChartType = (s as any).type ?? type;
       const serieHasArea = serieType === 'area' || serieType === 'areaspline';
-      const serieSmooth = serieType === 'spline' || serieType === 'areaspline' || isSmooth(type);
+      const serieSmooth = isSmooth(serieType);
       return {
         type: 'line',
         name: s.name,

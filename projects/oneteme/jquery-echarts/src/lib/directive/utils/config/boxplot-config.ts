@@ -28,12 +28,22 @@ export function computeBoxplotBox(values: number[]): BoxplotBox {
   const upperFence = stats.q3 + WHISKER_FACTOR * stats.iqr;
   const inside = values.filter((v) => v >= lowerFence && v <= upperFence);
   const outliers = values.filter((v) => v < lowerFence || v > upperFence);
-  const low = inside.length ? Math.min(...inside) : stats.q1;
-  const high = inside.length ? Math.max(...inside) : stats.q3;
+  const [low, high] = inside.length ? extent(inside) : [stats.q1, stats.q3];
   return {
     box: [low, stats.q1, stats.median, stats.q3, high],
     outliers,
   };
+}
+
+/** Bornes min/max en une boucle : évite `Math.min(...array)`, qui dépasse la pile d'appels sur de grands tableaux. */
+function extent(values: number[]): [number, number] {
+  let min = Infinity;
+  let max = -Infinity;
+  for (const v of values) {
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return [min, max];
 }
 
 export interface BoxplotSerie {
