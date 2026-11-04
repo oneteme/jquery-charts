@@ -250,6 +250,8 @@ Panneau latéral collapsible pour filtrer les données par catégories.
 | `(filterChange)` | `EventEmitter<(row: T) => boolean>` | — | Prédicat de filtre |
 | `(collapsedChange)` | `EventEmitter<boolean>` | — | État replié |
 
+> Les événements `(filterChange)` et `(activeKeysChange)` déclenchés par un changement d'inputs (`[data]`, `[sliceConfigs]`, `[columns]`, `[lazyStatus]`, `[presetKeys]`) sont émis après le cycle de détection (microtask). Un parent peut donc mettre à jour son état dans le handler sans erreur `ExpressionChangedAfterItHasBeenChecked`. Les actions de l'utilisateur et les méthodes publiques (`onSliceCategorySelected`, `addDynamicSlice`, etc.) émettent toujours de façon synchrone.
+
 ---
 
 ## Système d'Unités avec Auto-Scaling

@@ -73,21 +73,26 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       const presetApplied = !!changes['presetKeys'] && !!this.presetKeys;
       if (presetApplied) {
         this._applyPresetKeys(this.presetKeys!);
-        this._emitFilter();
+        this._emitFilterOutsideChangeDetection();
       // Un slice retiré de la config emporte sa sélection : le parent doit en être informé.
       } else if (hadActiveFilters || this._hasActiveFilters()) {
-        this._emitFilter();
+        this._emitFilterOutsideChangeDetection();
       }
       this._cdr.markForCheck();
     } else if (changes['presetKeys'] && this.presetKeys) {
       this._applyPresetKeys(this.presetKeys);
-      this._emitFilter();
+      this._emitFilterOutsideChangeDetection();
       this._cdr.markForCheck();
     }
   }
 
   private _hasActiveFilters(): boolean {
     return [...this.activeKeysBySlice.values()].some(s => s.size > 0);
+  }
+
+  // Émis après le cycle de détection : un parent qui met à jour son état dans le handler ne provoque pas NG0100.
+  private _emitFilterOutsideChangeDetection(): void {
+    Promise.resolve().then(() => this._emitFilter());
   }
 
   get showPanel(): boolean {
