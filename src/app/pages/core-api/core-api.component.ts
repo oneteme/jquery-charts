@@ -36,7 +36,6 @@ import {
   formatChartValue,
   formatUnitValue,
   groupBy,
-  groupByFiled,
   groupableOrganizerFields,
   initialOrganizerState,
   intervalCategories,
@@ -182,7 +181,7 @@ export class CoreApiComponent implements OnDestroy {
         { name: 'buildChart()', type: 'CommonChart<X, Y>', source: 'Core', description: 'Construit catégories et séries à partir des lignes et du ChartProvider.', code: 'const chart = buildChart(rows, provider);' },
         { name: 'buildSingleSerieChart()', type: 'CommonChart<X, Y>', source: 'Core', description: 'Prépare la variante où plusieurs providers sont fusionnés dans une seule série.', code: 'const chart = buildSingleSerieChart(rows, provider);' },
         { name: 'distinct / naturalComparator / naturalFieldComparator', type: 'T[] / Comparator<T>', source: 'Core', description: 'Déduplique des catégories et fournit un tri sur une valeur ou un champ.', code: "const regions = distinct(rows, [field('region')]);" },
-        { name: 'groupBy / groupByFiled', type: 'Record<string, T[]>', source: 'Core', description: 'Regroupe des lignes par provider ou par nom de champ.', code: "const byRegion = groupBy(rows as [], field('region'));" },
+        { name: 'groupBy', type: 'Record<string, T[]>', source: 'Core', description: 'Regroupe des lignes par provider ou par nom de champ.', code: "const byRegion = groupBy(rows as [], field('region'));" },
       ],
     },
     {
@@ -544,7 +543,6 @@ publishChartGroupSync({
     const mapped = mapField<string>('region', labels)(sample, 0);
     const fixed = values<number>(10, 20, 30)(sample, 1);
     const grouped = groupBy(this.providerRows as [], field<string>('region'));
-    const groupedByField = groupByFiled(this.providerRows as [], 'region');
     const sortedMonths = [...distinct(this.providerRows, [field<string>('month')])]
       .sort(naturalComparator('desc'));
     const sortedRows = [...this.providerRows].sort(naturalFieldComparator('asc', field<number>('sales')));
@@ -559,7 +557,6 @@ publishChartGroupSync({
       joinProviders: joinedProviders,
       combineProviders: combinedProviders,
       groupByKeys: Object.keys(grouped),
-      groupByFiledKeys: Object.keys(groupedByField),
       distinctThenDesc: sortedMonths,
       naturalFieldComparatorFirst: sortedRows[0].month,
     };
