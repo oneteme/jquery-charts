@@ -23,6 +23,8 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
 
   private _config: ChartOrganizerConfig = {};
   private _provider: ChartProvider<X, Y> | null = null;
+  /** Ids connus à la dernière mise à jour : seuls les nouveaux ids sont auto-sélectionnés. */
+  private _knownIds = new Set<string>();
 
   /** Champs (séries) disponibles, déduits des noms statiques du provider. */
   viewFields: ChartOrganizerFieldDef[] = [];
@@ -57,16 +59,11 @@ export class ChartViewFacade<X extends XaxisType = any, Y extends YaxisType = an
     this.viewFields = organizerFieldDefsFromChartSeries(provider?.series ?? []);
 
     const existingIds = new Set(this.viewFields.map(f => f.id));
-
-    if (this.state.selectedFieldIds.length === 0) {
-      // Initialisation : toutes les séries sont visibles
-      this.state.selectedFieldIds = [...existingIds];
-    } else {
-      // Màj incrémentale : conserver les sélections existantes + ajouter les nouvelles
-      const kept = this.state.selectedFieldIds.filter(id => existingIds.has(id));
-      const added = this.viewFields.filter(f => !this.state.selectedFieldIds.includes(f.id) && existingIds.has(f.id)).map(f => f.id);
-      this.state.selectedFieldIds = [...kept, ...added];
-    }
+    // Une série jamais vue est visible par défaut ; une série déjà connue garde son état (même masquée).
+    const added = [...existingIds].filter(id => !this._knownIds.has(id));
+    const kept = this.state.selectedFieldIds.filter(id => existingIds.has(id));
+    this.state.selectedFieldIds = [...kept, ...added];
+    this._knownIds = existingIds;
   }
 
   /** Applique un état Organizer contrôlé par le composant parent. */

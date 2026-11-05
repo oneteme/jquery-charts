@@ -15,7 +15,7 @@ export function groupByKey<T>(arr:T[], keyFn: Function<T,string|number>) : {[key
 export function groupBy<T, V>(arr: T[], keyFn: Function<T,string|number>, initial: ()=> V, combiner: BiFunction<V,T,V>): {[key:string]:V} {
   return arr.reduce((acc, o) => {
     let key = keyFn(o);
-    acc[key] = combiner(acc[key] == undefined ? acc[key] : initial(), o);
+    acc[key] = combiner(acc[key] === undefined ? initial() : acc[key], o);
     return acc;
   }, {});
 }

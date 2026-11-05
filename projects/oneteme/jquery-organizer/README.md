@@ -123,6 +123,7 @@ Composant standalone qui affiche un bouton ouvrant un menu Material. Le menu exp
 |---|---|---|
 | `[config]` | `OrganizerConfig` | Configuration du bouton et menu |
 | `[state]` | `OrganizerState` | État courant des sélections |
+| `[sliceFilterValues]` | `Record<string, string[]>` | Clés brutes actuellement sélectionnées pour chaque slice (par identifiant de slice). Requis pour que `remapSliceSelection` puisse convertir la sélection lors d'un changement de variante X ; sans cette liaison, la sélection est remappée depuis une liste vide |
 | `(viewChange)` | `EventEmitter<OrganizerEvent>` | Émis à chaque interaction utilisateur |
 | `(sliceStateChange)` | `EventEmitter<OrganizerSliceState \| null>` | Données de filtre après fetch. Avec plusieurs slices sélectionnés, `onFetchSliceData` est appelé pour chacun : `sliceConfigs` contient un slice par filtre (avec ses `categories`) et `tasks` la concaténation des lignes. À exploiter via `(activeKeysChange)` du `slice-panel` (filtrage côté serveur) ; le prédicat `(filterChange)` n'a pas de sens ici, les lignes provenant de requêtes distinctes |
 
@@ -140,6 +141,7 @@ export interface OrganizerConfig {
   // Callbacks
   onFetchFieldData?: (fieldId: string) => Promise<any[]>;
   onFetchSliceData?: (filterKey: string) => Observable<any[]> | Promise<any[]>;
+  remapSliceSelection?: (selectedKeys: string[], previousKeys: string[], nextKeys: string[]) => string[] | null;
   onSliceClick?: () => void;
 
   // Export & Préférences
@@ -184,6 +186,7 @@ export interface OrganizerState {
   visibleFields?: string[];             // Champs visibles en table
   selectedChartType?: string;            // Type de graphique choisi par l’utilisateur
   selectedX?: string;                   // Dimension X (ex: 'date')
+  selectedXOption?: string;             // Variante de l'axe X (ex: 'hour'), voir « Variantes de l'axe X »
   selectedY?: string;                   // Indicateur Y (ex: 'count')
   selectedYAggregate?: string;           // Agrégat si applicable
   selectedGroupBy?: string;              // Regroupement actif
@@ -234,6 +237,68 @@ onViewChange(event: OrganizerButtonEvent): void {
 
 ---
 
+### Variantes de l'axe X (sous-menu)
+
+Un `OrganizerXField` peut proposer un sous-menu de variantes (ex. découper une date par heure, jour ou mois). La première variante est celle utilisée lorsque `selectedXOption` n'est pas défini. Le choix est stocké dans `state.selectedXOption` et émis dans `xSelected`.
+
+```typescript
+const config: OrganizerConfig = {
+  xFields: [
+    {
+      id: 'date',
+      label: 'Date',
+      options: [
+        { id: 'hour', label: 'Heure' },
+        { id: 'day', label: 'Jour' },
+      ],
+    },
+  ],
+};
+```
+
+Une variante désactivée (`disabled: true`) est ignorée. Une variante inconnue pour l'axe courant est écartée. Un changement de template réinitialise `selectedXOption`.
+
+Dans le cas d'un bridge (`buildOrganizerChartBinding` / `handleOrganizerChartEvent`), les variantes sont fournies par `OrganizerChartBridgeOptions.resolveXOptions(groupKey)`.
+
+### Options du bridge (`OrganizerChartBridgeOptions`)
+
+`buildOrganizerChartBinding(chartConfig, options)` et `handleOrganizerChartEvent(...)` acceptent ces options optionnelles :
+
+| Option | Signature | Rôle |
+|---|---|---|
+| `onFetchSliceData` | `(filterKey) => Observable \| Promise` | Chargement des valeurs d'un slice |
+| `resolveXOptions` | `(groupKey) => OrganizerXOption[] \| undefined` | Variantes de l'axe X pour un groupe |
+| `resolveSliceDisplay` | `(filterKey) => { formatLabel?, compareKeys? } \| undefined` | Libellés et ordre des valeurs (tranches et empilements) |
+| `remapSliceSelection` | voir `OrganizerConfig` | Conversion des tranches lors d'un changement de variante X |
+| `onExportVisual` / `onExportData` / `switchView` | — | Actions et bascule de vue |
+
+```typescript
+const binding = buildOrganizerChartBinding(chartConfig, {
+  resolveXOptions: groupKey => (groupKey === 'date' ? dateOptions : undefined),
+  resolveSliceDisplay: filterKey => (filterKey === 'hour' ? { formatLabel: raw => `${raw} h` } : undefined),
+  remapSliceSelection: (selected, previous, next) => convertKeys(selected, previous, next),
+});
+```
+
+### Libellés et ordre des tranches
+
+Un `OrganizerViewSlice` accepte deux fonctions optionnelles :
+
+- `formatLabel(raw)` : libellé affiché pour une valeur. La clé brute reste utilisée pour le filtrage.
+- `compareKeys(a, b)` : ordre d'affichage des valeurs. Par défaut, tri natif des clés.
+
+### Remap des tranches lors d'un changement d'axe X
+
+Changer la variante X d'un même axe (ex. jour → heure) peut rendre les valeurs de tranche sélectionnées invalides. Si `remapSliceSelection` est fourni, il convertit la sélection :
+
+- il reçoit la sélection courante, les clés de l'ancienne liste et celles de la nouvelle ;
+- il renvoie la sélection équivalente ;
+- il renvoie `null` si la sélection ne peut pas être conservée : la sélection des tranches est alors vidée (le parent reçoit `selectedSlices: []`).
+
+Sans `remapSliceSelection`, un changement d'axe X vide les tranches sélectionnées : le parent reçoit `selectedSlices: []` et `sliceStateChange` émet `null`.
+
+---
+
 ## SlicePanelComponent
 
 Panneau latéral collapsible pour filtrer les données par catégories.
@@ -248,7 +313,11 @@ Panneau latéral collapsible pour filtrer les données par catégories.
 | `[showToggle]` | `boolean` | `true` | Affiche bouton replier/déplier |
 | `[alwaysShow]` | `boolean` | `false` | Affiche même sans données |
 | `(filterChange)` | `EventEmitter<(row: T) => boolean>` | — | Prédicat de filtre |
+| `[presetKeys]` | `string[][] \| null` | `null` | Clés à sélectionner par slice (alignées sur `sliceConfigs`), appliquées à chaque nouvelle valeur |
 | `(collapsedChange)` | `EventEmitter<boolean>` | — | État replié |
+| `(activeKeysChange)` | `EventEmitter<string[][]>` | — | Clés actives par slice, émises après chaque changement de sélection ou d'inputs |
+
+> Les événements `(filterChange)` et `(activeKeysChange)` déclenchés par un changement d'inputs (`[data]`, `[sliceConfigs]`, `[columns]`, `[lazyStatus]`, `[presetKeys]`) sont émis après le cycle de détection (microtask). Un parent peut donc mettre à jour son état dans le handler sans erreur `ExpressionChangedAfterItHasBeenChecked`. Les actions de l'utilisateur et les méthodes publiques (`onSliceCategorySelected`, `addDynamicSlice`, etc.) émettent toujours de façon synchrone.
 
 ---
 

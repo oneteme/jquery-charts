@@ -1,5 +1,6 @@
 import { ChartProvider, formatChartValue, mergeDeep, selectBestScale, UnitConfig } from '@oneteme/jquery-core';
 import { EChartsOption } from './types';
+import { toNumber } from './config/raw-series';
 
 export { selectBestScale };
 
@@ -46,18 +47,15 @@ function getTooltipValue(param: any): unknown {
 }
 
 export function formatTooltipValue(value: unknown): string {
-  const numericValue = typeof value === 'number' || typeof value === 'string'
-    ? Number(value)
-    : Number.NaN;
-
-  if (!Number.isFinite(numericValue)) return formatNonNumericTooltipValue(value);
+  const numericValue = toNumber(value);
+  if (numericValue === undefined) return formatNonNumericTooltipValue(value);
 
   if (numericValue === 0) return '0';
   return formatChartValue(numericValue);
 }
 
 function formatNonNumericTooltipValue(value: unknown): string {
-  if (value == null) return '–';
+  if (value == null || (typeof value === 'string' && value.trim() === '')) return '–';
   if (typeof value === 'object') {
     try {
       return JSON.stringify(value) ?? '–';
@@ -80,8 +78,8 @@ function formatNonNumericTooltipValue(value: unknown): string {
 }
 
 function formatNumericAxisValue(value: unknown): string {
-  const numericValue = typeof value === 'number' ? value : Number(value);
-  if (Number.isFinite(numericValue)) return formatChartValue(numericValue);
+  const numericValue = toNumber(value);
+  if (numericValue !== undefined) return formatChartValue(numericValue);
   return typeof value === 'string' ? value : '';
 }
 
@@ -261,8 +259,11 @@ export function applyCommonConfig(
   if (config.xtitle) {
     (patch as any).xAxis = { name: config.xtitle, nameLocation: 'center', nameGap: 30 };
   }
-  if (config.ytitle && !Array.isArray(config.ytitle)) {
-    (patch as any).yAxis = { name: config.ytitle, nameLocation: 'center', nameGap: 40 };
+  // Un tableau de titres est réservé aux multi-axes (mixed-config gère chaque axe par index) :
+  // ici, pour un axe Y unique, on prend le premier titre au lieu de l'ignorer.
+  const singleYTitle = Array.isArray(config.ytitle) ? config.ytitle[0] : config.ytitle;
+  if (singleYTitle && !Array.isArray((option as any).yAxis)) {
+    (patch as any).yAxis = { name: singleYTitle, nameLocation: 'center', nameGap: 40 };
   }
 
   const { series: seriesPatch, ...restOptions } = (config.options ?? {}) as any;

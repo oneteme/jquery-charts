@@ -1,6 +1,6 @@
 import type { GroupSyncMode } from './chart-capabilities.model';
 
-export declare type ChartType = 'pie' | 'donut' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'mixed' | 'map' | string;
+export declare type ChartType = 'pie' | 'donut' | 'rose' | 'funnel' | 'pyramid' | 'polar' | 'radar' | 'radarArea' | 'radial' | 'radialBar' | 'gauge' | 'sankey' | 'bar' | 'column' | 'columnpyramid' | 'line' | 'area' | 'spline' | 'areaspline' | 'scatter' | 'bubble' | 'treemap' | 'sunburst' | 'graph' | 'calendar' | 'waterfall' | 'heatmap' | 'boxplot' | 'columnrange' | 'arearange' | 'areasplinerange' | 'rangeArea' | 'rangeBar' | 'rangeColumn' | 'mixed' | 'map' | string;
 
 export function values<T>(...values: T[]): DataProvider<T> {
   return (o, idx) => {
@@ -70,6 +70,7 @@ export function buildSingleSerieChart<X extends XaxisType, Y extends YaxisType>(
                 resolveDataProvider(s.name)
               )) as DataProvider<X>,
           y: s.data.y,
+          z: s.data.z,
         },
         color: s.color,
         // no unit
@@ -92,7 +93,7 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
   const mappers = resolvedProvider.pivot
     ? resolvedSeries.map((m) => ({
         name: resolveDataProvider(m.data.x),
-        data: { x: resolveDataProvider(m.name, ''), y: m.data.y },
+        data: { x: resolveDataProvider(m.name, ''), y: m.data.y, z: m.data.z },
       }))
     : resolvedSeries;
 
@@ -168,11 +169,16 @@ export function buildChart<X extends XaxisType, Y extends YaxisType>(
       }
 
       if (resolvedProvider.continue) {
-        chartSeries[name].data.push({
+        const point: Record<string, any> = {
           x: m.data.x(o, i),
           y: requireNonUndefined(m.data.y(o, i), defaultValue),
           _o: o,
-        });
+        };
+        const z = m.data.z?.(o, i);
+        if (z !== undefined) {
+          point.z = z;
+        }
+        chartSeries[name].data.push(point);
       } else {
         const key = m.data.x(o, i);
         const idx = chart.categories.indexOf(key);
@@ -217,12 +223,16 @@ function resolveCoordinateProvider<X extends XaxisType, Y extends YaxisType>(
   if (isFieldCoordinateProvider(coordinate)) {
     return {
       x: field<X>(coordinate.xField),
-      y: field<Y>(coordinate.yField)
+      y: field<Y>(coordinate.yField),
+      ...(coordinate.zField !== undefined ? { z: field<number>(coordinate.zField) } : {}),
     };
   }
 
   const functionCoordinate = coordinate as FunctionCoordinateProvider<X, Y>;
   if (functionCoordinate && typeof functionCoordinate.x === 'function' && typeof functionCoordinate.y === 'function') {
+    if (functionCoordinate.z !== undefined && typeof functionCoordinate.z !== 'function') {
+      throw new Error('Configuration de coordonnees invalide : z doit etre une fonction.');
+    }
     return functionCoordinate;
   }
 
@@ -239,6 +249,9 @@ function isFieldCoordinateProvider<X extends XaxisType, Y extends YaxisType>(
   const fieldCoordinate = coordinate as Partial<FieldCoordinateProvider>;
   if (typeof fieldCoordinate.xField !== 'string' || !fieldCoordinate.xField.trim() || typeof fieldCoordinate.yField !== 'string' || !fieldCoordinate.yField.trim()) {
     throw new Error('Configuration de coordonnees invalide : xField et yField doivent etre des chaines non vides.');
+  }
+  if (fieldCoordinate.zField !== undefined && (typeof fieldCoordinate.zField !== 'string' || !fieldCoordinate.zField.trim())) {
+    throw new Error('Configuration de coordonnees invalide : zField doit etre une chaine non vide.');
   }
 
   return true;
@@ -343,7 +356,8 @@ export interface SerieProvider<X extends XaxisType, Y extends YaxisType> {
   yAxisConfig?: Record<string, any>; // Options personnalisées pour cet axe Y (ex: splitNumber)
 }
 
-export declare type Coordinate2D = { x: XaxisType; y: YaxisType };
+/** `z` est optionnel : seul un graphique à bulles le consomme (taille de la bulle). */
+export declare type Coordinate2D = { x: XaxisType; y: YaxisType; z?: number };
 
 export declare type XaxisType = number | string | Date;
 
@@ -352,12 +366,14 @@ export declare type YaxisType = number | number[]; // 2D
 export declare type FunctionCoordinateProvider<X, Y> = {
   x: DataProvider<X>;
   y: DataProvider<Y>;
+  z?: DataProvider<number>;
 };
 
 /** Coordonnees serialisables : adaptees au stockage JSON et aux configurations transmises par API. */
 export declare type FieldCoordinateProvider = {
   xField: string;
   yField: string;
+  zField?: string;
 };
 
 export declare type CoordinateProvider<X, Y> = FunctionCoordinateProvider<X, Y> | FieldCoordinateProvider;
@@ -421,10 +437,6 @@ export function naturalFieldComparator<T>(
 export function naturalComparator<T>(sens: Sort): (o1: T, o2: T) => number {
   const v = sens === 'asc' ? 1 : -1;
   return (a: T, b: T) => (a > b ? v : a < b ? -v : 0);
-}
-
-export function groupByFiled<T>(arr: [], name: string): { [key: string]: T[] } {
-  return groupBy(arr, field(name));
 }
 
 export function groupBy<T>(

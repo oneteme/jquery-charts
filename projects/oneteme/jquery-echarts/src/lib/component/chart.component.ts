@@ -210,7 +210,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
     const skipped = selectedFieldIds?.filter(id => !availableIds.has(id)) ?? [];
     if (selectedFieldIds) {
       this._organizerFacade.state.selectedFieldIds = compatibleIds;
-      this._effectiveConfig = this._organizerFacade.getEffectiveProvider(this.organizerState !== undefined);
+      this._effectiveConfig = this._organizerFacade.getEffectiveProvider(this.organizerState !== undefined) ?? this.config;
     }
     return {
       applied: true,
@@ -235,7 +235,7 @@ export class ChartComponent<X extends XaxisType, Y extends YaxisType> implements
         }
       }
       this._effectiveConfig = this.config
-        ? this._organizerFacade.getEffectiveProvider(this.organizerState !== undefined)
+        ? this._organizerFacade.getEffectiveProvider(this.organizerState !== undefined) ?? this.config
         : this.config;
     }
   }

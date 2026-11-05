@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { SliceCategory, SliceColumnDef, SliceConfig } from './slice-panel.model';
-import { buildCategoriesFromRows } from './slice-categories';
+import { buildCategoriesFromRows, CategoryDisplayOptions } from './slice-categories';
 
 const I18N = {
   expandFilterTitle: 'Déplier le filtre',
@@ -32,6 +32,8 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   @Input() showCounts = true;
   @Input() collapsedByDefault = false;
   @Input() alwaysShow = false;
+  /** Clés à sélectionner par slice (alignées sur sliceConfigs), appliquées à chaque nouvelle valeur. */
+  @Input() presetKeys: string[][] | null = null;
 
   @Output() filterChange = new EventEmitter<(row: T) => boolean>();
   @Output() activeKeysChange = new EventEmitter<string[][]>();
@@ -62,21 +64,35 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']) {
+    const structuralChange = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']);
+    if (structuralChange) {
       const hadActiveFilters = this._hasActiveFilters();
       this._refreshDynamicSlices();
       this._rebuildCache();
-      const shouldReemitFilter = !!(changes['sliceConfigs'] || changes['data'] || changes['columns'] || changes['lazyStatus']);
+      // Les clés préréglées remplacent la sélection courante et sont émises une seule fois, sans ré-émission en double.
+      const presetApplied = !!changes['presetKeys'] && !!this.presetKeys;
+      if (presetApplied) {
+        this._applyPresetKeys(this.presetKeys!);
+        this._emitFilterOutsideChangeDetection();
       // Un slice retiré de la config emporte sa sélection : le parent doit en être informé.
-      if (shouldReemitFilter && (hadActiveFilters || this._hasActiveFilters())) {
-        this._emitFilter();
+      } else if (hadActiveFilters || this._hasActiveFilters()) {
+        this._emitFilterOutsideChangeDetection();
       }
+      this._cdr.markForCheck();
+    } else if (changes['presetKeys'] && this.presetKeys) {
+      this._applyPresetKeys(this.presetKeys);
+      this._emitFilterOutsideChangeDetection();
       this._cdr.markForCheck();
     }
   }
 
   private _hasActiveFilters(): boolean {
     return [...this.activeKeysBySlice.values()].some(s => s.size > 0);
+  }
+
+  // Émis après le cycle de détection : un parent qui met à jour son état dans le handler ne provoque pas NG0100.
+  private _emitFilterOutsideChangeDetection(): void {
+    Promise.resolve().then(() => this._emitFilter());
   }
 
   get showPanel(): boolean {
@@ -357,20 +373,20 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       (this.data || []).forEach(row => { const v = bucket(row); counts.set(v, (counts.get(v) ?? 0) + 1); });
       return {
         ...slice,
-        categories: [...counts.keys()].sort().map((v) => ({
-          key: v, label: v, count: counts.get(v),
+        categories: [...counts.keys()].sort(slice.compareKeys).map((v) => ({
+          key: v, label: slice.formatLabel ? slice.formatLabel(v) : v, count: counts.get(v),
           filter: (row: T) => bucket(row) === v,
         })),
       };
     }
     return {
       ...slice,
-      categories: this._categoriesOf(slice.columnKey!),
+      categories: this._categoriesOf(slice.columnKey!, slice),
     };
   }
 
-  private _categoriesOf(columnKey: string): SliceCategory<T>[] {
-    return buildCategoriesFromRows(this.data, row => this._getLazyAwareValue(columnKey, row));
+  private _categoriesOf(columnKey: string, display?: CategoryDisplayOptions): SliceCategory<T>[] {
+    return buildCategoriesFromRows(this.data, row => this._getLazyAwareValue(columnKey, row), display);
   }
 
   private _columnsRef?: SliceColumnDef<T>[];
@@ -416,6 +432,17 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       const availableKeys = new Set((slice.categories || []).map((c) => c.key));
       const matchingKeys = [...previousKeys].filter((key) => availableKeys.has(key));
       if (matchingKeys.length > 0) nextActiveKeys.set(index, new Set(matchingKeys));
+    });
+    this.activeKeysBySlice = nextActiveKeys;
+    this._countCache.clear();
+  }
+
+  private _applyPresetKeys(presetKeys: string[][]): void {
+    const nextActiveKeys = new Map<number, Set<string>>();
+    this._cachedSlices.forEach((slice, index) => {
+      const availableKeys = new Set((slice.categories || []).map((c) => c.key));
+      const keys = (presetKeys[index] ?? []).filter((key) => availableKeys.has(key));
+      if (keys.length > 0) nextActiveKeys.set(index, new Set(keys));
     });
     this.activeKeysBySlice = nextActiveKeys;
     this._countCache.clear();

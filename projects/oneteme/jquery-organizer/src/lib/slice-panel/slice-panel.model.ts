@@ -19,6 +19,10 @@ export interface SliceConfig<T = any> {
   hidden?: boolean;
   bucket?: (row: T) => string;
   categories?: SliceCategory<T>[];
+  /** Libellé affiché pour une valeur brute. La clé de catégorie (utilisée pour filtrer) reste la valeur brute. */
+  formatLabel?: (raw: string) => string;
+  /** Ordre d'affichage des valeurs brutes ; par défaut, ordre alphabétique des clés. */
+  compareKeys?: (a: string, b: string) => number;
 }
 
 export interface SliceColumnDef<T = any> {

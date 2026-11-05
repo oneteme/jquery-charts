@@ -94,6 +94,8 @@ function applySingleAxis(
     : Object.assign({}, options.yAxis);
   if (existingAxis.showEmpty === undefined) existingAxis.showEmpty = false;
   markAutomaticAxisVisibility(existingAxis, series);
+  const title = resolveAxisTitles(config)[0];
+  if (title) existingAxis.title = mergeAxisTitle(existingAxis.title, title);
   const hasUnit = !!config.yUnit || series.some(serie => typeof serie.unit === 'string' && serie.unit.trim());
 
   const display = hasUnit

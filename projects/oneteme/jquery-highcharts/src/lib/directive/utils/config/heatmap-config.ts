@@ -28,9 +28,10 @@ function matrixToHeatmap(
   const heatmapData: any[] = [];
   const yCategories: string[] = [];
 
-  series.forEach((serie, yIndex) => {
+  series.forEach((serie) => {
     if (!serie.data || serie.data.length === 0) return;
 
+    const yIndex = yCategories.length;
     yCategories.push(serie.name || `Série ${yIndex + 1}`);
 
     serie.data.forEach((value: any, xIndex: number) => {
@@ -76,7 +77,9 @@ function heatmapToSeries(series: any[]): any[] {
   const seriesByY = new Map<number, any[]>();
 
   firstSerie.data.forEach((point: any) => {
-    const heatPoint = typeof point === 'object' ? point : null;
+    const heatPoint = Array.isArray(point)
+      ? { x: point[0], y: point[1], value: point[2] }
+      : typeof point === 'object' ? point : null;
     if (!heatPoint) return;
 
     const y = heatPoint.y ?? 0;

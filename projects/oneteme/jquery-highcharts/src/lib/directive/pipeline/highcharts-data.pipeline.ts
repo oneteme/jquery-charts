@@ -5,6 +5,7 @@ import {
   transformChartData,
   transformDataForSimpleChart,
   validateChartData,
+  isBubbleChart,
 } from '../utils';
 import { buildChart, ChartProvider, ChartType } from '@oneteme/jquery-core';
 
@@ -126,7 +127,8 @@ function prepareSimpleChartData(context: HighchartsDataPipelineContext): Prepare
 function prepareComplexChartData(
   context: HighchartsDataPipelineContext,
 ): HighchartsDataPipelineResult {
-  const chartConfig = { ...context.config, continue: false };
+  const continuous = isBubbleChart(context.type);
+  const chartConfig = { ...context.config, continue: continuous };
   const commonChart = buildChart(context.data, chartConfig, null);
   let categories = commonChart.categories || [];
   let series = commonChart.series || [];
@@ -176,7 +178,10 @@ function prepareComplexChartData(
   return {
     data: {
       series,
-      xAxis: { categories, title: { text: context.config.xtitle || '' } },
+      xAxis: {
+        ...(continuous ? {} : { categories }),
+        title: { text: context.config.xtitle || '' },
+      },
       yAxis: yCategories
         ? { categories: yCategories, title: { text: context.config.ytitle || '' } }
         : undefined,

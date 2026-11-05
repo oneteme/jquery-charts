@@ -3,7 +3,7 @@
   <span *ngIf="config.buttonLabel" class="organizer-btn-label">{{ config.buttonLabel }}</span>
 </button>
 
-<mat-menu #viewMenu="matMenu" panelClass="organizer-menu-panel">
+<mat-menu #viewMenu="matMenu" class="organizer-menu-panel">
 
   <!-- Type -->
   <button *ngIf="hasChartTypes()" mat-menu-item [matMenuTriggerFor]="chartTypesSubMenu" class="organizer-menu-trigger">
@@ -97,7 +97,7 @@
 </mat-menu>
 
 <!-- Sous-menu : types de graphique -->
-<mat-menu #chartTypesSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #chartTypesSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -115,7 +115,7 @@
 </mat-menu>
 
 <!-- Sous-menu : actions du visuel -->
-<mat-menu #actionsSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #actionsSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -136,7 +136,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Export graphique -->
-<mat-menu #exportSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #exportSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -157,7 +157,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Champs chart (X + Y) -->
-<mat-menu #champsSubMenu="matMenu" panelClass="organizer-champs-panel">
+<mat-menu #champsSubMenu="matMenu" class="organizer-champs-panel">
   <div class="organizer-champs-wrapper"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -166,14 +166,32 @@
     <!-- Bloc X -->
     <div class="organizer-champs-block" *ngIf="config.xFields?.length">
       <span class="organizer-champs-block-title">Axe horizontal — X</span>
-      <button type="button" class="organizer-submenu-item"
-        *ngFor="let xField of config.xFields"
-        [class.active]="state?.selectedX === xField.id"
-        [disabled]="xField.disabled"
-        (click)="onXFieldSelect(xField.id)">
-        <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
-        {{ xField.label }}
-      </button>
+      <ng-container *ngFor="let xField of config.xFields">
+
+        <!-- X simple -->
+        <button *ngIf="!xField.options?.length"
+          type="button" class="organizer-submenu-item"
+          [class.active]="state?.selectedX === xField.id"
+          [disabled]="xField.disabled"
+          (click)="onXFieldSelect(xField.id)">
+          <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+          {{ xField.label }}
+        </button>
+
+        <!-- X avec variantes → sous-menu -->
+        <button *ngIf="xField.options?.length"
+          type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+          [class.active]="state?.selectedX === xField.id"
+          [disabled]="xField.disabled"
+          [matMenuTriggerFor]="xOptSubMenu"
+          [matMenuTriggerData]="{ xField: xField }"
+          (mousedown)="$event.stopPropagation()">
+          <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+          {{ xField.label }}
+          <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+        </button>
+
+      </ng-container>
     </div>
 
     <mat-divider *ngIf="config.xFields?.length && config.yFields?.length" class="organizer-champs-divider"></mat-divider>
@@ -213,8 +231,27 @@
   </div>
 </mat-menu>
 
+<!-- Sous-menu dynamique : variantes d'un champ X -->
+<mat-menu #xOptSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-xField="xField">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let option of xField.options"
+        [class.active]="isXOptionActive(xField.id, option.id)"
+        [disabled]="option.disabled"
+        (click)="onXOptionSelect(xField.id, option.id)">
+        <span class="organizer-submenu-check">{{ isXOptionActive(xField.id, option.id) ? '✓' : '' }}</span>
+        {{ option.label }}
+      </button>
+    </div>
+  </ng-template>
+</mat-menu>
+
 <!-- Sous-menu dynamique : agrégats d'un champ Y -->
-<mat-menu #yAggSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #yAggSubMenu="matMenu" class="organizer-submenu-panel">
   <ng-template matMenuContent let-yField="yField">
     <div class="organizer-submenu"
          (mousedown)="$event.stopPropagation()"
@@ -232,7 +269,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Champs table (toggle colonnes) -->
-<mat-menu #fieldsSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #fieldsSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -247,7 +284,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Grouper par -->
-<mat-menu #groupsSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #groupsSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -262,7 +299,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Filtrer par -->
-<mat-menu #slicesSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #slicesSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -277,7 +314,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Template -->
-<mat-menu #templateSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #templateSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
@@ -295,7 +332,7 @@
 </mat-menu>
 
 <!-- Sous-menu : Préférences -->
-<mat-menu #preferencesSubMenu="matMenu" panelClass="organizer-submenu-panel">
+<mat-menu #preferencesSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"

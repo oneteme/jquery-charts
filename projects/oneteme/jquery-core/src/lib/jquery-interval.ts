@@ -217,10 +217,12 @@ export function intervalsByCount<T extends IntervalBound>(
  *   then inclusive (`value <= max`). Unconstrained if `max === null`.
  */
 export function inInterval<T extends IntervalBound>(
-  value: T,
+  value: T | null | undefined,
   interval: Interval<T>
 ): boolean {
+  if (value === null || value === undefined) return false;
   const v  = toNum(value);
+  if (Number.isNaN(v)) return false;
   if (interval.min !== null && v < toNum(interval.min)) return false;
   if (interval.max !== null) {
     const hi = toNum(interval.max);
@@ -439,7 +441,7 @@ export type IntervalStrategy =
 
 // ── Internal: extraction + statistics ────────────────────────────────────
 
-/** Extracts non-null numeric values from a dataset, sorted ascending. */
+/** Extracts finite numeric values from a dataset (null, undefined and NaN are skipped), sorted ascending. */
 function extractSortedNums<T extends IntervalBound>(
   data: any[],
   valueExtractor: (item: any) => T | null | undefined
@@ -447,7 +449,9 @@ function extractSortedNums<T extends IntervalBound>(
   const nums: number[] = [];
   for (const item of data) {
     const v = valueExtractor(item);
-    if (v != null) nums.push(toNum(v));
+    if (v == null) continue;
+    const n = toNum(v);
+    if (!Number.isNaN(n)) nums.push(n);
   }
   return nums.sort((a, b) => a - b);
 }
@@ -708,9 +712,10 @@ export function intervalsFromData<T extends IntervalBound>(
     .filter(b => b > stats.min && b < stats.max);
 
   if (breakNums.length === 0) {
-    // Degenerate case: all values identical or strategy produced nothing useful
-    const v = (isDate ? new Date(stats.min) : stats.min) as T;
-    return [makeInterval<T>(v, v, true, options)];
+    // Degenerate case (identical values, or no usable breakpoint): a single closed interval covering the whole dataset
+    const lo = (isDate ? new Date(stats.min) : stats.min) as T;
+    const hi = (isDate ? new Date(stats.max) : stats.max) as T;
+    return [makeInterval<T>(lo, hi, true, options)];
   }
 
   const breakpoints = breakNums.map(n => (isDate ? new Date(n) : n) as T);

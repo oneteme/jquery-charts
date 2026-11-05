@@ -333,7 +333,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this.applyInitialSearchQuery(changes['config'].firstChange);
       this._invalidateOrganizerConfig(); // les colonnes ont pu changer
     }
-    if (dataChanged && this._lazyColumnStatus.size && this._resolvedData.length) this._runLazyLoader();
+    if (dataChanged && this._resolvedData.length && this._hasPendingLazyColumns()) this._runLazyLoader();
   }
 
   ngAfterContentInit(): void {
@@ -760,15 +760,22 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     });
   }
 
-  /** Nouveau `data` : il l'emporte sur les lignes du chargeur. Avec un chargeur, les colonnes déjà demandées sont rechargées. */
+  /**
+   * Nouveau `data` : il l'emporte sur les lignes du chargeur et n'entraîne aucun appel. Le parent doit donc fournir dans `data`
+   * les colonnes déjà demandées. Seule une colonne dont la réponse est encore en cours est rechargée (cf. ngOnChanges).
+   */
   private _onNewData(): void {
     this._loaderSub?.unsubscribe();
     this._loaderRows = null;
-    if (this.config?.lazyLoader && this._lazyColumnStatus.size) {
-      this._setLazyStatus([...this._lazyColumnStatus.keys()], 'loading');
-    } else {
-      this._settleLazyColumns();
-    }
+    const keepPending = !!this.config?.lazyLoader;
+    const settle = [...this._lazyColumnStatus]
+      .filter(([, status]) => status !== 'loaded' && !(keepPending && status === 'loading'))
+      .map(([key]) => key);
+    if (settle.length) this._setLazyStatus(settle, 'loaded');
+  }
+
+  private _hasPendingLazyColumns(): boolean {
+    return [...this._lazyColumnStatus.values()].includes('loading');
   }
 
   /** Sans chargeur ni écouteur, la colonne demandée resterait en skeleton sans que rien ne l'explique. */
@@ -1255,6 +1262,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       hiddenSliceKeys:     [...this._staticSliceHiddenKeys],
       dynamicSliceKeys:    dynamicSliceKeys.length ? dynamicSliceKeys : undefined,
       sliceFilters:        this.slicePanelRef ? this.slicePanelRef.getActiveFilters() : undefined,
+      sort:                this._activeSort.active && this._activeSort.direction
+                             ? { active: this._activeSort.active, direction: this._activeSort.direction }
+                             : undefined,
+      groupSortOrder:      this._groupBy.groupSortOrder,
     };
     this._preferencesManager.save(config);
     this._hasSavedConfig = true;
@@ -1281,6 +1292,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     this._groupBy.reset();
     this._groupBy.setDefaultCollapsed(false);
+    this._groupBy.groupSortOrder = 'asc';
     this._userPageSize = null;
     this.pageSize = this.resolvePageSize();
     if (this.paginator) this.paginator.pageSize = this.pageSize;
@@ -1302,6 +1314,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Filtre de slice actif
     this.activeSliceFilter = () => true;
     if (this.slicePanelRef) this.slicePanelRef.restoreFilters({});
+
+    // Tri de colonne : retour au tri non défini ; le defaultSort de la config reste affiché s'il existe
+    this._setSortState('', '');
+    const defaultSort = this.resolvedConfig.defaultSort;
+    if (defaultSort) {
+      this._matSortActive = defaultSort.active;
+      this._matSortDirection = defaultSort.direction;
+    }
 
     // Rafraîchit toute la vue
     this.activeFields = this._organizer.fields.activeFields;
@@ -1350,6 +1370,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         && (saved.groupPageSize === 0 || this.pageSizeOptionsGroupBy.includes(saved.groupPageSize))) {
       this.groupPageSize = saved.groupPageSize;
     }
+    if (saved.groupSortOrder === 'asc' || saved.groupSortOrder === 'desc') {
+      this._groupBy.groupSortOrder = saved.groupSortOrder;
+    }
     // État panneau slice
     if (saved.slicePanelCollapsed !== undefined) this._slicePanelCollapsed = saved.slicePanelCollapsed;
     // Slices statiques cachées — on utilise la valeur exacte sauvegardée (pas les defaults de config)
@@ -1371,6 +1394,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       // → on les exclut : l'utilisateur avait explicitement choisi ce sous-ensemble
       if (ordered.length > 0) {
         this._organizer.setActiveFields(ordered);
+      }
+    }
+    // Tri de colonne : ignoré si la colonne n'est plus visible ou n'est pas triable (évite un tri invisible)
+    const savedSort = saved.sort;
+    if (savedSort && (savedSort.direction === 'asc' || savedSort.direction === 'desc')) {
+      const column = this._organizer.fields.activeFields.find(c => c.key === savedSort.active);
+      if (column && column.sortable !== false) {
+        this._setSortState(column.key, savedSort.direction);
       }
     }
     // Filtres actifs du slice panel
@@ -2190,14 +2221,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (this._sortSubscribed !== this.sort) {
       this._sortSubscribed = this.sort;
       this.sort.sortChange.pipe(takeUntil(this._destroy$)).subscribe(() => {
-        this._activeSort = {
-          active: this.sort.active,
-          direction: this.sort.direction,
-        };
+        this._setSortState(this.sort.active, this.sort.direction);
         this.sortChange.emit({ active: this.sort.active, direction: this.sort.direction });
         this._scheduleRender();
       });
     }
+  }
+
+  /**
+   * Met à jour le tri courant et les bindings MatSort. Les bindings restent alignés sur le tri réel,
+   * donc un changement déclenche le rafraîchissement des flèches d'en-tête. N'émet pas sortChange.
+   */
+  private _setSortState(active: string, direction: 'asc' | 'desc' | ''): void {
+    this._activeSort = { active, direction };
+    this._matSortActive = active;
+    this._matSortDirection = direction;
   }
 }
 

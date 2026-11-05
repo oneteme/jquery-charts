@@ -19,7 +19,7 @@ export interface ChartDateFormatOptions extends ChartDateNormalizationOptions {
   format?: Intl.DateTimeFormatOptions;
 }
 
-const DEFAULT_LOCALE = 'en-US';
+const DEFAULT_LOCALE = 'fr-FR';
 const DEFAULT_TIME_ZONE = 'UTC';
 const DEFAULT_DATE_FORMAT: Intl.DateTimeFormatOptions = {
   day: '2-digit',
@@ -77,6 +77,297 @@ export function formatChartDate(
     ...format,
     timeZone: options.timeZone ?? format.timeZone ?? DEFAULT_TIME_ZONE,
   }).format(date);
+}
+
+/**
+ * Server-side bucket granularities returned as raw grouping keys (all in UTC).
+ * `monthDayHour` is a composite bucket built by the caller from `monthDay` + `hour`
+ * (raw form `"11-03 13"`), used to show each hour of each day of a multi-day range.
+ */
+export type ChartPeriodGranularity = 'hour' | 'date' | 'monthDay' | 'monthDayHour' | 'yearWeek' | 'yearMonth' | 'year';
+
+export interface ChartPeriodFormatOptions {
+  /** BCP 47 locale or locale list passed to `Intl.DateTimeFormat`. Defaults to `fr-FR`. */
+  locale?: string | string[];
+}
+
+/** Identifiant de l'option « Automatique » : la granularité suit alors la durée de la période. */
+export const PERIOD_AUTO_OPTION_ID = 'auto';
+
+export interface ChartPeriodOption {
+  id: string;
+  label: string;
+}
+
+/**
+ * Découpages de période proposés à l'utilisateur (ex. sous-menu de l'axe « Date »).
+ * Les identifiants sont des granularités de {@link ChartPeriodGranularity}, plus {@link PERIOD_AUTO_OPTION_ID}.
+ * `monthDayHour` est proposé à la place de `hour` : il garde le jour, donc les heures de plusieurs jours restent distinctes.
+ */
+export function buildPeriodOptions(): ChartPeriodOption[] {
+  return [
+    { id: PERIOD_AUTO_OPTION_ID, label: 'Automatique' },
+    { id: 'monthDayHour', label: 'Heure' },
+    { id: 'date', label: 'Jour' },
+    { id: 'yearWeek', label: 'Semaine' },
+    { id: 'yearMonth', label: 'Mois' },
+    { id: 'year', label: 'Année' },
+  ];
+}
+
+const DEFAULT_PERIOD_LOCALE = 'fr-FR';
+const PERIOD_REFERENCE_YEAR = 2000;
+
+const PERIOD_PATTERNS: Record<ChartPeriodGranularity, RegExp> = {
+  hour: /^(\d{1,2})$/,
+  date: /^(\d{4})-(\d{2})-(\d{2})$/,
+  monthDay: /^(\d{2})-(\d{2})$/,
+  monthDayHour: /^(\d{2})-(\d{2}) (\d{1,2})$/,
+  yearWeek: /^(\d{4})-W(\d{2})$/,
+  yearMonth: /^(\d{4})-(\d{2})$/,
+  year: /^(\d{4})$/,
+};
+
+/**
+ * Formats a raw period bucket returned by the server (e.g. `"13"`, `"11-03"`,
+ * `"2026-W30"`, `"2026-11"`, `"2026"`) as a readable label, e.g. `13:00`,
+ * `3 nov.`, `S30 2026`, `nov. 2026`, `2026`.
+ *
+ * Buckets are UTC wall-clock values, so they are displayed as-is without any
+ * timezone conversion. Unparseable input is returned unchanged.
+ */
+export function formatPeriodLabel(
+  raw: string | number,
+  granularity: ChartPeriodGranularity,
+  options: ChartPeriodFormatOptions = {},
+): string {
+  const text = String(raw);
+  const parts = parsePeriodParts(text, granularity);
+  if (!parts) {
+    return text;
+  }
+
+  const locale = options.locale ?? DEFAULT_PERIOD_LOCALE;
+  const [first, second, third] = parts;
+  switch (granularity) {
+    case 'hour':
+      return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(PERIOD_REFERENCE_YEAR, 0, 1, first)));
+    case 'date':
+      return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(first, second - 1, third)));
+    case 'monthDay':
+      return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(PERIOD_REFERENCE_YEAR, first - 1, second)));
+    case 'monthDayHour': {
+      const day = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(PERIOD_REFERENCE_YEAR, first - 1, second)));
+      const hour = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(PERIOD_REFERENCE_YEAR, 0, 1, third)));
+      return `${day} ${hour}`;
+    }
+    case 'yearWeek':
+      return `S${String(second).padStart(2, '0')} ${first}`;
+    case 'yearMonth':
+      return new Intl.DateTimeFormat(locale, { month: 'short', year: 'numeric', timeZone: 'UTC' })
+        .format(new Date(Date.UTC(first, second - 1, 1)));
+    case 'year':
+      return String(first);
+  }
+}
+
+/**
+ * Sorts raw period buckets chronologically. Server strings sort lexicographically
+ * (`"9"` after `"17"`), so this compares the parsed values instead.
+ *
+ * `monthDay` buckets carry no year. When `from` is provided, they are ordered
+ * starting from that date, so ranges crossing New Year stay in order
+ * (e.g. `11-30`, `12-01`, `01-02`). Unparseable values are placed last.
+ */
+export function sortPeriodLabels<T extends string | number>(
+  raws: readonly T[],
+  granularity: ChartPeriodGranularity,
+  from?: Date,
+): T[] {
+  return [...raws].sort((left, right) => comparePeriodLabels(left, right, granularity, from));
+}
+
+/**
+ * Comparator counterpart of {@link sortPeriodLabels}, usable directly as a `sort` callback
+ * (e.g. for slice values). Same ordering rules, including the `from` anchor for `monthDay`.
+ */
+export function comparePeriodLabels(
+  left: string | number,
+  right: string | number,
+  granularity: ChartPeriodGranularity,
+  from?: Date,
+): number {
+  const fromTime = from ? Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), from.getUTCDate()) : undefined;
+  const leftKey = periodSortKey(String(left), granularity, fromTime);
+  const rightKey = periodSortKey(String(right), granularity, fromTime);
+  if (leftKey === rightKey) {
+    return 0;
+  }
+  return leftKey < rightKey ? -1 : 1;
+}
+
+function parsePeriodParts(text: string, granularity: ChartPeriodGranularity): number[] | null {
+  const match = PERIOD_PATTERNS[granularity].exec(text);
+  if (!match) {
+    return null;
+  }
+
+  const values = match.slice(1).map(Number);
+  const [first, second, third] = values;
+  switch (granularity) {
+    case 'hour':
+      return first <= 23 ? values : null;
+    case 'date':
+      return second >= 1 && second <= 12 && third >= 1 && third <= 31 ? values : null;
+    case 'monthDay':
+      return first >= 1 && first <= 12 && second >= 1 && second <= 31 ? values : null;
+    case 'monthDayHour':
+      return first >= 1 && first <= 12 && second >= 1 && second <= 31 && third <= 23 ? values : null;
+    case 'yearWeek':
+      return second >= 1 && second <= 53 ? values : null;
+    case 'yearMonth':
+      return second >= 1 && second <= 12 ? values : null;
+    case 'year':
+      return values;
+  }
+}
+
+function periodSortKey(text: string, granularity: ChartPeriodGranularity, fromTime: number | undefined): number {
+  const parts = parsePeriodParts(text, granularity);
+  if (!parts) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  const [first, second, third] = parts;
+  switch (granularity) {
+    case 'hour':
+      return first;
+    case 'date':
+      return first * 10000 + second * 100 + third;
+    case 'monthDay': {
+      if (fromTime === undefined) {
+        return first * 100 + second;
+      }
+      const fromYear = new Date(fromTime).getUTCFullYear();
+      const candidate = Date.UTC(fromYear, first - 1, second);
+      return candidate < fromTime ? Date.UTC(fromYear + 1, first - 1, second) : candidate;
+    }
+    case 'monthDayHour': {
+      const dayKey = periodSortKey(`${String(first).padStart(2, '0')}-${String(second).padStart(2, '0')}`, 'monthDay', fromTime);
+      return dayKey * 100 + third;
+    }
+    case 'yearWeek':
+      return first * 100 + second;
+    case 'yearMonth':
+      return first * 100 + second;
+    case 'year':
+      return first;
+  }
+}
+
+/**
+ * Converts a selection of period slice keys from one granularity to another, when the conversion is exact.
+ *
+ * Supported conversions:
+ * - day (`yyyy-MM-dd`) → hour (`MM-dd H`): every hour of each selected day is kept.
+ * - hour (`MM-dd H`) → day (`yyyy-MM-dd`): a day is kept only if every source hour of that day is selected.
+ *   "Every source hour" means the hours listed in `sourceKeys`, not all 24 hours of the day.
+ * - day (`yyyy-MM-dd`) → plain hour (`H`) and plain hour (`H`) → day, when the window covers a single day.
+ *   Plain hours carry no date, so the day is taken from the single-day key list (`sourceKeys` or `targetKeys`).
+ *
+ * Returns `null` when the conversion cannot be exact (other granularities, partial hour selection,
+ * several days in the key list, several years sharing the same `MM-dd`, or no matching target key).
+ * An empty selection yields `[]`.
+ */
+export function convertPeriodSelection(
+  selected: readonly string[],
+  sourceKeys: readonly string[],
+  targetKeys: readonly string[],
+): string[] | null {
+  if (!selected.length) {
+    return [];
+  }
+  if (!targetKeys.length) {
+    return null;
+  }
+
+  if (selected.every(key => PERIOD_PATTERNS.date.test(key)) && targetKeys.every(key => PERIOD_PATTERNS.monthDayHour.test(key))) {
+    const selectedDays = new Set(selected.map(monthDayOf));
+    const converted = targetKeys.filter(key => selectedDays.has(monthDayOf(key)));
+    return converted.length ? converted : null;
+  }
+
+  if (selected.every(key => PERIOD_PATTERNS.monthDayHour.test(key)) && targetKeys.every(key => PERIOD_PATTERNS.date.test(key))) {
+    const selectedSet = new Set(selected);
+    const selectedDays = new Set(selected.map(monthDayOf));
+    for (const day of selectedDays) {
+      const sourceHours = sourceKeys.filter(key => monthDayOf(key) === day);
+      if (!sourceHours.length || !sourceHours.every(hour => selectedSet.has(hour))) {
+        return null;
+      }
+    }
+    const converted: string[] = [];
+    for (const day of selectedDays) {
+      const matches = targetKeys.filter(key => monthDayOf(key) === day);
+      if (matches.length > 1) {
+        return null;
+      }
+      converted.push(...matches);
+    }
+    return converted.length ? converted : null;
+  }
+
+  const sourceDay = singleDateKeyOf(sourceKeys);
+  if (sourceDay && selected.every(key => key === sourceDay) && targetKeys.every(key => PERIOD_PATTERNS.hour.test(key))) {
+    return [...targetKeys];
+  }
+
+  const targetDay = singleDateKeyOf(targetKeys);
+  if (targetDay && sourceKeys.length && selected.every(key => PERIOD_PATTERNS.hour.test(key))
+    && sourceKeys.every(key => PERIOD_PATTERNS.hour.test(key))) {
+    const selectedSet = new Set(selected);
+    const sourceSet = new Set(sourceKeys);
+    const exact = sourceKeys.every(key => selectedSet.has(key)) && selected.every(key => sourceSet.has(key));
+    return exact ? [targetDay] : null;
+  }
+
+  return null;
+}
+
+/** Returns the single `yyyy-MM-dd` key when every key is a date key and they all share the same day. */
+function singleDateKeyOf(keys: readonly string[]): string | null {
+  if (!keys.length || !keys.every(key => PERIOD_PATTERNS.date.test(key))) {
+    return null;
+  }
+  return new Set(keys).size === 1 ? keys[0] : null;
+}
+
+/**
+ * Remaps a selection of slice keys onto the keys of a new list.
+ * Period keys are converted with {@link convertPeriodSelection}; other keys are kept only when they all
+ * exist in the new list. Returns `null` when the selection cannot be kept exactly.
+ */
+export function remapSliceKeys(
+  selected: readonly string[],
+  previousKeys: readonly string[],
+  nextKeys: readonly string[],
+): string[] | null {
+  const converted = convertPeriodSelection(selected, previousKeys, nextKeys);
+  if (converted !== null) {
+    return converted;
+  }
+  return selected.every(key => nextKeys.includes(key)) ? [...selected] : null;
+}
+
+/** Returns the `MM-dd` part of a `yyyy-MM-dd` or `MM-dd H` key. */
+function monthDayOf(key: string): string {
+  const date = PERIOD_PATTERNS.date.exec(key);
+  return date ? `${date[2]}-${date[3]}` : key.slice(0, 5);
 }
 
 function handleInvalidDate(value: unknown, policy: InvalidChartDatePolicy = 'throw'): null {

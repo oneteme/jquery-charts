@@ -1,4 +1,4 @@
-import { OrganizerConfig, OrganizerState, OrganizerTemplate, OrganizerYField } from './organizer-config.interface';
+import { OrganizerConfig, OrganizerState, OrganizerTemplate, OrganizerXField, OrganizerYField } from './organizer-config.interface';
 
 type OrganizerStateConfig = Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates' | 'chartTypes'>;
 
@@ -46,6 +46,7 @@ export function normalizeOrganizerState(
   const base = state || {};
   const normalizedY = normalizeYSelection(base.selectedY, base.selectedYAggregate, config.yFields);
   const selectedX = hasOption(config.xFields, base.selectedX) ? base.selectedX : undefined;
+  const selectedXOption = resolveXOption(config.xFields, selectedX, base.selectedXOption);
   const selectedChartType = hasOption(config.chartTypes, base.selectedChartType) ? base.selectedChartType : undefined;
   const selectedGroupBy = hasOption(config.groups, base.selectedGroupBy) ? base.selectedGroupBy : undefined;
   const selectedSlices = (base.selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId));
@@ -54,6 +55,7 @@ export function normalizeOrganizerState(
     ...base,
     selectedChartType,
     selectedX,
+    selectedXOption,
     selectedY: normalizedY.selectedY,
     selectedYAggregate: normalizedY.selectedYAggregate,
     selectedGroupBy,
@@ -224,4 +226,13 @@ function sameSlices(left: string[], right: string[]): boolean {
 
 function hasOption(items: Array<{ id: string }> | undefined, id: string | undefined): boolean {
   return !!id && !!items?.some(item => item.id === id);
+}
+
+function resolveXOption(
+  xFields: OrganizerXField[] | undefined,
+  selectedX: string | undefined,
+  selectedXOption: string | undefined
+): string | undefined {
+  const options = xFields?.find(field => field.id === selectedX)?.options;
+  return hasOption(options, selectedXOption) ? selectedXOption : undefined;
 }

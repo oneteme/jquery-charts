@@ -2,34 +2,44 @@ import { buildChart, ChartProvider, ChartType, CommonChart } from '@oneteme/jque
 import { EChartsOption } from '../types';
 import { EChartTypeConfigurator } from './chart-config-registry';
 
-function buildTreemapOption(
-  chart: CommonChart<string, number>,
-  type: ChartType,
-  config: ChartProvider<any, any>
-): EChartsOption {
-  // Construit les nœuds feuilles depuis la première série
-  // Si plusieurs séries, chaque série devient un nœud parent
-  let data: any[];
+export interface HierarchyNode {
+  name: string;
+  value: number;
+  children?: HierarchyNode[];
+}
 
+/**
+ * Nœuds hiérarchiques partagés par treemap et sunburst.
+ * Une série : nœuds feuilles, un par catégorie.
+ * Plusieurs séries : un nœud parent par série, avec ses catégories en enfants.
+ */
+export function buildHierarchyData(chart: CommonChart<string, number>): HierarchyNode[] {
   if (chart.series.length === 1) {
-    data = chart.series[0].data
+    return chart.series[0].data
       .map((val, i) => ({
         name: String(chart.categories[i] ?? `Item ${i}`),
         value: val ?? 0,
       }))
       .filter((d) => d.value > 0);
-  } else {
-    data = chart.series.map((s) => ({
-      name: s.name ?? 'Groupe',
-      value: s.data.reduce<number>((sum, v) => sum + (v ?? 0), 0),
-      children: s.data
-        .map((val, i) => ({
-          name: String(chart.categories[i] ?? `Item ${i}`),
-          value: val ?? 0,
-        }))
-        .filter((d) => d.value > 0),
-    }));
   }
+  return chart.series.map((s) => ({
+    name: s.name ?? 'Groupe',
+    value: s.data.reduce<number>((sum, v) => sum + (v ?? 0), 0),
+    children: s.data
+      .map((val, i) => ({
+        name: String(chart.categories[i] ?? `Item ${i}`),
+        value: val ?? 0,
+      }))
+      .filter((d) => d.value > 0),
+  }));
+}
+
+function buildTreemapOption(
+  chart: CommonChart<string, number>,
+  type: ChartType,
+  config: ChartProvider<any, any>
+): EChartsOption {
+  const data = buildHierarchyData(chart);
 
   return {
     grid: undefined,

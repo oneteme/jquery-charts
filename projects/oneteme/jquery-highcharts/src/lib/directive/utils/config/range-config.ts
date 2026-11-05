@@ -102,7 +102,7 @@ function singleSeriesByPairs(serie: any): any {
   return {
     ...serie,
     data: rangeData,
-    [ORIGINAL_DATA_SYMBOL]: serie.data,
+    [ORIGINAL_DATA_SYMBOL]: [serie],
   };
 }
 
@@ -130,7 +130,7 @@ function singleSeriesByGroups(serie: any, groupSize: number = 3): any {
   return {
     ...serie,
     data: rangeData,
-    [ORIGINAL_DATA_SYMBOL]: serie.data,
+    [ORIGINAL_DATA_SYMBOL]: [serie],
   };
 }
 
@@ -231,11 +231,11 @@ function compareTwoSeries(series: any[]): any[] {
   const rangeData: any[] = [];
 
   for (let i = 0; i < maxLength; i++) {
-    const val1 = serie1.data[i] ? extractValue(serie1.data[i]) : null;
-    const val2 = serie2.data[i] ? extractValue(serie2.data[i]) : null;
+    const val1 = extractValue(serie1.data[i]);
+    const val2 = extractValue(serie2.data[i]);
 
     if (val1 !== null && val2 !== null) {
-      const xValue = extractXValue(serie1.data[i] || serie2.data[i], i);
+      const xValue = extractXValue(serie1.data[i] ?? serie2.data[i], i);
       rangeData.push({
         x: xValue,
         low: Math.min(val1, val2),

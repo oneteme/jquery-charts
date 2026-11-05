@@ -178,6 +178,10 @@ export interface SavedTableConfig {
   dynamicSliceKeys?: string[];
   /** Filtres actifs du slice panel, indexés par clé de colonne stable. */
   sliceFilters?: Record<string, string[]>;
+  /** Tri de colonne utilisateur. Absent si aucun tri n'est actif (le `defaultSort` de la config s'applique alors). */
+  sort?: { active: string; direction: 'asc' | 'desc' };
+  /** Ordre d'affichage des groupes (mode Group by). */
+  groupSortOrder?: 'asc' | 'desc';
 }
 export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];
@@ -210,8 +214,9 @@ export interface TableProvider<T = any> {
   /** Configuration de l'export CSV. */
   export?: TableExportConfig<T>;
   /**
-   * Chargeur des colonnes `lazy` : appelé à l'activation d'une colonne lazy (et après chaque nouveau `data` si des colonnes
-   * ont déjà été demandées). Sans chargeur, la table émet seulement `lazyColumnsRequested`.
+   * Chargeur des colonnes `lazy` : appelé à l'activation d'une colonne lazy avec toutes les colonnes déjà demandées, et sa réponse
+   * remplace les lignes. Un nouveau `data` ne relance pas le chargeur : il doit donc contenir les valeurs des colonnes déjà
+   * demandées (réémises via `lazyColumnsRequested`). Sans chargeur, la table émet seulement `lazyColumnsRequested`.
    */
   lazyLoader?: TableLazyLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */

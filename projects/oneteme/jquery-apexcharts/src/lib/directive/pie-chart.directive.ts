@@ -18,6 +18,10 @@ export class PieChartDirective
     super.isLoading = isLoading;
   }
 
+  get isLoading(): boolean {
+    return super.isLoading;
+  }
+
   @Input()
   set type(type: PieChartType) {
     if (this._type === type) return;
@@ -55,6 +59,8 @@ export class PieChartDirective
         ? buildChart(this.data, chartConfig, null)
         : buildSingleSerieChart(this.data, chartConfig, null);
 
+    let labels: string[] = commonChart.categories || [];
+
     if (this.data.length != 1 && this._type == 'radar') {
       this._options.series = commonChart.series;
     } else if (this._type == 'radar') {
@@ -67,10 +73,11 @@ export class PieChartDirective
         },
       ];
     } else {
-      this._options.series = commonChart.series.flatMap((s) =>
-        s.data.filter((d) => d != null)
-      );
+      // Les libellés suivent le même filtrage que les valeurs nulles pour rester alignés.
+      const values = commonChart.series.flatMap((s) => s.data);
+      this._options.series = values.filter((d) => d != null);
+      labels = labels.filter((_, i) => values[i] != null);
     }
-    this._options.labels = commonChart.categories || [];
+    this._options.labels = labels;
   }
 }

@@ -110,6 +110,36 @@ describe('organizer-utils', () => {
       expect(state.selectedY).toBeUndefined();
     });
 
+    describe('options de l\'axe X', () => {
+      const withXOptions = (): Cfg => ({
+        ...config(),
+        xFields: [
+          { id: 'day', label: 'Date', options: [{ id: 'auto', label: 'Automatique' }, { id: 'date', label: 'Jour' }] },
+          { id: 'app', label: 'Application' },
+        ],
+      });
+
+      it('conserve une option appartenant aux options du X sélectionné', () => {
+        const state = normalizeOrganizerState({ selectedX: 'day', selectedXOption: 'date' }, withXOptions());
+        expect(state.selectedXOption).toBe('date');
+      });
+
+      it('écarte une option inconnue ou une option d\'un autre X', () => {
+        expect(normalizeOrganizerState({ selectedX: 'day', selectedXOption: 'ghost' }, withXOptions()).selectedXOption).toBeUndefined();
+        expect(normalizeOrganizerState({ selectedX: 'app', selectedXOption: 'date' }, withXOptions()).selectedXOption).toBeUndefined();
+      });
+
+      it('écarte une option quand le X sélectionné n\'en déclare aucune', () => {
+        const state = normalizeOrganizerState({ selectedX: 'app', selectedXOption: 'date' }, withXOptions());
+        expect(state.selectedXOption).toBeUndefined();
+      });
+
+      it('ne sélectionne pas d\'option par défaut (le composant applique la première)', () => {
+        const state = normalizeOrganizerState({ selectedX: 'day' }, withXOptions());
+        expect(state.selectedXOption).toBeUndefined();
+      });
+    });
+
     it('résout le modèle correspondant à l\'état', () => {
       const templates: OrganizerTemplate[] = [
         { id: 'perf', label: 'Perf', xField: 'day', yField: 'latency', yAggregate: 'avg' },

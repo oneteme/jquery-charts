@@ -96,6 +96,65 @@ describe('OrganizerButtonComponent', () => {
       expect(last().state.selectedX).toBeUndefined();
     });
 
+    describe('variantes de l\'axe X (options)', () => {
+      const withOptions = (): OrganizerConfig => ({
+        ...baseConfig(),
+        xFields: [
+          {
+            id: 'day', label: 'Date', options: [
+              { id: 'auto', label: 'Automatique' },
+              { id: 'date', label: 'Jour' },
+              { id: 'hour', label: 'Heure', disabled: true },
+            ],
+          },
+          { id: 'app', label: 'Application' },
+        ],
+      });
+
+      it('isXOptionActive : la première option est active par défaut', () => {
+        const { component } = setup(withOptions(), { selectedX: 'day' });
+        expect(component.isXOptionActive('day', 'auto')).toBeTrue();
+        expect(component.isXOptionActive('day', 'date')).toBeFalse();
+      });
+
+      it('isXOptionActive : suit selectedXOption et reste faux si le X n\'est pas sélectionné', () => {
+        const { component } = setup(withOptions(), { selectedX: 'day', selectedXOption: 'date' });
+        expect(component.isXOptionActive('day', 'date')).toBeTrue();
+        expect(component.isXOptionActive('day', 'auto')).toBeFalse();
+        expect(component.isXOptionActive('app', 'auto')).toBeFalse();
+      });
+
+      it('onXOptionSelect émet xSelected avec le X et l\'option', () => {
+        const { component, last } = setup(withOptions(), { selectedX: 'day' });
+        component.onXOptionSelect('day', 'date');
+        expect(last().type).toBe('xSelected');
+        expect(last().state.selectedX).toBe('day');
+        expect(last().state.selectedXOption).toBe('date');
+        expect(last().source).toBe('user');
+      });
+
+      it('onXOptionSelect ignore l\'option déjà active, désactivée ou inconnue', () => {
+        const { component, events } = setup(withOptions(), { selectedX: 'day' });
+        component.onXOptionSelect('day', 'auto');
+        component.onXOptionSelect('day', 'hour');
+        component.onXOptionSelect('day', 'ghost');
+        component.onXOptionSelect('app', 'auto');
+        expect(events.length).toBe(0);
+      });
+
+      it('onXFieldSelect réinitialise selectedXOption lors du changement de X', () => {
+        const { component, last } = setup(withOptions(), { selectedX: 'day', selectedXOption: 'date' });
+        component.onXFieldSelect('app');
+        expect(last().state.selectedX).toBe('app');
+        expect(last().state.selectedXOption).toBeUndefined();
+      });
+
+      it('activeXLabel ajoute le libellé de l\'option sélectionnée', () => {
+        const { component } = setup(withOptions(), { selectedX: 'day', selectedXOption: 'date' });
+        expect(component.activeXLabel()).toBe('Date · Jour');
+      });
+    });
+
     it('Y : sélectionner un champ à agrégats choisit le premier agrégat', () => {
       const { component, last } = setup();
       component.onYFieldSelect('latency');
@@ -249,6 +308,127 @@ describe('OrganizerButtonComponent', () => {
       expect(onFetchSliceData.calls.allArgs()).toEqual([['ok']]);
       expect(sliceStates.at(-1)!.sliceConfigs.map(s => s.columnKey)).toEqual(['ok']);
       expect(sliceStates.at(-1)!.sliceConfigs[0].categories).toBeUndefined();
+    });
+
+    it('changer l\'option X vide les tranches sélectionnées et notifie le parent par null', () => {
+      const onFetchSliceData = jasmine.createSpy('onFetchSliceData').and.returnValue(of([]));
+      const config: OrganizerConfig = {
+        ...baseConfig(),
+        xFields: [{ id: 'date', label: 'Date', options: [{ id: 'hour', label: 'Heure' }, { id: 'day', label: 'Jour' }] }],
+        onFetchSliceData,
+      };
+      const { component, last, sliceStates } = setup(config, { selectedX: 'date', selectedXOption: 'day', selectedSlices: ['ok'] });
+
+      component.onXOptionSelect('date', 'hour');
+
+      expect(last().type).toBe('xSelected');
+      expect(last().state.selectedXOption).toBe('hour');
+      expect(last().state.selectedSlices).toEqual([]);
+      expect(sliceStates).toEqual([null]);
+      expect(onFetchSliceData).not.toHaveBeenCalled();
+    });
+
+    it('changer le champ X vide aussi les tranches sélectionnées', () => {
+      const config: OrganizerConfig = {
+        ...baseConfig(),
+        xFields: [{ id: 'date', label: 'Date' }, { id: 'app', label: 'Application' }],
+      };
+      const { component, last, sliceStates } = setup(config, { selectedX: 'date', selectedSlices: ['ok'] });
+
+      component.onXFieldSelect('app');
+
+      expect(last().state.selectedX).toBe('app');
+      expect(last().state.selectedSlices).toEqual([]);
+      expect(sliceStates).toEqual([null]);
+    });
+
+    it('changer l\'option X sans tranche sélectionnée n\'émet pas de changement de tranches', () => {
+      const onFetchSliceData = jasmine.createSpy('onFetchSliceData').and.returnValue(of([]));
+      const config: OrganizerConfig = {
+        ...baseConfig(),
+        xFields: [{ id: 'date', label: 'Date', options: [{ id: 'hour', label: 'Heure' }, { id: 'day', label: 'Jour' }] }],
+        onFetchSliceData,
+      };
+      const { component, sliceStates } = setup(config, { selectedX: 'date', selectedXOption: 'day' });
+
+      component.onXOptionSelect('date', 'hour');
+
+      expect(onFetchSliceData).not.toHaveBeenCalled();
+      expect(sliceStates).toEqual([]);
+    });
+
+    describe('remappage des tranches lors d\'un changement de variante X', () => {
+      const dateConfig = (overrides: Partial<OrganizerConfig>): OrganizerConfig => ({
+        ...baseConfig(),
+        xFields: [
+          { id: 'date', label: 'Date', options: [{ id: 'hour', label: 'Heure' }, { id: 'day', label: 'Jour' }] },
+          { id: 'app', label: 'Application' },
+        ],
+        ...overrides,
+      });
+
+      it('conserve la sélection convertie et recharge les libellés de la nouvelle granularité', () => {
+        let rows: any[] = [{ ok: '2026-11-03' }];
+        const remap = jasmine.createSpy('remap').and.returnValue(['11-03 0']);
+        const { component, last, sliceStates } = setup(dateConfig({ onFetchSliceData: () => of(rows), remapSliceSelection: remap }));
+        component.onSliceClick('ok');
+        component.state = { selectedX: 'date', selectedXOption: 'day', selectedSlices: ['ok'] };
+        component.sliceFilterValues = { ok: ['2026-11-03'] };
+        rows = [{ ok: '11-03 0' }, { ok: '11-03 1' }];
+
+        component.onXOptionSelect('date', 'hour');
+
+        expect(last().type).toBe('xSelected');
+        expect(last().state.selectedXOption).toBe('hour');
+        expect(last().state.selectedSlices).toEqual(['ok']);
+        expect(remap).toHaveBeenCalledOnceWith(['2026-11-03'], ['2026-11-03'], ['11-03 0', '11-03 1']);
+        expect(sliceStates.at(-1)!.selectedKeys).toEqual([['11-03 0']]);
+      });
+
+      it('ferme le panneau et vide la sélection si la conversion est impossible', () => {
+        const remap = jasmine.createSpy('remap').and.returnValue(null);
+        const { component, last, sliceStates, events } = setup(
+          dateConfig({ onFetchSliceData: () => of([{ ok: '11-03 0' }]), remapSliceSelection: remap }),
+          { selectedX: 'date', selectedXOption: 'day', selectedSlices: ['ok'] });
+        component.sliceFilterValues = { ok: ['2026-11-03'] };
+
+        component.onXOptionSelect('date', 'hour');
+
+        expect(last().type).toBe('xSelected');
+        expect(last().state.selectedSlices).toEqual([]);
+        expect(sliceStates).toEqual([null]);
+        expect(events.map(e => e.state.selectedSlices)).toEqual([['ok'], []]);
+      });
+
+      it('une erreur de rechargement ferme le panneau et vide la sélection', () => {
+        const remap = jasmine.createSpy('remap').and.returnValue(['11-03 0']);
+        const { component, sliceStates, events } = setup(
+          dateConfig({ onFetchSliceData: () => throwError(() => new Error('boom')) as Observable<any[]>, remapSliceSelection: remap }),
+          { selectedX: 'date', selectedXOption: 'day', selectedSlices: ['ok'] });
+        spyOn(console, 'error');
+        component.sliceFilterValues = { ok: ['2026-11-03'] };
+
+        component.onXOptionSelect('date', 'hour');
+
+        expect(remap).not.toHaveBeenCalled();
+        expect(sliceStates).toEqual([null]);
+        expect(events.map(e => e.state.selectedSlices)).toEqual([['ok'], []]);
+      });
+
+      it('un changement de champ X ne tente jamais de remappage', () => {
+        const remap = jasmine.createSpy('remap');
+        const onFetchSliceData = jasmine.createSpy('onFetchSliceData').and.returnValue(of([]));
+        const { component, last, sliceStates } = setup(
+          dateConfig({ onFetchSliceData, remapSliceSelection: remap }),
+          { selectedX: 'date', selectedXOption: 'day', selectedSlices: ['ok'] });
+
+        component.onXFieldSelect('app');
+
+        expect(remap).not.toHaveBeenCalled();
+        expect(onFetchSliceData).not.toHaveBeenCalled();
+        expect(last().state.selectedSlices).toEqual([]);
+        expect(sliceStates).toEqual([null]);
+      });
     });
 
     it('accepte une promesse et signale une erreur de chargement sans bloquer la sélection', async () => {

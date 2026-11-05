@@ -60,9 +60,13 @@ data: { x: field('month'), y: field('revenue') }
 
 // Configuration sérialisable, pour une API ou localStorage.
 data: { xField: 'month', yField: 'revenue' }
+
+// Bulles : z (taille) est optionnel, en fonction ou en champ.
+data: { x: field('month'), y: field('revenue'), z: (o) => o.size }
+data: { xField: 'month', yField: 'revenue', zField: 'size' }
 ```
 
-`xField` et `yField` doivent être des chaînes non vides. Elles sont transformées en providers au moment de construire le graphique. Les fonctions ne doivent pas être enregistrées avec `JSON.stringify` : elles sont supprimées pendant la sérialisation.
+`xField` et `yField` doivent être des chaînes non vides ; `zField` est optionnel, mais s'il est présent il doit aussi être une chaîne non vide. Elles sont transformées en providers au moment de construire le graphique. Les fonctions ne doivent pas être enregistrées avec `JSON.stringify` : elles sont supprimées pendant la sérialisation.
 
 ### Providers de données
 
@@ -171,7 +175,7 @@ const categories = intervalCategories(intervals, row => row.duration);
 
 ## Utilitaires de donnees de graphiques
 
-Les utilitaires de donnees sont purs et ne dependent pas du navigateur. Les dates utilisent `Intl.DateTimeFormat` avec une locale et un fuseau configurables ; le fuseau par defaut est `UTC` pour eviter une dependance implicite a l'environnement.
+Les utilitaires de donnees sont purs et ne dependent pas du navigateur. Les dates et nombres utilisent `Intl` avec une locale configurable ; la locale par defaut est `fr-FR` (comme pour les durees et libelles de periode). Le fuseau par defaut des dates est `UTC` pour eviter une dependance implicite a l'environnement.
 
 ```typescript
 import {
@@ -200,6 +204,34 @@ const convertedValues = convertChartDataValues(rows, ['value'], units, 'm', 'km'
 ```
 
 `normalizeChartDate`, `formatChartDate` et `formatChartNumber` traitent les valeurs nulles en les conservant. Les dates, nombres invalides et valeurs non finies lèvent une erreur par défaut ; les options `invalidDate: 'null'` et `invalidNumber: 'null'` permettent un comportement explicite. `convertChartDataValues` exige des unites enregistrees et des nombres finis : une unite inconnue ne declenche aucun fallback silencieux. Les transformations retournent un nouveau tableau et de nouvelles lignes superficielles.
+
+### Periodes et durees
+
+Ces utilitaires servent à afficher les libellés de regroupement temporel (valeurs brutes renvoyées par le serveur) et les durées, en français par défaut. Ils sont volontairement tolérants : une valeur illisible est renvoyée telle quelle au lieu de lever une erreur, car ce sont des libellés d'affichage.
+
+```typescript
+import { formatDuration, formatPeriodLabel, sortPeriodLabels } from '@oneteme/jquery-core';
+
+formatPeriodLabel('14', 'hour');        // '14:00'
+formatPeriodLabel('11-03', 'monthDay'); // '3 nov.'
+formatPeriodLabel('2026-W30', 'yearWeek'); // 'S30 2026'
+formatPeriodLabel('2026-11', 'yearMonth'); // 'nov. 2026'
+formatPeriodLabel('2026', 'year');      // '2026'
+
+sortPeriodLabels(['9', '17', '10'], 'hour'); // ['9', '10', '17'] (tri numérique)
+sortPeriodLabels(['12-30', '01-02'], 'monthDay', new Date('2025-12-29')); // ['12-30', '01-02']
+
+formatDuration(850);        // '850 ms'
+formatDuration(42_000);     // '42 s'
+formatDuration(185_000);    // '3 min 05 s'
+formatDuration(8_100_000);  // '2 h 15 min'
+```
+
+`ChartPeriodGranularity` accepte `hour`, `date` (jour complet, ex. `'2026-11-03'` → `'3 nov. 2026'`), `monthDay`, `monthDayHour` (valeur composée `MM-dd HH`, ex. `'11-03 14'` → `'3 nov. 14:00'`), `yearWeek`, `yearMonth` et `year`. Les heures et jours sont affichés tels que fournis par le serveur (UTC) ; `sortPeriodLabels` ne modifie pas le tableau d'origine.
+
+`buildPeriodOptions()` fournit les découpages à proposer à l'utilisateur (ex. sous-menu d'un axe « Date ») : `Automatique` (`PERIOD_AUTO_OPTION_ID`, `'auto'`), puis `Heure` (`monthDayHour`), `Jour`, `Semaine`, `Mois` et `Année`. Les identifiants sont des granularités, donc une application peut les mapper vers ses propres paramètres serveur.
+
+Lors d'un changement de granularité, `remapSliceKeys(selected, previousKeys, nextKeys)` recalcule la sélection du panneau. `convertPeriodSelection` ne convertit que les conversions exactes : jour → heures (toutes les heures de chaque jour sélectionné) et heures → jour (seulement si toutes les heures **affichées** de ce jour sont sélectionnées ; les heures absentes de la base ne bloquent pas la conversion). Pour une fenêtre d'un seul jour, le serveur renvoie des heures simples (`'13'`, sans date) : la conversion jour ↔ heure simple s'appuie alors sur la liste à jour unique. Dans les autres cas, `null` signale qu'il faut fermer le panneau.
 
 ## Organizer
 
@@ -248,7 +280,7 @@ storage.rename(snapshot.id, 'Consommation');
 storage.remove(snapshot.id);
 ```
 
-Les méthodes disponibles sont `list`, `get`, `create`, `replace`, `rename`, `remove`, `clear` et `isLabelAvailable`. `DuplicateVisualSnapshotLabelError` signale un libellé déjà utilisé. Le format est versionné avec `schemaVersion: 1`; `isVisualSnapshot` permet de valider une donnée restaurée.
+Les méthodes disponibles sont `list`, `get`, `create`, `replace`, `rename`, `remove`, `clear` et `isLabelAvailable`. `DuplicateVisualSnapshotLabelError` signale un libellé déjà utilisé. Le format est versionné avec `schemaVersion: 1`; `isVisualSnapshot` permet de valider une donnée restaurée. Une donnée illisible (JSON invalide ou autre version de schéma) est copiée dans la clé `<storageKey>.backup` avant d'être retirée de la clé active, afin de ne pas perdre les snapshots existants ; si cette copie échoue, la clé active est conservée.
 
 ## Plein écran et sérialisation
 

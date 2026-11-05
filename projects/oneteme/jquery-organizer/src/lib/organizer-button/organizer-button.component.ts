@@ -12,6 +12,13 @@ import { normalizeOrganizerState, resolveMatchingTemplateId } from '../models/or
 import { buildCategoriesFromRows } from '../slice-panel/slice-categories';
 import { TemplateManager } from './template-manager.utility';
 
+/** Demande de remappage des sélections de slices lors d'un changement de variante de l'axe X. */
+interface SliceRemapRequest {
+  /** Sélection actuelle, alignée sur les slices sélectionnés. */
+  selectedKeys: string[][];
+  onRemapFailed: () => void;
+}
+
 @Component({
   standalone: true,
   imports: [ CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatDividerModule ],
@@ -25,6 +32,8 @@ export class OrganizerButtonComponent implements OnDestroy {
   @Input() config!: OrganizerConfig;
   @Input() state?: OrganizerState;
   @Input() hideMenuValues = false;
+  /** Sélection courante des tranches de l'axe X, par identifiant de slice (clés brutes du filtre). */
+  @Input() sliceFilterValues: Record<string, string[]> = {};
   @Output() viewChange = new EventEmitter<OrganizerButtonEvent>();
   @Output() sliceStateChange = new EventEmitter<OrganizerSliceState | null>();
 
@@ -35,6 +44,8 @@ export class OrganizerButtonComponent implements OnDestroy {
   private destroyed = false;
   private sliceRequestId = 0;
   private sliceSubscription?: Subscription;
+  /** Clés distinctes de la dernière liste chargée par slice : elles servent de source au remappage. */
+  private sliceSourceKeys = new Map<string, string[]>();
 
   @ViewChild('mainMenuTrigger') mainMenuTrigger?: MatMenuTrigger;
 
@@ -77,7 +88,35 @@ export class OrganizerButtonComponent implements OnDestroy {
     if (this.state?.selectedX === fieldId) {
       return;
     }
-    this.emitChange('xSelected', { selectedX: fieldId });
+    this.changeX({ selectedX: fieldId, selectedXOption: undefined });
+  }
+
+  onXOptionSelect(fieldId: string, optionId: string): void {
+    const option = this.config.xFields?.find(f => f.id === fieldId)?.options?.find(o => o.id === optionId);
+    if (!option || option.disabled || this.isXOptionActive(fieldId, optionId)) {
+      return;
+    }
+    this.changeX({ selectedX: fieldId, selectedXOption: optionId });
+  }
+
+  // Un changement d'axe X invalide les tranches sélectionnées : elles sont vidées ici et le parent est notifié,
+  // pour que le filtre et le panneau restent cohérents avec le graphique.
+  // Exception : une variante du même axe (ex. jour → heure) conserve les tranches si la config sait les convertir.
+  private changeX(update: Pick<OrganizerState, 'selectedX' | 'selectedXOption'>): void {
+    const selectedSlices = this.state?.selectedSlices ?? [];
+    const sameField = this.state?.selectedX === update.selectedX;
+    if (selectedSlices.length && sameField && this.config.remapSliceSelection) {
+      this.emitChange('xSelected', { ...update, selectedSlices });
+      this.syncSliceState(selectedSlices, undefined, {
+        selectedKeys: selectedSlices.map(id => this.sliceFilterValues[id] ?? []),
+        onRemapFailed: () => this.emitChange('xSelected', { ...update, selectedSlices: [] }),
+      });
+      return;
+    }
+    this.emitChange('xSelected', { ...update, selectedSlices: [] });
+    if (selectedSlices.length) {
+      this.sliceStateChange.emit(null);
+    }
   }
 
   onYFieldSelect(fieldId: string): void {
@@ -150,7 +189,7 @@ export class OrganizerButtonComponent implements OnDestroy {
     });
   }
 
-  private syncSliceState(selectedSlices: string[] | undefined, onLoaded?: () => void): void {
+  private syncSliceState(selectedSlices: string[] | undefined, onLoaded?: () => void, remap?: SliceRemapRequest): void {
     // Une nouvelle demande annule la précédente : seule la réponse la plus récente est prise en compte.
     const requestId = ++this.sliceRequestId;
     this.sliceSubscription?.unsubscribe();
@@ -163,6 +202,7 @@ export class OrganizerButtonComponent implements OnDestroy {
     if (!slices.length || !onFetchSliceData) {
       this.sliceStateChange.emit(null);
       onLoaded?.();
+      remap?.onRemapFailed();
       return;
     }
 
@@ -173,17 +213,30 @@ export class OrganizerButtonComponent implements OnDestroy {
     const result = combineLatest(requests);
     const handleData = (results: any[][]) => {
       if (this.destroyed || requestId !== this.sliceRequestId) return;
+      const nextKeys = results.map((rows, i) => buildCategoriesFromRows(rows, row => row?.[slices[i].id]).map(c => c.key));
+      const selectedKeys = remap ? this.remapSlices(slices, remap.selectedKeys, nextKeys) : undefined;
+      slices.forEach((s, i) => this.sliceSourceKeys.set(s.id, nextKeys[i]));
+      if (remap && !selectedKeys) {
+        this.sliceStateChange.emit(null);
+        remap.onRemapFailed();
+        return;
+      }
+      // La config peut avoir été mise à jour pendant la requête (ex. nouvelle granularité) : libellés relus ici.
+      const current = slices.map(s => this.config.slices?.find(c => c.id === s.id) ?? s);
       // Un slice : le panneau déduit les catégories des lignes. Plusieurs slices : chaque requête ne renvoie que sa colonne,
       // les catégories sont donc construites ici et les lignes simplement concaténées.
       const single = slices.length === 1;
       this.sliceStateChange.emit({
-        sliceConfigs: slices.map((s, i) => ({
+        sliceConfigs: current.map((s, i) => ({
           title: s.label ?? s.id,
           columnKey: s.id,
-          ...(single ? {} : { categories: buildCategoriesFromRows(results[i], row => row?.[s.id]) })
+          ...(s.formatLabel ? { formatLabel: s.formatLabel } : {}),
+          ...(s.compareKeys ? { compareKeys: s.compareKeys } : {}),
+          ...(single ? {} : { categories: buildCategoriesFromRows(results[i], row => row?.[s.id], s) })
         })),
         tasks: results.flat(),
-        filterApplied: false  // Panel vient d'être ouvert, pas de filtre sélectionné encore
+        filterApplied: false,  // Panel vient d'être ouvert, pas de filtre sélectionné encore
+        ...(selectedKeys ? { selectedKeys } : {})
       });
       onLoaded?.();
     };
@@ -192,10 +245,20 @@ export class OrganizerButtonComponent implements OnDestroy {
       console.error('[OrganizerButton] Slice data loading failed', error);
       this.sliceStateChange.emit(null);
       onLoaded?.();
+      remap?.onRemapFailed();
     };
 
     this.sliceSubscription = result.pipe(takeUntil(this.destroy$)).subscribe({ next: handleData, error: handleError });
   }
+
+  /** Convertit la sélection de chaque slice ; renvoie `undefined` si l'une d'elles ne peut pas être conservée. */
+  private remapSlices(slices: OrganizerViewSlice[], selectedKeys: string[][], nextKeys: string[][]): string[][] | undefined {
+    const remapSelection = this.config.remapSliceSelection;
+    if (!remapSelection) return undefined;
+    const remapped = slices.map((s, i) => remapSelection(selectedKeys[i] ?? [], this.sliceSourceKeys.get(s.id) ?? [], nextKeys[i]));
+    return remapped.every((keys): keys is string[] => keys !== null) ? remapped : undefined;
+  }
+
 
   async loadFieldData(fieldId: string): Promise<void> {
     if (this.fieldDataCache.has(fieldId)) return;
@@ -326,7 +389,11 @@ export class OrganizerButtonComponent implements OnDestroy {
   activeXLabel(): string {
     const id = this.state?.selectedX;
     if (!id) return '';
-    return this.config.xFields?.find(f => f.id === id)?.label ?? id;
+    const xField = this.config.xFields?.find(f => f.id === id);
+    const base = xField?.label ?? id;
+    const optionId = this.state?.selectedXOption;
+    const option = xField?.options?.find(o => o.id === optionId);
+    return option ? `${base} · ${option.label}` : base;
   }
 
   activeYLabel(): string {
@@ -387,6 +454,12 @@ export class OrganizerButtonComponent implements OnDestroy {
 
   isYAggregateActive(yFieldId: string, aggregateId: string): boolean {
     return this.state?.selectedY === yFieldId && this.state?.selectedYAggregate === aggregateId;
+  }
+
+  isXOptionActive(xFieldId: string, optionId: string): boolean {
+    if (this.state?.selectedX !== xFieldId) return false;
+    const defaultOptionId = this.config.xFields?.find(f => f.id === xFieldId)?.options?.[0]?.id;
+    return (this.state?.selectedXOption ?? defaultOptionId) === optionId;
   }
 
   isChartTypeActive(chartType: string): boolean {

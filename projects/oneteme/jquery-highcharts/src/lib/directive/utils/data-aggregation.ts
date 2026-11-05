@@ -26,9 +26,7 @@ export function aggregateMultiSeriesData(
       }
       const value =
         typeof dataPoint === 'object'
-          ? dataPoint.y !== undefined
-            ? dataPoint.y
-            : dataPoint
+          ? dataPoint.y ?? dataPoint.value ?? 0
           : dataPoint;
       return total + (value || 0);
     }, 0);

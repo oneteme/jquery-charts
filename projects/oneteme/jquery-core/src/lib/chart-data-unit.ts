@@ -22,9 +22,10 @@ export function selectBestScale(unitConfig: UnitConfig, values: readonly number[
   return { scale: selected.scale, unit: selected.unit, formatter: unitConfig.formatter };
 }
 
-/** Consistent compact formatting used by chart axes and tooltips. */
+/** Consistent compact formatting used by chart axes and tooltips. Non-finite values render as `–`. */
 export function formatChartValue(value: number, precision?: number): string {
-  if (!Number.isFinite(value) || value === 0) return '0';
+  if (!Number.isFinite(value)) return '–';
+  if (value === 0) return '0';
   if (precision !== undefined) {
     return value.toLocaleString('fr-FR', { maximumFractionDigits: precision, minimumFractionDigits: precision });
   }
@@ -37,6 +38,35 @@ export function formatUnitValue(value: number, unit: string, scale?: SelectedUni
   const scaled = scale ? value * scale.scale : value;
   if (scale?.formatter) return scale.formatter(scaled, scale.unit);
   return `${formatChartValue(scaled)}\u00a0${scale?.unit ?? unit}`;
+}
+
+/**
+ * Formats a duration given in milliseconds as a short label, e.g. `850 ms`,
+ * `1,2 s`, `42 s`, `3 min 04 s`, `2 h 15 min`, `1 j 3 h`.
+ * Negative durations keep their sign; non-finite values render as `–`.
+ */
+export function formatDuration(milliseconds: number, locale = 'fr-FR'): string {
+  if (!Number.isFinite(milliseconds)) return '–';
+
+  const sign = milliseconds < 0 ? '-' : '';
+  const ms = Math.abs(milliseconds);
+  const formatNumber = (value: number, maximumFractionDigits = 0) =>
+    value.toLocaleString(locale, { maximumFractionDigits });
+  const pad = (value: number) => String(value).padStart(2, '0');
+
+  if (Math.round(ms) < 1000) return `${sign}${formatNumber(Math.round(ms))} ms`;
+  if (ms < 10_000) return `${sign}${formatNumber(ms / 1000, 1)} s`;
+
+  const totalSeconds = Math.floor(ms / 1000);
+  if (ms < 60_000) return `${sign}${totalSeconds} s`;
+
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  if (totalMinutes < 60) return `${sign}${totalMinutes} min ${pad(totalSeconds % 60)} s`;
+
+  const totalHours = Math.floor(totalMinutes / 60);
+  if (totalHours < 24) return `${sign}${totalHours} h ${pad(totalMinutes % 60)} min`;
+
+  return `${sign}${formatNumber(Math.floor(totalHours / 24))} j ${totalHours % 24} h`;
 }
 
 export interface UnitDefinition<Unit extends string = string> {

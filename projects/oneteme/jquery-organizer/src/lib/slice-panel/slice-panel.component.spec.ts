@@ -1,9 +1,12 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { SlicePanelComponent, SlicePanelFilters } from './slice-panel.component';
 import { SliceColumnDef, SliceConfig } from './slice-panel.model';
 
 interface Row { id: number; status?: string | null; team?: string | null; score?: number }
+
+const flushMicrotasks = (): Promise<void> => new Promise(resolve => setTimeout(resolve));
 
 const rows = (): Row[] => [
   { id: 1, status: 'OK', team: 'A', score: 5 },
@@ -151,13 +154,14 @@ describe('SlicePanelComponent', () => {
   });
 
   describe('conservation des sélections quand les données changent', () => {
-    it('conserve la sélection tant que la catégorie existe et réémet le filtre', () => {
+    it('conserve la sélection tant que la catégorie existe et réémet le filtre', async () => {
       const { panel, set, filters } = setup();
       panel.onSliceCategorySelected(0, 'OK');
       const before = filters.length;
 
       set('data', [...rows(), { id: 5, status: 'OK', team: 'C' }]);
       expect(panel.isSliceCategoryActive(0, 'OK')).toBeTrue();
+      await flushMicrotasks();
       expect(filters.length).toBe(before + 1);
     });
 
@@ -169,11 +173,70 @@ describe('SlicePanelComponent', () => {
       expect(panel.isSliceAllActive(0)).toBeTrue();
     });
 
-    it('ne réémet pas de filtre quand rien n\'est sélectionné', () => {
+    it('ne réémet pas de filtre quand rien n\'est sélectionné', async () => {
       const { set, filters } = setup();
       const before = filters.length;
       set('data', rows());
+      await flushMicrotasks();
       expect(filters.length).toBe(before);
+    });
+
+    it('n\'émet pas pendant le cycle de détection mais après celui-ci', async () => {
+      const { panel, set, activeKeys } = setup();
+      panel.onSliceCategorySelected(0, 'OK');
+      const before = activeKeys.length;
+
+      set('data', rows());
+      expect(activeKeys.length).toBe(before);
+      await flushMicrotasks();
+      expect(activeKeys.length).toBe(before + 1);
+    });
+  });
+
+  describe('clés préréglées (presetKeys)', () => {
+    it('applique les clés préréglées et filtre les lignes correspondantes', async () => {
+      const { set, activeKeys, lastFilter, matching } = setup();
+      set('presetKeys', [['KO']]);
+      await flushMicrotasks();
+      expect(activeKeys.at(-1)).toEqual([['KO']]);
+      expect(matching(lastFilter())).toEqual([2]);
+    });
+
+    it('émet une seule fois par préréglage', async () => {
+      const { set, activeKeys } = setup();
+      const before = activeKeys.length;
+      set('presetKeys', [['OK']]);
+      await flushMicrotasks();
+      expect(activeKeys.length).toBe(before + 1);
+    });
+
+    it('ignore les clés absentes des catégories', async () => {
+      const { set, activeKeys } = setup();
+      set('presetKeys', [['KO', 'ghost']]);
+      await flushMicrotasks();
+      expect(activeKeys.at(-1)).toEqual([['KO']]);
+    });
+
+    it('un préréglage vide émet quand même (le graphique doit être rechargé sans filtre)', async () => {
+      const { set, activeKeys } = setup();
+      set('presetKeys', [['OK']]);
+      await flushMicrotasks();
+      const before = activeKeys.length;
+      set('presetKeys', [[]]);
+      await flushMicrotasks();
+      expect(activeKeys.length).toBe(before + 1);
+      expect(activeKeys.at(-1)).toEqual([[]]);
+    });
+
+    it('avec un changement de données simultané, le préréglage remplace la sélection et n\'émet qu\'une fois', async () => {
+      const { fixture, activeKeys } = setup();
+      const before = activeKeys.length;
+      fixture.componentRef.setInput('data', rows());
+      fixture.componentRef.setInput('presetKeys', [['KO']]);
+      fixture.detectChanges();
+      await flushMicrotasks();
+      expect(activeKeys.length).toBe(before + 1);
+      expect(activeKeys.at(-1)).toEqual([['KO']]);
     });
   });
 
@@ -316,7 +379,7 @@ describe('SlicePanelComponent', () => {
       expect(categoryKeys(0)).toEqual(['A', 'B']);
     });
 
-    it('réémet le filtre quand le statut lazy change et qu\'une sélection est active', () => {
+    it('réémet le filtre quand le statut lazy change et qu\'une sélection est active', async () => {
       const data = rows();
       const { panel, set, filters } = setup({ sliceConfigs: [{ title: 'Équipe', columnKey: 'team' }], columns: lazyColumns(), data });
       set('lazyStatus', new Map([['team', 'loaded']]));
@@ -324,6 +387,7 @@ describe('SlicePanelComponent', () => {
       const before = filters.length;
 
       set('lazyStatus', new Map([['team', 'loaded']]));
+      await flushMicrotasks();
       expect(filters.length).toBe(before + 1);
     });
   });
@@ -400,6 +464,41 @@ describe('SlicePanelComponent', () => {
       const { panel } = setup({ sliceConfigs: [{ title: 'Équipe', columnKey: 'team' }, { title: 'X', icon: 'star', categories: [] }] });
       expect(panel.getSliceIcon(panel.slices[0])).toBe('group');
       expect(panel.getSliceIcon(panel.slices[1])).toBe('star');
+    });
+  });
+
+  describe('parent qui réagit au filtre (non-régression NG0100)', () => {
+    @Component({
+      standalone: true,
+      imports: [SlicePanelComponent],
+      template: `
+        <span class="filter-events">{{ filterEvents }}</span>
+        <slice-panel [sliceConfigs]="configs" [columns]="columns" [data]="rows" (activeKeysChange)="onKeys()"></slice-panel>
+      `,
+    })
+    class FilterHostComponent {
+      configs: SliceConfig<Row>[] = [{ title: 'Statut', columnKey: 'status' }];
+      columns = columns();
+      rows = rows();
+      filterEvents = 0;
+      onKeys(): void { this.filterEvents++; }
+    }
+
+    it('ne lève pas ExpressionChangedAfterItHasBeenChecked quand le changement de données réémet le filtre', async () => {
+      const host = TestBed.createComponent(FilterHostComponent);
+      host.detectChanges();
+      const panel = host.debugElement.query(By.directive(SlicePanelComponent)).componentInstance as SlicePanelComponent<Row>;
+      panel.onSliceCategorySelected(0, 'OK');
+      host.detectChanges();
+      expect(host.componentInstance.filterEvents).toBe(1);
+
+      host.componentInstance.rows = rows().slice(0, 3);
+      expect(() => host.detectChanges()).not.toThrow();
+
+      await flushMicrotasks();
+      host.detectChanges();
+      expect(host.componentInstance.filterEvents).toBe(2);
+      expect(host.nativeElement.querySelector('.filter-events').textContent).toContain('2');
     });
   });
 });

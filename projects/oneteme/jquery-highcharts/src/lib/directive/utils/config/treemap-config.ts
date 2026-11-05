@@ -166,8 +166,9 @@ function treemapToSeries(series: any[]): any[] {
 
   if (!firstSerie.data) return series;
 
-  const parents = firstSerie.data.filter((p: any) => !p.parent);
-  const children = firstSerie.data.filter((p: any) => p.parent);
+  const points = firstSerie.data.filter((p: any) => p !== null && p !== undefined);
+  const parents = points.filter((p: any) => !p.parent);
+  const children = points.filter((p: any) => p.parent);
 
   const recreatedSeries: any[] = [];
 
