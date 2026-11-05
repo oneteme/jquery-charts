@@ -246,7 +246,7 @@
               <mat-select
                 [(ngModel)]="groupPageSize"
                 (ngModelChange)="onGroupPageSizeChange($event)"
-                panelClass="mat-mdc-paginator-select-page-size group-page-size-panel"
+                class="mat-mdc-paginator-select-page-size group-page-size-panel"
                 [panelWidth]="'auto'"
               >
                 <mat-select-trigger>{{ groupPageSize === 0 ? i18n.groupShowAll : groupPageSize }}</mat-select-trigger>
