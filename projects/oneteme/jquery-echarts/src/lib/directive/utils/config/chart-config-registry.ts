@@ -14,6 +14,10 @@ import { gaugeConfigurator } from './gauge-config';
 import { sankeyConfigurator } from './sankey-config';
 import { boxplotConfigurator } from './boxplot-config';
 import { radialBarConfigurator } from './radial-bar-config';
+import { sunburstConfigurator } from './sunburst-config';
+import { graphConfigurator } from './graph-config';
+import { calendarConfigurator } from './calendar-config';
+import { waterfallConfigurator } from './waterfall-config';
 
 /**
  * Contrat d'un configurateur de type de graphique ECharts.
@@ -63,6 +67,10 @@ const CONFIGURATORS: EChartTypeConfigurator<any>[] = [
   radialBarConfigurator,
   gaugeConfigurator,
   sankeyConfigurator,
+  graphConfigurator,
+  sunburstConfigurator,
+  calendarConfigurator,
+  waterfallConfigurator,
   boxplotConfigurator,
   scatterConfigurator,
   rangeConfigurator,

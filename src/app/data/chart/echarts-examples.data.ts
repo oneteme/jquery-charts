@@ -170,7 +170,276 @@ export const ECHARTS_EXAMPLES: ChartDataCollection<EChartsExampleData> = {
       xtitle: 'Coût (k€/mois)',
       ytitle: 'Req/s',
       continue: true,
-      series: [{ data: { x: field('x'), y: field('y') }, name: field('name') }],
+      series: [{ data: { x: field('x'), y: field('y'), z: field('z') }, name: field('name') }],
+    },
+  },
+
+  roseExample: {
+    data: [
+      { canal: 'Web', visites: 4200 },
+      { canal: 'Mobile', visites: 3100 },
+      { canal: 'API', visites: 2400 },
+      { canal: 'Batch', visites: 900 },
+      { canal: 'Partenaires', visites: 620 },
+    ],
+    config: {
+      title: 'Trafic par canal',
+      series: [{ data: { x: field('canal'), y: field('visites') }, name: 'Visites' }],
+    },
+  },
+
+  gaugeExample: {
+    data: [
+      { indicateur: 'Disponibilité', valeur: 99.2 },
+      { indicateur: 'Succès API', valeur: 97.5 },
+      { indicateur: 'Cache hit', valeur: 64.8 },
+      { indicateur: 'Charge CPU', valeur: 72.1 },
+    ],
+    config: {
+      title: 'Indicateurs de santé',
+      series: [{ name: 'Actuel', data: { x: field('indicateur'), y: field('valeur') }, unit: '%' }],
+    },
+  },
+
+  sankeyExample: {
+    data: [
+      { origine: 'Navigateur', cible: 'Passerelle', flux: 420 },
+      { origine: 'Mobile', cible: 'Passerelle', flux: 260 },
+      { origine: 'Passerelle', cible: 'Auth', flux: 300 },
+      { origine: 'Passerelle', cible: 'Catalogue', flux: 380 },
+      { origine: 'Catalogue', cible: 'Base', flux: 210 },
+      { origine: 'Auth', cible: 'Base', flux: 150 },
+    ],
+    config: {
+      title: 'Flux de requêtes entre services',
+      series: [{ data: { x: field('origine'), y: field('flux') }, name: field('cible') }],
+    },
+  },
+
+  graphExample: {
+    data: [
+      { origine: 'Navigateur', cible: 'Passerelle', flux: 420 },
+      { origine: 'Mobile', cible: 'Passerelle', flux: 260 },
+      { origine: 'Passerelle', cible: 'Auth', flux: 300 },
+      { origine: 'Passerelle', cible: 'Catalogue', flux: 380 },
+      { origine: 'Catalogue', cible: 'Base', flux: 210 },
+      { origine: 'Auth', cible: 'Base', flux: 150 },
+      { origine: 'Base', cible: 'Catalogue', flux: 90 },
+    ],
+    config: {
+      title: 'Dépendances entre services (graphe)',
+      series: [{ data: { x: field('origine'), y: field('flux') }, name: field('cible') }],
+    },
+  },
+
+  sunburstExample: {
+    data: [
+      { service: 'Auth', lectures: 320, ecritures: 45 },
+      { service: 'Paiement', lectures: 210, ecritures: 120 },
+      { service: 'Catalogue', lectures: 180, ecritures: 30 },
+      { service: 'Panier', lectures: 150, ecritures: 95 },
+    ],
+    config: {
+      title: 'Trafic par service et type d\'accès',
+      series: [
+        { name: 'Lectures', data: { x: field('service'), y: field('lectures') } },
+        { name: 'Écritures', data: { x: field('service'), y: field('ecritures') } },
+      ],
+    },
+  },
+
+  calendarExample: {
+    data: [
+      { jour: '2024-01-02', deploiements: 2 },
+      { jour: '2024-01-03', deploiements: 5 },
+      { jour: '2024-01-04', deploiements: 1 },
+      { jour: '2024-01-09', deploiements: 3 },
+      { jour: '2024-01-10', deploiements: 7 },
+      { jour: '2024-01-11', deploiements: 4 },
+      { jour: '2024-01-16', deploiements: 6 },
+      { jour: '2024-01-17', deploiements: 2 },
+      { jour: '2024-01-18', deploiements: 9 },
+      { jour: '2024-01-23', deploiements: 1 },
+      { jour: '2024-01-24', deploiements: 4 },
+      { jour: '2024-01-25', deploiements: 8 },
+      { jour: '2024-01-30', deploiements: 3 },
+      { jour: '2024-02-01', deploiements: 5 },
+      { jour: '2024-02-06', deploiements: 2 },
+      { jour: '2024-02-07', deploiements: 6 },
+      { jour: '2024-02-13', deploiements: 10 },
+      { jour: '2024-02-14', deploiements: 3 },
+    ],
+    config: {
+      title: 'Déploiements par jour',
+      series: [{ name: 'Déploiements', data: { x: field('jour'), y: field('deploiements') } }],
+    },
+  },
+
+  waterfallExample: {
+    data: [
+      { poste: 'Solde initial', variation: 1000 },
+      { poste: 'Ventes', variation: 450 },
+      { poste: 'Achats', variation: -320 },
+      { poste: 'Salaires', variation: -180 },
+      { poste: 'Subventions', variation: 90 },
+      { poste: 'Charges', variation: -60 },
+    ],
+    config: {
+      title: 'Cascade de trésorerie',
+      series: [{ name: 'Variation', data: { x: field('poste'), y: field('variation') } }],
+    },
+  },
+
+  boxplotExample: {
+    data: [
+      { service: 'Auth', latence: 42 },
+      { service: 'Auth', latence: 45 },
+      { service: 'Auth', latence: 39 },
+      { service: 'Auth', latence: 51 },
+      { service: 'Auth', latence: 160 },
+      { service: 'Catalogue', latence: 88 },
+      { service: 'Catalogue', latence: 92 },
+      { service: 'Catalogue', latence: 85 },
+      { service: 'Catalogue', latence: 101 },
+      { service: 'Catalogue', latence: 96 },
+      { service: 'Paiement', latence: 120 },
+      { service: 'Paiement', latence: 135 },
+      { service: 'Paiement', latence: 128 },
+      { service: 'Paiement', latence: 142 },
+      { service: 'Paiement', latence: 131 },
+      { service: 'Recherche', latence: 60 },
+      { service: 'Recherche', latence: 64 },
+      { service: 'Recherche', latence: 58 },
+      { service: 'Recherche', latence: 71 },
+      { service: 'Recherche', latence: 66 },
+    ],
+    config: {
+      title: 'Latence par service (ms)',
+      series: [{ data: { x: field('service'), y: field('latence') }, name: 'Latence' }],
+    },
+  },
+
+  columnpyramidExample: {
+    data: [
+      { mois: 'Jan', solde: 120 },
+      { mois: 'Fév', solde: 80 },
+      { mois: 'Mar', solde: -40 },
+      { mois: 'Avr', solde: 150 },
+      { mois: 'Mai', solde: -90 },
+      { mois: 'Jun', solde: 60 },
+    ],
+    config: {
+      title: 'Solde net mensuel (k€)',
+      series: [{ data: { x: field('mois'), y: field('solde') }, name: 'Solde' }],
+    },
+  },
+
+  radialBarExample: {
+    data: [
+      { noeud: 'Nœud 1', charge: 72 },
+      { noeud: 'Nœud 2', charge: 58 },
+      { noeud: 'Nœud 3', charge: 91 },
+      { noeud: 'Nœud 4', charge: 45 },
+    ],
+    config: {
+      title: 'Charge CPU par nœud (%)',
+      series: [{ data: { x: field('noeud'), y: field('charge') }, name: 'Charge CPU' }],
+    },
+  },
+
+  radarAreaExample: {
+    data: [
+      { dim: 'Performance', svc_a: 80, svc_b: 65 },
+      { dim: 'Fiabilité', svc_a: 92, svc_b: 88 },
+      { dim: 'Sécurité', svc_a: 75, svc_b: 90 },
+      { dim: 'Scalabilité', svc_a: 70, svc_b: 60 },
+      { dim: 'UX', svc_a: 85, svc_b: 72 },
+    ],
+    config: {
+      title: 'Maturité des services',
+      series: [
+        { data: { x: field('dim'), y: field('svc_a') }, name: 'Service A' },
+        { data: { x: field('dim'), y: field('svc_b') }, name: 'Service B' },
+      ],
+    },
+  },
+
+  areasplineExample: {
+    data: [
+      { jour: 'Lun', visites: 1200, sessions: 800 },
+      { jour: 'Mar', visites: 1350, sessions: 920 },
+      { jour: 'Mer', visites: 1280, sessions: 870 },
+      { jour: 'Jeu', visites: 1500, sessions: 1010 },
+      { jour: 'Ven', visites: 1720, sessions: 1190 },
+      { jour: 'Sam', visites: 980, sessions: 640 },
+      { jour: 'Dim', visites: 860, sessions: 560 },
+    ],
+    config: {
+      title: 'Trafic hebdomadaire',
+      series: [
+        { data: { x: field('jour'), y: field('visites') }, name: 'Visites' },
+        { data: { x: field('jour'), y: field('sessions') }, name: 'Sessions' },
+      ],
+    },
+  },
+
+  columnrangeExample: {
+    data: [
+      { mois: 'Jan', min: -2, max: 8 },
+      { mois: 'Fév', min: -1, max: 10 },
+      { mois: 'Mar', min: 3, max: 15 },
+      { mois: 'Avr', min: 6, max: 19 },
+      { mois: 'Mai', min: 10, max: 23 },
+      { mois: 'Jun', min: 14, max: 27 },
+    ],
+    config: {
+      title: 'Températures mensuelles (°C)',
+      series: [{ data: { x: field('mois'), y: rangeFields('min', 'max') }, name: 'Température', unit: '°C' }],
+    },
+  },
+
+  arearangeExample: {
+    data: [
+      { heure: '00h', min: 110, max: 180 },
+      { heure: '04h', min: 95, max: 150 },
+      { heure: '08h', min: 160, max: 310 },
+      { heure: '12h', min: 180, max: 360 },
+      { heure: '16h', min: 170, max: 330 },
+      { heure: '20h', min: 130, max: 240 },
+    ],
+    config: {
+      title: 'Plage de latence sur la journée (ms)',
+      series: [{ data: { x: field('heure'), y: rangeFields('min', 'max') }, name: 'Latence' }],
+    },
+  },
+
+  areasplinerangeExample: {
+    data: [
+      { semaine: 'S1', min: 40, max: 210 },
+      { semaine: 'S2', min: 45, max: 240 },
+      { semaine: 'S3', min: 38, max: 190 },
+      { semaine: 'S4', min: 52, max: 260 },
+      { semaine: 'S5', min: 47, max: 225 },
+      { semaine: 'S6', min: 55, max: 280 },
+    ],
+    config: {
+      title: 'Temps de réponse : enveloppe min/max',
+      series: [{ data: { x: field('semaine'), y: rangeFields('min', 'max') }, name: 'Temps de réponse' }],
+    },
+  },
+
+  rangeAreaExample: {
+    data: [
+      { semaine: 'S1', p5: 60, p95: 340 },
+      { semaine: 'S2', p5: 72, p95: 390 },
+      { semaine: 'S3', p5: 55, p95: 310 },
+      { semaine: 'S4', p5: 68, p95: 370 },
+      { semaine: 'S5', p5: 50, p95: 300 },
+      { semaine: 'S6', p5: 80, p95: 420 },
+    ],
+    config: {
+      title: 'Temps de réponse : P5 à P95 (ms)',
+      series: [{ data: { x: field('semaine'), y: rangeFields('p5', 'p95') }, name: 'P5–P95' }],
     },
   },
 

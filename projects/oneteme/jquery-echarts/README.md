@@ -10,7 +10,7 @@ Angular renderer for [Apache ECharts](https://echarts.apache.org/), built on top
 
 This library provides an Angular component and directive to render interactive charts using Apache ECharts, with full integration with the `@oneteme/jquery-core` data model.
 
-**Supported chart types:** `bar`, `column`, `columnpyramid`, `line`, `spline`, `area`, `areaspline`, `mixed`, `pie`, `donut`, `rose`, `scatter`, `bubble`, `heatmap`, `radar`, `radarArea`, `radialBar`, `treemap`, `funnel`, `pyramid`, `gauge`, `sankey`, `boxplot`, `rangeBar`, `rangeColumn`, `rangeArea`, `arearange`, `areasplinerange`, `columnrange`
+**Supported chart types:** `bar`, `column`, `columnpyramid`, `line`, `spline`, `area`, `areaspline`, `mixed`, `pie`, `donut`, `rose`, `scatter`, `bubble`, `heatmap`, `radar`, `radarArea`, `radialBar`, `treemap`, `sunburst`, `funnel`, `pyramid`, `gauge`, `sankey`, `graph`, `calendar`, `waterfall`, `boxplot`, `rangeBar`, `rangeColumn`, `rangeArea`, `arearange`, `areasplinerange`, `columnrange`
 
 ## Mapping des données des nouveaux types
 
@@ -23,8 +23,12 @@ This library provides an Angular component and directive to render interactive c
 | `gauge` | catégorie | valeur | série | Une jauge par (série × catégorie). Min/max par série via `min` / `max` (défaut 0 → 100), unité via `unit`. |
 | `sankey` | source | valeur (≥ 0) | cible, évaluée par ligne | Les liens identiques sont additionnés. Les boucles (source = cible) sont ignorées. |
 | `boxplot` | catégorie | valeur | série | Une boîte par (série × catégorie), calculée sur toutes les lignes brutes. Moustaches de Tukey (1,5 × IQR), valeurs aberrantes dans une série `scatter` `"<nom> (valeurs aberrantes)"`. Catégorie sans valeur : absente. |
+| `graph` | source | valeur (≥ 0) | cible, évaluée par ligne | Même mapping que `sankey`, en disposition force. Taille des nœuds selon le flux total, épaisseur des liens selon la valeur. Boucles ignorées. |
+| `sunburst` | catégorie | valeur | série | Même hiérarchie que `treemap` (une série = un niveau parent), en anneaux concentriques. Sans `stack`. |
+| `calendar` | date (`YYYY-MM-DD`, Date ou timestamp) | valeur | série | Une cellule par jour, valeurs additionnées par jour sur toutes les séries. Dates invalides ignorées. Sans donnée : année courante. |
+| `waterfall` | catégorie | variation (±) | série | Cascade cumulée à partir de zéro, vert pour hausse, rouge pour baisse. Seule la **première série** est utilisée. Pas de barre total implicite. |
 
-Pour `gauge`, `sankey` et `boxplot`, les lignes ne sont pas agrégées par `buildChart` (qui garde la dernière valeur par catégorie) : elles sont lues brutes.
+Pour `gauge`, `sankey`, `graph`, `calendar` et `boxplot`, les lignes ne sont pas agrégées par `buildChart` (qui garde la dernière valeur par catégorie) : elles sont lues brutes.
 
 ## Fonctionnalités intégrées
 

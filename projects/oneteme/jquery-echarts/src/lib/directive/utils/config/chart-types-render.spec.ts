@@ -97,4 +97,42 @@ describe('Rendu ECharts des nouveaux types', () => {
     );
     expect(seriesTypes).toEqual(['line', 'line']);
   });
+
+  it('sunburst : une série sunburst', () => {
+    const { option, seriesTypes } = renderType(
+      'sunburst',
+      [{ c: 'A', v: 3 }, { c: 'B', v: 5 }],
+      { series: [{ name: 'S', data: { xField: 'c', yField: 'v' } }] }
+    );
+    expect(seriesTypes).toEqual(['sunburst']);
+    expect(option.series[0].data.length).toBe(2);
+  });
+
+  it('graph : un graphe force avec nœuds et liens', () => {
+    const { seriesTypes } = renderType(
+      'graph',
+      [{ s: 'A', v: 2 }, { s: 'B', v: 1 }],
+      { series: [{ name: 'T', data: { xField: 's', yField: 'v' } }] }
+    );
+    expect(seriesTypes).toEqual(['graph']);
+  });
+
+  it('calendar : une heatmap calendaire', () => {
+    const { option, seriesTypes } = renderType(
+      'calendar',
+      [{ d: '2024-01-05', v: 2 }, { d: '2024-01-06', v: 4 }],
+      { series: [{ name: 'S', data: { xField: 'd', yField: 'v' } }] }
+    );
+    expect(seriesTypes).toEqual(['heatmap']);
+    expect(option.calendar.range).toEqual(['2024-01-05', '2024-01-06']);
+  });
+
+  it('waterfall : une série custom dessinant les barres de cascade', () => {
+    const { seriesTypes } = renderType(
+      'waterfall',
+      [{ c: 'A', v: 10 }, { c: 'B', v: -4 }],
+      { series: [{ name: 'S', data: { xField: 'c', yField: 'v' } }] }
+    );
+    expect(seriesTypes).toEqual(['custom']);
+  });
 });
