@@ -274,7 +274,7 @@ export const HIGHCHARTS_EXAMPLES = {
       xtitle: 'Coût (k€/mois)',
       ytitle: 'Req/s',
       continue: true,
-      series: [{ data: { x: field('x'), y: field('y') }, name: field('name') }],
+      series: [{ data: { x: field('x'), y: field('y'), z: field('z') }, name: field('name') }],
     },
   },
 

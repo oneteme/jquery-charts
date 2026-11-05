@@ -1,4 +1,4 @@
-import { ChartType } from '@oneteme/jquery-core';
+import { ChartType, field } from '@oneteme/jquery-core';
 import { prepareHighchartsData, resolveHighchartsPointValue } from './highcharts-data.pipeline';
 
 function run(data: any[], config: any, type: ChartType, mapCodeToName = new Map<string, string>()) {
@@ -168,6 +168,21 @@ describe('prepareHighchartsData', () => {
   });
 
   describe('graphiques complexes', () => {
+    it('conserve z et un axe x numérique pour une bulle', () => {
+      const { data, validationError } = run(
+        [{ x: 10, y: 220, z: 30, name: 'A' }, { x: 25, y: 340, z: 80, name: 'B' }],
+        { series: [{ name: 'Apps', data: { x: field('x'), y: field('y'), z: field('z') } }], continue: true },
+        'bubble',
+      );
+
+      expect(validationError).toBeNull();
+      expect(data.xAxis.categories).toBeUndefined();
+      expect(data.series[0].data).toEqual([
+        jasmine.objectContaining({ x: 10, y: 220, z: 30 }),
+        jasmine.objectContaining({ x: 25, y: 340, z: 80 }),
+      ]);
+    });
+
     it('construit les catégories et les séries à partir des données', () => {
       const { data, validationError } = run(
         [{ x: 'Jan', a: 1 }, { x: 'Fév', a: 2 }],
