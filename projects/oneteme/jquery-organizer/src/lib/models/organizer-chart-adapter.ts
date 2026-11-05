@@ -33,7 +33,10 @@ export interface OrganizerChartBridgeOptions {
   onExportVisual?: () => void;
   onExportData?: () => void;
   switchView?: OrganizerConfig['switchView'];
-  /** Formatage optionnel des valeurs d'un slice, résolu à partir de la clé du filtre. */
+  /**
+   * Formatage optionnel des valeurs d'un champ, résolu à partir de sa clé : appliqué aux tranches (filtre)
+   * et aux libellés d'un empilement issu d'un groupe (ex. « Date » en pile).
+   */
   resolveSliceDisplay?: (filterKey: string) => Pick<OrganizerViewSlice, 'formatLabel' | 'compareKeys'> | undefined;
   /** Variantes optionnelles de l'axe X (sous-menu), résolues à partir de la clé du groupe. */
   resolveXOptions?: (groupKey: string) => OrganizerXOption[] | undefined;
@@ -160,7 +163,8 @@ export function chartConfigToUnifiedState(
 
 export function applyOrganizerEventToChart(
   event: OrganizerButtonEvent,
-  chartConfig: OrganizerChartConfig | null | undefined
+  chartConfig: OrganizerChartConfig | null | undefined,
+  options: Pick<OrganizerChartBridgeOptions, 'resolveSliceDisplay'> = {}
 ): void {
   if (!chartConfig) {
     return;
@@ -171,7 +175,7 @@ export function applyOrganizerEventToChart(
   if (state.selectedX !== undefined) _applyXSelection(state.selectedX, chartConfig);
   if (state.selectedY !== undefined) _applyYSelection(state.selectedY, state.selectedYAggregate, chartConfig);
   const effectiveGroupBy = state.selectedGroupBy !== state.selectedX ? state.selectedGroupBy : undefined;
-  _applyGroupBySelection(effectiveGroupBy, chartConfig);
+  _applyGroupBySelection(effectiveGroupBy, chartConfig, options.resolveSliceDisplay);
   if (state.selectedSlices !== undefined) _applySliceSelection(state.selectedSlices, chartConfig);
   event.resolvedYUnit = resolveYUnit(chartConfig, event.state.selectedY, event.state.selectedYAggregate);
 }
@@ -192,7 +196,7 @@ export function handleOrganizerChartEvent(
     };
   }
 
-  applyOrganizerEventToChart(event, chartConfig);
+  applyOrganizerEventToChart(event, chartConfig, options);
 
   if (event.type === 'ySelected' || event.type === 'templateSelected') {
     const binding = buildOrganizerChartBinding(chartConfig, options);
@@ -285,7 +289,21 @@ function _applyYSelection(selectedY: string, selectedYAggregate: string | undefi
   });
 }
 
-function _applyGroupBySelection(effectiveGroupBy: string | undefined, chartConfig: OrganizerChartConfig): void {
+/** Libellé d'une valeur d'empilement : formaté si un formateur est résolu pour la clé du groupe, sinon brut. */
+function _formatStackValue(
+  groupKey: string,
+  value: string,
+  resolveSliceDisplay: OrganizerChartBridgeOptions['resolveSliceDisplay']
+): string {
+  const formatLabel = resolveSliceDisplay?.(groupKey)?.formatLabel;
+  return formatLabel ? formatLabel(String(value)) : String(value);
+}
+
+function _applyGroupBySelection(
+  effectiveGroupBy: string | undefined,
+  chartConfig: OrganizerChartConfig,
+  resolveSliceDisplay: OrganizerChartBridgeOptions['resolveSliceDisplay']
+): void {
   const activeIndicator = getIndicatorItems(chartConfig).find(i => i.selected);
   const stackItems: OrganizerChartItem[] = getStackItems(activeIndicator);
   if (effectiveGroupBy === undefined) {
@@ -312,7 +330,8 @@ function _applyGroupBySelection(effectiveGroupBy: string | undefined, chartConfi
       jquery: groupItem.jquery ? {
         value: () => groupItem.jquery!.value(),
         buildAlias: () => groupItem.jquery!.buildAlias(),
-        buildName: (_item: any, value: string) => String(value),
+        // Résolu au moment du rendu : le formateur suit la granularité courante (ex. « Jour » puis « Heure »).
+        buildName: (_item: any, value: string) => _formatStackValue(groupItem.key, value, resolveSliceDisplay),
       } : undefined,
     }));
   } else {

@@ -203,6 +203,41 @@ describe('organizer-chart-adapter', () => {
     it('ne fait rien sans graphique', () => {
       expect(() => applyOrganizerEventToChart(event('reset', {}), undefined)).not.toThrow();
     });
+
+    describe('libellés d\'un empilement issu d\'un groupe', () => {
+      const withGroupJquery = (chart: OrganizerChartConfig): OrganizerChartConfig => {
+        getGroupItems(chart).find(g => g.key === 'app')!.jquery = { value: () => 'app', buildAlias: () => 'app' };
+        return chart;
+      };
+      const groupByApp = event('groupBySelected', { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'app' });
+      const stackLabel = (chart: OrganizerChartConfig, value: string): string =>
+        getStackItems(getIndicatorItems(chart)[0]).find(s => s.key === 'app')!.jquery!.buildName!(undefined, value);
+
+      it('applique le formateur résolu pour la clé du groupe (ex. date → libellé de période)', () => {
+        const chart = withGroupJquery(makeChart());
+        handleOrganizerChartEvent(groupByApp, chart, undefined, {
+          resolveSliceDisplay: key => key === 'app' ? { formatLabel: raw => `[${raw}]` } : undefined,
+        });
+        expect(stackLabel(chart, '11-03')).toBe('[11-03]');
+      });
+
+      it('garde la valeur brute sans formateur pour la clé', () => {
+        const chart = withGroupJquery(makeChart());
+        applyOrganizerEventToChart(groupByApp, chart, { resolveSliceDisplay: () => undefined });
+        expect(stackLabel(chart, '11-03')).toBe('11-03');
+      });
+
+      it('résout le formateur au rendu : suit un changement de granularité sans réappliquer l\'événement', () => {
+        let granularity = 'jour';
+        const chart = withGroupJquery(makeChart());
+        applyOrganizerEventToChart(groupByApp, chart, {
+          resolveSliceDisplay: () => ({ formatLabel: raw => `${granularity}:${raw}` }),
+        });
+        expect(stackLabel(chart, '11-03')).toBe('jour:11-03');
+        granularity = 'heure';
+        expect(stackLabel(chart, '11-03')).toBe('heure:11-03');
+      });
+    });
   });
 
   describe('handleOrganizerChartEvent', () => {
