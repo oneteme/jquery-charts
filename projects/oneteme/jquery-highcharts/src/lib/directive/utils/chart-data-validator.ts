@@ -11,7 +11,7 @@ export function validateChartData(
   series: any[],
   chartType: ChartType
 ): ValidationResult {
-  if (!series || series.length === 0) {
+  if (!series || series.every((serie) => Array.isArray(serie?.data) && serie.data.length === 0)) {
     return {
       isValid: false,
       isNoData: true,
@@ -121,6 +121,7 @@ function validateRangeChartData(
       }
       return (
         typeof point === 'object' &&
+        point !== null &&
         isFiniteNumericValue(point.low) &&
         isFiniteNumericValue(point.high)
       );
