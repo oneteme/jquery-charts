@@ -540,11 +540,36 @@ describe('TableComponent — colonnes lazy (requête relancée par l\'applicatio
       expect(t.count('.lazy-error-btn')).toBe(0);
     });
 
-    it('un nouveau data l\'emporte sur les lignes du chargeur et recharge les colonnes déjà demandées', async () => {
+    it('un nouveau data qui contient la colonne déjà demandée l\'affiche sans nouvel appel', async () => {
       const { t, calls, pending } = withLoader();
       t.activate('details');
       await t.settle();
       pending[0].next(withValues('details', { 1: 'd1', 2: 'd2', 3: 'd3' }));
+      await t.settle();
+
+      t.host.data = withValues('details', { 1: 'x1', 2: 'x2', 3: 'x3', 4: 'x4' }, [1, 2, 3, 4]);
+      await t.settle();
+      expect(calls).toEqual([['details']]);
+      expect(t.count('.lazy-skeleton')).toBe(0);
+      expect(t.cells('details')).toEqual(['x1', 'x2', 'x3', 'x4']);
+    });
+
+    it('un nouveau data sans la colonne déjà demandée ne relance pas le chargeur', async () => {
+      const { t, calls, pending } = withLoader();
+      t.activate('details');
+      await t.settle();
+      pending[0].next(withValues('details', { 1: 'd1', 2: 'd2', 3: 'd3' }));
+      await t.settle();
+
+      t.host.data = rows(1, 2, 3, 4);
+      await t.settle();
+      expect(calls).toEqual([['details']]);
+      expect(t.count('.lazy-skeleton')).toBe(0);
+    });
+
+    it('un nouveau data pendant un chargement relance une seule fois les colonnes en attente', async () => {
+      const { t, calls, pending } = withLoader();
+      t.activate('details');
       await t.settle();
 
       t.host.data = rows(1, 2, 3, 4);
@@ -555,6 +580,7 @@ describe('TableComponent — colonnes lazy (requête relancée par l\'applicatio
       pending[1].next(withValues('details', { 1: 'x1', 2: 'x2', 3: 'x3', 4: 'x4' }, [1, 2, 3, 4]));
       await t.settle();
       expect(t.cells('details')).toEqual(['x1', 'x2', 'x3', 'x4']);
+      expect(calls.length).toBe(2);
     });
 
     it('un nouveau data ignore la réponse encore en cours de l\'ancien appel', async () => {

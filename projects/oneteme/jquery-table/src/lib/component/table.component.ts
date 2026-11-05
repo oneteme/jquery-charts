@@ -333,7 +333,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this.applyInitialSearchQuery(changes['config'].firstChange);
       this._invalidateOrganizerConfig(); // les colonnes ont pu changer
     }
-    if (dataChanged && this._lazyColumnStatus.size && this._resolvedData.length) this._runLazyLoader();
+    if (dataChanged && this._resolvedData.length && this._hasPendingLazyColumns()) this._runLazyLoader();
   }
 
   ngAfterContentInit(): void {
@@ -760,15 +760,22 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     });
   }
 
-  /** Nouveau `data` : il l'emporte sur les lignes du chargeur. Avec un chargeur, les colonnes déjà demandées sont rechargées. */
+  /**
+   * Nouveau `data` : il l'emporte sur les lignes du chargeur et n'entraîne aucun appel. Le parent doit donc fournir dans `data`
+   * les colonnes déjà demandées. Seule une colonne dont la réponse est encore en cours est rechargée (cf. ngOnChanges).
+   */
   private _onNewData(): void {
     this._loaderSub?.unsubscribe();
     this._loaderRows = null;
-    if (this.config?.lazyLoader && this._lazyColumnStatus.size) {
-      this._setLazyStatus([...this._lazyColumnStatus.keys()], 'loading');
-    } else {
-      this._settleLazyColumns();
-    }
+    const keepPending = !!this.config?.lazyLoader;
+    const settle = [...this._lazyColumnStatus]
+      .filter(([, status]) => status !== 'loaded' && !(keepPending && status === 'loading'))
+      .map(([key]) => key);
+    if (settle.length) this._setLazyStatus(settle, 'loaded');
+  }
+
+  private _hasPendingLazyColumns(): boolean {
+    return [...this._lazyColumnStatus.values()].includes('loading');
   }
 
   /** Sans chargeur ni écouteur, la colonne demandée resterait en skeleton sans que rien ne l'explique. */

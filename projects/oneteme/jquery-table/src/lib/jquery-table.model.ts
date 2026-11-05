@@ -214,8 +214,9 @@ export interface TableProvider<T = any> {
   /** Configuration de l'export CSV. */
   export?: TableExportConfig<T>;
   /**
-   * Chargeur des colonnes `lazy` : appelé à l'activation d'une colonne lazy (et après chaque nouveau `data` si des colonnes
-   * ont déjà été demandées). Sans chargeur, la table émet seulement `lazyColumnsRequested`.
+   * Chargeur des colonnes `lazy` : appelé à l'activation d'une colonne lazy avec toutes les colonnes déjà demandées, et sa réponse
+   * remplace les lignes. Un nouveau `data` ne relance pas le chargeur : il doit donc contenir les valeurs des colonnes déjà
+   * demandées (réémises via `lazyColumnsRequested`). Sans chargeur, la table émet seulement `lazyColumnsRequested`.
    */
   lazyLoader?: TableLazyLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */
