@@ -178,6 +178,10 @@ export interface SavedTableConfig {
   dynamicSliceKeys?: string[];
   /** Filtres actifs du slice panel, indexés par clé de colonne stable. */
   sliceFilters?: Record<string, string[]>;
+  /** Tri de colonne utilisateur. Absent si aucun tri n'est actif (le `defaultSort` de la config s'applique alors). */
+  sort?: { active: string; direction: 'asc' | 'desc' };
+  /** Ordre d'affichage des groupes (mode Group by). */
+  groupSortOrder?: 'asc' | 'desc';
 }
 export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];

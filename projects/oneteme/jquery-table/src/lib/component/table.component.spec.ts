@@ -667,6 +667,96 @@ describe('TableComponent', () => {
       await t.settle();
       expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
     });
+
+    it('sauvegarde le tri de colonne et le restaure sans émettre sortChange', async () => {
+      const t = setup();
+      await t.settle();
+      t.sortBy('name', 2);
+      await t.settle();
+      expect(t.cells('name')[0]).toBe('item-12');
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!).sort).toEqual({ active: 'name', direction: 'desc' });
+      t.fixture.destroy();
+
+      const restored = setup();
+      await restored.settle();
+      expect(restored.cells('name')).toEqual(['item-12', 'item-11', 'item-10', 'item-09', 'item-08']);
+      expect(restored.table().sort!.active).toBe('name');
+      expect(restored.table().sort!.direction).toBe('desc');
+      expect(restored.host.sorts).toEqual([]);
+    });
+
+    it('un tri sauvegardé prime sur defaultSort', async () => {
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ sort: { active: 'name', direction: 'asc' } }));
+      const t = setup({ config: { defaultSort: { active: 'name', direction: 'desc' } } });
+      await t.settle();
+      expect(t.cells('name')[0]).toBe('item-01');
+      expect(t.table().sort!.direction).toBe('asc');
+    });
+
+    it('ignore un tri sur une colonne absente de la vue', async () => {
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ sort: { active: 'ghost', direction: 'desc' } }));
+      const t = setup();
+      await t.settle();
+      expect(t.table().sort!.active).toBe('');
+      expect(t.cells('name')[0]).toBe('item-01');
+    });
+
+    it('ignore un tri sur une colonne non triable', async () => {
+      const columns = baseColumns().map(c => c.key === 'status' ? { ...c, sortable: false } : c);
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ sort: { active: 'status', direction: 'asc' } }));
+      const t = setup({ columns });
+      await t.settle();
+      expect(t.table().sort!.active).toBe('');
+    });
+
+    it('sauvegarde et restaure l\'ordre des groupes', async () => {
+      const t = setup();
+      await t.settle();
+      t.table().onGroupByChange('team');
+      t.table().onGroupSortToggle('desc');
+      await t.settle();
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!).groupSortOrder).toBe('desc');
+      t.fixture.destroy();
+
+      const restored = setup();
+      await restored.settle();
+      expect(restored.table().groupSortOrder).toBe('desc');
+      expect(restored.groupLabels()).toEqual(['Gamma', 'Beta', 'Alpha']);
+    });
+
+    it('clearPreferences remet le tri de colonne et l\'ordre des groupes par défaut', async () => {
+      const t = setup();
+      await t.settle();
+      t.sortBy('name', 2);
+      await t.settle();
+      t.table().onGroupByChange('team');
+      t.table().onGroupSortToggle('desc');
+      await t.settle();
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!)).toEqual(jasmine.objectContaining({ sort: { active: 'name', direction: 'desc' }, groupSortOrder: 'desc' }));
+
+      t.table().clearPreferences();
+      await t.settle();
+      expect(t.table().sort!.active).toBe('');
+      expect(t.table().sort!.direction).toBe('');
+      expect(t.table().groupSortOrder).toBe('asc');
+      expect(localStorage.getItem('jqt_prefs_spec-table')).toBeNull();
+    });
+
+    it('clearPreferences réapplique defaultSort au lieu du tri utilisateur', async () => {
+      const t = setup({ config: { defaultSort: { active: 'name', direction: 'desc' } } });
+      await t.settle();
+      t.sortBy('score', 1);
+      await t.settle();
+      expect(t.table().sort!.active).toBe('score');
+
+      t.table().clearPreferences();
+      await t.settle();
+      expect(t.table().sort!.active).toBe('name');
+      expect(t.cells('name')[0]).toBe('item-12');
+    });
   });
 
   describe('snapshot visuel', () => {
