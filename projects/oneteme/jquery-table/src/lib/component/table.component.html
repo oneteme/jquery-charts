@@ -99,7 +99,7 @@
             (drop)="onHeaderDrop(column.key, $event)"
           >
             <div class="head-cell">
-              <mat-icon *ngIf="column.icon" class="head-icon" fontSet="material-icons-outlined">{{ column.icon }}</mat-icon>
+              <mat-icon *ngIf="column.icon" class="head-icon" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
               <span class="head-text" [title]="column.header">{{ column.header }}</span>
               <button
                 type="button"

@@ -9,6 +9,8 @@ export interface TableColumnBase<T = any> {
   /** Libellé affiché dans l'en-tête de colonne. Optionnel si la colonne utilise un template custom. */
   header?: string;
   icon?: string;
+  /** Police de l'icône d'en-tête ; `material-icons-outlined` par défaut. Utiliser `material-symbols-outlined` pour les noms absents de Material Icons (ex. `steppers`). */
+  iconFontSet?: 'material-icons-outlined' | 'material-symbols-outlined';
   value?: DataProvider<any>;
   /** Valeur utilisée pour le tri si différente de `value`. Utile quand `value` retourne une chaîne formatée (date, durée...). */
   sortValue?: DataProvider<any>;
