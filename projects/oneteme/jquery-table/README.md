@@ -179,6 +179,7 @@ interface TableColumnProvider<T = any> {
   key:        string;
   header?:    string;                  // Label de l'entête
   icon?:      string;                  // Icône Material (affiché dans l'entête)
+  iconFontSet?: 'material-icons-outlined' | 'material-symbols-outlined'; // Police de l'icône, défaut: material-icons-outlined (entête et menus)
   value?:     DataProvider<any>;       // (row, index) => valeur affichée
   sortValue?: DataProvider<any>;       // Valeur pour le tri si différente de value
   sortable?:  boolean;

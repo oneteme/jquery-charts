@@ -13,7 +13,7 @@ import { defer, Subject, Subscription, take, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
-import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState } from '@oneteme/jquery-organizer';
+import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState, OrganizerIconFontSet } from '@oneteme/jquery-organizer';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
 import { TablePreferencesManager } from './table-preferences.manager';
 import { ExportManager } from './export.manager';
@@ -170,12 +170,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _initialSlicePanelCollapsedApplied = false;
 
   // Délégués vers _view (conservés pour compatibilité template sans refactoring HTML)
-  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> { return this._organizer.staticSlicesForMenu; }
+  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> { return this._organizer.staticSlicesForMenu; }
   get _activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.activeDynamicFields; }
   get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._organizer.sliceBy.availableForDynamic; }
   get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.allDynamicFields; }
   get _activeSliceByLabel(): string { return this._organizer.sliceBy.activeLabel; }
-  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
+  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; col?: TableColumnProvider<T> }> = [];
 
   searchQuery = '';
   get activeGroupByKey(): string | null { return this._organizer.groupBy.activeKey; }
@@ -500,17 +500,20 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         id: c.key,
         label: this.colLabel(c),
         icon: c.icon,
+        iconFontSet: c.iconFontSet,
         state: 'ready' as const,
       })) : undefined,
       groups: this._organizer.showGroupBySection ? this._organizer.groupByFields.map(c => ({
         id: c.key,
         label: this.colLabel(c),
         icon: c.icon,
+        iconFontSet: c.iconFontSet,
       })) : undefined,
       slices: this._organizer.showSliceBySection ? this._sliceByMenuItems.map(item => ({
         id: item.key,
         label: item.title,
         icon: item.icon,
+        iconFontSet: item.iconFontSet,
       })) : undefined,
       buttonLabel: organizerOptions?.buttonLabel,
       buttonIcon: organizerOptions?.buttonIcon,
@@ -945,7 +948,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return this._organizer.showSliceBySection;
   }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
+  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> {
     return this._organizer.staticSlicesForMenu;
   }
 
@@ -1800,21 +1803,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const staticSliceMap = new Map(this._staticSlicesForMenu.map(s => [s.key, s]));
     const dynamicSliceSet = new Set(this._allDynamicSliceColumns.map(c => c.key));
     const seen = new Set<string>();
-    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
+    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; col?: TableColumnProvider<T> }> = [];
     for (const col of this.resolvedConfig.columns ?? []) {
       if (seen.has(col.key)) continue;
       if (staticSliceMap.has(col.key)) {
         const s = staticSliceMap.get(col.key)!;
-        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon });
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet });
         seen.add(col.key);
       } else if (dynamicSliceSet.has(col.key)) {
-        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, col });
+        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, iconFontSet: col.iconFontSet, col });
         seen.add(col.key);
       }
     }
     for (const s of this._staticSlicesForMenu) {
       if (!seen.has(s.key)) {
-        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon });
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet });
       }
     }
     this._sliceByMenuItems = items;
@@ -2389,6 +2392,7 @@ function serializableColumn<T>(column: TableColumnProvider<T>): Record<string, u
     key: column.key,
     header: column.header,
     icon: column.icon,
+    iconFontSet: column.iconFontSet,
     sortable: column.sortable,
     removable: column.removable,
     optional: column.optional,

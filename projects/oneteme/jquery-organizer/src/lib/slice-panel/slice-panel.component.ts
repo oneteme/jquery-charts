@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { SliceCategory, SliceColumnDef, SliceConfig } from './slice-panel.model';
+import type { OrganizerIconFontSet } from '../models/organizer-config.interface';
 import { buildCategoriesFromRows, CategoryDisplayOptions } from './slice-categories';
 
 const I18N = {
@@ -201,6 +202,12 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       return (this.columns || []).find(c => c.key === slice.columnKey)?.icon;
     }
     return undefined;
+  }
+
+  getSliceIconFontSet(slice: SliceConfig<T>): OrganizerIconFontSet {
+    if (slice.icon) return slice.iconFontSet ?? 'material-icons-outlined';
+    const column = slice.columnKey ? (this.columns || []).find(c => c.key === slice.columnKey) : undefined;
+    return column?.iconFontSet ?? 'material-icons-outlined';
   }
 
   isSliceCategoryActive(sliceIndex: number, categoryKey: string): boolean {

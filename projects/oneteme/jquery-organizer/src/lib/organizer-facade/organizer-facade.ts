@@ -1,6 +1,7 @@
 import { Subject } from 'rxjs';
 import { ChartOrganizerEvent, ChartOrganizerState } from '@oneteme/jquery-core';
 import { OrganizerFieldDef, OrganizerFieldsState, OrganizerGroupByState, OrganizerPanelConfig, OrganizerSliceByState } from './organizer-facade.types';
+import type { OrganizerIconFontSet } from '../models/organizer-config.interface';
 
 export function humanizeKey(key: string): string {
   return key
@@ -89,12 +90,17 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return field?.header || this.groupBy.activeKey;
   }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
+  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> {
     return (this._panelConfig.sliceConfigs ?? [])
       .filter(s => !!s.columnKey)
       .map(s => {
-        const fieldIcon = (this._panelConfig.fields ?? []).find(c => c.key === s.columnKey)?.icon;
-        return { key: s.columnKey!, title: s.title || humanizeKey(s.columnKey!), icon: s.icon ?? fieldIcon };
+        const fieldDef = (this._panelConfig.fields ?? []).find(c => c.key === s.columnKey);
+        return {
+          key: s.columnKey!,
+          title: s.title || humanizeKey(s.columnKey!),
+          icon: s.icon ?? fieldDef?.icon,
+          iconFontSet: s.icon ? s.iconFontSet : fieldDef?.iconFontSet,
+        };
       });
   }
 

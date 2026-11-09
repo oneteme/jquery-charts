@@ -290,11 +290,11 @@ describe('OrganizerFacade', () => {
     it('staticSlicesForMenu : titre, titre dérivé de la clé et icône de la colonne', () => {
       const { facade } = setup(
         { sliceConfigs: [{ title: 'Statut', columnKey: 'status' }, { columnKey: 'createdAt' }, { title: 'Sans clé' }] },
-        [{ key: 'status', header: 'S', icon: 'flag' }, { key: 'createdAt', header: 'C' }],
+        [{ key: 'status', header: 'S', icon: 'flag', iconFontSet: 'material-symbols-outlined' }, { key: 'createdAt', header: 'C' }],
       );
       expect(facade.staticSlicesForMenu).toEqual([
-        { key: 'status', title: 'Statut', icon: 'flag' },
-        { key: 'createdAt', title: 'Created At', icon: undefined },
+        { key: 'status', title: 'Statut', icon: 'flag', iconFontSet: 'material-symbols-outlined' },
+        { key: 'createdAt', title: 'Created At', icon: undefined, iconFontSet: undefined },
       ]);
     });
 

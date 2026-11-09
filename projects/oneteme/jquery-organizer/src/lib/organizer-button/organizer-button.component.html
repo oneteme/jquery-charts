@@ -278,7 +278,7 @@
       *ngFor="let field of config.fields"
       [class.active]="isFieldVisible(field.id)"
       (click)="onFieldToggle(field.id, !isFieldVisible(field.id))">
-      <span class="organizer-submenu-check">{{ isFieldVisible(field.id) ? '✓' : '' }}</span>      <mat-icon *ngIf="field.icon" class="organizer-submenu-icon">{{ field.icon }}</mat-icon>      {{ field.label }}
+      <span class="organizer-submenu-check">{{ isFieldVisible(field.id) ? '✓' : '' }}</span>      <mat-icon *ngIf="field.icon" class="organizer-submenu-icon" [fontSet]="field.iconFontSet ?? 'material-icons-outlined'">{{ field.icon }}</mat-icon>      {{ field.label }}
     </button>
   </div>
 </mat-menu>
@@ -293,7 +293,7 @@
       *ngFor="let group of config.groups"
       [class.active]="state?.selectedGroupBy === group.id"
       (click)="onGroupBySelect(group.id)">
-      <span class="organizer-submenu-check">{{ state?.selectedGroupBy === group.id ? '✓' : '' }}</span>      <mat-icon *ngIf="group.icon" class="organizer-submenu-icon">{{ group.icon }}</mat-icon>      {{ group.label }}
+      <span class="organizer-submenu-check">{{ state?.selectedGroupBy === group.id ? '✓' : '' }}</span>      <mat-icon *ngIf="group.icon" class="organizer-submenu-icon" [fontSet]="group.iconFontSet ?? 'material-icons-outlined'">{{ group.icon }}</mat-icon>      {{ group.label }}
     </button>
   </div>
 </mat-menu>
@@ -308,7 +308,7 @@
       *ngFor="let slice of config.slices"
       [class.active]="state?.selectedSlices?.includes(slice.id)"
       (click)="onSliceClick(slice.id)">
-      <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>      <mat-icon *ngIf="slice.icon" class="organizer-submenu-icon">{{ slice.icon }}</mat-icon>      {{ slice.label }}
+      <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>      <mat-icon *ngIf="slice.icon" class="organizer-submenu-icon" [fontSet]="slice.iconFontSet ?? 'material-icons-outlined'">{{ slice.icon }}</mat-icon>      {{ slice.label }}
     </button>
   </div>
 </mat-menu>

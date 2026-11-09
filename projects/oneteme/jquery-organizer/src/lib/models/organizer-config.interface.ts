@@ -3,10 +3,13 @@ import { SliceConfig } from '../slice-panel/slice-panel.model';
 import { UnitConfig } from '@oneteme/jquery-core';
 
 export type FieldState = 'ready' | 'loading' | 'error';
+/** Police des icônes de colonne ; `material-icons-outlined` par défaut, comme dans l'en-tête du tableau. */
+export type OrganizerIconFontSet = 'material-icons-outlined' | 'material-symbols-outlined';
 export interface OrganizerViewField {
   id: string;
   label: string;
   icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
   visible?: boolean;
   state?: FieldState;
 }
@@ -44,12 +47,14 @@ export interface OrganizerViewGroup {
   id: string;
   label: string;
   icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
 }
 
 export interface OrganizerViewSlice {
   id: string;
   label: string;
   icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
   /** Libellé affiché pour une valeur de slice ; la clé brute reste utilisée pour le filtrage. */
   formatLabel?: (raw: string) => string;
   /** Ordre d'affichage des valeurs de slice ; par défaut, tri natif des clés. */

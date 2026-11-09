@@ -502,6 +502,20 @@ describe('TableComponent', () => {
       expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'c', 'a']);
     });
 
+    it('transmet la police des icônes au menu Champs et au groupement', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom', icon: 'person' },
+          { key: 'steps', header: 'Étapes', icon: 'steppers', iconFontSet: 'material-symbols-outlined' },
+        ],
+      });
+      await t.settle();
+      const fields = t.table().organizerConfig.fields!;
+      expect(fields.find(f => f.id === 'name')!.iconFontSet).toBeUndefined();
+      expect(fields.find(f => f.id === 'steps')!.iconFontSet).toBe('material-symbols-outlined');
+      expect(t.table().organizerConfig.groups!.find(g => g.id === 'steps')!.iconFontSet).toBe('material-symbols-outlined');
+    });
+
     it('refuse une colonne sans nom optionnelle ou lazy', () => {
       const optional = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, optional: true }] as TableColumnProvider<Row>[];
       const lazy = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, lazy: true }] as TableColumnProvider<Row>[];
