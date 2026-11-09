@@ -469,6 +469,7 @@ describe('TableComponent', () => {
       expect(t.cells('rank')[0]).toBe('#1');
       expect(t.table()._organizer.menuBaseFields.map(column => column.key)).toEqual(['name']);
       expect(t.table()._organizer.menuOptionalFields.map(column => column.key)).toEqual(['score']);
+      expect(t.root().querySelector('.head-text:empty')?.hasAttribute('title')).toBe(false);
     });
 
     it('refuse une colonne sans nom optionnelle ou lazy', () => {

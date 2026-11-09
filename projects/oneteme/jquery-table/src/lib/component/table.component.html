@@ -100,7 +100,7 @@
           >
             <div class="head-cell">
               <mat-icon *ngIf="column.icon" class="head-icon" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
-              <span class="head-text" [title]="column.header">{{ column.header }}</span>
+              <span class="head-text" [attr.title]="column.header || null">{{ column.header }}</span>
               <button
                 type="button"
                 *ngIf="isColumnDragDropEnabled || _editMode"
