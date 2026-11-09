@@ -290,11 +290,11 @@ describe('OrganizerFacade', () => {
     it('staticSlicesForMenu : titre, titre dérivé de la clé et icône de la colonne', () => {
       const { facade } = setup(
         { sliceConfigs: [{ title: 'Statut', columnKey: 'status' }, { columnKey: 'createdAt' }, { title: 'Sans clé' }] },
-        [{ key: 'status', header: 'S', icon: 'flag' }, { key: 'createdAt', header: 'C' }],
+        [{ key: 'status', header: 'S', icon: 'flag', iconFontSet: 'material-symbols-outlined' }, { key: 'createdAt', header: 'C' }],
       );
       expect(facade.staticSlicesForMenu).toEqual([
-        { key: 'status', title: 'Statut', icon: 'flag' },
-        { key: 'createdAt', title: 'Created At', icon: undefined },
+        { key: 'status', title: 'Statut', icon: 'flag', iconFontSet: 'material-symbols-outlined' },
+        { key: 'createdAt', title: 'Created At', icon: undefined, iconFontSet: undefined },
       ]);
     });
 
@@ -310,6 +310,35 @@ describe('OrganizerFacade', () => {
 
       facade.updateHiddenStaticKeys(new Set());
       expect(facade.sliceBy.activeLabel).toBe('2 actifs');
+    });
+  });
+
+  describe('champs sans nom (inFieldsMenu)', () => {
+    it('exclut du menu Champs les colonnes marquées inFieldsMenu: false, base comme optionnelles', () => {
+      const { facade } = setup({}, [
+        { key: 'name', header: 'Nom' },
+        { key: 'hidden', inFieldsMenu: false },
+        { key: 'team', header: 'Équipe', optional: true },
+        { key: 'hiddenOptional', optional: true, inFieldsMenu: false },
+      ]);
+      expect(keys(facade.menuBaseFields)).toEqual(['name']);
+      expect(keys(facade.menuOptionalFields)).toEqual(['team']);
+      expect(facade.totalFieldCount).toBe(2);
+    });
+
+    it('garde la colonne sans nom non optionnelle active et hors Group by', () => {
+      const { facade } = setup({}, [
+        { key: 'name', header: 'Nom' },
+        { key: 'hidden', inFieldsMenu: false },
+      ]);
+      expect(keys(facade.fields.activeFields)).toEqual(['name', 'hidden']);
+      expect(keys(facade.groupByFields)).toEqual(['name']);
+    });
+
+    it('une colonne sans nom sans inFieldsMenu reste dans le menu avec un libellé humanisé', () => {
+      const { facade } = setup({}, [{ key: 'my_col', optional: true }]);
+      expect(keys(facade.menuOptionalFields)).toEqual(['my_col']);
+      expect(facade.fieldLabel({ key: 'my_col' })).toBe(humanizeKey('my_col'));
     });
   });
 

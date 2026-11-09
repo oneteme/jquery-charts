@@ -157,8 +157,10 @@ interface TableProvider<T = any> {
   export?:       TableExportConfig<T>;
   lazyLoader?:   (lazyColumns: string[]) => Observable<T[]>;  // Charge les colonnes lazy (lignes complètes)
   preferences?:  TablePreferencesConfig;  // Sauvegarde dans localStorage
+  pinning?:      TablePinningConfig;      // Épinglage d'une colonne à gauche (activé par défaut)
+  columnMinWidth?: number;                // Largeur minimale en px des colonnes sans minWidth ni width (aucune valeur par défaut)
 
-  defaultSort?:    { active: string; direction: 'asc' | 'desc' };
+  defaultSort?:     { active: string; direction: 'asc' | 'desc' };
   defaultGroupBy?: string | null;          // Group by initial au chargement
   rowClass?:       (row: T, index: number) => string | string[] | Record<string, boolean>;
   onRowSelected?:  (row: T, event: MouseEvent | null) => void; // Alternative au Output (rowSelected)
@@ -177,22 +179,27 @@ interface TableColumnProvider<T = any> {
   key:        string;
   header?:    string;                  // Label de l'entête
   icon?:      string;                  // Icône Material (affiché dans l'entête)
+  iconFontSet?: 'material-icons-outlined' | 'material-symbols-outlined'; // Police de l'icône, défaut: material-icons-outlined (entête et menus)
   value?:     DataProvider<any>;       // (row, index) => valeur affichée
   sortValue?: DataProvider<any>;       // Valeur pour le tri si différente de value
   sortable?:  boolean;
   width?:     string;                  // Largeur CSS en px uniquement pour le calcul min-width (ex: '120px')
                                        // Les unités %, em, rem sont ignorées dans le calcul de tableMinWidth
+  minWidth?:  number;                  // Largeur minimale en px. Aucune valeur par défaut : sans minWidth, la colonne peut être réduite à 0 px
 
   optional?:  boolean;                 // Colonne masquée par défaut, ajoutables via View menu (implicite pour une colonne lazy)
   removable?: boolean;                 // Peut être retirée manuellement
 
   groupable?: boolean;                 // Disponible comme critère de regroupement dans View menu
   sliceable?: boolean;                 // Disponible comme slice dynamique dans View menu
+  inFieldsMenu?: boolean;              // false : absente du menu Champs (Organizer). Pour une colonne sans header, toujours affichée
   searchValue?: DataProvider<string>;  // Valeur utilisée par la recherche texte (si différente de value)
 
   lazy?: true;                         // Absente de la requête de base, forcément optionnelle : demandée à sa première activation
 }
 ```
+
+Une colonne **sans `header`** n'apparaît pas dans le menu Champs si elle porte `inFieldsMenu: false`. Elle reste affichée par défaut : `optional: true` et `lazy: true` sont refusés (erreur explicite) pour ce cas, car la colonne ne pourrait plus être réactivée depuis le menu. Sans `inFieldsMenu: false`, elle apparaît dans le menu Champs avec un libellé dérivé de sa clé. Elle reste exclue du Group by et du Slice by, sauf `groupable: true` / `sliceable: true`.
 
 ---
 
@@ -673,6 +680,37 @@ interface TablePreferencesConfig {
 La configuration est persistée sous la clé `jqt_prefs_<tableId>` et restaurée automatiquement au chargement suivant.
 
 Le nombre de lignes (`pageSize` en mode normal, `groupPageSize` en mode Group by, `0` = tout afficher) est restauré uniquement s'il figure encore dans `pagination.pageSizeOptions` / `pageSizeOptionsGroupBy` ; sinon la valeur de la config est conservée. L'index de page n'est pas sauvegardé.
+
+---
+
+## Fonctionnalité — Épinglage de colonne (`TablePinningConfig`)
+
+Activée par défaut. Un bouton punaise (`push_pin`) est placé à gauche du titre de chaque en-tête (le tri reste à droite). Pour la désactiver : `pinning: { enabled: false }`.
+
+- Le bouton n'apparaît que lorsque le tableau défile horizontalement (débordement de largeur, mesuré en continu).
+- Si la colonne possède une icône, le bouton la recouvre au survol de l'en-tête.
+- Une seule colonne peut être épinglée à la fois. Elle est placée en première position et reste visible lors du défilement horizontal, au-dessus des autres en-têtes et cellules.
+- Tant qu'une colonne est épinglée, les boutons des autres colonnes sont désactivés : il faut d'abord désépingler la colonne active.
+- Un second clic sur la punaise de la colonne épinglée la désépingle et la remet à sa position d'origine (mémorisée au moment de l'épinglage).
+- Si la colonne épinglée est masquée, l'épingle est retirée.
+- L'épingle est sauvegardée avec les préférences (`pinnedColumn`) lorsque `preferences` est activé et que l'utilisateur enregistre. Après restauration, la position d'origine n'est pas connue : le désépinglage laisse la colonne en place.
+
+```ts
+interface TablePinningConfig {
+  /** Affiche le bouton d'épinglage dans chaque en-tête (visible seulement si le tableau défile horizontalement). Par défaut : true. */
+  enabled?: boolean;
+}
+```
+
+### Largeur minimale commune (`columnMinWidth`)
+
+`columnMinWidth` (en px, au niveau du `TableProvider`) s'applique aux colonnes qui n'ont ni `minWidth` ni `width` explicite. Le `minWidth` d'une colonne reste prioritaire. Aucune valeur par défaut : sans cette option, ces colonnes peuvent être réduites à 0 px quand le tableau est plein.
+
+```ts
+columnMinWidth: 120
+```
+
+Limite : une colonne dont la `width` est un pourcentage (ex. `'15%'`) ne peut pas recevoir de minimum, car les cellules utilisent `table-layout: fixed`. Pour un minimum garanti, utiliser une `width` en px ou un `minWidth`.
 
 ---
 

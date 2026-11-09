@@ -95,19 +95,36 @@
             [class.drag-enabled]="isColumnDragDropEnabled || _editMode"
             [class.drop-target]="isHeaderDropTarget(column.key)"
             [class.edit-mode-header]="_editMode"
+            [class.col-pinned]="isColumnPinned(column.key)"
             (dragover)="onHeaderDragOver(column.key, $event)"
             (drop)="onHeaderDrop(column.key, $event)"
           >
-            <div class="head-cell">
-              <mat-icon *ngIf="column.icon" class="head-icon" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
-              <span class="head-text" [title]="column.header">{{ column.header }}</span>
+            <div class="head-cell" [class.has-icon]="!!column.icon" [class.has-pin]="showPinButton(column.key)">
+              <span class="head-lead">
+                <mat-icon *ngIf="column.icon" class="head-icon" [class.covered]="isColumnPinned(column.key)" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
+                <button
+                  type="button"
+                  *ngIf="showPinButton(column.key)"
+                  class="pin-btn"
+                  [class.pinned]="isColumnPinned(column.key)"
+                  [disabled]="!canPinColumn(column.key)"
+                  [attr.aria-pressed]="isColumnPinned(column.key)"
+                  [attr.aria-label]="pinButtonTitle(column.key) + ' : ' + colLabel(column)"
+                  [attr.title]="pinButtonTitle(column.key)"
+                  (click)="$event.stopPropagation(); togglePinColumn(column.key)"
+                  (keydown)="$event.stopPropagation()"
+                >
+                  <mat-icon>push_pin</mat-icon>
+                </button>
+              </span>
+              <span class="head-text" [attr.title]="column.header || null">{{ column.header }}</span>
               <button
                 type="button"
                 *ngIf="isColumnDragDropEnabled || _editMode"
                 class="drag-handle"
                 draggable="true"
                 tabindex="0"
-                [attr.aria-label]="'Réordonner la colonne ' + column.header"
+                [attr.aria-label]="'Réordonner la colonne ' + colLabel(column)"
                 (dragstart)="onHeaderDragStart(column.key, $event)"
                 (dragend)="onHeaderDragEnd()"
                 (keydown)="onHeaderKeyDown(column.key, $event)"
@@ -126,6 +143,7 @@
           </th>
           <td mat-cell *matCellDef="let row"
             [style.width]="getColumnWidth(column.key)"
+            [class.col-pinned]="isColumnPinned(column.key)"
             [class.edit-mode-cell]="_editMode">
             <ng-container *ngIf="!_editMode; else editModeCellTpl">
               <ng-container [ngSwitch]="column.lazy ? getLazyRenderType(row[column.key]) : 'value'">

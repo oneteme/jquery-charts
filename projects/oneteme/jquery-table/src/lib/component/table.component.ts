@@ -13,7 +13,7 @@ import { defer, Subject, Subscription, take, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
 import { JqtCellDefDirective } from '../directive/jqt-cell-def.directive';
-import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState } from '@oneteme/jquery-organizer';
+import { SliceConfig, SlicePanelComponent, OrganizerFacade, GroupByManager, OrganizerConfig, OrganizerButtonEvent, OrganizerState, OrganizerIconFontSet } from '@oneteme/jquery-organizer';
 import { getFrenchPaginatorIntl, humanizeKey, normalizeCellValue } from './table.utils';
 import { TablePreferencesManager } from './table-preferences.manager';
 import { ExportManager } from './export.manager';
@@ -170,12 +170,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _initialSlicePanelCollapsedApplied = false;
 
   // Délégués vers _view (conservés pour compatibilité template sans refactoring HTML)
-  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> { return this._organizer.staticSlicesForMenu; }
+  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> { return this._organizer.staticSlicesForMenu; }
   get _activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.activeDynamicFields; }
   get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._organizer.sliceBy.availableForDynamic; }
   get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.allDynamicFields; }
   get _activeSliceByLabel(): string { return this._organizer.sliceBy.activeLabel; }
-  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
+  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; col?: TableColumnProvider<T> }> = [];
 
   searchQuery = '';
   get activeGroupByKey(): string | null { return this._organizer.groupBy.activeKey; }
@@ -218,6 +218,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _paginatorIntl = inject(MatPaginatorIntl);
   private _i18nRaw = inject(JQT_I18N, { optional: true });
   private _tableShellResizeObserver?: ResizeObserver;
+  private _tableOverflowObserver?: ResizeObserver;
+  /** Vrai quand le tableau déborde de son conteneur (défilement) : le bouton d'épinglage n'est alors proposé. */
+  private _isScrollable = false;
   private readonly _fullItemsPerPageLabel = this._paginatorIntl.itemsPerPageLabel;
   copyFeedbackMessage = '';
   private _copyFeedbackTimer?: number;
@@ -273,6 +276,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   _editMode = false;
   /** Largeurs de colonnes personnalisées par l'utilisateur (clé → px). */
   _columnWidths: Record<string, number> = {};
+  /** Clé de la colonne épinglée à gauche (une seule au maximum). `null` = aucune. */
+  _pinnedColumnKey: string | null = null;
+  /** Position de la colonne épinglée avant l'épinglage, pour la remettre à sa place au désépinglage. */
+  private _pinnedOriginalIndex: number | null = null;
   /** Message de feedback après save/clear. `null` = pas de message. */
   _preferencesMessage: string | null = null;
   /** Vrai si une configuration est sauvegardée pour ce tableau. */
@@ -349,7 +356,28 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.attachSort();
     this._measureHeaderHeight();
     this._observeTableShellWidth();
+    this._observeTableOverflow();
     this._applyPendingDynamicSliceKeys();
+  }
+
+  private _observeTableOverflow(): void {
+    const scroller = this.tableBodyScrollRef?.nativeElement;
+    if (!scroller || typeof ResizeObserver === 'undefined') return;
+
+    this._tableOverflowObserver = new ResizeObserver(() => this._updateScrollable());
+    this._tableOverflowObserver.observe(scroller);
+    const table = scroller.querySelector('table');
+    if (table) this._tableOverflowObserver.observe(table);
+  }
+
+  private _updateScrollable(): void {
+    const scroller = this.tableBodyScrollRef?.nativeElement;
+    const scrollable = !!scroller && scroller.scrollWidth > scroller.clientWidth;
+    if (scrollable === this._isScrollable) return;
+    this._ngZone.run(() => {
+      this._isScrollable = scrollable;
+      this._cdr.markForCheck();
+    });
   }
 
   private _observeTableShellWidth(): void {
@@ -401,6 +429,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   ngOnDestroy(): void {
     this._destroyed = true;
     this._tableShellResizeObserver?.disconnect();
+    this._tableOverflowObserver?.disconnect();
     if (this._copyFeedbackTimer !== undefined) window.clearTimeout(this._copyFeedbackTimer);
     if (this._pendingRender !== null) {
       clearTimeout(this._pendingRender);
@@ -453,27 +482,38 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   private _organizerConfigCache: OrganizerConfig | null = null;
+  private _organizerConfigSignature = '';
   private _invalidateOrganizerConfig(): void { this._organizerConfigCache = null; }
   get organizerConfig(): OrganizerConfig {
-    if (this._organizerConfigCache) return this._organizerConfigCache;
-    const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
+    const activeKeys = this.visibleColumns.map(c => c.key);
+    const signature = activeKeys.join('\u0000');
+    if (this._organizerConfigCache && signature === this._organizerConfigSignature) return this._organizerConfigCache;
+    this._organizerConfigSignature = signature;
+    // Les champs actifs remontent en tête, dans leur ordre d'affichage ; les autres gardent l'ordre de configuration.
+    const activeRank = new Map(activeKeys.map((key, index) => [key, index]));
+    const rankOf = (key: string) => activeRank.get(key) ?? Number.MAX_SAFE_INTEGER;
+    const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields]
+      .sort((a, b) => rankOf(a.key) - rankOf(b.key));
     const organizerOptions = this.resolvedConfig.organizer;
     this._organizerConfigCache = {
       fields: this._organizer.showFields ? allCols.map(c => ({
         id: c.key,
         label: this.colLabel(c),
         icon: c.icon,
+        iconFontSet: c.iconFontSet,
         state: 'ready' as const,
       })) : undefined,
       groups: this._organizer.showGroupBySection ? this._organizer.groupByFields.map(c => ({
         id: c.key,
         label: this.colLabel(c),
         icon: c.icon,
+        iconFontSet: c.iconFontSet,
       })) : undefined,
       slices: this._organizer.showSliceBySection ? this._sliceByMenuItems.map(item => ({
         id: item.key,
         label: item.title,
         icon: item.icon,
+        iconFontSet: item.iconFontSet,
       })) : undefined,
       buttonLabel: organizerOptions?.buttonLabel,
       buttonIcon: organizerOptions?.buttonIcon,
@@ -498,8 +538,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get organizerState(): OrganizerState {
+    const menuKeys = new Set([...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields].map(c => c.key));
     return {
-      visibleFields: this.visibleColumns.map(c => c.key),
+      visibleFields: this.visibleColumns.map(c => c.key).filter(key => menuKeys.has(key)),
       selectedGroupBy: this.activeGroupByKey ?? undefined,
       selectedSlices: this._sliceByMenuItems
         .filter(i => this.isSliceMenuItemActive(i))
@@ -907,7 +948,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return this._organizer.showSliceBySection;
   }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string }> {
+  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> {
     return this._organizer.staticSlicesForMenu;
   }
 
@@ -1068,27 +1109,36 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return `Sélectionner la ligne ${(row?.[ROW_INDEX_KEY] ?? 0) + 1}`;
   }
 
-  /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives.
-   * Retourne null si aucune colonne n'a de largeur définie (le tableau remplit alors 100% du conteneur).
-   * Seules les valeurs explicitement en `px` sont sommables ; les pourcentages ou autres unités sont ignorés. */
+  /** Largeur minimale effective d'une colonne : son `minWidth`, sinon `columnMinWidth` du tableau. */
+  private _effectiveMinWidth(col: TableColumnProvider<T>): number | undefined {
+    return col.minWidth ?? this.resolvedConfig.columnMinWidth;
+  }
+
+  /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives
+   * (redimensionnement, `width` en px ou largeur minimale effective). Retourne null si aucune colonne n'a de largeur explicite
+   * (le tableau remplit alors 100% du conteneur). Une colonne sans largeur explicite ne contribue pas. */
   get tableMinWidth(): string | null {
-    const hasResized = Object.keys(this._columnWidths).length > 0;
-    const hasSomeExplicitWidth = hasResized || this.activeFields.some(c => c.width);
-    if (!hasSomeExplicitWidth) return null;
     let sum = 0;
+    let hasExplicitWidth = false;
     for (const col of this.activeFields) {
       if (this._columnWidths[col.key] != null) {
         sum += this._columnWidths[col.key];
-      } else if (col.width) {
-        const isPx = col.width.trim().toLowerCase().endsWith('px');
-        const px = Number.parseFloat(col.width);
-        if (isPx && !Number.isNaN(px)) { sum += px; }
-      } else {
-        sum += 120; // largeur minimale estimée pour une colonne sans largeur explicite
+        hasExplicitWidth = true;
+        continue;
+      }
+      const px = col.width?.trim().toLowerCase().endsWith('px') ? Number.parseFloat(col.width) : NaN;
+      const minWidth = this._effectiveMinWidth(col);
+      if (!Number.isNaN(px)) {
+        sum += px;
+        hasExplicitWidth = true;
+      } else if (minWidth != null) {
+        sum += minWidth;
+        hasExplicitWidth = true;
       }
     }
-    return sum + 'px';
+    return hasExplicitWidth ? sum + 'px' : null;
   }
+
 
   trackRowFn = (_index: number, row: any): any => {
     if (row[GROUP_HEADER_MARKER]) return `__group_${row[ROW_GROUP_KEY]}`;
@@ -1238,11 +1288,85 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     });
   }
 
-  /** Retourne la largeur CSS d'une colonne (px si personnalisée, sinon la valeur de config ou auto). */
+  /** Retourne la largeur CSS d'une colonne : px redimensionné, sinon `width` de config, sinon largeur minimale effective, sinon auto. */
   getColumnWidth(key: string): string {
     if (this._columnWidths[key] != null) return this._columnWidths[key] + 'px';
     const col = this._columnMap.get(key);
-    return col?.width ?? 'auto';
+    if (col?.width) return col.width;
+    const minWidth = col ? this._effectiveMinWidth(col) : undefined;
+    if (minWidth != null) return minWidth + 'px';
+    return 'auto';
+  }
+
+  // ── Épinglage de colonne
+
+  get isPinningEnabled(): boolean {
+    return this.resolvedConfig.pinning?.enabled !== false;
+  }
+
+  isColumnPinned(key: string): boolean {
+    return this._pinnedColumnKey === key;
+  }
+
+  /** Le bouton est proposé quand le tableau défile, ou toujours pour la colonne déjà épinglée (pour pouvoir la désépingler). */
+  showPinButton(key: string): boolean {
+    return this.isPinningEnabled && (this._isScrollable || this.isColumnPinned(key));
+  }
+
+  /** Une seule colonne épinglée à la fois : les autres boutons sont désactivés tant qu'une colonne est épinglée. */
+  canPinColumn(key: string): boolean {
+    return this._pinnedColumnKey === null || this._pinnedColumnKey === key;
+  }
+
+  pinButtonTitle(key: string): string {
+    if (this.isColumnPinned(key)) return 'Désépingler la colonne';
+    if (!this.canPinColumn(key)) {
+      const pinned = this._columnMap.get(this._pinnedColumnKey!);
+      return 'Désépinglez d\'abord ' + (pinned ? this.colLabel(pinned) : 'la colonne épinglée');
+    }
+    return 'Épingler à gauche';
+  }
+
+  /** Épingle la colonne (placée en tête) ou la désépingle si elle l'était. Sans effet si une autre colonne est épinglée. */
+  togglePinColumn(key: string): void {
+    if (!this.isPinningEnabled || !this.canPinColumn(key)) return;
+    if (this._pinnedColumnKey === key) {
+      this._unpinColumn();
+    } else {
+      this._pinnedOriginalIndex = this._organizer.fields.activeFields.findIndex(c => c.key === key);
+      this._pinnedColumnKey = key;
+    }
+    this.refreshViewModel();
+  }
+
+  /** Remet la colonne épinglée à sa position d'origine (index mémorisé avant l'épinglage). */
+  private _unpinColumn(): void {
+    const key = this._pinnedColumnKey;
+    const index = this._pinnedOriginalIndex;
+    this._pinnedColumnKey = null;
+    this._pinnedOriginalIndex = null;
+    const fields = this._organizer.fields.activeFields;
+    const column = fields.find(c => c.key === key);
+    if (!column || index === null || index < 0) return;
+    const others = fields.filter(c => c !== column);
+    others.splice(Math.min(index, others.length), 0, column);
+    this._organizer.setActiveFields(others);
+  }
+
+  /** Garantit que la colonne épinglée reste en première position de activeFields.
+   * Efface l'épingle si la colonne n'est plus visible. */
+  private _applyPinnedOrder(): void {
+    if (!this.isPinningEnabled || this._pinnedColumnKey === null) return;
+    const fields = this._organizer.fields.activeFields;
+    if (fields.length === 0) return;
+    const pinned = fields.find(c => c.key === this._pinnedColumnKey);
+    if (!pinned) {
+      this._pinnedColumnKey = null;
+      this._pinnedOriginalIndex = null;
+      return;
+    }
+    if (fields[0] === pinned) return;
+    this._organizer.setActiveFields([pinned, ...fields.filter(c => c !== pinned)]);
   }
 
   // ── Préférences : save / clear
@@ -1258,6 +1382,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       pageSize:            this.paginator?.pageSize ?? this.pageSize,
       groupPageSize:       this.groupPageSize,
       columnWidths:        Object.keys(this._columnWidths).length ? { ...this._columnWidths } : undefined,
+      pinnedColumn:        this._pinnedColumnKey,
       slicePanelCollapsed: this._slicePanelCollapsed,
       hiddenSliceKeys:     [...this._staticSliceHiddenKeys],
       dynamicSliceKeys:    dynamicSliceKeys.length ? dynamicSliceKeys : undefined,
@@ -1283,6 +1408,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Reset complet de l'état vers les valeurs par défaut de la config
     this.searchQuery = '';
     this._columnWidths = {};
+    this._pinnedColumnKey = null;
+    this._pinnedOriginalIndex = null;
     this._slicePanelCollapsed = false;
     // Synchroniser l'état interne du slice-panel : si le composant est en état collapsed
     // (l'utilisateur l'avait fermé après la sauvegarde), le rouvrir explicitement pour
@@ -1352,6 +1479,11 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (saved.search) this.searchQuery = saved.search;
     // Largeurs colonnes
     if (saved.columnWidths) this._columnWidths = { ...saved.columnWidths };
+    // Colonne épinglée (validée ensuite par _applyPinnedOrder : colonne doit être visible)
+    if (saved.pinnedColumn !== undefined && this.isPinningEnabled) {
+      this._pinnedColumnKey = saved.pinnedColumn;
+      this._pinnedOriginalIndex = null;
+    }
     // Group by
     if (saved.groupBy !== undefined) {
       this.setGroupByAndEmit(saved.groupBy);
@@ -1628,6 +1760,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this.emitColumnsChangeIfNeeded();
     }
 
+    // La colonne épinglée reste toujours en première position (après restauration des préférences)
+    this._applyPinnedOrder();
+    this.activeFields = this._organizer.fields.activeFields;
+    this.renderedColumns = this.activeFields.map(c => c.key);
+    this.emitColumnsChangeIfNeeded();
+
     // Propriétés stables pour les bindings du template
     // On recalcule _sliceConfigs en reflétant l'état courant des slices cachées,
     // pour que SlicePanelComponent.ngOnInit reçoive la bonne valeur de `hidden`
@@ -1665,21 +1803,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const staticSliceMap = new Map(this._staticSlicesForMenu.map(s => [s.key, s]));
     const dynamicSliceSet = new Set(this._allDynamicSliceColumns.map(c => c.key));
     const seen = new Set<string>();
-    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; col?: TableColumnProvider<T> }> = [];
+    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; col?: TableColumnProvider<T> }> = [];
     for (const col of this.resolvedConfig.columns ?? []) {
       if (seen.has(col.key)) continue;
       if (staticSliceMap.has(col.key)) {
         const s = staticSliceMap.get(col.key)!;
-        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon });
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet });
         seen.add(col.key);
       } else if (dynamicSliceSet.has(col.key)) {
-        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, col });
+        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, iconFontSet: col.iconFontSet, col });
         seen.add(col.key);
       }
     }
     for (const s of this._staticSlicesForMenu) {
       if (!seen.has(s.key)) {
-        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon });
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet });
       }
     }
     this._sliceByMenuItems = items;
@@ -1800,11 +1938,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Une colonne lazy est forcément optionnelle : `optional` est implicite, et `optional: false` est refusé. */
   private _normalizeColumns(columns: TableColumnProvider<T>[]): TableColumnProvider<T>[] {
     if (columns === this._columnsSource) return this._columnsNormalized!;
+    columns.forEach(column => this._assertUnnamedColumnIsRequired(column));
     const normalized = columns.map(column => this._withImpliedOptional(column));
     const result = normalized.some((column, index) => column !== columns[index]) ? normalized : columns;
     this._columnsSource = columns;
     this._columnsNormalized = result;
     return result;
+  }
+
+  /** Une colonne sans `header` ne peut être ni optionnelle ni lazy : elle ne pourrait plus être activée depuis l'UI. */
+  private _assertUnnamedColumnIsRequired(column: TableColumnProvider<T>): void {
+    if (column.header || !(column.optional || column.lazy)) return;
+    throw new Error(
+      `[jquery-table] La colonne '${column.key}' n'a pas de header : elle doit être affichée par défaut. `
+      + 'optional et lazy sont refusés pour une colonne sans header, car elle ne pourrait plus être activée depuis le menu Champs.',
+    );
   }
 
   private _withImpliedOptional(column: TableColumnProvider<T>): TableColumnProvider<T> {
@@ -2244,6 +2392,7 @@ function serializableColumn<T>(column: TableColumnProvider<T>): Record<string, u
     key: column.key,
     header: column.header,
     icon: column.icon,
+    iconFontSet: column.iconFontSet,
     sortable: column.sortable,
     removable: column.removable,
     optional: column.optional,

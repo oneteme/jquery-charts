@@ -6,7 +6,10 @@ export { SliceConfig } from '@oneteme/jquery-organizer';
 /** Propriétés communes à toutes les colonnes ; voir `TableColumnProvider`. */
 export interface TableColumnBase<T = any> {
   key: string;
-  /** Libellé affiché dans l'en-tête de colonne. Optionnel si la colonne utilise un template custom. */
+  /**
+   * Libellé affiché dans l'en-tête de colonne. Optionnel si la colonne utilise un template custom.
+   * Sans `header`, la colonne doit être affichée par défaut : `optional` et `lazy` sont refusés.
+   */
   header?: string;
   icon?: string;
   /** Police de l'icône d'en-tête ; `material-icons-outlined` par défaut. Utiliser `material-symbols-outlined` pour les noms absents de Material Icons (ex. `steppers`). */
@@ -25,10 +28,14 @@ export interface TableColumnBase<T = any> {
   sortable?: boolean;
   removable?: boolean;
   width?: string;
+  /** Largeur minimale en px, appliquée seulement si la colonne n'a ni `width` ni redimensionnement. Aucune valeur par défaut. */
+  minWidth?: number;
   /** Rend la colonne disponible dans Group by ; `true` par défaut si `header` est défini. */
   groupable?: boolean;
   /** Rend la colonne disponible comme Slice by dynamique ; `true` par défaut si `header` est défini. */
   sliceable?: boolean;
+  /** Présence dans le menu Champs (View) ; `true` par défaut. Utiliser `false` pour une colonne sans `header`. */
+  inFieldsMenu?: boolean;
 }
 
 /**
@@ -156,6 +163,12 @@ export interface TablePreferencesConfig {
   tableId?: string;
 }
 
+/** Configuration de l'épinglage d'une colonne à gauche. */
+export interface TablePinningConfig {
+  /** Affiche le bouton d'épinglage dans chaque en-tête (visible seulement si le tableau défile horizontalement). Par défaut : `true`. */
+  enabled?: boolean;
+}
+
 /** Snapshot de configuration persisté dans le localStorage. */
 export interface SavedTableConfig {
   /** Valeur de la searchbar. */
@@ -172,6 +185,8 @@ export interface SavedTableConfig {
   visibleColumns?: string[];
   /** Largeurs de colonnes en pixels, indexées par clé. */
   columnWidths?: Record<string, number>;
+  /** Clé de la colonne épinglée à gauche. `null` = aucune. Absent = non sauvegardé. */
+  pinnedColumn?: string | null;
   /** Panneau slice replié ou non. */
   slicePanelCollapsed?: boolean;
   /** Clés des slices statiques cachées par l'utilisateur (via toggle dans le menu View). */
@@ -223,6 +238,13 @@ export interface TableProvider<T = any> {
   lazyLoader?: TableLazyLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */
   preferences?: TablePreferencesConfig;
+  /** Configuration de l'épinglage d'une colonne à gauche. Activé par défaut. */
+  pinning?: TablePinningConfig;
+  /**
+   * Largeur minimale en px appliquée à toutes les colonnes qui n'ont ni `minWidth` ni `width` explicite.
+   * Le `minWidth` d'une colonne reste prioritaire. Aucune valeur par défaut : sans cette option, les colonnes peuvent être réduites à 0 px.
+   */
+  columnMinWidth?: number;
 }
 
 

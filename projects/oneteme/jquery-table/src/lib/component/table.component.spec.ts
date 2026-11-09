@@ -455,6 +455,75 @@ describe('TableComponent', () => {
       expect(t.host.columns.at(-1)).toEqual(['name', 'team', 'status']);
     });
 
+    it('affiche une colonne sans nom avec inFieldsMenu: false sans la proposer dans le menu Champs', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom' },
+          { key: 'rank', value: row => `#${row.id}`, inFieldsMenu: false },
+          { key: 'score', header: 'Score', optional: true },
+        ],
+      });
+      await t.settle();
+
+      expect(t.columnKeys()).toEqual(['name', 'rank']);
+      expect(t.cells('rank')[0]).toBe('#1');
+      expect(t.table()._organizer.menuBaseFields.map(column => column.key)).toEqual(['name']);
+      expect(t.table()._organizer.menuOptionalFields.map(column => column.key)).toEqual(['score']);
+      expect(t.root().querySelector('.head-text:empty')?.hasAttribute('title')).toBe(false);
+    });
+
+    it('ne compte pas la colonne sans menu dans le numérateur du menu Champs', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom' },
+          { key: 'rank', value: row => `#${row.id}`, inFieldsMenu: false },
+          { key: 'score', header: 'Score', optional: true },
+        ],
+      });
+      await t.settle();
+
+      expect(t.table().organizerState.visibleFields).toEqual(['name']);
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['name', 'score']);
+    });
+
+    it('place les champs affichés en tête du menu Champs, dans leur ordre d\'affichage', async () => {
+      const t = setup({
+        columns: [
+          { key: 'a', header: 'A', optional: true },
+          { key: 'b', header: 'B' },
+          { key: 'c', header: 'C', optional: true },
+        ],
+      });
+      await t.settle();
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'a', 'c']);
+
+      t.table().onColumnVisibilityChange(t.host.config.columns![2], true);
+      await t.settle();
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'c', 'a']);
+    });
+
+    it('transmet la police des icônes au menu Champs et au groupement', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom', icon: 'person' },
+          { key: 'steps', header: 'Étapes', icon: 'steppers', iconFontSet: 'material-symbols-outlined' },
+        ],
+      });
+      await t.settle();
+      const fields = t.table().organizerConfig.fields!;
+      expect(fields.find(f => f.id === 'name')!.iconFontSet).toBeUndefined();
+      expect(fields.find(f => f.id === 'steps')!.iconFontSet).toBe('material-symbols-outlined');
+      expect(t.table().organizerConfig.groups!.find(g => g.id === 'steps')!.iconFontSet).toBe('material-symbols-outlined');
+    });
+
+    it('refuse une colonne sans nom optionnelle ou lazy', () => {
+      const optional = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, optional: true }] as TableColumnProvider<Row>[];
+      const lazy = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, lazy: true }] as TableColumnProvider<Row>[];
+
+      expect(() => setup({ columns: optional })).toThrowError(/'rank' n'a pas de header/);
+      expect(() => setup({ columns: lazy })).toThrowError(/'rank' n'a pas de header/);
+    });
+
     it('refuse de retirer la dernière colonne', async () => {
       const t = setup({ columns: [{ key: 'name', header: 'Nom' }] });
       await t.settle();
@@ -500,6 +569,260 @@ describe('TableComponent', () => {
       const t = setup({ data: [{ ...makeRows(1)[0], team: '' }] });
       await t.settle();
       expect(t.root().querySelector('td.mat-column-team .cell-empty')).not.toBeNull();
+    });
+  });
+
+  describe('dimensionnement et épinglage', () => {
+    const pinButton = (t: ReturnType<typeof setup>, key: string) =>
+      t.root().querySelector<HTMLButtonElement>(`th.mat-column-${key} .pin-btn`);
+    const dragEvent = () => ({ preventDefault: () => undefined, dataTransfer: null }) as unknown as DragEvent;
+    const keyEvent = (key: string) => ({ key, preventDefault: () => undefined }) as unknown as KeyboardEvent;
+    const savedPrefs = (saved: object) => localStorage.setItem('jqt_prefs_spec-table', JSON.stringify(saved));
+    const visibleOrder = { columnOrder: ['name', 'team', 'status'], visibleColumns: ['name', 'team', 'status'] };
+    const wideColumns = (): TableColumnProvider<Row>[] => [
+      { key: 'name', header: 'Nom', minWidth: 600 },
+      { key: 'team', header: 'Équipe', minWidth: 600 },
+      { key: 'status', header: 'Statut', minWidth: 600 },
+    ];
+    // Le débordement est mesuré par ResizeObserver (asynchrone) : on attend l'apparition des boutons
+    const settleWide = async (t: ReturnType<typeof setup>) => {
+      await t.settle();
+      for (let i = 0; i < 25 && t.count('.pin-btn') === 0; i++) {
+        await new Promise(resolve => setTimeout(resolve, 20));
+        await t.settle();
+      }
+    };
+
+    it('n\'affiche le bouton d\'épinglage que lorsque le tableau défile horizontalement', async () => {
+      const vertical = setup({ config: { pinning: { enabled: true } } });
+      (vertical.fixture.debugElement.query(By.directive(TableComponent)).nativeElement as HTMLElement).style.height = '400px';
+      await vertical.settle();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await vertical.settle();
+      const scroller = vertical.root().querySelector<HTMLElement>('.table-body-scroll')!;
+      expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
+      expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth);
+      expect(vertical.count('.pin-btn')).toBe(0);
+
+      const wide = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(wide);
+      expect(wide.count('.pin-btn')).toBe(3);
+    });
+
+    it('propose le bouton d\'épinglage d\'une colonne sans header comme les autres colonnes, au survol', async () => {
+      const t = setup({
+        config: { pinning: { enabled: true } },
+        columns: [
+          { key: 'name', minWidth: 600 },
+          { key: 'team', header: 'Équipe', minWidth: 600 },
+          { key: 'status', header: 'Statut', minWidth: 600 },
+        ],
+      });
+      await settleWide(t);
+      expect(pinButton(t, 'name')).not.toBeNull();
+      expect(t.root().querySelector('th.mat-column-name .head-cell')!.classList.contains('has-pin')).toBeTrue();
+      expect(pinButton(t, 'team')).not.toBeNull();
+    });
+
+    it('place le bouton d\'épinglage à gauche du titre, dans le conteneur head-lead', async () => {
+      const t = setup({
+        config: { pinning: { enabled: true } },
+        columns: [
+          { key: 'name', header: 'Nom', icon: 'person', minWidth: 600 },
+          { key: 'team', header: 'Équipe', minWidth: 600 },
+          { key: 'status', header: 'Statut', minWidth: 600 },
+        ],
+      });
+      await settleWide(t);
+      const btn = pinButton(t, 'name')!;
+      const headCell = btn.closest('.head-cell')!;
+      expect(headCell.firstElementChild?.classList.contains('head-lead')).toBe(true);
+      expect(btn.closest('.head-lead')).not.toBeNull();
+      expect(headCell.classList.contains('has-icon')).toBe(true);
+      expect(pinButton(t, 'team')!.closest('.head-cell')!.classList.contains('has-icon')).toBe(false);
+    });
+
+    it('n\'épingle qu\'une colonne à la fois : les autres boutons sont désactivés tant qu\'une colonne est épinglée', async () => {
+      const t = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(t);
+
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+      expect(t.count('th.col-pinned')).toBe(1);
+      expect(pinButton(t, 'status')!.getAttribute('aria-pressed')).toBe('true');
+      expect(pinButton(t, 'name')!.disabled).toBe(true);
+      expect(pinButton(t, 'team')!.disabled).toBe(true);
+      expect(pinButton(t, 'status')!.disabled).toBe(false);
+
+      // Une tentative directe sur une autre colonne n'a aucun effet
+      t.table().togglePinColumn('team');
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBe('status');
+      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+    });
+
+    it('permet d\'épingler une autre colonne après avoir désépinglé la première', async () => {
+      const t = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(t);
+
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(pinButton(t, 'team')!.disabled).toBe(false);
+
+      pinButton(t, 'team')!.click();
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['team', 'name', 'status']);
+      expect(t.count('th.col-pinned')).toBe(1);
+      expect(t.count('td.col-pinned')).toBe(5);
+    });
+
+    it('remet la colonne épinglée à sa position d\'origine au désépinglage', async () => {
+      const t = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(t);
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBeNull();
+      expect(t.count('th.col-pinned')).toBe(0);
+      expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
+    });
+
+    it('ne fixe aucune largeur minimale de tableau sans largeur explicite', async () => {
+      const t = setup();
+      await t.settle();
+      expect(t.table().tableMinWidth).toBeNull();
+      expect(t.table().getColumnWidth('name')).toBe('auto');
+    });
+
+    it('calcule la largeur minimale du tableau depuis minWidth et width en px', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom', minWidth: 200 },
+          { key: 'team', header: 'Équipe', width: '150px', minWidth: 300 },
+          { key: 'status', header: 'Statut' },
+        ],
+      });
+      await t.settle();
+      expect(t.table().getColumnWidth('name')).toBe('200px');
+      expect(t.table().getColumnWidth('team')).toBe('150px');
+      expect(t.table().getColumnWidth('status')).toBe('auto');
+      expect(t.table().tableMinWidth).toBe('350px');
+    });
+
+    it('n\'affiche aucun bouton d\'épinglage quand pinning est désactivé', async () => {
+      const t = setup({ config: { pinning: { enabled: false } }, columns: wideColumns() });
+      await settleWide(t);
+      expect(t.count('.pin-btn')).toBe(0);
+      t.table().togglePinColumn('status');
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
+    });
+
+    it('active l\'épinglage par défaut, sans configuration', async () => {
+      const t = setup({ columns: wideColumns() });
+      await settleWide(t);
+      expect(t.table().isPinningEnabled).toBeTrue();
+      expect(t.count('.pin-btn')).toBe(3);
+    });
+
+    it('applique columnMinWidth aux colonnes sans minWidth ni width, sans écraser minWidth', async () => {
+      const t = setup({
+        config: { columnMinWidth: 120 },
+        columns: [
+          { key: 'name', header: 'Nom' },
+          { key: 'team', header: 'Équipe', minWidth: 200 },
+          { key: 'status', header: 'Statut', width: '150px' },
+        ],
+      });
+      await t.settle();
+      expect(t.table().getColumnWidth('name')).toBe('120px');
+      expect(t.table().getColumnWidth('team')).toBe('200px');
+      expect(t.table().getColumnWidth('status')).toBe('150px');
+      expect(t.table().tableMinWidth).toBe('470px');
+    });
+
+    it('sans columnMinWidth, une colonne sans largeur reste auto', async () => {
+      const t = setup({ columns: [{ key: 'name', header: 'Nom' }] });
+      await t.settle();
+      expect(t.table().getColumnWidth('name')).toBe('auto');
+      expect(t.table().tableMinWidth).toBeNull();
+    });
+
+    it('garde la colonne épinglée en tête lors d\'un déplacement clavier ou glisser-déposer', async () => {
+      const t = setup({ config: { pinning: { enabled: true } } });
+      await t.settle();
+      t.table().togglePinColumn('status');
+      await t.settle();
+
+      t.table().onHeaderKeyDown('status', keyEvent('ArrowRight'));
+      expect(t.columnKeys()[0]).toBe('status');
+
+      t.table().onHeaderDragStart('team', dragEvent());
+      t.table().onHeaderDrop('status', dragEvent());
+      await t.settle();
+      expect(t.columnKeys()[0]).toBe('status');
+      expect(t.columnKeys().length).toBe(3);
+    });
+
+    it('rend la colonne épinglée sticky à gauche', async () => {
+      const t = setup({ config: { pinning: { enabled: true } } });
+      await t.settle();
+      t.table().togglePinColumn('name');
+      await t.settle();
+      const th = t.root().querySelector<HTMLElement>('th.mat-column-name')!;
+      const td = t.root().querySelector<HTMLElement>('td.mat-column-name')!;
+      expect(getComputedStyle(th).position).toBe('sticky');
+      expect(getComputedStyle(td).position).toBe('sticky');
+      expect(getComputedStyle(td).left).toBe('0px');
+      expect(Number(getComputedStyle(th).zIndex)).toBeGreaterThan(100);
+      expect(getComputedStyle(td).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+      expect(getComputedStyle(t.root().querySelector<HTMLElement>('td.mat-column-team')!).position).not.toBe('sticky');
+    });
+
+    it('sauvegarde et restaure la colonne épinglée', async () => {
+      const t = setup({ config: { pinning: { enabled: true } } });
+      await t.settle();
+      t.table().togglePinColumn('status');
+      await t.settle();
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!).pinnedColumn).toBe('status');
+      t.fixture.destroy();
+
+      const restored = setup({ config: { pinning: { enabled: true } } });
+      await restored.settle();
+      expect(restored.columnKeys()[0]).toBe('status');
+      expect(restored.count('th.col-pinned')).toBe(1);
+    });
+
+    it('ignore la colonne épinglée sauvegardée si elle n\'est plus visible', async () => {
+      savedPrefs({ ...visibleOrder, pinnedColumn: 'score' });
+      const t = setup({ config: { pinning: { enabled: true } } });
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBeNull();
+      expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
+    });
+
+    it('n\'applique pas l\'épingle sauvegardée quand pinning est désactivé', async () => {
+      savedPrefs({ ...visibleOrder, pinnedColumn: 'status' });
+      const t = setup({ config: { pinning: { enabled: false } } });
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBeNull();
+      expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
+    });
+
+    it('réinitialise l\'épingle avec les préférences', async () => {
+      const t = setup({ config: { pinning: { enabled: true } } });
+      await t.settle();
+      t.table().togglePinColumn('status');
+      await t.settle();
+      t.table().clearPreferences();
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBeNull();
     });
   });
 

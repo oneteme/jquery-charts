@@ -746,9 +746,34 @@
 .head-cell {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 6px;
   min-width: 0;
+}
+
+// Icône et bouton d'épinglage partagent la même case : le bouton recouvre l'icône au survol
+.head-lead {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  > * { grid-area: 1 / 1; }
+}
+
+// Le bouton n'est présent que si le tableau défile horizontalement : au repos il reste masqué et n'apparaît qu'au survol (avec ou sans icône)
+.head-cell.has-pin .pin-btn {
+  visibility: hidden;
+}
+
+.head-cell.has-pin:hover .pin-btn,
+.head-cell.has-pin .pin-btn.pinned {
+  visibility: visible;
+}
+
+// Sans bouton au survol, l'icône reste visible ; avec le bouton, le bouton recouvre l'icône
+.head-cell.has-icon.has-pin:hover .head-icon,
+.head-icon.covered {
+  visibility: hidden;
 }
 
 .drag-handle {
@@ -775,6 +800,51 @@
   }
 }
 
+.pin-btn {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0 2px;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--jqt-text-muted);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+
+  &:hover:not(:disabled) { color: var(--jqt-primary-color); }
+  &.pinned { color: var(--jqt-primary-color); }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+  }
+}
+
+// Colonne épinglée à gauche : reste visible lors du scroll horizontal.
+// Le CDK pose un z-index inline de 100 sur les en-têtes sticky : !important est nécessaire pour passer au-dessus.
+:host ::ng-deep .mat-mdc-header-cell.col-pinned {
+  position: sticky;
+  left: 0;
+  z-index: 101 !important;
+  background: var(--jqt-header-bg);
+  box-shadow: 2px 0 4px -2px rgba(0, 0, 0, .15);
+}
+
+// Fond opaque imposé sur background-color uniquement : les consommateurs peuvent poser un dégradé de statut
+// (background-image) sur la première cellule ; sans fond opaque, le contenu défilant transparaît.
+:host ::ng-deep .mat-mdc-cell.col-pinned {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-color: var(--jqt-cell-bg) !important;
+  box-shadow: 2px 0 4px -2px rgba(0, 0, 0, .15);
+}
+
 .head-icon {
   font-size: 14px;
   width: 14px;
@@ -785,6 +855,8 @@
 }
 
 .head-text {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1068,9 +1140,16 @@
   white-space: nowrap;
 }
 
+// Largeur fixe qui contient le trigger MDC (90 px) : la flèche reste à droite de la boîte
 :host ::ng-deep .group-bottom-bar .mat-mdc-paginator-page-size-select {
-  width: 72px;
+  width: 106px;
+  min-width: 106px;
   font-size: 12px;
+}
+
+:host ::ng-deep .group-bottom-bar .mat-mdc-select-trigger,
+:host ::ng-deep .group-bottom-bar .mat-mdc-form-field-infix {
+  width: 100%;
 }
 
 :host ::ng-deep .group-bottom-bar .mat-mdc-text-field-wrapper {

@@ -26,7 +26,7 @@
             (click)="toggleSliceCollapse(si)"
           >
             <span class="slice-title-chevron" [class.expanded]="!isSliceCollapsed(si)">›</span>
-            <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon">{{ getSliceIcon(slice) }}</mat-icon>
+            <mat-icon *ngIf="getSliceIcon(slice)" class="slice-title-icon" [fontSet]="getSliceIconFontSet(slice)">{{ getSliceIcon(slice) }}</mat-icon>
             <span class="slice-title">{{ slice.title || i18n.filterBlockDefaultTitle }}</span>
           </button>
           <button

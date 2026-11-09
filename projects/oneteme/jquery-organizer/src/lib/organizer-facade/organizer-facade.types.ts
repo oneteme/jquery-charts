@@ -1,13 +1,17 @@
 import { SliceConfig } from '../slice-panel/slice-panel.model';
 import { ChartOrganizerConfig } from '@oneteme/jquery-core';
+import { OrganizerIconFontSet } from '../models/organizer-config.interface';
 
 export interface OrganizerFieldDef {
   key: string;
   header?: string;
   icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
   optional?: boolean;
   groupable?: boolean;
   sliceable?: boolean;
+  /** Présence dans le menu Champs ; `true` par défaut. `false` retire le champ de ce menu sans affecter Group by / Slice by. */
+  inFieldsMenu?: boolean;
 }
 export interface OrganizerPanelConfig<TField extends OrganizerFieldDef = OrganizerFieldDef> {
   config?: ChartOrganizerConfig;

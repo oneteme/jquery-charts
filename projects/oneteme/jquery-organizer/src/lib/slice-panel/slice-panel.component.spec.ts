@@ -465,6 +465,23 @@ describe('SlicePanelComponent', () => {
       expect(panel.getSliceIcon(panel.slices[0])).toBe('group');
       expect(panel.getSliceIcon(panel.slices[1])).toBe('star');
     });
+
+    it('getSliceIconFontSet : police du slice puis de la colonne, outlined par défaut', () => {
+      const { panel } = setup({
+        columns: [
+          { key: 'status', header: 'Statut' },
+          { key: 'team', header: 'Équipe', icon: 'group', iconFontSet: 'material-symbols-outlined' },
+        ],
+        sliceConfigs: [
+          { title: 'Statut', columnKey: 'status' },
+          { title: 'Équipe', columnKey: 'team' },
+          { title: 'X', icon: 'star', iconFontSet: 'material-symbols-outlined', categories: [] },
+        ],
+      });
+      expect(panel.getSliceIconFontSet(panel.slices[0])).toBe('material-icons-outlined');
+      expect(panel.getSliceIconFontSet(panel.slices[1])).toBe('material-symbols-outlined');
+      expect(panel.getSliceIconFontSet(panel.slices[2])).toBe('material-symbols-outlined');
+    });
   });
 
   describe('parent qui réagit au filtre (non-régression NG0100)', () => {
