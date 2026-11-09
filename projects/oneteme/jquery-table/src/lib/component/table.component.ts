@@ -218,6 +218,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _paginatorIntl = inject(MatPaginatorIntl);
   private _i18nRaw = inject(JQT_I18N, { optional: true });
   private _tableShellResizeObserver?: ResizeObserver;
+  private _tableOverflowObserver?: ResizeObserver;
+  /** Vrai quand le tableau déborde de son conteneur (défilement) : le bouton d'épinglage n'est alors proposé. */
+  private _isScrollable = false;
   private readonly _fullItemsPerPageLabel = this._paginatorIntl.itemsPerPageLabel;
   copyFeedbackMessage = '';
   private _copyFeedbackTimer?: number;
@@ -275,6 +278,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   _columnWidths: Record<string, number> = {};
   /** Clé de la colonne épinglée à gauche (une seule au maximum). `null` = aucune. */
   _pinnedColumnKey: string | null = null;
+  /** Position de la colonne épinglée avant l'épinglage, pour la remettre à sa place au désépinglage. */
+  private _pinnedOriginalIndex: number | null = null;
   /** Message de feedback après save/clear. `null` = pas de message. */
   _preferencesMessage: string | null = null;
   /** Vrai si une configuration est sauvegardée pour ce tableau. */
@@ -351,7 +356,28 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.attachSort();
     this._measureHeaderHeight();
     this._observeTableShellWidth();
+    this._observeTableOverflow();
     this._applyPendingDynamicSliceKeys();
+  }
+
+  private _observeTableOverflow(): void {
+    const scroller = this.tableBodyScrollRef?.nativeElement;
+    if (!scroller || typeof ResizeObserver === 'undefined') return;
+
+    this._tableOverflowObserver = new ResizeObserver(() => this._updateScrollable());
+    this._tableOverflowObserver.observe(scroller);
+    const table = scroller.querySelector('table');
+    if (table) this._tableOverflowObserver.observe(table);
+  }
+
+  private _updateScrollable(): void {
+    const scroller = this.tableBodyScrollRef?.nativeElement;
+    const scrollable = !!scroller && scroller.scrollWidth > scroller.clientWidth;
+    if (scrollable === this._isScrollable) return;
+    this._ngZone.run(() => {
+      this._isScrollable = scrollable;
+      this._cdr.markForCheck();
+    });
   }
 
   private _observeTableShellWidth(): void {
@@ -403,6 +429,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   ngOnDestroy(): void {
     this._destroyed = true;
     this._tableShellResizeObserver?.disconnect();
+    this._tableOverflowObserver?.disconnect();
     if (this._copyFeedbackTimer !== undefined) window.clearTimeout(this._copyFeedbackTimer);
     if (this._pendingRender !== null) {
       clearTimeout(this._pendingRender);
@@ -1078,8 +1105,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return `Sélectionner la ligne ${(row?.[ROW_INDEX_KEY] ?? 0) + 1}`;
   }
 
+  /** Largeur minimale effective d'une colonne : son `minWidth`, sinon `columnMinWidth` du tableau. */
+  private _effectiveMinWidth(col: TableColumnProvider<T>): number | undefined {
+    return col.minWidth ?? this.resolvedConfig.columnMinWidth;
+  }
+
   /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives
-   * (redimensionnement, `width` en px ou `minWidth`). Retourne null si aucune colonne n'a de largeur explicite
+   * (redimensionnement, `width` en px ou largeur minimale effective). Retourne null si aucune colonne n'a de largeur explicite
    * (le tableau remplit alors 100% du conteneur). Une colonne sans largeur explicite ne contribue pas. */
   get tableMinWidth(): string | null {
     let sum = 0;
@@ -1091,16 +1123,18 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         continue;
       }
       const px = col.width?.trim().toLowerCase().endsWith('px') ? Number.parseFloat(col.width) : NaN;
+      const minWidth = this._effectiveMinWidth(col);
       if (!Number.isNaN(px)) {
         sum += px;
         hasExplicitWidth = true;
-      } else if (col.minWidth != null) {
-        sum += col.minWidth;
+      } else if (minWidth != null) {
+        sum += minWidth;
         hasExplicitWidth = true;
       }
     }
     return hasExplicitWidth ? sum + 'px' : null;
   }
+
 
   trackRowFn = (_index: number, row: any): any => {
     if (row[GROUP_HEADER_MARKER]) return `__group_${row[ROW_GROUP_KEY]}`;
@@ -1250,30 +1284,69 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     });
   }
 
-  /** Retourne la largeur CSS d'une colonne : px redimensionné, sinon `width` de config, sinon `minWidth`, sinon auto. */
+  /** Retourne la largeur CSS d'une colonne : px redimensionné, sinon `width` de config, sinon largeur minimale effective, sinon auto. */
   getColumnWidth(key: string): string {
     if (this._columnWidths[key] != null) return this._columnWidths[key] + 'px';
     const col = this._columnMap.get(key);
     if (col?.width) return col.width;
-    if (col?.minWidth != null) return col.minWidth + 'px';
+    const minWidth = col ? this._effectiveMinWidth(col) : undefined;
+    if (minWidth != null) return minWidth + 'px';
     return 'auto';
   }
 
   // ── Épinglage de colonne
 
   get isPinningEnabled(): boolean {
-    return this.resolvedConfig.pinning?.enabled === true;
+    return this.resolvedConfig.pinning?.enabled !== false;
   }
 
   isColumnPinned(key: string): boolean {
     return this._pinnedColumnKey === key;
   }
 
-  /** Épingle la colonne (la place en tête) ou la désépingle si elle l'était déjà. Remplace une éventuelle autre épingle. */
+  /** Le bouton est proposé quand le tableau défile, ou toujours pour la colonne déjà épinglée (pour pouvoir la désépingler). */
+  showPinButton(key: string): boolean {
+    return this.isPinningEnabled && (this._isScrollable || this.isColumnPinned(key));
+  }
+
+  /** Une seule colonne épinglée à la fois : les autres boutons sont désactivés tant qu'une colonne est épinglée. */
+  canPinColumn(key: string): boolean {
+    return this._pinnedColumnKey === null || this._pinnedColumnKey === key;
+  }
+
+  pinButtonTitle(key: string): string {
+    if (this.isColumnPinned(key)) return 'Désépingler la colonne';
+    if (!this.canPinColumn(key)) {
+      const pinned = this._columnMap.get(this._pinnedColumnKey!);
+      return 'Désépinglez d\'abord ' + (pinned ? this.colLabel(pinned) : 'la colonne épinglée');
+    }
+    return 'Épingler à gauche';
+  }
+
+  /** Épingle la colonne (placée en tête) ou la désépingle si elle l'était. Sans effet si une autre colonne est épinglée. */
   togglePinColumn(key: string): void {
-    if (!this.isPinningEnabled) return;
-    this._pinnedColumnKey = this._pinnedColumnKey === key ? null : key;
+    if (!this.isPinningEnabled || !this.canPinColumn(key)) return;
+    if (this._pinnedColumnKey === key) {
+      this._unpinColumn();
+    } else {
+      this._pinnedOriginalIndex = this._organizer.fields.activeFields.findIndex(c => c.key === key);
+      this._pinnedColumnKey = key;
+    }
     this.refreshViewModel();
+  }
+
+  /** Remet la colonne épinglée à sa position d'origine (index mémorisé avant l'épinglage). */
+  private _unpinColumn(): void {
+    const key = this._pinnedColumnKey;
+    const index = this._pinnedOriginalIndex;
+    this._pinnedColumnKey = null;
+    this._pinnedOriginalIndex = null;
+    const fields = this._organizer.fields.activeFields;
+    const column = fields.find(c => c.key === key);
+    if (!column || index === null || index < 0) return;
+    const others = fields.filter(c => c !== column);
+    others.splice(Math.min(index, others.length), 0, column);
+    this._organizer.setActiveFields(others);
   }
 
   /** Garantit que la colonne épinglée reste en première position de activeFields.
@@ -1285,6 +1358,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const pinned = fields.find(c => c.key === this._pinnedColumnKey);
     if (!pinned) {
       this._pinnedColumnKey = null;
+      this._pinnedOriginalIndex = null;
       return;
     }
     if (fields[0] === pinned) return;
@@ -1331,6 +1405,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this.searchQuery = '';
     this._columnWidths = {};
     this._pinnedColumnKey = null;
+    this._pinnedOriginalIndex = null;
     this._slicePanelCollapsed = false;
     // Synchroniser l'état interne du slice-panel : si le composant est en état collapsed
     // (l'utilisateur l'avait fermé après la sauvegarde), le rouvrir explicitement pour
@@ -1401,7 +1476,10 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Largeurs colonnes
     if (saved.columnWidths) this._columnWidths = { ...saved.columnWidths };
     // Colonne épinglée (validée ensuite par _applyPinnedOrder : colonne doit être visible)
-    if (saved.pinnedColumn !== undefined && this.isPinningEnabled) this._pinnedColumnKey = saved.pinnedColumn;
+    if (saved.pinnedColumn !== undefined && this.isPinningEnabled) {
+      this._pinnedColumnKey = saved.pinnedColumn;
+      this._pinnedOriginalIndex = null;
+    }
     // Group by
     if (saved.groupBy !== undefined) {
       this.setGroupByAndEmit(saved.groupBy);

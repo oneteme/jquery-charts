@@ -99,22 +99,25 @@
             (dragover)="onHeaderDragOver(column.key, $event)"
             (drop)="onHeaderDrop(column.key, $event)"
           >
-            <div class="head-cell">
-              <mat-icon *ngIf="column.icon" class="head-icon" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
+            <div class="head-cell" [class.has-icon]="!!column.icon" [class.has-pin]="showPinButton(column.key)">
+              <span class="head-lead">
+                <mat-icon *ngIf="column.icon" class="head-icon" [class.covered]="isColumnPinned(column.key)" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
+                <button
+                  type="button"
+                  *ngIf="showPinButton(column.key)"
+                  class="pin-btn"
+                  [class.pinned]="isColumnPinned(column.key)"
+                  [disabled]="!canPinColumn(column.key)"
+                  [attr.aria-pressed]="isColumnPinned(column.key)"
+                  [attr.aria-label]="pinButtonTitle(column.key) + ' : ' + colLabel(column)"
+                  [attr.title]="pinButtonTitle(column.key)"
+                  (click)="$event.stopPropagation(); togglePinColumn(column.key)"
+                  (keydown)="$event.stopPropagation()"
+                >
+                  <mat-icon>push_pin</mat-icon>
+                </button>
+              </span>
               <span class="head-text" [attr.title]="column.header || null">{{ column.header }}</span>
-              <button
-                type="button"
-                *ngIf="isPinningEnabled"
-                class="pin-btn"
-                [class.pinned]="isColumnPinned(column.key)"
-                [attr.aria-pressed]="isColumnPinned(column.key)"
-                [attr.aria-label]="(isColumnPinned(column.key) ? 'Désépingler la colonne ' : 'Épingler la colonne ') + colLabel(column)"
-                [attr.title]="isColumnPinned(column.key) ? 'Désépingler' : 'Épingler à gauche'"
-                (click)="$event.stopPropagation(); togglePinColumn(column.key)"
-                (keydown)="$event.stopPropagation()"
-              >
-                <mat-icon>push_pin</mat-icon>
-              </button>
               <button
                 type="button"
                 *ngIf="isColumnDragDropEnabled || _editMode"

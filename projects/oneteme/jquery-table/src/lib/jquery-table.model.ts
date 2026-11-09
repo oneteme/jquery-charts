@@ -165,7 +165,7 @@ export interface TablePreferencesConfig {
 
 /** Configuration de l'épinglage d'une colonne à gauche. */
 export interface TablePinningConfig {
-  /** Affiche le bouton d'épinglage dans chaque en-tête. Par défaut : `false`. */
+  /** Affiche le bouton d'épinglage dans chaque en-tête (visible seulement si le tableau défile horizontalement). Par défaut : `true`. */
   enabled?: boolean;
 }
 
@@ -238,8 +238,13 @@ export interface TableProvider<T = any> {
   lazyLoader?: TableLazyLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */
   preferences?: TablePreferencesConfig;
-  /** Configuration de l'épinglage d'une colonne à gauche. Désactivé par défaut. */
+  /** Configuration de l'épinglage d'une colonne à gauche. Activé par défaut. */
   pinning?: TablePinningConfig;
+  /**
+   * Largeur minimale en px appliquée à toutes les colonnes qui n'ont ni `minWidth` ni `width` explicite.
+   * Le `minWidth` d'une colonne reste prioritaire. Aucune valeur par défaut : sans cette option, les colonnes peuvent être réduites à 0 px.
+   */
+  columnMinWidth?: number;
 }
 
 

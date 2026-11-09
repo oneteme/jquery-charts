@@ -551,6 +551,103 @@ describe('TableComponent', () => {
     const keyEvent = (key: string) => ({ key, preventDefault: () => undefined }) as unknown as KeyboardEvent;
     const savedPrefs = (saved: object) => localStorage.setItem('jqt_prefs_spec-table', JSON.stringify(saved));
     const visibleOrder = { columnOrder: ['name', 'team', 'status'], visibleColumns: ['name', 'team', 'status'] };
+    const wideColumns = (): TableColumnProvider<Row>[] => [
+      { key: 'name', header: 'Nom', minWidth: 600 },
+      { key: 'team', header: 'Équipe', minWidth: 600 },
+      { key: 'status', header: 'Statut', minWidth: 600 },
+    ];
+    // Le débordement est mesuré par ResizeObserver (asynchrone) : on attend l'apparition des boutons
+    const settleWide = async (t: ReturnType<typeof setup>) => {
+      await t.settle();
+      for (let i = 0; i < 25 && t.count('.pin-btn') === 0; i++) {
+        await new Promise(resolve => setTimeout(resolve, 20));
+        await t.settle();
+      }
+    };
+
+    it('n\'affiche le bouton d\'épinglage que lorsque le tableau défile horizontalement', async () => {
+      const vertical = setup({ config: { pinning: { enabled: true } } });
+      (vertical.fixture.debugElement.query(By.directive(TableComponent)).nativeElement as HTMLElement).style.height = '400px';
+      await vertical.settle();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      await vertical.settle();
+      const scroller = vertical.root().querySelector<HTMLElement>('.table-body-scroll')!;
+      expect(scroller.scrollHeight).toBeGreaterThan(scroller.clientHeight);
+      expect(scroller.scrollWidth).toBeLessThanOrEqual(scroller.clientWidth);
+      expect(vertical.count('.pin-btn')).toBe(0);
+
+      const wide = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(wide);
+      expect(wide.count('.pin-btn')).toBe(3);
+    });
+
+    it('place le bouton d\'épinglage à gauche du titre, dans le conteneur head-lead', async () => {
+      const t = setup({
+        config: { pinning: { enabled: true } },
+        columns: [
+          { key: 'name', header: 'Nom', icon: 'person', minWidth: 600 },
+          { key: 'team', header: 'Équipe', minWidth: 600 },
+          { key: 'status', header: 'Statut', minWidth: 600 },
+        ],
+      });
+      await settleWide(t);
+      const btn = pinButton(t, 'name')!;
+      const headCell = btn.closest('.head-cell')!;
+      expect(headCell.firstElementChild?.classList.contains('head-lead')).toBe(true);
+      expect(btn.closest('.head-lead')).not.toBeNull();
+      expect(headCell.classList.contains('has-icon')).toBe(true);
+      expect(pinButton(t, 'team')!.closest('.head-cell')!.classList.contains('has-icon')).toBe(false);
+    });
+
+    it('n\'épingle qu\'une colonne à la fois : les autres boutons sont désactivés tant qu\'une colonne est épinglée', async () => {
+      const t = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(t);
+
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+      expect(t.count('th.col-pinned')).toBe(1);
+      expect(pinButton(t, 'status')!.getAttribute('aria-pressed')).toBe('true');
+      expect(pinButton(t, 'name')!.disabled).toBe(true);
+      expect(pinButton(t, 'team')!.disabled).toBe(true);
+      expect(pinButton(t, 'status')!.disabled).toBe(false);
+
+      // Une tentative directe sur une autre colonne n'a aucun effet
+      t.table().togglePinColumn('team');
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBe('status');
+      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+    });
+
+    it('permet d\'épingler une autre colonne après avoir désépinglé la première', async () => {
+      const t = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(t);
+
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(pinButton(t, 'team')!.disabled).toBe(false);
+
+      pinButton(t, 'team')!.click();
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['team', 'name', 'status']);
+      expect(t.count('th.col-pinned')).toBe(1);
+      expect(t.count('td.col-pinned')).toBe(5);
+    });
+
+    it('remet la colonne épinglée à sa position d\'origine au désépinglage', async () => {
+      const t = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
+      await settleWide(t);
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+      pinButton(t, 'status')!.click();
+      await t.settle();
+      expect(t.table()._pinnedColumnKey).toBeNull();
+      expect(t.count('th.col-pinned')).toBe(0);
+      expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
+    });
 
     it('ne fixe aucune largeur minimale de tableau sans largeur explicite', async () => {
       const t = setup();
@@ -574,43 +671,43 @@ describe('TableComponent', () => {
       expect(t.table().tableMinWidth).toBe('350px');
     });
 
-    it('n\'affiche aucun bouton d\'épinglage tant que pinning n\'est pas activé', async () => {
-      const t = setup();
-      await t.settle();
+    it('n\'affiche aucun bouton d\'épinglage quand pinning est désactivé', async () => {
+      const t = setup({ config: { pinning: { enabled: false } }, columns: wideColumns() });
+      await settleWide(t);
       expect(t.count('.pin-btn')).toBe(0);
       t.table().togglePinColumn('status');
       await t.settle();
       expect(t.columnKeys()).toEqual(['name', 'team', 'status']);
     });
 
-    it('épingle une colonne en première position, une seule à la fois', async () => {
-      const t = setup({ config: { pinning: { enabled: true } } });
-      await t.settle();
+    it('active l\'épinglage par défaut, sans configuration', async () => {
+      const t = setup({ columns: wideColumns() });
+      await settleWide(t);
+      expect(t.table().isPinningEnabled).toBeTrue();
       expect(t.count('.pin-btn')).toBe(3);
-
-      pinButton(t, 'status')!.click();
-      await t.settle();
-      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
-      expect(t.count('th.col-pinned')).toBe(1);
-      expect(pinButton(t, 'status')!.getAttribute('aria-pressed')).toBe('true');
-
-      pinButton(t, 'team')!.click();
-      await t.settle();
-      expect(t.columnKeys()).toEqual(['team', 'status', 'name']);
-      expect(t.count('th.col-pinned')).toBe(1);
-      expect(t.count('td.col-pinned')).toBe(5);
     });
 
-    it('désépingle la colonne au second clic sans changer l\'ordre', async () => {
-      const t = setup({ config: { pinning: { enabled: true } } });
+    it('applique columnMinWidth aux colonnes sans minWidth ni width, sans écraser minWidth', async () => {
+      const t = setup({
+        config: { columnMinWidth: 120 },
+        columns: [
+          { key: 'name', header: 'Nom' },
+          { key: 'team', header: 'Équipe', minWidth: 200 },
+          { key: 'status', header: 'Statut', width: '150px' },
+        ],
+      });
       await t.settle();
-      pinButton(t, 'status')!.click();
+      expect(t.table().getColumnWidth('name')).toBe('120px');
+      expect(t.table().getColumnWidth('team')).toBe('200px');
+      expect(t.table().getColumnWidth('status')).toBe('150px');
+      expect(t.table().tableMinWidth).toBe('470px');
+    });
+
+    it('sans columnMinWidth, une colonne sans largeur reste auto', async () => {
+      const t = setup({ columns: [{ key: 'name', header: 'Nom' }] });
       await t.settle();
-      pinButton(t, 'status')!.click();
-      await t.settle();
-      expect(t.table()._pinnedColumnKey).toBeNull();
-      expect(t.count('th.col-pinned')).toBe(0);
-      expect(t.columnKeys()).toEqual(['status', 'name', 'team']);
+      expect(t.table().getColumnWidth('name')).toBe('auto');
+      expect(t.table().tableMinWidth).toBeNull();
     });
 
     it('garde la colonne épinglée en tête lors d\'un déplacement clavier ou glisser-déposer', async () => {
@@ -639,6 +736,8 @@ describe('TableComponent', () => {
       expect(getComputedStyle(th).position).toBe('sticky');
       expect(getComputedStyle(td).position).toBe('sticky');
       expect(getComputedStyle(td).left).toBe('0px');
+      expect(Number(getComputedStyle(th).zIndex)).toBeGreaterThan(100);
+      expect(getComputedStyle(td).backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
       expect(getComputedStyle(t.root().querySelector<HTMLElement>('td.mat-column-team')!).position).not.toBe('sticky');
     });
 
@@ -667,7 +766,7 @@ describe('TableComponent', () => {
 
     it('n\'applique pas l\'épingle sauvegardée quand pinning est désactivé', async () => {
       savedPrefs({ ...visibleOrder, pinnedColumn: 'status' });
-      const t = setup();
+      const t = setup({ config: { pinning: { enabled: false } } });
       await t.settle();
       expect(t.table()._pinnedColumnKey).toBeNull();
       expect(t.columnKeys()).toEqual(['name', 'team', 'status']);

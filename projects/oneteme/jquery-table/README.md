@@ -157,7 +157,8 @@ interface TableProvider<T = any> {
   export?:       TableExportConfig<T>;
   lazyLoader?:   (lazyColumns: string[]) => Observable<T[]>;  // Charge les colonnes lazy (lignes complètes)
   preferences?:  TablePreferencesConfig;  // Sauvegarde dans localStorage
-  pinning?:      TablePinningConfig;      // Épinglage d'une colonne à gauche (désactivé par défaut)
+  pinning?:      TablePinningConfig;      // Épinglage d'une colonne à gauche (activé par défaut)
+  columnMinWidth?: number;                // Largeur minimale en px des colonnes sans minWidth ni width (aucune valeur par défaut)
 
   defaultSort?:     { active: string; direction: 'asc' | 'desc' };
   defaultGroupBy?: string | null;          // Group by initial au chargement
@@ -683,24 +684,32 @@ Le nombre de lignes (`pageSize` en mode normal, `groupPageSize` en mode Group by
 
 ## Fonctionnalité — Épinglage de colonne (`TablePinningConfig`)
 
-Activée avec `pinning: { enabled: true }`. Un bouton punaise (`push_pin`) apparaît dans chaque en-tête de colonne.
+Activée par défaut. Un bouton punaise (`push_pin`) est placé à gauche du titre de chaque en-tête (le tri reste à droite). Pour la désactiver : `pinning: { enabled: false }`.
 
-- Une seule colonne peut être épinglée à la fois. Elle est toujours placée en première position et reste visible lors du défilement horizontal.
-- Un second clic sur la punaise désépingle la colonne. Épingler une autre colonne désépingle la précédente.
-- L'ordre des autres colonnes n'est pas modifié.
+- Le bouton n'apparaît que lorsque le tableau défile horizontalement (débordement de largeur, mesuré en continu).
+- Si la colonne possède une icône, le bouton la recouvre au survol de l'en-tête.
+- Une seule colonne peut être épinglée à la fois. Elle est placée en première position et reste visible lors du défilement horizontal, au-dessus des autres en-têtes et cellules.
+- Tant qu'une colonne est épinglée, les boutons des autres colonnes sont désactivés : il faut d'abord désépingler la colonne active.
+- Un second clic sur la punaise de la colonne épinglée la désépingle et la remet à sa position d'origine (mémorisée au moment de l'épinglage).
 - Si la colonne épinglée est masquée, l'épingle est retirée.
-- L'épingle est sauvegardée avec les préférences (`pinnedColumn`) lorsque `preferences` est activé et que l'utilisateur enregistre.
-
-```ts
-pinning: { enabled: true }
-```
+- L'épingle est sauvegardée avec les préférences (`pinnedColumn`) lorsque `preferences` est activé et que l'utilisateur enregistre. Après restauration, la position d'origine n'est pas connue : le désépinglage laisse la colonne en place.
 
 ```ts
 interface TablePinningConfig {
-  /** Affiche le bouton d'épinglage dans chaque en-tête. Par défaut : false. */
+  /** Affiche le bouton d'épinglage dans chaque en-tête (visible seulement si le tableau défile horizontalement). Par défaut : true. */
   enabled?: boolean;
 }
 ```
+
+### Largeur minimale commune (`columnMinWidth`)
+
+`columnMinWidth` (en px, au niveau du `TableProvider`) s'applique aux colonnes qui n'ont ni `minWidth` ni `width` explicite. Le `minWidth` d'une colonne reste prioritaire. Aucune valeur par défaut : sans cette option, ces colonnes peuvent être réduites à 0 px quand le tableau est plein.
+
+```ts
+columnMinWidth: 120
+```
+
+Limite : une colonne dont la `width` est un pourcentage (ex. `'15%'`) ne peut pas recevoir de minimum, car les cellules utilisent `table-layout: fixed`. Pour un minimum garanti, utiliser une `width` en px ou un `minWidth`.
 
 ---
 
