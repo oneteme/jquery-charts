@@ -472,6 +472,22 @@ describe('TableComponent', () => {
       expect(t.root().querySelector('.head-text:empty')?.hasAttribute('title')).toBe(false);
     });
 
+    it('place les champs affichés en tête du menu Champs, dans leur ordre d\'affichage', async () => {
+      const t = setup({
+        columns: [
+          { key: 'a', header: 'A', optional: true },
+          { key: 'b', header: 'B' },
+          { key: 'c', header: 'C', optional: true },
+        ],
+      });
+      await t.settle();
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'a', 'c']);
+
+      t.table().onColumnVisibilityChange(t.host.config.columns![2], true);
+      await t.settle();
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'c', 'a']);
+    });
+
     it('refuse une colonne sans nom optionnelle ou lazy', () => {
       const optional = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, optional: true }] as TableColumnProvider<Row>[];
       const lazy = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, lazy: true }] as TableColumnProvider<Row>[];

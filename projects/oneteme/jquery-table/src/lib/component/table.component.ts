@@ -453,10 +453,18 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   private _organizerConfigCache: OrganizerConfig | null = null;
+  private _organizerConfigSignature = '';
   private _invalidateOrganizerConfig(): void { this._organizerConfigCache = null; }
   get organizerConfig(): OrganizerConfig {
-    if (this._organizerConfigCache) return this._organizerConfigCache;
-    const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields];
+    const activeKeys = this.visibleColumns.map(c => c.key);
+    const signature = activeKeys.join('\u0000');
+    if (this._organizerConfigCache && signature === this._organizerConfigSignature) return this._organizerConfigCache;
+    this._organizerConfigSignature = signature;
+    // Les champs actifs remontent en tête, dans leur ordre d'affichage ; les autres gardent l'ordre de configuration.
+    const activeRank = new Map(activeKeys.map((key, index) => [key, index]));
+    const rankOf = (key: string) => activeRank.get(key) ?? Number.MAX_SAFE_INTEGER;
+    const allCols = [...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields]
+      .sort((a, b) => rankOf(a.key) - rankOf(b.key));
     const organizerOptions = this.resolvedConfig.organizer;
     this._organizerConfigCache = {
       fields: this._organizer.showFields ? allCols.map(c => ({
