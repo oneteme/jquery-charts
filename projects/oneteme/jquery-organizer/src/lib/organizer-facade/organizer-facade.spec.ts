@@ -323,6 +323,7 @@ describe('OrganizerFacade', () => {
       ]);
       expect(keys(facade.menuBaseFields)).toEqual(['name']);
       expect(keys(facade.menuOptionalFields)).toEqual(['team']);
+      expect(facade.totalFieldCount).toBe(2);
     });
 
     it('garde la colonne sans nom non optionnelle active et hors Group by', () => {

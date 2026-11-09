@@ -760,16 +760,17 @@
   > * { grid-area: 1 / 1; }
 }
 
-// Le bouton n'est présent que si le tableau défile horizontalement : sans lui, l'icône reste visible au survol
-.head-cell.has-icon.has-pin .pin-btn {
+// Le bouton n'est présent que si le tableau défile horizontalement : au repos il reste masqué et n'apparaît qu'au survol (avec ou sans icône)
+.head-cell.has-pin .pin-btn {
   visibility: hidden;
 }
 
-.head-cell.has-icon.has-pin:hover .pin-btn,
-.head-cell.has-icon.has-pin .pin-btn.pinned {
+.head-cell.has-pin:hover .pin-btn,
+.head-cell.has-pin .pin-btn.pinned {
   visibility: visible;
 }
 
+// Sans bouton au survol, l'icône reste visible ; avec le bouton, le bouton recouvre l'icône
 .head-cell.has-icon.has-pin:hover .head-icon,
 .head-icon.covered {
   visibility: hidden;
@@ -1139,9 +1140,16 @@
   white-space: nowrap;
 }
 
+// Largeur fixe qui contient le trigger MDC (90 px) : la flèche reste à droite de la boîte
 :host ::ng-deep .group-bottom-bar .mat-mdc-paginator-page-size-select {
-  width: 72px;
+  width: 106px;
+  min-width: 106px;
   font-size: 12px;
+}
+
+:host ::ng-deep .group-bottom-bar .mat-mdc-select-trigger,
+:host ::ng-deep .group-bottom-bar .mat-mdc-form-field-infix {
+  width: 100%;
 }
 
 :host ::ng-deep .group-bottom-bar .mat-mdc-text-field-wrapper {

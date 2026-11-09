@@ -535,8 +535,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   get organizerState(): OrganizerState {
+    const menuKeys = new Set([...this._organizer.menuBaseFields, ...this._organizer.menuOptionalFields].map(c => c.key));
     return {
-      visibleFields: this.visibleColumns.map(c => c.key),
+      visibleFields: this.visibleColumns.map(c => c.key).filter(key => menuKeys.has(key)),
       selectedGroupBy: this.activeGroupByKey ?? undefined,
       selectedSlices: this._sliceByMenuItems
         .filter(i => this.isSliceMenuItemActive(i))

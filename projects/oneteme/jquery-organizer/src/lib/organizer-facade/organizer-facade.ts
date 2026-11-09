@@ -70,7 +70,7 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
   }
 
   get totalFieldCount(): number {
-    return new Set((this._panelConfig.fields || []).map(c => c.key)).size;
+    return new Set((this._panelConfig.fields || []).filter(c => c.inFieldsMenu !== false).map(c => c.key)).size;
   }
 
   get groupByFields(): TField[] {

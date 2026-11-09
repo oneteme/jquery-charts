@@ -472,6 +472,20 @@ describe('TableComponent', () => {
       expect(t.root().querySelector('.head-text:empty')?.hasAttribute('title')).toBe(false);
     });
 
+    it('ne compte pas la colonne sans menu dans le numérateur du menu Champs', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom' },
+          { key: 'rank', value: row => `#${row.id}`, inFieldsMenu: false },
+          { key: 'score', header: 'Score', optional: true },
+        ],
+      });
+      await t.settle();
+
+      expect(t.table().organizerState.visibleFields).toEqual(['name']);
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['name', 'score']);
+    });
+
     it('place les champs affichés en tête du menu Champs, dans leur ordre d\'affichage', async () => {
       const t = setup({
         columns: [
@@ -579,6 +593,21 @@ describe('TableComponent', () => {
       const wide = setup({ config: { pinning: { enabled: true } }, columns: wideColumns() });
       await settleWide(wide);
       expect(wide.count('.pin-btn')).toBe(3);
+    });
+
+    it('propose le bouton d\'épinglage d\'une colonne sans header comme les autres colonnes, au survol', async () => {
+      const t = setup({
+        config: { pinning: { enabled: true } },
+        columns: [
+          { key: 'name', minWidth: 600 },
+          { key: 'team', header: 'Équipe', minWidth: 600 },
+          { key: 'status', header: 'Statut', minWidth: 600 },
+        ],
+      });
+      await settleWide(t);
+      expect(pinButton(t, 'name')).not.toBeNull();
+      expect(t.root().querySelector('th.mat-column-name .head-cell')!.classList.contains('has-pin')).toBeTrue();
+      expect(pinButton(t, 'team')).not.toBeNull();
     });
 
     it('place le bouton d\'épinglage à gauche du titre, dans le conteneur head-lead', async () => {
