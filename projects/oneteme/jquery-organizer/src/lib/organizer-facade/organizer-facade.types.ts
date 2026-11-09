@@ -8,6 +8,8 @@ export interface OrganizerFieldDef {
   optional?: boolean;
   groupable?: boolean;
   sliceable?: boolean;
+  /** Présence dans le menu Champs ; `true` par défaut. `false` retire le champ de ce menu sans affecter Group by / Slice by. */
+  inFieldsMenu?: boolean;
 }
 export interface OrganizerPanelConfig<TField extends OrganizerFieldDef = OrganizerFieldDef> {
   config?: ChartOrganizerConfig;

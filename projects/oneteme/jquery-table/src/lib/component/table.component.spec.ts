@@ -455,6 +455,30 @@ describe('TableComponent', () => {
       expect(t.host.columns.at(-1)).toEqual(['name', 'team', 'status']);
     });
 
+    it('affiche une colonne sans nom avec inFieldsMenu: false sans la proposer dans le menu Champs', async () => {
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom' },
+          { key: 'rank', value: row => `#${row.id}`, inFieldsMenu: false },
+          { key: 'score', header: 'Score', optional: true },
+        ],
+      });
+      await t.settle();
+
+      expect(t.columnKeys()).toEqual(['name', 'rank']);
+      expect(t.cells('rank')[0]).toBe('#1');
+      expect(t.table()._organizer.menuBaseFields.map(column => column.key)).toEqual(['name']);
+      expect(t.table()._organizer.menuOptionalFields.map(column => column.key)).toEqual(['score']);
+    });
+
+    it('refuse une colonne sans nom optionnelle ou lazy', () => {
+      const optional = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, optional: true }] as TableColumnProvider<Row>[];
+      const lazy = [{ key: 'name', header: 'Nom' }, { key: 'rank', value: (row: Row) => row.id, lazy: true }] as TableColumnProvider<Row>[];
+
+      expect(() => setup({ columns: optional })).toThrowError(/'rank' n'a pas de header/);
+      expect(() => setup({ columns: lazy })).toThrowError(/'rank' n'a pas de header/);
+    });
+
     it('refuse de retirer la dernière colonne', async () => {
       const t = setup({ columns: [{ key: 'name', header: 'Nom' }] });
       await t.settle();

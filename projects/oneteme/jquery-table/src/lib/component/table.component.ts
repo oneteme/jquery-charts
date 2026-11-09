@@ -1800,11 +1800,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   /** Une colonne lazy est forcément optionnelle : `optional` est implicite, et `optional: false` est refusé. */
   private _normalizeColumns(columns: TableColumnProvider<T>[]): TableColumnProvider<T>[] {
     if (columns === this._columnsSource) return this._columnsNormalized!;
+    columns.forEach(column => this._assertUnnamedColumnIsRequired(column));
     const normalized = columns.map(column => this._withImpliedOptional(column));
     const result = normalized.some((column, index) => column !== columns[index]) ? normalized : columns;
     this._columnsSource = columns;
     this._columnsNormalized = result;
     return result;
+  }
+
+  /** Une colonne sans `header` ne peut être ni optionnelle ni lazy : elle ne pourrait plus être activée depuis l'UI. */
+  private _assertUnnamedColumnIsRequired(column: TableColumnProvider<T>): void {
+    if (column.header || !(column.optional || column.lazy)) return;
+    throw new Error(
+      `[jquery-table] La colonne '${column.key}' n'a pas de header : elle doit être affichée par défaut. `
+      + 'optional et lazy sont refusés pour une colonne sans header, car elle ne pourrait plus être activée depuis le menu Champs.',
+    );
   }
 
   private _withImpliedOptional(column: TableColumnProvider<T>): TableColumnProvider<T> {

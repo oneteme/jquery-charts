@@ -188,11 +188,14 @@ interface TableColumnProvider<T = any> {
 
   groupable?: boolean;                 // Disponible comme critère de regroupement dans View menu
   sliceable?: boolean;                 // Disponible comme slice dynamique dans View menu
+  inFieldsMenu?: boolean;              // false : absente du menu Champs (Organizer). Pour une colonne sans header, toujours affichée
   searchValue?: DataProvider<string>;  // Valeur utilisée par la recherche texte (si différente de value)
 
   lazy?: true;                         // Absente de la requête de base, forcément optionnelle : demandée à sa première activation
 }
 ```
+
+Une colonne **sans `header`** n'apparaît pas dans le menu Champs si elle porte `inFieldsMenu: false`. Elle reste affichée par défaut : `optional: true` et `lazy: true` sont refusés (erreur explicite) pour ce cas, car la colonne ne pourrait plus être réactivée depuis le menu. Sans `inFieldsMenu: false`, elle apparaît dans le menu Champs avec un libellé dérivé de sa clé. Elle reste exclue du Group by et du Slice by, sauf `groupable: true` / `sliceable: true`.
 
 ---
 

@@ -107,7 +107,7 @@
                 class="drag-handle"
                 draggable="true"
                 tabindex="0"
-                [attr.aria-label]="'Réordonner la colonne ' + column.header"
+                [attr.aria-label]="'Réordonner la colonne ' + colLabel(column)"
                 (dragstart)="onHeaderDragStart(column.key, $event)"
                 (dragend)="onHeaderDragEnd()"
                 (keydown)="onHeaderKeyDown(column.key, $event)"

@@ -6,7 +6,10 @@ export { SliceConfig } from '@oneteme/jquery-organizer';
 /** Propriétés communes à toutes les colonnes ; voir `TableColumnProvider`. */
 export interface TableColumnBase<T = any> {
   key: string;
-  /** Libellé affiché dans l'en-tête de colonne. Optionnel si la colonne utilise un template custom. */
+  /**
+   * Libellé affiché dans l'en-tête de colonne. Optionnel si la colonne utilise un template custom.
+   * Sans `header`, la colonne doit être affichée par défaut : `optional` et `lazy` sont refusés.
+   */
   header?: string;
   icon?: string;
   /** Police de l'icône d'en-tête ; `material-icons-outlined` par défaut. Utiliser `material-symbols-outlined` pour les noms absents de Material Icons (ex. `steppers`). */
@@ -29,6 +32,8 @@ export interface TableColumnBase<T = any> {
   groupable?: boolean;
   /** Rend la colonne disponible comme Slice by dynamique ; `true` par défaut si `header` est défini. */
   sliceable?: boolean;
+  /** Présence dans le menu Champs (View) ; `true` par défaut. Utiliser `false` pour une colonne sans `header`. */
+  inFieldsMenu?: boolean;
 }
 
 /**

@@ -62,11 +62,11 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
   }
 
   get menuBaseFields(): TField[] {
-    return this._uniqueByKey((this._panelConfig.fields || []).filter(c => !c.optional));
+    return this._uniqueByKey((this._panelConfig.fields || []).filter(c => !c.optional && c.inFieldsMenu !== false));
   }
 
   get menuOptionalFields(): TField[] {
-    return this._uniqueByKey((this._panelConfig.fields || []).filter(c => c.optional));
+    return this._uniqueByKey((this._panelConfig.fields || []).filter(c => c.optional && c.inFieldsMenu !== false));
   }
 
   get totalFieldCount(): number {

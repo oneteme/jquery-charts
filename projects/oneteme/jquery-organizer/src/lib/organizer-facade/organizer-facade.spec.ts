@@ -313,6 +313,34 @@ describe('OrganizerFacade', () => {
     });
   });
 
+  describe('champs sans nom (inFieldsMenu)', () => {
+    it('exclut du menu Champs les colonnes marquées inFieldsMenu: false, base comme optionnelles', () => {
+      const { facade } = setup({}, [
+        { key: 'name', header: 'Nom' },
+        { key: 'hidden', inFieldsMenu: false },
+        { key: 'team', header: 'Équipe', optional: true },
+        { key: 'hiddenOptional', optional: true, inFieldsMenu: false },
+      ]);
+      expect(keys(facade.menuBaseFields)).toEqual(['name']);
+      expect(keys(facade.menuOptionalFields)).toEqual(['team']);
+    });
+
+    it('garde la colonne sans nom non optionnelle active et hors Group by', () => {
+      const { facade } = setup({}, [
+        { key: 'name', header: 'Nom' },
+        { key: 'hidden', inFieldsMenu: false },
+      ]);
+      expect(keys(facade.fields.activeFields)).toEqual(['name', 'hidden']);
+      expect(keys(facade.groupByFields)).toEqual(['name']);
+    });
+
+    it('une colonne sans nom sans inFieldsMenu reste dans le menu avec un libellé humanisé', () => {
+      const { facade } = setup({}, [{ key: 'my_col', optional: true }]);
+      expect(keys(facade.menuOptionalFields)).toEqual(['my_col']);
+      expect(facade.fieldLabel({ key: 'my_col' })).toBe(humanizeKey('my_col'));
+    });
+  });
+
   describe('divers', () => {
     it('toOrganizerState reflète champs, Group by et slices dynamiques', () => {
       const { facade } = setup(slicePanelLike());
