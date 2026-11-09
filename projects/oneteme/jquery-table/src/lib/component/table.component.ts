@@ -273,6 +273,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   _editMode = false;
   /** Largeurs de colonnes personnalisées par l'utilisateur (clé → px). */
   _columnWidths: Record<string, number> = {};
+  /** Clé de la colonne épinglée à gauche (une seule au maximum). `null` = aucune. */
+  _pinnedColumnKey: string | null = null;
   /** Message de feedback après save/clear. `null` = pas de message. */
   _preferencesMessage: string | null = null;
   /** Vrai si une configuration est sauvegardée pour ce tableau. */
@@ -1076,26 +1078,28 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return `Sélectionner la ligne ${(row?.[ROW_INDEX_KEY] ?? 0) + 1}`;
   }
 
-  /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives.
-   * Retourne null si aucune colonne n'a de largeur définie (le tableau remplit alors 100% du conteneur).
-   * Seules les valeurs explicitement en `px` sont sommables ; les pourcentages ou autres unités sont ignorés. */
+  /** Largeur minimale du tableau en px, calculée depuis les largeurs explicites des colonnes actives
+   * (redimensionnement, `width` en px ou `minWidth`). Retourne null si aucune colonne n'a de largeur explicite
+   * (le tableau remplit alors 100% du conteneur). Une colonne sans largeur explicite ne contribue pas. */
   get tableMinWidth(): string | null {
-    const hasResized = Object.keys(this._columnWidths).length > 0;
-    const hasSomeExplicitWidth = hasResized || this.activeFields.some(c => c.width);
-    if (!hasSomeExplicitWidth) return null;
     let sum = 0;
+    let hasExplicitWidth = false;
     for (const col of this.activeFields) {
       if (this._columnWidths[col.key] != null) {
         sum += this._columnWidths[col.key];
-      } else if (col.width) {
-        const isPx = col.width.trim().toLowerCase().endsWith('px');
-        const px = Number.parseFloat(col.width);
-        if (isPx && !Number.isNaN(px)) { sum += px; }
-      } else {
-        sum += 120; // largeur minimale estimée pour une colonne sans largeur explicite
+        hasExplicitWidth = true;
+        continue;
+      }
+      const px = col.width?.trim().toLowerCase().endsWith('px') ? Number.parseFloat(col.width) : NaN;
+      if (!Number.isNaN(px)) {
+        sum += px;
+        hasExplicitWidth = true;
+      } else if (col.minWidth != null) {
+        sum += col.minWidth;
+        hasExplicitWidth = true;
       }
     }
-    return sum + 'px';
+    return hasExplicitWidth ? sum + 'px' : null;
   }
 
   trackRowFn = (_index: number, row: any): any => {
@@ -1246,11 +1250,45 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     });
   }
 
-  /** Retourne la largeur CSS d'une colonne (px si personnalisée, sinon la valeur de config ou auto). */
+  /** Retourne la largeur CSS d'une colonne : px redimensionné, sinon `width` de config, sinon `minWidth`, sinon auto. */
   getColumnWidth(key: string): string {
     if (this._columnWidths[key] != null) return this._columnWidths[key] + 'px';
     const col = this._columnMap.get(key);
-    return col?.width ?? 'auto';
+    if (col?.width) return col.width;
+    if (col?.minWidth != null) return col.minWidth + 'px';
+    return 'auto';
+  }
+
+  // ── Épinglage de colonne
+
+  get isPinningEnabled(): boolean {
+    return this.resolvedConfig.pinning?.enabled === true;
+  }
+
+  isColumnPinned(key: string): boolean {
+    return this._pinnedColumnKey === key;
+  }
+
+  /** Épingle la colonne (la place en tête) ou la désépingle si elle l'était déjà. Remplace une éventuelle autre épingle. */
+  togglePinColumn(key: string): void {
+    if (!this.isPinningEnabled) return;
+    this._pinnedColumnKey = this._pinnedColumnKey === key ? null : key;
+    this.refreshViewModel();
+  }
+
+  /** Garantit que la colonne épinglée reste en première position de activeFields.
+   * Efface l'épingle si la colonne n'est plus visible. */
+  private _applyPinnedOrder(): void {
+    if (!this.isPinningEnabled || this._pinnedColumnKey === null) return;
+    const fields = this._organizer.fields.activeFields;
+    if (fields.length === 0) return;
+    const pinned = fields.find(c => c.key === this._pinnedColumnKey);
+    if (!pinned) {
+      this._pinnedColumnKey = null;
+      return;
+    }
+    if (fields[0] === pinned) return;
+    this._organizer.setActiveFields([pinned, ...fields.filter(c => c !== pinned)]);
   }
 
   // ── Préférences : save / clear
@@ -1266,6 +1304,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       pageSize:            this.paginator?.pageSize ?? this.pageSize,
       groupPageSize:       this.groupPageSize,
       columnWidths:        Object.keys(this._columnWidths).length ? { ...this._columnWidths } : undefined,
+      pinnedColumn:        this._pinnedColumnKey,
       slicePanelCollapsed: this._slicePanelCollapsed,
       hiddenSliceKeys:     [...this._staticSliceHiddenKeys],
       dynamicSliceKeys:    dynamicSliceKeys.length ? dynamicSliceKeys : undefined,
@@ -1291,6 +1330,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Reset complet de l'état vers les valeurs par défaut de la config
     this.searchQuery = '';
     this._columnWidths = {};
+    this._pinnedColumnKey = null;
     this._slicePanelCollapsed = false;
     // Synchroniser l'état interne du slice-panel : si le composant est en état collapsed
     // (l'utilisateur l'avait fermé après la sauvegarde), le rouvrir explicitement pour
@@ -1360,6 +1400,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     if (saved.search) this.searchQuery = saved.search;
     // Largeurs colonnes
     if (saved.columnWidths) this._columnWidths = { ...saved.columnWidths };
+    // Colonne épinglée (validée ensuite par _applyPinnedOrder : colonne doit être visible)
+    if (saved.pinnedColumn !== undefined && this.isPinningEnabled) this._pinnedColumnKey = saved.pinnedColumn;
     // Group by
     if (saved.groupBy !== undefined) {
       this.setGroupByAndEmit(saved.groupBy);
@@ -1635,6 +1677,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this.renderedColumns = this.activeFields.map(c => c.key);
       this.emitColumnsChangeIfNeeded();
     }
+
+    // La colonne épinglée reste toujours en première position (après restauration des préférences)
+    this._applyPinnedOrder();
+    this.activeFields = this._organizer.fields.activeFields;
+    this.renderedColumns = this.activeFields.map(c => c.key);
+    this.emitColumnsChangeIfNeeded();
 
     // Propriétés stables pour les bindings du template
     // On recalcule _sliceConfigs en reflétant l'état courant des slices cachées,

@@ -28,6 +28,8 @@ export interface TableColumnBase<T = any> {
   sortable?: boolean;
   removable?: boolean;
   width?: string;
+  /** Largeur minimale en px, appliquée seulement si la colonne n'a ni `width` ni redimensionnement. Aucune valeur par défaut. */
+  minWidth?: number;
   /** Rend la colonne disponible dans Group by ; `true` par défaut si `header` est défini. */
   groupable?: boolean;
   /** Rend la colonne disponible comme Slice by dynamique ; `true` par défaut si `header` est défini. */
@@ -161,6 +163,12 @@ export interface TablePreferencesConfig {
   tableId?: string;
 }
 
+/** Configuration de l'épinglage d'une colonne à gauche. */
+export interface TablePinningConfig {
+  /** Affiche le bouton d'épinglage dans chaque en-tête. Par défaut : `false`. */
+  enabled?: boolean;
+}
+
 /** Snapshot de configuration persisté dans le localStorage. */
 export interface SavedTableConfig {
   /** Valeur de la searchbar. */
@@ -177,6 +185,8 @@ export interface SavedTableConfig {
   visibleColumns?: string[];
   /** Largeurs de colonnes en pixels, indexées par clé. */
   columnWidths?: Record<string, number>;
+  /** Clé de la colonne épinglée à gauche. `null` = aucune. Absent = non sauvegardé. */
+  pinnedColumn?: string | null;
   /** Panneau slice replié ou non. */
   slicePanelCollapsed?: boolean;
   /** Clés des slices statiques cachées par l'utilisateur (via toggle dans le menu View). */
@@ -228,6 +238,8 @@ export interface TableProvider<T = any> {
   lazyLoader?: TableLazyLoader<T>;
   /** Configuration de la fonctionnalité Préférences (édition + persistance localStorage). */
   preferences?: TablePreferencesConfig;
+  /** Configuration de l'épinglage d'une colonne à gauche. Désactivé par défaut. */
+  pinning?: TablePinningConfig;
 }
 
 

@@ -157,8 +157,9 @@ interface TableProvider<T = any> {
   export?:       TableExportConfig<T>;
   lazyLoader?:   (lazyColumns: string[]) => Observable<T[]>;  // Charge les colonnes lazy (lignes complètes)
   preferences?:  TablePreferencesConfig;  // Sauvegarde dans localStorage
+  pinning?:      TablePinningConfig;      // Épinglage d'une colonne à gauche (désactivé par défaut)
 
-  defaultSort?:    { active: string; direction: 'asc' | 'desc' };
+  defaultSort?:     { active: string; direction: 'asc' | 'desc' };
   defaultGroupBy?: string | null;          // Group by initial au chargement
   rowClass?:       (row: T, index: number) => string | string[] | Record<string, boolean>;
   onRowSelected?:  (row: T, event: MouseEvent | null) => void; // Alternative au Output (rowSelected)
@@ -182,6 +183,7 @@ interface TableColumnProvider<T = any> {
   sortable?:  boolean;
   width?:     string;                  // Largeur CSS en px uniquement pour le calcul min-width (ex: '120px')
                                        // Les unités %, em, rem sont ignorées dans le calcul de tableMinWidth
+  minWidth?:  number;                  // Largeur minimale en px. Aucune valeur par défaut : sans minWidth, la colonne peut être réduite à 0 px
 
   optional?:  boolean;                 // Colonne masquée par défaut, ajoutables via View menu (implicite pour une colonne lazy)
   removable?: boolean;                 // Peut être retirée manuellement
@@ -676,6 +678,29 @@ interface TablePreferencesConfig {
 La configuration est persistée sous la clé `jqt_prefs_<tableId>` et restaurée automatiquement au chargement suivant.
 
 Le nombre de lignes (`pageSize` en mode normal, `groupPageSize` en mode Group by, `0` = tout afficher) est restauré uniquement s'il figure encore dans `pagination.pageSizeOptions` / `pageSizeOptionsGroupBy` ; sinon la valeur de la config est conservée. L'index de page n'est pas sauvegardé.
+
+---
+
+## Fonctionnalité — Épinglage de colonne (`TablePinningConfig`)
+
+Activée avec `pinning: { enabled: true }`. Un bouton punaise (`push_pin`) apparaît dans chaque en-tête de colonne.
+
+- Une seule colonne peut être épinglée à la fois. Elle est toujours placée en première position et reste visible lors du défilement horizontal.
+- Un second clic sur la punaise désépingle la colonne. Épingler une autre colonne désépingle la précédente.
+- L'ordre des autres colonnes n'est pas modifié.
+- Si la colonne épinglée est masquée, l'épingle est retirée.
+- L'épingle est sauvegardée avec les préférences (`pinnedColumn`) lorsque `preferences` est activé et que l'utilisateur enregistre.
+
+```ts
+pinning: { enabled: true }
+```
+
+```ts
+interface TablePinningConfig {
+  /** Affiche le bouton d'épinglage dans chaque en-tête. Par défaut : false. */
+  enabled?: boolean;
+}
+```
 
 ---
 
