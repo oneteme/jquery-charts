@@ -90,7 +90,7 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
     return field?.header || this.groupBy.activeKey;
   }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> {
+  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; iconSvg?: string }> {
     return (this._panelConfig.sliceConfigs ?? [])
       .filter(s => !!s.columnKey)
       .map(s => {
@@ -100,6 +100,7 @@ export class OrganizerFacade<TField extends OrganizerFieldDef = OrganizerFieldDe
           title: s.title || humanizeKey(s.columnKey!),
           icon: s.icon ?? fieldDef?.icon,
           iconFontSet: s.icon ? s.iconFontSet : fieldDef?.iconFontSet,
+          iconSvg: s.icon ? s.iconSvg : fieldDef?.iconSvg,
         };
       });
   }

@@ -486,7 +486,7 @@ describe('TableComponent', () => {
       expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['name', 'score']);
     });
 
-    it('place les champs affichés en tête du menu Champs, dans leur ordre d\'affichage', async () => {
+    it('garde l\'ordre de configuration du menu Champs à la sélection d\'un champ', async () => {
       const t = setup({
         columns: [
           { key: 'a', header: 'A', optional: true },
@@ -499,7 +499,7 @@ describe('TableComponent', () => {
 
       t.table().onColumnVisibilityChange(t.host.config.columns![2], true);
       await t.settle();
-      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'c', 'a']);
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'a', 'c']);
     });
 
     it('transmet la police des icônes au menu Champs et au groupement', async () => {
@@ -514,6 +514,37 @@ describe('TableComponent', () => {
       expect(fields.find(f => f.id === 'name')!.iconFontSet).toBeUndefined();
       expect(fields.find(f => f.id === 'steps')!.iconFontSet).toBe('material-symbols-outlined');
       expect(t.table().organizerConfig.groups!.find(g => g.id === 'steps')!.iconFontSet).toBe('material-symbols-outlined');
+    });
+
+    it('transmet une icône SVG à l\'en-tête, au menu Champs, au groupement et au Slice by', async () => {
+      const svg = '<svg viewBox="0 0 24 24"><path d="M12 2l10 20H2z"/></svg>';
+      const t = setup({
+        columns: [
+          { key: 'name', header: 'Nom', icon: 'person', iconSvg: svg },
+          { key: 'steps', header: 'Étapes', icon: 'steppers' },
+        ],
+      });
+      await t.settle();
+      const headCell = t.root().querySelector('th.mat-column-name .head-cell')!;
+      expect(headCell.querySelector('.head-icon-svg svg')).not.toBeNull();
+      expect(headCell.querySelector('mat-icon.head-icon')).toBeNull();
+      expect(t.table().organizerConfig.fields!.find(f => f.id === 'name')!.iconSvg).toBe(svg);
+      expect(t.table().organizerConfig.groups!.find(g => g.id === 'name')!.iconSvg).toBe(svg);
+      expect(t.table().organizerConfig.slices!.find(s => s.id === 'name')!.iconSvg).toBe(svg);
+      expect(t.table().organizerConfig.fields!.find(f => f.id === 'steps')!.iconSvg).toBeUndefined();
+    });
+
+    it('nettoie le SVG de l\'en-tête avant rendu (pas de script ni de handler)', async () => {
+      const malicious = '<svg viewBox="0 0 24 24" onload="window.__pwned = 1"><script>window.__pwned = 1</script><path d="M1 1" onclick="window.__pwned = 1"/></svg>';
+      const t = setup({
+        columns: [{ key: 'name', header: 'Nom', icon: 'person', iconSvg: malicious }],
+      });
+      await t.settle();
+      const icon = t.root().querySelector('th.mat-column-name .head-icon-svg')!;
+      expect(icon.querySelector('svg path')).not.toBeNull();
+      expect(icon.querySelector('script')).toBeNull();
+      expect(icon.innerHTML).not.toContain('onclick');
+      expect(icon.innerHTML).not.toContain('onload');
     });
 
     it('refuse une colonne sans nom optionnelle ou lazy', () => {

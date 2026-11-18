@@ -14,6 +14,8 @@ export interface TableColumnBase<T = any> {
   icon?: string;
   /** Police de l'icône d'en-tête ; `material-icons-outlined` par défaut. Utiliser `material-symbols-outlined` pour les noms absents de Material Icons (ex. `steppers`). */
   iconFontSet?: 'material-icons-outlined' | 'material-symbols-outlined';
+  /** Icône SVG (markup brut `<svg>…</svg>`) ; prioritaire sur `icon`. Rendue via `innerHTML`, donc sanitisée par Angular. Utiliser `fill`/`stroke` plutôt que `style`. */
+  iconSvg?: string;
   value?: DataProvider<any>;
   /** Valeur utilisée pour le tri si différente de `value`. Utile quand `value` retourne une chaîne formatée (date, durée...). */
   sortValue?: DataProvider<any>;

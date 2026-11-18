@@ -287,6 +287,10 @@ Un `OrganizerViewSlice` accepte deux fonctions optionnelles :
 - `formatLabel(raw)` : libellé affiché pour une valeur. La clé brute reste utilisée pour le filtrage.
 - `compareKeys(a, b)` : ordre d'affichage des valeurs. Par défaut, tri natif des clés.
 
+### Icônes SVG (`iconSvg`)
+
+Les champs `iconSvg` des fields, groupes et tranches (`OrganizerViewField`, `OrganizerViewGroup`, `OrganizerViewSlice`, `SliceConfig`, `SliceColumnDef`, `OrganizerFieldDef`) acceptent une chaîne de markup `<svg>…</svg>`, prioritaire sur `icon`. Le markup est nettoyé par une liste blanche (`sanitizeSvgMarkup` de `@oneteme/jquery-core`) : seuls les éléments de forme (`path`, `circle`, `rect`, `g`…) et les attributs de présentation sont conservés. Scripts, handlers `on*`, `href`, `style`, `foreignObject`, `use` et `image` sont retirés. Un markup invalide ou non SVG n'affiche rien.
+
 ### Remap des tranches lors d'un changement d'axe X
 
 Changer la variante X d'un même axe (ex. jour → heure) peut rendre les valeurs de tranche sélectionnées invalides. Si `remapSliceSelection` est fourni, il convertit la sélection :
