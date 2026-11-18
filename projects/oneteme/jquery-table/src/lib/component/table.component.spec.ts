@@ -486,7 +486,7 @@ describe('TableComponent', () => {
       expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['name', 'score']);
     });
 
-    it('place les champs affichés en tête du menu Champs, dans leur ordre d\'affichage', async () => {
+    it('garde l\'ordre de configuration du menu Champs à la sélection d\'un champ', async () => {
       const t = setup({
         columns: [
           { key: 'a', header: 'A', optional: true },
@@ -499,7 +499,7 @@ describe('TableComponent', () => {
 
       t.table().onColumnVisibilityChange(t.host.config.columns![2], true);
       await t.settle();
-      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'c', 'a']);
+      expect(t.table().organizerConfig.fields!.map(f => f.id)).toEqual(['b', 'a', 'c']);
     });
 
     it('transmet la police des icônes au menu Champs et au groupement', async () => {
