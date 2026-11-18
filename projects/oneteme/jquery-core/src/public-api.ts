@@ -16,3 +16,4 @@ export * from './lib/chart-data-unit';
 export * from './lib/chart-data-transform';
 export * from './lib/chart-capabilities.model';
 export * from './lib/chart-group-sync';
+export * from './lib/svg-sanitizer';

@@ -245,6 +245,20 @@
   color: var(--jqt-title-color);
 }
 
+// SVG inséré via innerHTML : hors encapsulation, d'où ::ng-deep pour dimensionner le <svg>.
+.slice-title-icon-svg {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  // Sur le conteneur et non sur le <svg> : un fill CSS sur le <svg> écraserait fill="none" des icônes en trait.
+  fill: currentColor;
+
+  ::ng-deep svg {
+    width: 100%;
+    height: 100%;
+  }
+}
+
 .slice-remove-btn {
   background: none;
   border: none;

@@ -99,9 +99,10 @@
             (dragover)="onHeaderDragOver(column.key, $event)"
             (drop)="onHeaderDrop(column.key, $event)"
           >
-            <div class="head-cell" [class.has-icon]="!!column.icon" [class.has-pin]="showPinButton(column.key)">
+            <div class="head-cell" [class.has-icon]="!!(column.icon || column.iconSvg)" [class.has-pin]="showPinButton(column.key)">
               <span class="head-lead">
-                <mat-icon *ngIf="column.icon" class="head-icon" [class.covered]="isColumnPinned(column.key)" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
+                <span *ngIf="column.iconSvg" class="head-icon head-icon-svg" [class.covered]="isColumnPinned(column.key)" [innerHTML]="svgHtml(column.iconSvg)"></span>
+                <mat-icon *ngIf="column.icon && !column.iconSvg" class="head-icon" [class.covered]="isColumnPinned(column.key)" [fontSet]="column.iconFontSet ?? 'material-icons-outlined'">{{ column.icon }}</mat-icon>
                 <button
                   type="button"
                   *ngIf="showPinButton(column.key)"

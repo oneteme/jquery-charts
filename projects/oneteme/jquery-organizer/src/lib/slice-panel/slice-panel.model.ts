@@ -16,6 +16,8 @@ export interface SliceConfig<T = any> {
   title?: string;
   icon?: string;
   iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   multiSelect?: boolean;
   columnKey?: string;
   hidden?: boolean;
@@ -32,6 +34,8 @@ export interface SliceColumnDef<T = any> {
   header?: string;
   icon?: string;
   iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   value?: DataProvider<any>;
   /** Colonne absente de la requête de base : ses valeurs sont dans les lignes une fois chargée (`lazyStatus`). */
   lazy?: true;

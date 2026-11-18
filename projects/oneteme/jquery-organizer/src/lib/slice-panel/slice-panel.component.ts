@@ -1,6 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, EventEmitter, HostBinding, Input, OnChanges, OnInit, Output, SimpleChanges, ViewChild, inject } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { sanitizeSvgMarkup } from '@oneteme/jquery-core';
 import { SliceCategory, SliceColumnDef, SliceConfig } from './slice-panel.model';
 import type { OrganizerIconFontSet } from '../models/organizer-config.interface';
 import { buildCategoriesFromRows, CategoryDisplayOptions } from './slice-categories';
@@ -44,6 +46,8 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
   @ViewChild('slicePanelBody') slicePanelBodyRef?: ElementRef<HTMLElement>;
 
   private _cdr = inject(ChangeDetectorRef);
+  private _sanitizer = inject(DomSanitizer);
+  private readonly _svgHtmlCache = new Map<string, SafeHtml>();
 
   readonly i18n = I18N;
 
@@ -202,6 +206,25 @@ export class SlicePanelComponent<T = any> implements OnChanges, OnInit {
       return (this.columns || []).find(c => c.key === slice.columnKey)?.icon;
     }
     return undefined;
+  }
+
+  getSliceIconSvg(slice: SliceConfig<T>): string | undefined {
+    if (slice.icon) return slice.iconSvg;
+    if (slice.columnKey) {
+      return (this.columns || []).find(c => c.key === slice.columnKey)?.iconSvg;
+    }
+    return undefined;
+  }
+
+  /** Nettoyé par liste blanche avant rendu : le sanitizer Angular retirerait <svg>/<path>. */
+  svgHtml(svg: string | undefined): SafeHtml | null {
+    if (!svg) return null;
+    let safe = this._svgHtmlCache.get(svg);
+    if (!safe) {
+      safe = this._sanitizer.bypassSecurityTrustHtml(sanitizeSvgMarkup(svg));
+      this._svgHtmlCache.set(svg, safe);
+    }
+    return safe;
   }
 
   getSliceIconFontSet(slice: SliceConfig<T>): OrganizerIconFontSet {

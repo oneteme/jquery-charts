@@ -1,4 +1,6 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy, ViewChild, ViewEncapsulation } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy, ChangeDetectorRef, OnDestroy, ViewChild, ViewEncapsulation, inject } from '@angular/core';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { sanitizeSvgMarkup } from '@oneteme/jquery-core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -50,6 +52,20 @@ export class OrganizerButtonComponent implements OnDestroy {
   @ViewChild('mainMenuTrigger') mainMenuTrigger?: MatMenuTrigger;
 
   constructor(private cdr: ChangeDetectorRef) {}
+
+  private _sanitizer = inject(DomSanitizer);
+  private readonly _svgHtmlCache = new Map<string, SafeHtml>();
+
+  /** Nettoyé par liste blanche avant rendu : le sanitizer Angular retirerait <svg>/<path>. */
+  svgHtml(svg: string | undefined): SafeHtml | null {
+    if (!svg) return null;
+    let safe = this._svgHtmlCache.get(svg);
+    if (!safe) {
+      safe = this._sanitizer.bypassSecurityTrustHtml(sanitizeSvgMarkup(svg));
+      this._svgHtmlCache.set(svg, safe);
+    }
+    return safe;
+  }
 
   ngOnDestroy(): void {
     this.destroyed = true;

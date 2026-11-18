@@ -293,9 +293,18 @@ describe('OrganizerFacade', () => {
         [{ key: 'status', header: 'S', icon: 'flag', iconFontSet: 'material-symbols-outlined' }, { key: 'createdAt', header: 'C' }],
       );
       expect(facade.staticSlicesForMenu).toEqual([
-        { key: 'status', title: 'Statut', icon: 'flag', iconFontSet: 'material-symbols-outlined' },
-        { key: 'createdAt', title: 'Created At', icon: undefined, iconFontSet: undefined },
+        { key: 'status', title: 'Statut', icon: 'flag', iconFontSet: 'material-symbols-outlined', iconSvg: undefined },
+        { key: 'createdAt', title: 'Created At', icon: undefined, iconFontSet: undefined, iconSvg: undefined },
       ]);
+    });
+
+    it('staticSlicesForMenu : iconSvg de la colonne repris si la tranche n\'a pas d\'icône', () => {
+      const svg = '<svg viewBox="0 0 24 24"><path d="M0 0h24v24H0z"/></svg>';
+      const { facade } = setup(
+        { sliceConfigs: [{ columnKey: 'status' }] },
+        [{ key: 'status', header: 'S', icon: 'flag', iconSvg: svg }],
+      );
+      expect(facade.staticSlicesForMenu[0].iconSvg).toBe(svg);
     });
 
     it('libellé : Aucun, titre statique, header dynamique, nombre total, statiques masquées ignorées', () => {

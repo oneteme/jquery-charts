@@ -7,6 +7,8 @@ export interface OrganizerFieldDef {
   header?: string;
   icon?: string;
   iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   optional?: boolean;
   groupable?: boolean;
   sliceable?: boolean;

@@ -9,6 +9,8 @@ import { MatPaginator, MatPaginatorIntl, MatPaginatorModule } from '@angular/mat
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { sanitizeSvgMarkup } from '@oneteme/jquery-core';
 import { defer, Subject, Subscription, take, takeUntil } from 'rxjs';
 import { TableColumnProvider, TableExportConfig, TablePreferencesConfig, TableProvider, TableViewConfig } from '../jquery-table.model';
 import { JqtI18n, JQT_I18N, JQT_I18N_DEFAULTS } from '../jqt-i18n.token';
@@ -170,12 +172,12 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _initialSlicePanelCollapsedApplied = false;
 
   // Délégués vers _view (conservés pour compatibilité template sans refactoring HTML)
-  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> { return this._organizer.staticSlicesForMenu; }
+  get _staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; iconSvg?: string }> { return this._organizer.staticSlicesForMenu; }
   get _activeDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.activeDynamicFields; }
   get _availableColumnsForDynamicSlice(): TableColumnProvider<T>[] { return this._organizer.sliceBy.availableForDynamic; }
   get _allDynamicSliceColumns(): TableColumnProvider<T>[] { return this._organizer.sliceBy.allDynamicFields; }
   get _activeSliceByLabel(): string { return this._organizer.sliceBy.activeLabel; }
-  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; col?: TableColumnProvider<T> }> = [];
+  _sliceByMenuItems: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; iconSvg?: string; col?: TableColumnProvider<T> }> = [];
 
   searchQuery = '';
   get activeGroupByKey(): string | null { return this._organizer.groupBy.activeKey; }
@@ -217,6 +219,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   private _ngZone = inject(NgZone);
   private _paginatorIntl = inject(MatPaginatorIntl);
   private _i18nRaw = inject(JQT_I18N, { optional: true });
+  private _sanitizer = inject(DomSanitizer);
+  private readonly _svgHtmlCache = new Map<string, SafeHtml>();
   private _tableShellResizeObserver?: ResizeObserver;
   private _tableOverflowObserver?: ResizeObserver;
   /** Vrai quand le tableau déborde de son conteneur (défilement) : le bouton d'épinglage n'est alors proposé. */
@@ -501,6 +505,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         label: this.colLabel(c),
         icon: c.icon,
         iconFontSet: c.iconFontSet,
+        iconSvg: c.iconSvg,
         state: 'ready' as const,
       })) : undefined,
       groups: this._organizer.showGroupBySection ? this._organizer.groupByFields.map(c => ({
@@ -508,12 +513,14 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         label: this.colLabel(c),
         icon: c.icon,
         iconFontSet: c.iconFontSet,
+        iconSvg: c.iconSvg,
       })) : undefined,
       slices: this._organizer.showSliceBySection ? this._sliceByMenuItems.map(item => ({
         id: item.key,
         label: item.title,
         icon: item.icon,
         iconFontSet: item.iconFontSet,
+        iconSvg: item.iconSvg,
       })) : undefined,
       buttonLabel: organizerOptions?.buttonLabel,
       buttonIcon: organizerOptions?.buttonIcon,
@@ -948,7 +955,18 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     return this._organizer.showSliceBySection;
   }
 
-  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet }> {
+  /** Nettoyé par liste blanche avant rendu : le sanitizer Angular retirerait <svg>/<path>. */
+  svgHtml(svg: string | undefined): SafeHtml | null {
+    if (!svg) return null;
+    let safe = this._svgHtmlCache.get(svg);
+    if (!safe) {
+      safe = this._sanitizer.bypassSecurityTrustHtml(sanitizeSvgMarkup(svg));
+      this._svgHtmlCache.set(svg, safe);
+    }
+    return safe;
+  }
+
+  get staticSlicesForMenu(): Array<{ key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; iconSvg?: string }> {
     return this._organizer.staticSlicesForMenu;
   }
 
@@ -1803,21 +1821,21 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     const staticSliceMap = new Map(this._staticSlicesForMenu.map(s => [s.key, s]));
     const dynamicSliceSet = new Set(this._allDynamicSliceColumns.map(c => c.key));
     const seen = new Set<string>();
-    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; col?: TableColumnProvider<T> }> = [];
+    const items: Array<{ isStatic: boolean; key: string; title: string; icon?: string; iconFontSet?: OrganizerIconFontSet; iconSvg?: string; col?: TableColumnProvider<T> }> = [];
     for (const col of this.resolvedConfig.columns ?? []) {
       if (seen.has(col.key)) continue;
       if (staticSliceMap.has(col.key)) {
         const s = staticSliceMap.get(col.key)!;
-        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet });
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet, iconSvg: s.iconSvg });
         seen.add(col.key);
       } else if (dynamicSliceSet.has(col.key)) {
-        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, iconFontSet: col.iconFontSet, col });
+        items.push({ isStatic: false, key: col.key, title: this.colLabel(col), icon: col.icon, iconFontSet: col.iconFontSet, iconSvg: col.iconSvg, col });
         seen.add(col.key);
       }
     }
     for (const s of this._staticSlicesForMenu) {
       if (!seen.has(s.key)) {
-        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet });
+        items.push({ isStatic: true, key: s.key, title: s.title, icon: s.icon, iconFontSet: s.iconFontSet, iconSvg: s.iconSvg });
       }
     }
     this._sliceByMenuItems = items;
@@ -2393,7 +2411,7 @@ function serializableColumn<T>(column: TableColumnProvider<T>): Record<string, u
     header: column.header,
     icon: column.icon,
     iconFontSet: column.iconFontSet,
-    sortable: column.sortable,
+    iconSvg: column.iconSvg,
     removable: column.removable,
     optional: column.optional,
     width: column.width,

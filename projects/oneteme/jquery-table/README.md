@@ -180,6 +180,7 @@ interface TableColumnProvider<T = any> {
   header?:    string;                  // Label de l'entête
   icon?:      string;                  // Icône Material (affiché dans l'entête)
   iconFontSet?: 'material-icons-outlined' | 'material-symbols-outlined'; // Police de l'icône, défaut: material-icons-outlined (entête et menus)
+  iconSvg?:   string;                  // Icône SVG brute (`<svg>…</svg>`), prioritaire sur icon (entête et menus) ; nettoyée par liste blanche (scripts, handlers on*, href, style, foreignObject, use, image retirés)
   value?:     DataProvider<any>;       // (row, index) => valeur affichée
   sortValue?: DataProvider<any>;       // Valeur pour le tri si différente de value
   sortable?:  boolean;

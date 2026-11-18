@@ -10,6 +10,8 @@ export interface OrganizerViewField {
   label: string;
   icon?: string;
   iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   visible?: boolean;
   state?: FieldState;
 }
@@ -48,6 +50,8 @@ export interface OrganizerViewGroup {
   label: string;
   icon?: string;
   iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
 }
 
 export interface OrganizerViewSlice {
@@ -55,6 +59,8 @@ export interface OrganizerViewSlice {
   label: string;
   icon?: string;
   iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   /** Libellé affiché pour une valeur de slice ; la clé brute reste utilisée pour le filtrage. */
   formatLabel?: (raw: string) => string;
   /** Ordre d'affichage des valeurs de slice ; par défaut, tri natif des clés. */
