@@ -405,6 +405,26 @@ describe('TableComponent — colonnes lazy (requête relancée par l\'applicatio
       expect(t.host.requested).toEqual([['team']]);
     });
 
+    it('demande la colonne d\'un slice statique visible dès le premier rendu', async () => {
+      const t = setup({ config: { slices: [{ title: 'Équipe', columnKey: 'team' }] } });
+      await t.settle();
+      expect(t.host.requested).toEqual([['team']]);
+    });
+
+    it('affiche un slice statique masqué sur une colonne lazy: l\'activation demande la colonne puis la charge', async () => {
+      const t = setup({ config: { slices: [{ title: 'Équipe', columnKey: 'team', hidden: true }] } });
+      await t.settle();
+      expect(t.host.requested).toEqual([]);
+
+      t.table().toggleStaticSlice('team');
+      await t.settle();
+      expect(t.host.requested).toEqual([['team']]);
+
+      t.host.data = withValues('team', { 1: 'A', 2: 'B', 3: 'A' });
+      await t.settle();
+      expect(t.table()['_lazyColumnStatus'].get('team')).toBe('loaded');
+    });
+
     it('demande une colonne lazy restaurée par un snapshot', async () => {
       const t = setup();
       await t.settle();

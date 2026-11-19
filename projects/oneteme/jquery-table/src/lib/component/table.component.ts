@@ -745,12 +745,13 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._scheduleRender();
   }
 
-  /** Colonnes lazy dont la valeur est nécessaire : affichées, utilisées en Group by ou en Slice by dynamique. */
+  /** Colonnes lazy dont la valeur est nécessaire : affichées, Group by, Slice by dynamique ou slice statique visible. */
   private _usedLazyColumns(): TableColumnProvider<T>[] {
     const used = new Map<string, TableColumnProvider<T>>();
     const add = (column?: TableColumnProvider<T>) => { if (column?.lazy) used.set(column.key, column); };
     this.activeFields.forEach(add);
     this._organizer.sliceBy.activeDynamicFields.forEach(add);
+    this._computeSliceConfigs().forEach(slice => { if (slice.columnKey) add(this._columnMap.get(slice.columnKey)); });
     const groupKey = this.activeGroupByKey;
     if (groupKey) add(this._columnMap.get(groupKey));
     return [...used.values()];
@@ -979,6 +980,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     // Le panneau retire la sélection du slice masqué et réémet le filtre des autres.
     this._setSliceConfigs(this._computeSliceConfigs());
     this._recomputeShowSlicePanel();
+    this._requestLazyColumns();
     this._scheduleRender();
     this._cdr.markForCheck();
   }
