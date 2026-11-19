@@ -296,14 +296,13 @@ providers: [
       emptyState:        'No data',
       loadingState:      'Loading…',
       viewNoneSelected:  'None',
-      groupRemove:       'Remove grouping',
       exportButtonLabel: 'Export',
     },
   },
 ]
 ```
 
-Seuls les champs fournis écrasent les défauts français. Voir `JqtI18n` pour la liste complète (31 labels).
+Seuls les champs fournis écrasent les défauts français. Voir `JqtI18n` pour la liste complète (20 labels).
 
 ---
 

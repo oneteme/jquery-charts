@@ -3,6 +3,7 @@ export class GroupByManager {
   private readonly _groupPages = new Map<string, number>();
 
   groupPageSize = 5;
+  groupSortBy: 'key' | 'count' = 'key';
   groupSortOrder: 'asc' | 'desc' = 'asc';
 
   private _defaultGroupCollapsed = false;
@@ -75,6 +76,17 @@ export class GroupByManager {
   onGroupSortToggle(dir: 'asc' | 'desc', scrollTo: (key: string) => void): void {
     if (this.groupSortOrder === dir) return;
     this.groupSortOrder = dir;
+    this._afterSortChange(scrollTo);
+  }
+
+  onGroupSortByChange(by: 'key' | 'count', scrollTo: (key: string) => void): void {
+    if (this.groupSortBy === by) return;
+    this.groupSortBy = by;
+    this.groupSortOrder = by === 'count' ? 'desc' : 'asc';
+    this._afterSortChange(scrollTo);
+  }
+
+  private _afterSortChange(scrollTo: (key: string) => void): void {
     this._groupPages.clear();
     this.onNeedRender();
     const openGroup = this.getSingleOpenGroup();

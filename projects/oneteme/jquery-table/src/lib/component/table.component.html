@@ -241,22 +241,20 @@
       <div class="group-bottom-bar" *ngIf="activeGroupByKey">
         <div class="group-bottom-bar-container">
           <div class="group-bottom-bar-left">
-            <button type="button" class="group-reset-btn" (click)="onGroupByChange(null)">
-              <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" class="group-reset-icon">
-                <path d="M3 8a5 5 0 1 0 5-5 5 5 0 0 0-3.54 1.46L3 3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M3 3v2.5H5.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              {{ i18n.groupRemove }}
-            </button>
-            <div class="group-bar-separator"></div>
             <div class="group-sort-controls">
               <span class="group-sort-label">{{ i18n.groupSortLabel }}</span>
-              <button type="button" class="group-sort-btn" [class.active]="groupSortOrder === 'asc'" (click)="onGroupSortToggle('asc')" [title]="i18n.groupSortAsc">
-                <mat-icon>arrow_upward</mat-icon>
-              </button>
-              <button type="button" class="group-sort-btn" [class.active]="groupSortOrder === 'desc'" (click)="onGroupSortToggle('desc')" [title]="i18n.groupSortDesc">
-                <mat-icon>arrow_downward</mat-icon>
-              </button>
+              <div class="group-sort-segment">
+                <button type="button" class="group-sort-btn" [class.active]="groupSortBy === 'key'" (click)="onGroupSortByChange('key')">{{ i18n.groupSortByKey }}</button>
+                <button type="button" class="group-sort-btn" [class.active]="groupSortBy === 'count'" (click)="onGroupSortByChange('count')">{{ i18n.groupSortByCount }}</button>
+              </div>
+              <div class="group-sort-segment">
+                <button type="button" class="group-sort-btn" [class.active]="groupSortOrder === 'asc'" (click)="onGroupSortToggle('asc')" [title]="groupSortBy === 'count' ? i18n.groupSortCountAsc : i18n.groupSortAsc">
+                  <mat-icon>arrow_upward</mat-icon>
+                </button>
+                <button type="button" class="group-sort-btn" [class.active]="groupSortOrder === 'desc'" (click)="onGroupSortToggle('desc')" [title]="groupSortBy === 'count' ? i18n.groupSortCountDesc : i18n.groupSortDesc">
+                  <mat-icon>arrow_downward</mat-icon>
+                </button>
+              </div>
             </div>
           </div>
           <div class="mat-mdc-paginator-page-size">

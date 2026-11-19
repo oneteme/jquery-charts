@@ -34,6 +34,7 @@ interface GroupByCache<T> {
   rows: T[];
   key: string;
   sortOrder: 'asc' | 'desc';
+  sortBy: 'key' | 'count';
   sortActive: string;
   sortDir: string;
   order: string[];
@@ -199,6 +200,8 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   set groupPageSize(v: number) { this._groupBy.groupPageSize = v; }
   get groupSortOrder(): 'asc' | 'desc' { return this._groupBy.groupSortOrder; }
   set groupSortOrder(v: 'asc' | 'desc') { this._groupBy.groupSortOrder = v; }
+  get groupSortBy(): 'key' | 'count' { return this._groupBy.groupSortBy; }
+  set groupSortBy(v: 'key' | 'count') { this._groupBy.groupSortBy = v; }
 
   /**
    * Statut des colonnes `lazy` déjà demandées (absente = pas encore demandée).
@@ -720,10 +723,16 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
   }
 
   onGroupSortToggle(dir: 'asc' | 'desc'): void {
-    this._groupBy.onGroupSortToggle(dir, (key) => {
-      this._ngZone.runOutsideAngular(() => this._scheduleDeferred(() => this.scrollToGroupHeader(key)));
-    });
+    this._groupBy.onGroupSortToggle(dir, this._scrollToGroupSortKey);
   }
+
+  onGroupSortByChange(by: 'key' | 'count'): void {
+    this._groupBy.onGroupSortByChange(by, this._scrollToGroupSortKey);
+  }
+
+  private readonly _scrollToGroupSortKey = (key: string): void => {
+    this._ngZone.runOutsideAngular(() => this._scheduleDeferred(() => this.scrollToGroupHeader(key)));
+  };
 
   getLazyColumnStatus(key: string): 'idle' | 'loading' | 'loaded' | 'error' {
     return this._lazyColumnStatus.get(key) ?? 'idle';
@@ -1403,6 +1412,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
                              ? { active: this._activeSort.active, direction: this._activeSort.direction }
                              : undefined,
       groupSortOrder:      this._groupBy.groupSortOrder,
+      groupSortBy:         this._groupBy.groupSortBy,
     };
     this._preferencesManager.save(config);
     this._hasSavedConfig = true;
@@ -1432,6 +1442,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     this._groupBy.reset();
     this._groupBy.setDefaultCollapsed(false);
     this._groupBy.groupSortOrder = 'asc';
+    this._groupBy.groupSortBy = 'key';
     this._userPageSize = null;
     this.pageSize = this.resolvePageSize();
     if (this.paginator) this.paginator.pageSize = this.pageSize;
@@ -1516,6 +1527,9 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
     }
     if (saved.groupSortOrder === 'asc' || saved.groupSortOrder === 'desc') {
       this._groupBy.groupSortOrder = saved.groupSortOrder;
+    }
+    if (saved.groupSortBy === 'key' || saved.groupSortBy === 'count') {
+      this._groupBy.groupSortBy = saved.groupSortBy;
     }
     // État panneau slice
     if (saved.slicePanelCollapsed !== undefined) this._slicePanelCollapsed = saved.slicePanelCollapsed;
@@ -2118,6 +2132,7 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
       this._groupCache.rows === rows &&
       this._groupCache.key === groupKey &&
       this._groupCache.sortOrder === this._groupBy.groupSortOrder &&
+      this._groupCache.sortBy === this._groupBy.groupSortBy &&
       this._groupCache.sortActive === (effectiveSort.active ?? '') &&
       this._groupCache.sortDir === (effectiveSort.direction ?? '');
 
@@ -2161,11 +2176,17 @@ export class TableComponent<T = any> implements OnChanges, AfterContentInit, Aft
         });
       }
 
+      if (this._groupBy.groupSortBy === 'count') {
+        const dir = this._groupBy.groupSortOrder === 'desc' ? -1 : 1;
+        groupOrder.sort((a, b) => dir * (groupMap.get(a)!.length - groupMap.get(b)!.length) || a.localeCompare(b));
+      }
+
       // Mise en cache
       this._groupCache = {
         rows,
         key: groupKey,
         sortOrder: this._groupBy.groupSortOrder,
+        sortBy: this._groupBy.groupSortBy,
         sortActive: effectiveSort.active ?? '',
         sortDir: effectiveSort.direction ?? '',
         order: groupOrder,

@@ -39,6 +39,12 @@ function makeRows(count = 12): Row[] {
   }));
 }
 
+function rowsByTeam(counts: Record<string, number>): Row[] {
+  let id = 0;
+  return Object.entries(counts).flatMap(([team, n]) =>
+    Array.from({ length: n }, () => ({ id: ++id, name: `${team}-${id}`, team, status: 'OK', score: 1, when: new Date(2026, 0, 1) })));
+}
+
 const baseColumns = (): TableColumnProvider<Row>[] => [
   { key: 'name', header: 'Nom' },
   { key: 'team', header: 'Équipe' },
@@ -351,6 +357,27 @@ describe('TableComponent', () => {
       expect(t.groupLabels()).toEqual([]);
       expect(t.cells('name').length).toBe(5);
       expect(t.host.groups).toEqual(['team', null]);
+    });
+
+    it('trie les groupes par volume, le plus grand d\'abord, puis départage par ordre alphabétique', async () => {
+      const t = setup({ data: rowsByTeam({ Alpha: 1, Beta: 3, Gamma: 3, Delta: 2 }) });
+      await t.settle();
+      t.table().onGroupByChange('team');
+      await t.settle();
+      expect(t.groupLabels()).toEqual(['Alpha', 'Beta', 'Delta', 'Gamma']);
+
+      t.table().onGroupSortByChange('count');
+      await t.settle();
+      expect(t.groupLabels()).toEqual(['Beta', 'Gamma', 'Delta', 'Alpha']);
+
+      t.table().onGroupSortToggle('asc');
+      await t.settle();
+      expect(t.groupLabels()).toEqual(['Alpha', 'Delta', 'Beta', 'Gamma']);
+
+      t.table().onGroupSortByChange('key');
+      await t.settle();
+      expect(t.table().groupSortOrder).toBe('asc');
+      expect(t.groupLabels()).toEqual(['Alpha', 'Beta', 'Delta', 'Gamma']);
     });
 
     it('applique defaultGroupBy et ne le réapplique pas quand les données changent', async () => {
@@ -1078,6 +1105,43 @@ describe('TableComponent', () => {
       await restored.settle();
       expect(restored.table().groupSortOrder).toBe('desc');
       expect(restored.groupLabels()).toEqual(['Gamma', 'Beta', 'Alpha']);
+    });
+
+    it('sauvegarde et restaure le critère de tri des groupes par volume', async () => {
+      const data = rowsByTeam({ Alpha: 1, Beta: 3, Gamma: 2 });
+      const t = setup({ data });
+      await t.settle();
+      t.table().onGroupByChange('team');
+      t.table().onGroupSortByChange('count');
+      await t.settle();
+      t.table().savePreferences();
+      expect(JSON.parse(localStorage.getItem('jqt_prefs_spec-table')!)).toEqual(jasmine.objectContaining({ groupSortBy: 'count', groupSortOrder: 'desc' }));
+      t.fixture.destroy();
+
+      const restored = setup({ data });
+      await restored.settle();
+      expect(restored.table().groupSortBy).toBe('count');
+      expect(restored.groupLabels()).toEqual(['Beta', 'Gamma', 'Alpha']);
+    });
+
+    it('clearPreferences remet le critère de tri des groupes par nom', async () => {
+      const t = setup({ data: rowsByTeam({ Alpha: 1, Beta: 3 }) });
+      await t.settle();
+      t.table().onGroupByChange('team');
+      t.table().onGroupSortByChange('count');
+      await t.settle();
+      t.table().savePreferences();
+      t.table().clearPreferences();
+      await t.settle();
+      expect(t.table().groupSortBy).toBe('key');
+      expect(t.table().groupSortOrder).toBe('asc');
+    });
+
+    it('ignore un critère de tri de groupe invalide', async () => {
+      localStorage.setItem('jqt_prefs_spec-table', JSON.stringify({ groupSortBy: 'foo' }));
+      const t = setup();
+      await t.settle();
+      expect(t.table().groupSortBy).toBe('key');
     });
 
     it('clearPreferences remet le tri de colonne et l\'ordre des groupes par défaut', async () => {
