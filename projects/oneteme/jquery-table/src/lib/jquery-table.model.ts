@@ -201,6 +201,8 @@ export interface SavedTableConfig {
   sort?: { active: string; direction: 'asc' | 'desc' };
   /** Ordre d'affichage des groupes (mode Group by). */
   groupSortOrder?: 'asc' | 'desc';
+  /** Critère de tri des groupes : nom (défaut) ou volume de lignes. */
+  groupSortBy?: 'key' | 'count';
 }
 export interface TableProvider<T = any> {
   columns?: TableColumnProvider<T>[];

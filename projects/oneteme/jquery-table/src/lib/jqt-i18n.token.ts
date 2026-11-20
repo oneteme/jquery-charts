@@ -30,14 +30,20 @@ export interface JqtI18n {
   viewMenuSliceBy: string;
   /** Label affiché quand aucune option n'est sélectionnée (groupe, slice). */
   viewNoneSelected: string;
-  /** Bouton "Retirer le groupe" dans la barre de groupe. */
-  groupRemove: string;
   /** Label "Trier :" dans la barre de groupe. */
   groupSortLabel: string;
   /** Tooltip tri ascendant. */
   groupSortAsc: string;
   /** Tooltip tri descendant. */
   groupSortDesc: string;
+  /** Bouton de critère de tri par nom. */
+  groupSortByKey: string;
+  /** Bouton de critère de tri par volume. */
+  groupSortByCount: string;
+  /** Tooltip tri par volume ascendant. */
+  groupSortCountAsc: string;
+  /** Tooltip tri par volume descendant. */
+  groupSortCountDesc: string;
   /** Label "Lignes par groupe" dans le sélecteur de taille de groupe. */
   groupRowsPerGroup: string;
   /** Option "Toutes" (afficher toutes les lignes sans pagination de groupe). */
@@ -89,10 +95,13 @@ export const JQT_I18N_DEFAULTS: JqtI18n = {
   viewMenuGroupBy: 'Grouper par',
   viewMenuSliceBy: 'Filtrer par',
   viewNoneSelected: 'Aucun',
-  groupRemove: 'Retirer le groupe',
   groupSortLabel: 'Trier :',
   groupSortAsc: 'A → Z',
   groupSortDesc: 'Z → A',
+  groupSortByKey: 'Nom',
+  groupSortByCount: 'Volume',
+  groupSortCountAsc: 'Moins de lignes d\'abord',
+  groupSortCountDesc: 'Plus de lignes d\'abord',
   groupRowsPerGroup: 'Lignes par groupe :',
   groupShowAll: 'Toutes',
   groupTooMany: (count) => `⚠ Trop de groupes (${count}) — affinez les données ou choisissez une autre colonne`,

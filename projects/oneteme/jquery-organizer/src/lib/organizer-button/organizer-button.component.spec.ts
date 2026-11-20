@@ -155,6 +155,102 @@ describe('OrganizerButtonComponent', () => {
       });
     });
 
+    describe('variantes de Grouper par et de Filtrer par (options)', () => {
+      const withMenuOptions = (): OrganizerConfig => ({
+        ...baseConfig(),
+        xFields: [
+          { id: 'date', label: 'Date', options: [{ id: 'hour', label: 'Heure' }, { id: 'day', label: 'Jour' }] },
+          { id: 'app', label: 'Application' },
+        ],
+        groups: [
+          { id: 'date', label: 'Date', options: [{ id: 'auto', label: 'Automatique' }, { id: 'day', label: 'Jour' }] },
+          { id: 'status', label: 'Statut' },
+        ],
+        slices: [
+          { id: 'date', label: 'Date', options: [{ id: 'auto', label: 'Automatique' }, { id: 'day', label: 'Jour' }] },
+          { id: 'ko', label: 'KO' },
+        ],
+      });
+
+      it('Grouper par : une variante sélectionne le groupe avec son option sans toucher à l\'axe X', () => {
+        const { component, last } = setup(withMenuOptions(), { selectedX: 'date', selectedXOption: 'hour' });
+        component.onGroupOptionSelect('date', 'day');
+
+        expect(last().type).toBe('groupByOptionSelected');
+        expect(last().state.selectedGroupBy).toBe('date');
+        expect(last().state.selectedGroupByOption).toBe('day');
+        expect(last().state.selectedX).toBe('date');
+        expect(last().state.selectedXOption).toBe('hour');
+      });
+
+      it('Grouper par : l\'option par défaut est la première, et seulement si le groupe est sélectionné', () => {
+        expect(setup(withMenuOptions(), { selectedGroupBy: 'date' }).component.isGroupOptionActive('date', 'auto')).toBeTrue();
+        expect(setup(withMenuOptions(), { selectedGroupBy: 'date' }).component.isGroupOptionActive('date', 'day')).toBeFalse();
+        expect(setup(withMenuOptions(), {}).component.isGroupOptionActive('date', 'auto')).toBeFalse();
+      });
+
+      it('Grouper par : recliquer l\'option active retire le groupe ; une option inconnue ou d\'un groupe sans options est ignorée', () => {
+        const active = setup(withMenuOptions(), { selectedGroupBy: 'date', selectedGroupByOption: 'day' });
+        active.component.onGroupOptionSelect('date', 'day');
+        expect(active.last().type).toBe('groupBySelected');
+        expect(active.last().state.selectedGroupBy).toBeUndefined();
+        expect(active.last().state.selectedGroupByOption).toBeUndefined();
+
+        const { component, events } = setup(withMenuOptions(), { selectedGroupBy: 'date', selectedGroupByOption: 'day' });
+        component.onGroupOptionSelect('date', 'ghost');
+        component.onGroupOptionSelect('status', 'day');
+        expect(events.length).toBe(0);
+      });
+
+      it('libellé de Grouper par : affiche l\'option active', () => {
+        expect(setup(withMenuOptions(), { selectedGroupBy: 'date', selectedGroupByOption: 'day' }).component.activeGroupByLabel()).toBe('Date · Jour');
+        expect(setup(withMenuOptions(), { selectedGroupBy: 'date' }).component.activeGroupByLabel()).toBe('Date');
+      });
+
+      it('Filtrer par : une variante sur un filtre non sélectionné le sélectionne avec cette option', () => {
+        const { component, events, last } = setup(withMenuOptions(), { selectedX: 'app' });
+        component.onSliceOptionSelect('date', 'day');
+
+        expect(events[0].type).toBe('sliceOptionSelected');
+        expect(events[0].state.selectedSliceOptions).toEqual({ date: 'day' });
+        expect(last().type).toBe('sliceSelected');
+        expect(last().state.selectedSlices).toEqual(['date']);
+        expect(last().state.selectedX).toBe('app');
+      });
+
+      it('Filtrer par : changer la variante d\'un filtre sélectionné recharge ses tranches sans toucher à l\'axe X', () => {
+        const onFetchSliceData = jasmine.createSpy('onFetchSliceData').and.returnValue(of([{ date: '2026-11-03' }]));
+        const { component, last } = setup(
+          { ...withMenuOptions(), onFetchSliceData, remapSliceSelection: keys => keys },
+          { selectedX: 'app', selectedSlices: ['date'] });
+        component.onSliceOptionSelect('date', 'day');
+
+        expect(onFetchSliceData).toHaveBeenCalledWith('date');
+        expect(last().type).toBe('sliceOptionSelected');
+        expect(last().state.selectedSliceOptions).toEqual({ date: 'day' });
+        expect(last().state.selectedSlices).toEqual(['date']);
+        expect(last().state.selectedX).toBe('app');
+      });
+
+      it('Filtrer par : recliquer l\'option active d\'un filtre sélectionné le retire, sans toucher à l\'axe X', () => {
+        const { component, last } = setup(withMenuOptions(), { selectedX: 'app', selectedSlices: ['date'], selectedSliceOptions: { date: 'day' } });
+        component.onSliceOptionSelect('date', 'day');
+
+        expect(last().type).toBe('sliceSelected');
+        expect(last().state.selectedSlices).toEqual([]);
+        expect(last().state.selectedX).toBe('app');
+      });
+
+      it('Filtrer par : l\'option active suit selectedSliceOptions et reste fausse si le filtre n\'est pas sélectionné', () => {
+        expect(setup(withMenuOptions(), { selectedSlices: ['date'], selectedSliceOptions: { date: 'day' } })
+          .component.isSliceOptionActive('date', 'day')).toBeTrue();
+        expect(setup(withMenuOptions(), { selectedSlices: ['date'], selectedSliceOptions: { date: 'day' } })
+          .component.isSliceOptionActive('date', 'auto')).toBeFalse();
+        expect(setup(withMenuOptions(), { selectedSliceOptions: { date: 'day' } })
+          .component.isSliceOptionActive('date', 'day')).toBeFalse();
+      });
+    });
+
     it('Y : sélectionner un champ à agrégats choisit le premier agrégat', () => {
       const { component, last } = setup();
       component.onYFieldSelect('latency');
@@ -189,6 +285,33 @@ describe('OrganizerButtonComponent', () => {
       component.state = last().state;
       component.onGroupBySelect('status');
       expect(last().state.selectedGroupBy).toBeUndefined();
+    });
+
+    it('Empiler : visible uniquement avec un groupement actif', () => {
+      expect(setup({ ...baseConfig(), showStack: true }).component.showStackToggle()).toBeFalse();
+      expect(setup({ ...baseConfig(), showStack: true }, { selectedGroupBy: 'status' }).component.showStackToggle()).toBeTrue();
+      expect(setup(baseConfig(), { selectedGroupBy: 'status' }).component.showStackToggle()).toBeFalse();
+    });
+
+    it('Empiler : masqué pour les types de graphique non empilables', () => {
+      const config = { ...baseConfig(), showStack: true, stackChartTypes: ['column', 'bar'] };
+      expect(setup(config, { selectedGroupBy: 'status', selectedChartType: 'column' }).component.showStackToggle()).toBeTrue();
+      expect(setup(config, { selectedGroupBy: 'status', selectedChartType: 'line' }).component.showStackToggle()).toBeFalse();
+      expect(setup(config, { selectedGroupBy: 'status' }).component.showStackToggle()).toBeFalse();
+    });
+
+    it('Empiler : coché par défaut, un clic émet stackToggled et inverse l\'état', () => {
+      const { component, events, last } = setup({ ...baseConfig(), showStack: true }, { selectedGroupBy: 'status' });
+      expect(component.isStacked()).toBeTrue();
+
+      component.onStackToggle();
+      expect(last().type).toBe('stackToggled');
+      expect(last().state.stacked).toBeFalse();
+
+      component.state = last().state;
+      component.onStackToggle();
+      expect(last().state.stacked).toBeTrue();
+      expect(events.length).toBe(2);
     });
 
     it('type de graphique : ignore un type désactivé, inconnu ou déjà actif', () => {
@@ -477,7 +600,7 @@ describe('OrganizerButtonComponent', () => {
 
   describe('autres actions', () => {
     it('reset restaure les champs visibles par défaut et vide les sélections', () => {
-      const { component, last } = setup(baseConfig(), { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'status', selectedSlices: ['ok'] });
+      const { component, last } = setup(baseConfig(), { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'status', selectedSlices: ['ok'], stacked: false });
       component.onReset();
 
       expect(last().type).toBe('reset');
@@ -486,6 +609,7 @@ describe('OrganizerButtonComponent', () => {
       expect(last().state.selectedY).toBeUndefined();
       expect(last().state.selectedGroupBy).toBeUndefined();
       expect(last().state.selectedSlices).toEqual([]);
+      expect(last().state.stacked).toBeTrue();
     });
 
     it('switchView bascule entre graphique et tableau et notifie les deux canaux', () => {

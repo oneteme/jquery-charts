@@ -1,6 +1,46 @@
-import { OrganizerConfig, OrganizerState, OrganizerTemplate, OrganizerXField, OrganizerYField } from './organizer-config.interface';
+import { OrganizerConfig, OrganizerState, OrganizerSubmenu, OrganizerTemplate, OrganizerViewGroup, OrganizerViewSlice, OrganizerXField, OrganizerYField } from './organizer-config.interface';
 
 type OrganizerStateConfig = Pick<OrganizerConfig, 'xFields' | 'yFields' | 'groups' | 'slices' | 'templates' | 'chartTypes'>;
+
+/** Entrée de menu : soit une entrée simple (`item`), soit un sous-menu (`submenu`) regroupant `items`. */
+export interface OrganizerMenuEntry<T> {
+  item?: T;
+  submenu?: OrganizerSubmenu;
+  items?: T[];
+}
+
+/** Regroupe les entrées partageant un même `submenu.id` sous une seule entrée, à la position de la première. */
+export function buildMenuEntries<T extends { submenu?: OrganizerSubmenu }>(items: T[] | undefined): OrganizerMenuEntry<T>[] {
+  const entries: OrganizerMenuEntry<T>[] = [];
+  const bySubmenu = new Map<string, OrganizerMenuEntry<T>>();
+  for (const item of items ?? []) {
+    if (!item.submenu) {
+      entries.push({ item });
+      continue;
+    }
+    let entry = bySubmenu.get(item.submenu.id);
+    if (!entry) {
+      entry = { submenu: item.submenu, items: [] };
+      bySubmenu.set(item.submenu.id, entry);
+      entries.push(entry);
+    }
+    entry.items!.push(item);
+  }
+  return entries;
+}
+
+/** Mémorise les entrées de menu tant que la référence de la liste source ne change pas. */
+export function createMenuEntriesMemo<T extends { submenu?: OrganizerSubmenu }>(): (items: T[] | undefined) => OrganizerMenuEntry<T>[] {
+  let source: T[] | undefined;
+  let entries: OrganizerMenuEntry<T>[] = [];
+  return items => {
+    if (items !== source) {
+      source = items;
+      entries = buildMenuEntries(items);
+    }
+    return entries;
+  };
+}
 
 export interface OrganizerYIndicator {
   id: string;
@@ -49,7 +89,9 @@ export function normalizeOrganizerState(
   const selectedXOption = resolveXOption(config.xFields, selectedX, base.selectedXOption);
   const selectedChartType = hasOption(config.chartTypes, base.selectedChartType) ? base.selectedChartType : undefined;
   const selectedGroupBy = hasOption(config.groups, base.selectedGroupBy) ? base.selectedGroupBy : undefined;
+  const selectedGroupByOption = resolveGroupByOption(config.groups, selectedGroupBy, base.selectedGroupByOption);
   const selectedSlices = (base.selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId));
+  const selectedSliceOptions = resolveSliceOptions(config.slices, base.selectedSliceOptions);
 
   const normalized: OrganizerState = {
     ...base,
@@ -59,7 +101,9 @@ export function normalizeOrganizerState(
     selectedY: normalizedY.selectedY,
     selectedYAggregate: normalizedY.selectedYAggregate,
     selectedGroupBy,
+    selectedGroupByOption,
     selectedSlices,
+    selectedSliceOptions,
   };
 
   return {
@@ -85,6 +129,7 @@ export function normalizeTemplateToState(
     selectedYAggregate: normalizedY.selectedYAggregate,
     selectedGroupBy: hasOption(config.groups, template.groupBy) ? template.groupBy : base.selectedGroupBy,
     selectedSlices: (template.selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId)),
+    stacked: base.stacked,
   };
 
   const resolvedTemplateId = resolveMatchingTemplateId(config.templates, nextState, config);
@@ -217,7 +262,7 @@ function sameOrganizerState(left: OrganizerState, right: OrganizerState): boolea
     && sameSlices(left.selectedSlices || [], right.selectedSlices || []);
 }
 
-function sameSlices(left: string[], right: string[]): boolean {
+export function sameSlices(left: string[], right: string[]): boolean {
   if (left.length !== right.length) return false;
   const sortedLeft = [...left].sort((a, b) => a.localeCompare(b));
   const sortedRight = [...right].sort((a, b) => a.localeCompare(b));
@@ -235,4 +280,28 @@ function resolveXOption(
 ): string | undefined {
   const options = xFields?.find(field => field.id === selectedX)?.options;
   return hasOption(options, selectedXOption) ? selectedXOption : undefined;
+}
+
+function resolveGroupByOption(
+  groups: OrganizerViewGroup[] | undefined,
+  selectedGroupBy: string | undefined,
+  selectedGroupByOption: string | undefined
+): string | undefined {
+  const options = groups?.find(group => group.id === selectedGroupBy)?.options;
+  return hasOption(options, selectedGroupByOption) ? selectedGroupByOption : undefined;
+}
+
+/** Conserve l'option choisie de chaque filtre, indépendamment de sa sélection, tant qu'elle reste valide. */
+function resolveSliceOptions(
+  slices: OrganizerViewSlice[] | undefined,
+  selectedSliceOptions: Record<string, string> | undefined
+): Record<string, string> | undefined {
+  const resolved: Record<string, string> = {};
+  for (const slice of slices ?? []) {
+    const option = selectedSliceOptions?.[slice.id];
+    if (hasOption(slice.options, option)) {
+      resolved[slice.id] = option!;
+    }
+  }
+  return Object.keys(resolved).length ? resolved : undefined;
 }

@@ -145,5 +145,31 @@ describe('GroupByManager', () => {
       manager.onGroupSortToggle('desc', scrollTo);
       expect(scrollTo).toHaveBeenCalledOnceWith('B');
     });
+
+    it('passe au tri par volume en sens décroissant par défaut', () => {
+      const { manager, onNeedRender, scrollTo } = setup();
+      manager.groupPageForward('A', 50);
+
+      manager.onGroupSortByChange('count', scrollTo);
+      expect(manager.groupSortBy).toBe('count');
+      expect(manager.groupSortOrder).toBe('desc');
+      expect(manager.getPage('A')).toBe(0);
+      expect(onNeedRender).toHaveBeenCalledTimes(1);
+    });
+
+    it('revient au tri par nom en sens croissant', () => {
+      const { manager, scrollTo } = setup();
+      manager.onGroupSortByChange('count', scrollTo);
+
+      manager.onGroupSortByChange('key', scrollTo);
+      expect(manager.groupSortBy).toBe('key');
+      expect(manager.groupSortOrder).toBe('asc');
+    });
+
+    it('ignore le changement de critère demandé à l\'identique', () => {
+      const { manager, onNeedRender, scrollTo } = setup();
+      manager.onGroupSortByChange('key', scrollTo);
+      expect(onNeedRender).not.toHaveBeenCalled();
+    });
   });
 });

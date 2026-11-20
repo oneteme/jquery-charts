@@ -25,12 +25,18 @@ export interface OrganizerXOption {
 export interface OrganizerXField {
   id: string;
   label: string;
+  icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   disabled?: boolean;
   /**
    * Sous-menu de variantes pour cet axe (ex. découpage d'une date). La première option est la valeur par défaut
    * lorsque `selectedXOption` n'est pas défini.
    */
   options?: OrganizerXOption[];
+  /** Sous-menu regroupant plusieurs axes X (ex. « Statut » : Valeur, Tranche). Les entrées d'un sous-menu n'ont pas de variantes. */
+  submenu?: OrganizerSubmenu;
 }
 
 export interface OrganizerYAggregate {
@@ -45,6 +51,16 @@ export interface OrganizerYField {
   disabled?: boolean;
 }
 
+/** Sous-menu regroupant plusieurs entrées de « Grouper par » ou « Filtrer par » (ex. « Statut » : Valeur, Tranche). */
+export interface OrganizerSubmenu {
+  id: string;
+  label: string;
+  icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
+}
+
 export interface OrganizerViewGroup {
   id: string;
   label: string;
@@ -52,6 +68,9 @@ export interface OrganizerViewGroup {
   iconFontSet?: OrganizerIconFontSet;
   /** Icône SVG (markup brut), prioritaire sur `icon`. */
   iconSvg?: string;
+  submenu?: OrganizerSubmenu;
+  /** Variantes du groupement (ex. découpage d'une date). La première option est la valeur par défaut. */
+  options?: OrganizerXOption[];
 }
 
 export interface OrganizerViewSlice {
@@ -61,6 +80,10 @@ export interface OrganizerViewSlice {
   iconFontSet?: OrganizerIconFontSet;
   /** Icône SVG (markup brut), prioritaire sur `icon`. */
   iconSvg?: string;
+  /** Sous-menu : les tranches d'un même sous-menu sont exclusives (une seule sélectionnée à la fois). */
+  submenu?: OrganizerSubmenu;
+  /** Variantes du filtre (ex. découpage d'une date). La première option est la valeur par défaut. */
+  options?: OrganizerXOption[];
   /** Libellé affiché pour une valeur de slice ; la clé brute reste utilisée pour le filtrage. */
   formatLabel?: (raw: string) => string;
   /** Ordre d'affichage des valeurs de slice ; par défaut, tri natif des clés. */
@@ -121,6 +144,11 @@ export interface OrganizerConfig {
   onExportVisual?: () => void;
   onExportData?: () => void;
 
+  /** Affiche l'option « Empiler » en bas du sous-menu « Grouper par ». */
+  showStack?: boolean;
+  /** Types de graphique pour lesquels « Empiler » a un sens ; absent = tous les types. */
+  stackChartTypes?: string[];
+
   /** Affiche les commandes liées au visuel courant dans le sous-menu Actions. */
   showActions?: boolean;
   actions?: OrganizerActionsConfig;
@@ -169,12 +197,18 @@ export interface OrganizerState {
   selectedYAggregate?: string;
 
   selectedGroupBy?: string;
+  /** Variante choisie pour « Grouper par » ; absent = première option. Indépendante de `selectedXOption`. */
+  selectedGroupByOption?: string;
   selectedSlices?: string[];
+  /** Variante choisie par filtre (clé : id de la tranche) ; absent = première option. Indépendante des autres menus. */
+  selectedSliceOptions?: Record<string, string>;
+  /** Empilement des séries de « Grouper par ». Absent = empilé (comportement par défaut). */
+  stacked?: boolean;
   selectedTemplate?: string;
 }
 
 export interface OrganizerButtonEvent {
-  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'templateSelected' | 'sliceSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
+  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'groupByOptionSelected' | 'stackToggled' | 'templateSelected' | 'sliceSelected' | 'sliceOptionSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
   state: OrganizerState;
   source?: 'user' | 'api';
   resolvedYUnit?: string | UnitConfig;

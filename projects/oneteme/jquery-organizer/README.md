@@ -132,10 +132,10 @@ Composant standalone qui affiche un bouton ouvrant un menu Material. Le menu exp
 ```typescript
 export interface OrganizerConfig {
   // Champs/Indicateurs/Groupements disponibles
-  xFields?: OrganizerXField[];           // Dimensions (ex: date, host)
+  xFields?: OrganizerXField[];           // Dimensions (ex: date, host) ; `submenu` les regroupe sous un sous-menu commun (ex: Statut)
   yFields?: OrganizerYField[];           // Indicateurs (ex: count, elapsed_avg)
-  groups?: OrganizerViewGroup[];         // Options de regroupement
-  slices?: OrganizerViewSlice[];         // Options de filtre
+  groups?: OrganizerViewGroup[];         // Options de regroupement (`submenu` idem)
+  slices?: OrganizerViewSlice[];         // Options de filtre (`submenu` idem)
   chartTypes?: OrganizerChartType[];     // Types proposés par le renderer hôte
 
   // Callbacks
@@ -165,6 +165,8 @@ export interface OrganizerConfig {
 
   // UI
   showReset?: boolean;                   // Défaut: false
+  showStack?: boolean;                   // Affiche « Empiler » sous « Grouper par » (visible seulement si un groupement est actif) ; absent/false = pas d'option
+  stackChartTypes?: string[];            // Types de graphique où « Empiler » est proposé ; absent = tous les types
   buttonLabel?: string;
   buttonIcon?: string;                   // Icône Material
   showButtonIcon?: boolean;
@@ -191,11 +193,12 @@ export interface OrganizerState {
   selectedYAggregate?: string;           // Agrégat si applicable
   selectedGroupBy?: string;              // Regroupement actif
   selectedSlices?: string[];             // Filtres actifs
+  stacked?: boolean;                     // Séries empilées ; absent = empilé
 }
 
 export interface OrganizerButtonEvent {
   type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' 
-  | 'sliceSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
+  | 'sliceSelected' | 'chartTypeSelected' | 'stackToggled' | 'reset' | 'viewSwitched';
   state: OrganizerState;                 // État complet après action
   source?: 'user' | 'api';
   resolvedYUnit?: string | UnitConfig;   // Unité auto-détectée (voir Auto-Scaling)
