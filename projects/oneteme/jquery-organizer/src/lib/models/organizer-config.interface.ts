@@ -25,6 +25,10 @@ export interface OrganizerXOption {
 export interface OrganizerXField {
   id: string;
   label: string;
+  icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
   disabled?: boolean;
   /**
    * Sous-menu de variantes pour cet axe (ex. découpage d'une date). La première option est la valeur par défaut
@@ -51,6 +55,10 @@ export interface OrganizerYField {
 export interface OrganizerSubmenu {
   id: string;
   label: string;
+  icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
+  /** Icône SVG (markup brut), prioritaire sur `icon`. */
+  iconSvg?: string;
 }
 
 export interface OrganizerViewGroup {

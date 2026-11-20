@@ -1,14 +1,20 @@
-import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerSubmenu, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField, OrganizerXOption } from './organizer-config.interface';
+import { OrganizerButtonEvent, OrganizerConfig, OrganizerIconFontSet, OrganizerState, OrganizerSubmenu, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField, OrganizerXOption } from './organizer-config.interface';
 import { buildYFields, normalizeOrganizerState, resolveYKey, sameSlices } from './organizer-utils';
 import { UnitConfig } from '@oneteme/jquery-core';
 import { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
 
 export { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
 
+interface OrganizerIconFields {
+  icon?: string;
+  iconFontSet?: OrganizerIconFontSet;
+  iconSvg?: string;
+}
+
 export interface OrganizerChartItem {
   key: string;
   selected: boolean;
-  menu: { label: string };
+  menu: { label: string } & OrganizerIconFields;
   unit?: string | UnitConfig;
   jquery?: {
     value: (s?: string) => string;
@@ -85,6 +91,7 @@ export function chartConfigToOrganizer(
       return {
         id: g.key,
         label: g.menu.label || g.key,
+        ...iconFields(g.menu),
         ...(xOptions?.length ? { options: xOptions } : {}),
       };
     });
@@ -94,7 +101,7 @@ export function chartConfigToOrganizer(
   );
 
   const stackItems = getStackItems(activeIndicator).filter((s: OrganizerChartItem) => !_isSynthetic(s));
-  const stackFields = stackItems.map((s: OrganizerChartItem) => ({ id: s.key, label: s.menu.label || s.key }));
+  const stackFields = stackItems.map((s: OrganizerChartItem) => ({ id: s.key, label: s.menu.label || s.key, ...iconFields(s.menu) }));
 
   const seenKeys = new Set<string>();
   const mergedGroupFields = [...baseXFields, ...stackFields].filter(f => {
@@ -109,7 +116,7 @@ export function chartConfigToOrganizer(
   const menuFields: OrganizerXField[] = mergedGroupFields.map(f => {
     const submenu = sourceItems.get(f.id)?.submenu;
     return submenu
-      ? { ...f, label: submenu.itemLabel ?? f.label, submenu: { id: submenu.id, label: submenu.label } }
+      ? { ...f, label: submenu.itemLabel ?? f.label, submenu: { id: submenu.id, label: submenu.label, ...iconFields(submenu) } }
       : f;
   });
 
@@ -122,7 +129,8 @@ export function chartConfigToOrganizer(
       return {
         id: f.key,
         label: f.menu.label || f.key,
-        ...(f.submenu ? { submenu: { id: f.submenu.id, label: f.submenu.label } } : {}),
+        ...iconFields(f.menu),
+        ...(f.submenu ? { submenu: { id: f.submenu.id, label: f.submenu.label, ...iconFields(f.submenu) } } : {}),
         ...(sliceOptions?.length ? { options: sliceOptions } : {}),
         ...resolveSliceDisplay?.(f.key, 'slice')
       } as OrganizerViewSlice;
@@ -287,6 +295,14 @@ function _makeSynthetic(item: OrganizerChartItem): OrganizerChartItem {
 
 function _isSynthetic(item: OrganizerChartItem): boolean {
   return _syntheticItems.has(item);
+}
+
+function iconFields(source: OrganizerIconFields | undefined): OrganizerIconFields {
+  return {
+    ...(source?.icon ? { icon: source.icon } : {}),
+    ...(source?.iconFontSet ? { iconFontSet: source.iconFontSet } : {}),
+    ...(source?.iconSvg ? { iconSvg: source.iconSvg } : {}),
+  };
 }
 
 function _cleanSynthetics(chartConfig: OrganizerChartConfig): void {

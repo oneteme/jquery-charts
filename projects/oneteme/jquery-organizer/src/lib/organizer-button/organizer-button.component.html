@@ -176,6 +176,8 @@
             [disabled]="xField.disabled"
             (click)="onXFieldSelect(xField.id)">
             <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+            <span *ngIf="xField.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(xField.iconSvg)"></span>
+            <mat-icon *ngIf="xField.icon && !xField.iconSvg" class="organizer-submenu-icon" [fontSet]="xField.iconFontSet ?? 'material-icons-outlined'">{{ xField.icon }}</mat-icon>
             {{ xField.label }}
           </button>
 
@@ -188,6 +190,8 @@
             [matMenuTriggerData]="{ xField: xField }"
             (mousedown)="$event.stopPropagation()">
             <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+            <span *ngIf="xField.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(xField.iconSvg)"></span>
+            <mat-icon *ngIf="xField.icon && !xField.iconSvg" class="organizer-submenu-icon" [fontSet]="xField.iconFontSet ?? 'material-icons-outlined'">{{ xField.icon }}</mat-icon>
             {{ xField.label }}
             <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
           </button>
@@ -202,6 +206,8 @@
             [matMenuTriggerData]="{ entry: entry }"
             (mousedown)="$event.stopPropagation()">
             <span class="organizer-submenu-check">{{ isXEntryActive(entry) ? '✓' : '' }}</span>
+            <span *ngIf="entry.submenu?.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(entry.submenu?.iconSvg)"></span>
+            <mat-icon *ngIf="entry.submenu?.icon && !entry.submenu?.iconSvg" class="organizer-submenu-icon" [fontSet]="entry.submenu?.iconFontSet ?? 'material-icons-outlined'">{{ entry.submenu?.icon }}</mat-icon>
             {{ entry.submenu?.label }}
             <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
           </button>
@@ -349,6 +355,8 @@
         [matMenuTriggerData]="{ entry: entry }"
         (mousedown)="$event.stopPropagation()">
         <span class="organizer-submenu-check">{{ isGroupEntryActive(entry) ? '✓' : '' }}</span>
+        <span *ngIf="entry.submenu?.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(entry.submenu?.iconSvg)"></span>
+        <mat-icon *ngIf="entry.submenu?.icon && !entry.submenu?.iconSvg" class="organizer-submenu-icon" [fontSet]="entry.submenu?.iconFontSet ?? 'material-icons-outlined'">{{ entry.submenu?.icon }}</mat-icon>
         {{ entry.submenu?.label }}
         <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
       </button>
@@ -434,6 +442,8 @@
         [matMenuTriggerData]="{ entry: entry }"
         (mousedown)="$event.stopPropagation()">
         <span class="organizer-submenu-check">{{ isSliceEntryActive(entry) ? '✓' : '' }}</span>
+        <span *ngIf="entry.submenu?.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(entry.submenu?.iconSvg)"></span>
+        <mat-icon *ngIf="entry.submenu?.icon && !entry.submenu?.iconSvg" class="organizer-submenu-icon" [fontSet]="entry.submenu?.iconFontSet ?? 'material-icons-outlined'">{{ entry.submenu?.icon }}</mat-icon>
         {{ entry.submenu?.label }}
         <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
       </button>

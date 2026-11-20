@@ -101,6 +101,19 @@ describe('organizer-chart-adapter', () => {
       expect(ko?.formatLabel).toBeUndefined();
       expect(ko?.label).toBe('KO');
     });
+
+    it('transmet les icônes des axes X, des sous-menus et des tranches', () => {
+      const chart = makeChart();
+      chart.groups!.items[0].menu = { label: 'Jour', icon: 'today' };
+      chart.indicators!.items[0].extra!.stacks!.items[0].submenu = { id: 'statut', label: 'Statut', icon: 'task_alt', iconFontSet: 'material-symbols-outlined' };
+      chart.filters!.items[0].menu = { label: 'OK', iconSvg: '<svg></svg>' };
+      const organizer = chartConfigToOrganizer(chart);
+
+      expect(organizer.xFields?.find(f => f.id === 'day')).toEqual(jasmine.objectContaining({ icon: 'today' }));
+      expect(organizer.xFields?.find(f => f.id === 'status')?.submenu)
+        .toEqual({ id: 'statut', label: 'Statut', icon: 'task_alt', iconFontSet: 'material-symbols-outlined' });
+      expect(organizer.slices?.find(s => s.id === 'ok')).toEqual(jasmine.objectContaining({ iconSvg: '<svg></svg>' }));
+    });
   });
 
   describe('sous-menus', () => {
