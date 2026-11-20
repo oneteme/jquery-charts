@@ -193,9 +193,10 @@ export class OrganizerButtonComponent implements OnDestroy {
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
 
-  /** Empiler n'a d'effet qu'avec un groupement actif : l'option n'est proposée que dans ce cas. */
+  /** Empiler n'a d'effet qu'avec un groupement actif et un type de graphique empilable. */
   showStackToggle(): boolean {
-    return !!this.config.showStack && !!this.state?.selectedGroupBy;
+    const stackable = !this.config.stackChartTypes || (!!this.state?.selectedChartType && this.config.stackChartTypes.includes(this.state.selectedChartType));
+    return !!this.config.showStack && !!this.state?.selectedGroupBy && stackable;
   }
 
   /** Empile les séries (sélectionné par défaut, absent de l'état = empilé). */

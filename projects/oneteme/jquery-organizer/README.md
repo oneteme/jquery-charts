@@ -166,6 +166,7 @@ export interface OrganizerConfig {
   // UI
   showReset?: boolean;                   // Défaut: false
   showStack?: boolean;                   // Affiche « Empiler » sous « Grouper par » (visible seulement si un groupement est actif) ; absent/false = pas d'option
+  stackChartTypes?: string[];            // Types de graphique où « Empiler » est proposé ; absent = tous les types
   buttonLabel?: string;
   buttonIcon?: string;                   // Icône Material
   showButtonIcon?: boolean;

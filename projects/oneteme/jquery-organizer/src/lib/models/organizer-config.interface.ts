@@ -138,6 +138,8 @@ export interface OrganizerConfig {
 
   /** Affiche l'option « Empiler » en bas du sous-menu « Grouper par ». */
   showStack?: boolean;
+  /** Types de graphique pour lesquels « Empiler » a un sens ; absent = tous les types. */
+  stackChartTypes?: string[];
 
   /** Affiche les commandes liées au visuel courant dans le sous-menu Actions. */
   showActions?: boolean;

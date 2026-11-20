@@ -293,6 +293,13 @@ describe('OrganizerButtonComponent', () => {
       expect(setup(baseConfig(), { selectedGroupBy: 'status' }).component.showStackToggle()).toBeFalse();
     });
 
+    it('Empiler : masqué pour les types de graphique non empilables', () => {
+      const config = { ...baseConfig(), showStack: true, stackChartTypes: ['column', 'bar'] };
+      expect(setup(config, { selectedGroupBy: 'status', selectedChartType: 'column' }).component.showStackToggle()).toBeTrue();
+      expect(setup(config, { selectedGroupBy: 'status', selectedChartType: 'line' }).component.showStackToggle()).toBeFalse();
+      expect(setup(config, { selectedGroupBy: 'status' }).component.showStackToggle()).toBeFalse();
+    });
+
     it('Empiler : coché par défaut, un clic émet stackToggled et inverse l\'état', () => {
       const { component, events, last } = setup({ ...baseConfig(), showStack: true }, { selectedGroupBy: 'status' });
       expect(component.isStacked()).toBeTrue();
