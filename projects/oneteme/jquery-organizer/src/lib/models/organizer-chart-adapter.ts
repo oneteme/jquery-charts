@@ -51,6 +51,8 @@ export interface OrganizerChartBridgeOptions {
   resolveXOptions?: (groupKey: string) => OrganizerXOption[] | undefined;
   /** Conversion des sélections de slices lors d'un changement de variante de l'axe X. */
   remapSliceSelection?: OrganizerConfig['remapSliceSelection'];
+  /** Affiche l'option « Empiler » dans « Grouper par ». */
+  showStack?: boolean;
 }
 
 export interface OrganizerChartBinding {
@@ -71,7 +73,7 @@ export function chartConfigToOrganizer(
     return {};
   }
 
-  const { onFetchSliceData, onExportVisual, onExportData, switchView, resolveSliceDisplay, resolveXOptions, remapSliceSelection } = options;
+  const { onFetchSliceData, onExportVisual, onExportData, switchView, resolveSliceDisplay, resolveXOptions, remapSliceSelection, showStack } = options;
 
   const indicators = getIndicatorItems(chartConfig);
   const activeIndicator = indicators.find(i => i.selected);
@@ -133,6 +135,7 @@ export function chartConfigToOrganizer(
     onExportVisual,
     onExportData,
     switchView,
+    showStack,
   };
 }
 
@@ -154,6 +157,7 @@ export function chartConfigToState(chartConfig: OrganizerChartConfig | null | un
     selectedYAggregate: indicatorGroup ? activeIndicator?.key : undefined,
     selectedGroupBy: activeStack?.key,
     selectedSlices: activeSlices.map(f => f.key),
+    stacked: chartConfig.stacked,
   };
   const organizerConfig = chartConfigToOrganizer(chartConfig);
   return normalizeOrganizerState(state, organizerConfig);
@@ -200,6 +204,7 @@ export function applyOrganizerEventToChart(
   const effectiveGroupBy = state.selectedGroupBy !== state.selectedX ? state.selectedGroupBy : undefined;
   _applyGroupBySelection(effectiveGroupBy, chartConfig, options.resolveSliceDisplay);
   if (state.selectedSlices !== undefined) _applySliceSelection(state.selectedSlices, chartConfig);
+  if (state.stacked !== undefined) chartConfig.stacked = state.stacked;
   event.resolvedYUnit = resolveYUnit(chartConfig, event.state.selectedY, event.state.selectedYAggregate);
 }
 

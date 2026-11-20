@@ -136,6 +136,9 @@ export interface OrganizerConfig {
   onExportVisual?: () => void;
   onExportData?: () => void;
 
+  /** Affiche l'option « Empiler » en bas du sous-menu « Grouper par ». */
+  showStack?: boolean;
+
   /** Affiche les commandes liées au visuel courant dans le sous-menu Actions. */
   showActions?: boolean;
   actions?: OrganizerActionsConfig;
@@ -189,11 +192,13 @@ export interface OrganizerState {
   selectedSlices?: string[];
   /** Variante choisie par filtre (clé : id de la tranche) ; absent = première option. Indépendante des autres menus. */
   selectedSliceOptions?: Record<string, string>;
+  /** Empilement des séries de « Grouper par ». Absent = empilé (comportement par défaut). */
+  stacked?: boolean;
   selectedTemplate?: string;
 }
 
 export interface OrganizerButtonEvent {
-  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'groupByOptionSelected' | 'templateSelected' | 'sliceSelected' | 'sliceOptionSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
+  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'groupByOptionSelected' | 'stackToggled' | 'templateSelected' | 'sliceSelected' | 'sliceOptionSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
   state: OrganizerState;
   source?: 'user' | 'api';
   resolvedYUnit?: string | UnitConfig;

@@ -6,6 +6,8 @@ export interface OrganizerChartConfig {
   indicators?: OrganizerChartSection;
   filters?: OrganizerChartSection;
   templates?: OrganizerTemplate[];
+  /** Empilement des séries. Absent = empilé. */
+  stacked?: boolean;
 }
 
 export enum SyntheticItemKeys {

@@ -129,6 +129,7 @@ export function normalizeTemplateToState(
     selectedYAggregate: normalizedY.selectedYAggregate,
     selectedGroupBy: hasOption(config.groups, template.groupBy) ? template.groupBy : base.selectedGroupBy,
     selectedSlices: (template.selectedSlices || []).filter(sliceId => hasOption(config.slices, sliceId)),
+    stacked: base.stacked,
   };
 
   const resolvedTemplateId = resolveMatchingTemplateId(config.templates, nextState, config);

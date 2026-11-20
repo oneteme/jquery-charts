@@ -312,6 +312,20 @@ describe('organizer-chart-adapter', () => {
       expect(handleOrganizerChartEvent(event('groupBySelected', { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'status' }), chart, current).shouldRefetch).toBeTrue();
     });
 
+    it('stackToggled : écrit l\'empilement dans la config du graphique et recharge', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart);
+      const result = handleOrganizerChartEvent(event('stackToggled', { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'app', stacked: false }), chart, current);
+
+      expect(chart.stacked).toBeFalse();
+      expect(result.shouldRefetch).toBeTrue();
+    });
+
+    it('chartConfigToState reprend l\'empilement de la config (absent = empilé)', () => {
+      expect(chartConfigToState(makeChart()).stacked).toBeUndefined();
+      expect(chartConfigToState({ ...makeChart(), stacked: false }).stacked).toBeFalse();
+    });
+
     it('réutilise la config courante du binding pour les événements simples', () => {
       const chart = makeChart();
       const current = buildOrganizerChartBinding(chart);

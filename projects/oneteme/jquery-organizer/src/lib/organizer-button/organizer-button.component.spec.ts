@@ -287,6 +287,26 @@ describe('OrganizerButtonComponent', () => {
       expect(last().state.selectedGroupBy).toBeUndefined();
     });
 
+    it('Empiler : visible uniquement avec un groupement actif', () => {
+      expect(setup({ ...baseConfig(), showStack: true }).component.showStackToggle()).toBeFalse();
+      expect(setup({ ...baseConfig(), showStack: true }, { selectedGroupBy: 'status' }).component.showStackToggle()).toBeTrue();
+      expect(setup(baseConfig(), { selectedGroupBy: 'status' }).component.showStackToggle()).toBeFalse();
+    });
+
+    it('Empiler : coché par défaut, un clic émet stackToggled et inverse l\'état', () => {
+      const { component, events, last } = setup({ ...baseConfig(), showStack: true }, { selectedGroupBy: 'status' });
+      expect(component.isStacked()).toBeTrue();
+
+      component.onStackToggle();
+      expect(last().type).toBe('stackToggled');
+      expect(last().state.stacked).toBeFalse();
+
+      component.state = last().state;
+      component.onStackToggle();
+      expect(last().state.stacked).toBeTrue();
+      expect(events.length).toBe(2);
+    });
+
     it('type de graphique : ignore un type désactivé, inconnu ou déjà actif', () => {
       const { component, events, last } = setup(baseConfig(), { selectedChartType: 'bar' });
       component.onChartTypeSelect('pie');
@@ -573,7 +593,7 @@ describe('OrganizerButtonComponent', () => {
 
   describe('autres actions', () => {
     it('reset restaure les champs visibles par défaut et vide les sélections', () => {
-      const { component, last } = setup(baseConfig(), { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'status', selectedSlices: ['ok'] });
+      const { component, last } = setup(baseConfig(), { selectedX: 'day', selectedY: 'count', selectedGroupBy: 'status', selectedSlices: ['ok'], stacked: false });
       component.onReset();
 
       expect(last().type).toBe('reset');
@@ -582,6 +602,7 @@ describe('OrganizerButtonComponent', () => {
       expect(last().state.selectedY).toBeUndefined();
       expect(last().state.selectedGroupBy).toBeUndefined();
       expect(last().state.selectedSlices).toEqual([]);
+      expect(last().state.stacked).toBeTrue();
     });
 
     it('switchView bascule entre graphique et tableau et notifie les deux canaux', () => {

@@ -165,6 +165,7 @@ export interface OrganizerConfig {
 
   // UI
   showReset?: boolean;                   // Défaut: false
+  showStack?: boolean;                   // Affiche « Empiler » sous « Grouper par » (visible seulement si un groupement est actif) ; absent/false = pas d'option
   buttonLabel?: string;
   buttonIcon?: string;                   // Icône Material
   showButtonIcon?: boolean;
@@ -191,11 +192,12 @@ export interface OrganizerState {
   selectedYAggregate?: string;           // Agrégat si applicable
   selectedGroupBy?: string;              // Regroupement actif
   selectedSlices?: string[];             // Filtres actifs
+  stacked?: boolean;                     // Séries empilées ; absent = empilé
 }
 
 export interface OrganizerButtonEvent {
   type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' 
-  | 'sliceSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
+  | 'sliceSelected' | 'chartTypeSelected' | 'stackToggled' | 'reset' | 'viewSwitched';
   state: OrganizerState;                 // État complet après action
   source?: 'user' | 'api';
   resolvedYUnit?: string | UnitConfig;   // Unité auto-détectée (voir Auto-Scaling)

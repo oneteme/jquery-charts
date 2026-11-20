@@ -354,6 +354,15 @@
       </button>
     </ng-template>
     </ng-container>
+    <ng-container *ngIf="showStackToggle()">
+      <mat-divider class="organizer-champs-divider"></mat-divider>
+      <button type="button" class="organizer-submenu-item organizer-stack-toggle"
+        [class.active]="isStacked()"
+        (click)="onStackToggle()">
+        <span class="organizer-submenu-check">{{ isStacked() ? '✓' : '' }}</span>
+        Empiler
+      </button>
+    </ng-container>
   </div>
 </mat-menu>
 

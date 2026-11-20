@@ -193,6 +193,20 @@ export class OrganizerButtonComponent implements OnDestroy {
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
 
+  /** Empiler n'a d'effet qu'avec un groupement actif : l'option n'est proposée que dans ce cas. */
+  showStackToggle(): boolean {
+    return !!this.config.showStack && !!this.state?.selectedGroupBy;
+  }
+
+  /** Empile les séries (sélectionné par défaut, absent de l'état = empilé). */
+  isStacked(): boolean {
+    return this.state?.stacked !== false;
+  }
+
+  onStackToggle(): void {
+    this.emitChange('stackToggled', { stacked: !this.isStacked() });
+  }
+
   /** Variante de « Grouper par » : n'affecte ni l'axe X ni les filtres. Sélectionne le groupe si besoin ; sur l'option active, retire le groupe. */
   onGroupOptionSelect(groupId: string, optionId: string): void {
     const option = this.config.groups?.find(g => g.id === groupId)?.options?.find(o => o.id === optionId);
@@ -471,7 +485,8 @@ export class OrganizerButtonComponent implements OnDestroy {
       selectedY: undefined,
       selectedYAggregate: undefined,
       selectedGroupBy: undefined,
-      selectedSlices: []
+      selectedSlices: [],
+      stacked: true
     });
     this.mainMenuTrigger?.closeMenu();
   }
