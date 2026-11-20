@@ -50,7 +50,7 @@ export {
   getStackItems,
 } from './models/organizer-chart-config';
 
-export { buildYFields, resolveYKey, OrganizerYIndicator } from './models/organizer-utils';
+export { buildYFields, resolveYKey, OrganizerYIndicator, OrganizerMenuEntry } from './models/organizer-utils';
 
 export { OrganizerFacade, humanizeKey } from './organizer-facade/organizer-facade';
 export {

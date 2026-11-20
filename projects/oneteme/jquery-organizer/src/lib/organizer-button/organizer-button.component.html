@@ -166,30 +166,46 @@
     <!-- Bloc X -->
     <div class="organizer-champs-block" *ngIf="config.xFields?.length">
       <span class="organizer-champs-block-title">Axe horizontal — X</span>
-      <ng-container *ngFor="let xField of config.xFields">
+      <ng-container *ngFor="let entry of xMenuEntries()">
+        <ng-container *ngIf="entry.item as xField; else xEntrySubmenu">
 
-        <!-- X simple -->
-        <button *ngIf="!xField.options?.length"
-          type="button" class="organizer-submenu-item"
-          [class.active]="state?.selectedX === xField.id"
-          [disabled]="xField.disabled"
-          (click)="onXFieldSelect(xField.id)">
-          <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
-          {{ xField.label }}
-        </button>
+          <!-- X simple -->
+          <button *ngIf="!xField.options?.length"
+            type="button" class="organizer-submenu-item"
+            [class.active]="state?.selectedX === xField.id"
+            [disabled]="xField.disabled"
+            (click)="onXFieldSelect(xField.id)">
+            <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+            {{ xField.label }}
+          </button>
 
-        <!-- X avec variantes → sous-menu -->
-        <button *ngIf="xField.options?.length"
-          type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
-          [class.active]="state?.selectedX === xField.id"
-          [disabled]="xField.disabled"
-          [matMenuTriggerFor]="xOptSubMenu"
-          [matMenuTriggerData]="{ xField: xField }"
-          (mousedown)="$event.stopPropagation()">
-          <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
-          {{ xField.label }}
-          <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
-        </button>
+          <!-- X avec variantes → sous-menu -->
+          <button *ngIf="xField.options?.length"
+            type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+            [class.active]="state?.selectedX === xField.id"
+            [disabled]="xField.disabled"
+            [matMenuTriggerFor]="xOptSubMenu"
+            [matMenuTriggerData]="{ xField: xField }"
+            (mousedown)="$event.stopPropagation()">
+            <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+            {{ xField.label }}
+            <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+          </button>
+
+        </ng-container>
+
+        <!-- X regroupé sous un sous-menu (ex. « Statut » : Valeur, Tranche) -->
+        <ng-template #xEntrySubmenu>
+          <button type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+            [class.active]="isXEntryActive(entry)"
+            [matMenuTriggerFor]="xGroupSubMenu"
+            [matMenuTriggerData]="{ entry: entry }"
+            (mousedown)="$event.stopPropagation()">
+            <span class="organizer-submenu-check">{{ isXEntryActive(entry) ? '✓' : '' }}</span>
+            {{ entry.submenu?.label }}
+            <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+          </button>
+        </ng-template>
 
       </ng-container>
     </div>
@@ -229,6 +245,25 @@
     </div>
 
   </div>
+</mat-menu>
+
+<!-- Sous-menu dynamique : entrées d'un sous-menu de l'axe X -->
+<mat-menu #xGroupSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-entry="entry">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let xField of entry.items"
+        [class.active]="state?.selectedX === xField.id"
+        [disabled]="xField.disabled"
+        (click)="onXFieldSelect(xField.id)">
+        <span class="organizer-submenu-check">{{ state?.selectedX === xField.id ? '✓' : '' }}</span>
+        {{ xField.label }}
+      </button>
+    </div>
+  </ng-template>
 </mat-menu>
 
 <!-- Sous-menu dynamique : variantes d'un champ X -->
@@ -289,13 +324,74 @@
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
        (keydown)="$event.stopPropagation()">
+    <ng-container *ngFor="let entry of groupMenuEntries()">
+    <ng-container *ngIf="entry.item as group; else groupEntrySubmenu">
+    <button *ngIf="group.options?.length; else groupPlainItem" type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+      [class.active]="state?.selectedGroupBy === group.id"
+      [matMenuTriggerFor]="groupFieldOptSubMenu"
+      [matMenuTriggerData]="{ group: group }"
+      (mousedown)="$event.stopPropagation()">
+      <span class="organizer-submenu-check">{{ state?.selectedGroupBy === group.id ? '✓' : '' }}</span>      <span *ngIf="group.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(group.iconSvg)"></span>      <mat-icon *ngIf="group.icon && !group.iconSvg" class="organizer-submenu-icon" [fontSet]="group.iconFontSet ?? 'material-icons-outlined'">{{ group.icon }}</mat-icon>      {{ group.label }}
+      <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+    </button>
+    <ng-template #groupPlainItem>
     <button type="button" class="organizer-submenu-item"
-      *ngFor="let group of config.groups"
       [class.active]="state?.selectedGroupBy === group.id"
       (click)="onGroupBySelect(group.id)">
       <span class="organizer-submenu-check">{{ state?.selectedGroupBy === group.id ? '✓' : '' }}</span>      <span *ngIf="group.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(group.iconSvg)"></span>      <mat-icon *ngIf="group.icon && !group.iconSvg" class="organizer-submenu-icon" [fontSet]="group.iconFontSet ?? 'material-icons-outlined'">{{ group.icon }}</mat-icon>      {{ group.label }}
     </button>
+    </ng-template>
+    </ng-container>
+    <ng-template #groupEntrySubmenu>
+      <button type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+        [class.active]="isGroupEntryActive(entry)"
+        [matMenuTriggerFor]="groupOptSubMenu"
+        [matMenuTriggerData]="{ entry: entry }"
+        (mousedown)="$event.stopPropagation()">
+        <span class="organizer-submenu-check">{{ isGroupEntryActive(entry) ? '✓' : '' }}</span>
+        {{ entry.submenu?.label }}
+        <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+      </button>
+    </ng-template>
+    </ng-container>
   </div>
+</mat-menu>
+
+<!-- Sous-menu dynamique : options (granularité) d'un groupe de « Grouper par » -->
+<mat-menu #groupFieldOptSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-group="group">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let option of group.options"
+        [class.active]="isGroupOptionActive(group.id, option.id)"
+        [disabled]="option.disabled"
+        (click)="onGroupOptionSelect(group.id, option.id)">
+        <span class="organizer-submenu-check">{{ isGroupOptionActive(group.id, option.id) ? '✓' : '' }}</span>
+        {{ option.label }}
+      </button>
+    </div>
+  </ng-template>
+</mat-menu>
+
+<!-- Sous-menu dynamique : options d'un sous-menu de « Grouper par » -->
+<mat-menu #groupOptSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-entry="entry">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let group of entry.items"
+        [class.active]="state?.selectedGroupBy === group.id"
+        (click)="onGroupBySelect(group.id)">
+        <span class="organizer-submenu-check">{{ state?.selectedGroupBy === group.id ? '✓' : '' }}</span>
+        {{ group.label }}
+      </button>
+    </div>
+  </ng-template>
 </mat-menu>
 
 <!-- Sous-menu : Filtrer par -->
@@ -304,13 +400,74 @@
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
        (keydown)="$event.stopPropagation()">
+    <ng-container *ngFor="let entry of slicesMenuEntries()">
+    <ng-container *ngIf="entry.item as slice; else sliceEntrySubmenu">
+    <button *ngIf="slice.options?.length; else slicePlainItem" type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+      [class.active]="state?.selectedSlices?.includes(slice.id)"
+      [matMenuTriggerFor]="sliceFieldOptSubMenu"
+      [matMenuTriggerData]="{ slice: slice }"
+      (mousedown)="$event.stopPropagation()">
+      <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>      <span *ngIf="slice.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(slice.iconSvg)"></span>      <mat-icon *ngIf="slice.icon && !slice.iconSvg" class="organizer-submenu-icon" [fontSet]="slice.iconFontSet ?? 'material-icons-outlined'">{{ slice.icon }}</mat-icon>      {{ slice.label }}
+      <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+    </button>
+    <ng-template #slicePlainItem>
     <button type="button" class="organizer-submenu-item"
-      *ngFor="let slice of config.slices"
       [class.active]="state?.selectedSlices?.includes(slice.id)"
       (click)="onSliceClick(slice.id)">
       <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>      <span *ngIf="slice.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(slice.iconSvg)"></span>      <mat-icon *ngIf="slice.icon && !slice.iconSvg" class="organizer-submenu-icon" [fontSet]="slice.iconFontSet ?? 'material-icons-outlined'">{{ slice.icon }}</mat-icon>      {{ slice.label }}
     </button>
+    </ng-template>
+    </ng-container>
+    <ng-template #sliceEntrySubmenu>
+      <button type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+        [class.active]="isSliceEntryActive(entry)"
+        [matMenuTriggerFor]="sliceOptSubMenu"
+        [matMenuTriggerData]="{ entry: entry }"
+        (mousedown)="$event.stopPropagation()">
+        <span class="organizer-submenu-check">{{ isSliceEntryActive(entry) ? '✓' : '' }}</span>
+        {{ entry.submenu?.label }}
+        <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+      </button>
+    </ng-template>
+    </ng-container>
   </div>
+</mat-menu>
+
+<!-- Sous-menu dynamique : options (granularité) d'un filtre de « Filtrer par » -->
+<mat-menu #sliceFieldOptSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-slice="slice">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let option of slice.options"
+        [class.active]="isSliceOptionActive(slice.id, option.id)"
+        [disabled]="option.disabled"
+        (click)="onSliceOptionSelect(slice.id, option.id)">
+        <span class="organizer-submenu-check">{{ isSliceOptionActive(slice.id, option.id) ? '✓' : '' }}</span>
+        {{ option.label }}
+      </button>
+    </div>
+  </ng-template>
+</mat-menu>
+
+<!-- Sous-menu dynamique : options d'un sous-menu de « Filtrer par » -->
+<mat-menu #sliceOptSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-entry="entry">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let slice of entry.items"
+        [class.active]="state?.selectedSlices?.includes(slice.id)"
+        (click)="onSliceClick(slice.id)">
+        <span class="organizer-submenu-check">{{ state?.selectedSlices?.includes(slice.id) ? '✓' : '' }}</span>
+        {{ slice.label }}
+      </button>
+    </div>
+  </ng-template>
 </mat-menu>
 
 <!-- Sous-menu : Template -->

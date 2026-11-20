@@ -140,6 +140,40 @@ describe('organizer-utils', () => {
       });
     });
 
+    describe('options de Grouper par et de Filtrer par', () => {
+      const withMenuOptions = (): Cfg => ({
+        ...config(),
+        groups: [
+          { id: 'day', label: 'Date', options: [{ id: 'auto', label: 'Automatique' }, { id: 'date', label: 'Jour' }] },
+          { id: 'status', label: 'Statut' },
+        ],
+        slices: [
+          { id: 'ok', label: 'OK', options: [{ id: 'auto', label: 'Automatique' }, { id: 'date', label: 'Jour' }] },
+          { id: 'ko', label: 'KO' },
+        ],
+      });
+
+      it('conserve l\'option d\'un groupe sélectionné si elle appartient à ses options', () => {
+        const state = normalizeOrganizerState({ selectedGroupBy: 'day', selectedGroupByOption: 'date' }, withMenuOptions());
+        expect(state.selectedGroupByOption).toBe('date');
+      });
+
+      it('écarte l\'option d\'un groupe inconnu, inconnue du groupe ou sans groupe sélectionné', () => {
+        expect(normalizeOrganizerState({ selectedGroupBy: 'day', selectedGroupByOption: 'ghost' }, withMenuOptions()).selectedGroupByOption).toBeUndefined();
+        expect(normalizeOrganizerState({ selectedGroupBy: 'status', selectedGroupByOption: 'date' }, withMenuOptions()).selectedGroupByOption).toBeUndefined();
+        expect(normalizeOrganizerState({ selectedGroupByOption: 'date' }, withMenuOptions()).selectedGroupByOption).toBeUndefined();
+      });
+
+      it('conserve les options de filtres valides, même sans sélection de filtre', () => {
+        const state = normalizeOrganizerState({ selectedSliceOptions: { ok: 'date', ko: 'date', ghost: 'date' } }, withMenuOptions());
+        expect(state.selectedSliceOptions).toEqual({ ok: 'date' });
+      });
+
+      it('ne produit pas de selectedSliceOptions quand aucune option n\'est valide', () => {
+        expect(normalizeOrganizerState({ selectedSliceOptions: { ok: 'ghost' } }, withMenuOptions()).selectedSliceOptions).toBeUndefined();
+      });
+    });
+
     it('résout le modèle correspondant à l\'état', () => {
       const templates: OrganizerTemplate[] = [
         { id: 'perf', label: 'Perf', xField: 'day', yField: 'latency', yAggregate: 'avg' },

@@ -9,8 +9,8 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Subject, Subscription, combineLatest, from, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, OrganizerViewSlice } from '../models';
-import { normalizeOrganizerState, resolveMatchingTemplateId } from '../models/organizer-utils';
+import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, OrganizerViewGroup, OrganizerViewSlice, OrganizerXField } from '../models';
+import { createMenuEntriesMemo, normalizeOrganizerState, OrganizerMenuEntry, resolveMatchingTemplateId } from '../models/organizer-utils';
 import { buildCategoriesFromRows } from '../slice-panel/slice-categories';
 import { TemplateManager } from './template-manager.utility';
 
@@ -52,6 +52,37 @@ export class OrganizerButtonComponent implements OnDestroy {
   @ViewChild('mainMenuTrigger') mainMenuTrigger?: MatMenuTrigger;
 
   constructor(private cdr: ChangeDetectorRef) {}
+
+  private readonly groupMenu = createMenuEntriesMemo<OrganizerViewGroup>();
+  private readonly sliceMenu = createMenuEntriesMemo<OrganizerViewSlice>();
+  private readonly xMenu = createMenuEntriesMemo<OrganizerXField>();
+
+  /** Entrées de l'axe X : les champs d'un même sous-menu (ex. « Statut ») sont regroupés. */
+  xMenuEntries(): OrganizerMenuEntry<OrganizerXField>[] {
+    return this.xMenu(this.config?.xFields);
+  }
+
+  /** Entrées de « Grouper par » : les groupes d'un même sous-menu sont regroupés. */
+  groupMenuEntries(): OrganizerMenuEntry<OrganizerViewGroup>[] {
+    return this.groupMenu(this.config?.groups);
+  }
+
+  /** Entrées de « Filtrer par » : les tranches d'un même sous-menu sont regroupées. */
+  slicesMenuEntries(): OrganizerMenuEntry<OrganizerViewSlice>[] {
+    return this.sliceMenu(this.config?.slices);
+  }
+
+  isXEntryActive(entry: OrganizerMenuEntry<OrganizerXField>): boolean {
+    return !!entry.items?.some(field => field.id === this.state?.selectedX);
+  }
+
+  isGroupEntryActive(entry: OrganizerMenuEntry<OrganizerViewGroup>): boolean {
+    return !!entry.items?.some(group => group.id === this.state?.selectedGroupBy);
+  }
+
+  isSliceEntryActive(entry: OrganizerMenuEntry<OrganizerViewSlice>): boolean {
+    return !!entry.items?.some(slice => this.state?.selectedSlices?.includes(slice.id));
+  }
 
   private _sanitizer = inject(DomSanitizer);
   private readonly _svgHtmlCache = new Map<string, SafeHtml>();
@@ -162,6 +193,45 @@ export class OrganizerButtonComponent implements OnDestroy {
     this.emitChange('groupBySelected', { selectedGroupBy: current === groupId ? undefined : groupId });
   }
 
+  /** Variante de « Grouper par » : n'affecte ni l'axe X ni les filtres. Sélectionne le groupe si besoin ; sur l'option active, retire le groupe. */
+  onGroupOptionSelect(groupId: string, optionId: string): void {
+    const option = this.config.groups?.find(g => g.id === groupId)?.options?.find(o => o.id === optionId);
+    if (!option || option.disabled) return;
+    if (this.isGroupOptionActive(groupId, optionId)) {
+      this.emitChange('groupBySelected', { selectedGroupBy: undefined });
+      return;
+    }
+    this.emitChange('groupByOptionSelected', { selectedGroupBy: groupId, selectedGroupByOption: optionId });
+  }
+
+  /**
+   * Variante d'un filtre : n'affecte ni l'axe X ni les autres menus. Si le filtre est sélectionné, ses tranches
+   * sont rechargées avec la nouvelle variante puis remappées ; sinon il est simplement sélectionné.
+   * Sur l'option active d'un filtre sélectionné, le filtre est retiré.
+   */
+  onSliceOptionSelect(sliceId: string, optionId: string): void {
+    const option = this.config.slices?.find(s => s.id === sliceId)?.options?.find(o => o.id === optionId);
+    if (!option || option.disabled) return;
+    if (this.isSliceOptionActive(sliceId, optionId)) {
+      this.onSliceClick(sliceId);
+      return;
+    }
+
+    const selectedSliceOptions = { ...(this.state?.selectedSliceOptions ?? {}), [sliceId]: optionId };
+    const selectedSlices = this.state?.selectedSlices ?? [];
+    if (!selectedSlices.includes(sliceId)) {
+      this.emitChange('sliceOptionSelected', { selectedSliceOptions });
+      this.onSliceClick(sliceId);
+      return;
+    }
+
+    this.emitChange('sliceOptionSelected', { selectedSliceOptions, selectedSlices });
+    this.syncSliceState(selectedSlices, undefined, {
+      selectedKeys: selectedSlices.map(id => this.sliceFilterValues[id] ?? []),
+      onRemapFailed: () => this.emitChange('sliceOptionSelected', { selectedSliceOptions, selectedSlices: [] }),
+    });
+  }
+
   onChartTypeSelect(chartType: string): void {
     const option = this.config.chartTypes?.find(type => type.id === chartType);
     if (!option || option.disabled || this.state?.selectedChartType === chartType) return;
@@ -187,9 +257,13 @@ export class OrganizerButtonComponent implements OnDestroy {
     const selectedSlices = this.state?.selectedSlices || [];
     let updated: string[];
     if (sliceId) {
+      const submenuId = this.config.slices?.find(s => s.id === sliceId)?.submenu?.id;
+      const siblingIds = submenuId
+        ? (this.config.slices ?? []).filter(s => s.submenu?.id === submenuId && s.id !== sliceId).map(s => s.id)
+        : [];
       updated = selectedSlices.includes(sliceId)
         ? selectedSlices.filter(id => id !== sliceId)
-        : [...selectedSlices, sliceId];
+        : [...selectedSlices.filter(id => !siblingIds.includes(id)), sliceId];
     } else {
       updated = selectedSlices;
     }
@@ -428,7 +502,11 @@ export class OrganizerButtonComponent implements OnDestroy {
   activeGroupByLabel(): string {
     const id = this.state?.selectedGroupBy;
     if (!id) return '';
-    return this.config.groups?.find(g => g.id === id)?.label ?? id;
+    const group = this.config.groups?.find(g => g.id === id);
+    const base = group?.label ?? id;
+    const optionId = this.state?.selectedGroupByOption;
+    const option = group?.options?.find(o => o.id === optionId);
+    return option ? `${base} · ${option.label}` : base;
   }
 
   activeChartTypeLabel(): string {
@@ -476,6 +554,18 @@ export class OrganizerButtonComponent implements OnDestroy {
     if (this.state?.selectedX !== xFieldId) return false;
     const defaultOptionId = this.config.xFields?.find(f => f.id === xFieldId)?.options?.[0]?.id;
     return (this.state?.selectedXOption ?? defaultOptionId) === optionId;
+  }
+
+  isGroupOptionActive(groupId: string, optionId: string): boolean {
+    if (this.state?.selectedGroupBy !== groupId) return false;
+    const defaultOptionId = this.config.groups?.find(g => g.id === groupId)?.options?.[0]?.id;
+    return (this.state?.selectedGroupByOption ?? defaultOptionId) === optionId;
+  }
+
+  isSliceOptionActive(sliceId: string, optionId: string): boolean {
+    if (!this.state?.selectedSlices?.includes(sliceId)) return false;
+    const defaultOptionId = this.config.slices?.find(s => s.id === sliceId)?.options?.[0]?.id;
+    return (this.state?.selectedSliceOptions?.[sliceId] ?? defaultOptionId) === optionId;
   }
 
   isChartTypeActive(chartType: string): boolean {

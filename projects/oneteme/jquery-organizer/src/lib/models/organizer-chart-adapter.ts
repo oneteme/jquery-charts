@@ -1,5 +1,5 @@
-import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField, OrganizerXOption } from './organizer-config.interface';
-import { buildYFields, normalizeOrganizerState, resolveYKey } from './organizer-utils';
+import { OrganizerButtonEvent, OrganizerConfig, OrganizerState, OrganizerSubmenu, OrganizerUnifiedState, OrganizerViewSlice, OrganizerXField, OrganizerXOption } from './organizer-config.interface';
+import { buildYFields, normalizeOrganizerState, resolveYKey, sameSlices } from './organizer-utils';
 import { UnitConfig } from '@oneteme/jquery-core';
 import { OrganizerChartConfig, getGroupItems, getIndicatorItems, getFilterItems, getStackItems } from './organizer-chart-config';
 
@@ -17,6 +17,11 @@ export interface OrganizerChartItem {
     buildColor?: (value?: string) => string;
   };
   group?: string;
+  /**
+   * Sous-menu de « Grouper par » / « Filtrer par ». `itemLabel` remplace le libellé de l'entrée dans ces menus
+   * sans modifier celui de l'axe X (ex. empilement « Statut » affiché « Valeur » sous le sous-menu « Statut »).
+   */
+  submenu?: OrganizerSubmenu & { itemLabel?: string };
   extra?: {
     stacks?: { optional: boolean; items: OrganizerChartItem[] };
     [key: string]: any;
@@ -35,10 +40,14 @@ export interface OrganizerChartBridgeOptions {
   switchView?: OrganizerConfig['switchView'];
   /**
    * Formatage optionnel des valeurs d'un champ, résolu à partir de sa clé : appliqué aux tranches (filtre)
-   * et aux libellés d'un empilement issu d'un groupe (ex. « Date » en pile).
+   * et aux libellés d'un empilement issu d'un groupe (ex. « Date » en pile). `menu` distingue « Grouper par »
+   * (`'group'`) de « Filtrer par » (`'slice'`), qui peuvent avoir un découpage différent pour un même champ.
    */
-  resolveSliceDisplay?: (filterKey: string) => Pick<OrganizerViewSlice, 'formatLabel' | 'compareKeys'> | undefined;
-  /** Variantes optionnelles de l'axe X (sous-menu), résolues à partir de la clé du groupe. */
+  resolveSliceDisplay?: (filterKey: string, menu: 'group' | 'slice') => Pick<OrganizerViewSlice, 'formatLabel' | 'compareKeys'> | undefined;
+  /**
+   * Variantes optionnelles (sous-menu) résolues à partir de la clé d'un champ : appliquées à l'axe X, à « Grouper par »
+   * et à « Filtrer par », qui partagent ainsi le même découpage (ex. « Date » : Automatique, Heure, Jour…).
+   */
   resolveXOptions?: (groupKey: string) => OrganizerXOption[] | undefined;
   /** Conversion des sélections de slices lors d'un changement de variante de l'axe X. */
   remapSliceSelection?: OrganizerConfig['remapSliceSelection'];
@@ -82,9 +91,8 @@ export function chartConfigToOrganizer(
     indicators.map(i => ({ id: i.key, label: i.menu.label || i.key, group: i.group }))
   );
 
-  const stackFields = getStackItems(activeIndicator)
-    .filter((s: OrganizerChartItem) => !_isSynthetic(s))
-    .map((s: OrganizerChartItem) => ({ id: s.key, label: s.menu.label || s.key }));
+  const stackItems = getStackItems(activeIndicator).filter((s: OrganizerChartItem) => !_isSynthetic(s));
+  const stackFields = stackItems.map((s: OrganizerChartItem) => ({ id: s.key, label: s.menu.label || s.key }));
 
   const seenKeys = new Set<string>();
   const mergedGroupFields = [...baseXFields, ...stackFields].filter(f => {
@@ -93,15 +101,30 @@ export function chartConfigToOrganizer(
     return true;
   });
 
+  const sourceItems = new Map<string, OrganizerChartItem>(
+    [...getGroupItems(chartConfig), ...stackItems].map(i => [i.key, i] as [string, OrganizerChartItem])
+  );
+  const menuFields: OrganizerXField[] = mergedGroupFields.map(f => {
+    const submenu = sourceItems.get(f.id)?.submenu;
+    return submenu
+      ? { ...f, label: submenu.itemLabel ?? f.label, submenu: { id: submenu.id, label: submenu.label } }
+      : f;
+  });
+
   return {
-    xFields: mergedGroupFields,
+    xFields: menuFields,
     yFields,
-    groups: mergedGroupFields,
-    slices: getFilterItems(chartConfig).map(f => ({
-      id: f.key,
-      label: f.menu.label || f.key,
-      ...resolveSliceDisplay?.(f.key)
-    }) as OrganizerViewSlice),
+    groups: menuFields,
+    slices: getFilterItems(chartConfig).map(f => {
+      const sliceOptions = resolveXOptions?.(f.key);
+      return {
+        id: f.key,
+        label: f.menu.label || f.key,
+        ...(f.submenu ? { submenu: { id: f.submenu.id, label: f.submenu.label } } : {}),
+        ...(sliceOptions?.length ? { options: sliceOptions } : {}),
+        ...resolveSliceDisplay?.(f.key, 'slice')
+      } as OrganizerViewSlice;
+    }),
     templates: chartConfig.templates,
     showReset: false,
     onFetchSliceData,
@@ -202,11 +225,28 @@ export function handleOrganizerChartEvent(
     const binding = buildOrganizerChartBinding(chartConfig, options);
     if (event.type === 'ySelected') {
       binding.state = normalizeOrganizerState(
-        { ...binding.state, selectedXOption: event.state.selectedXOption },
+        {
+          ...binding.state,
+          selectedXOption: event.state.selectedXOption,
+          selectedGroupByOption: event.state.selectedGroupByOption,
+          selectedSliceOptions: event.state.selectedSliceOptions,
+        },
         binding.config
       );
     }
     return { binding, shouldRefetch: true };
+  }
+
+  if (event.type === 'groupByOptionSelected' || event.type === 'sliceOptionSelected') {
+    const slicesChanged = event.type === 'sliceOptionSelected'
+      && !sameSlices(currentBinding?.state.selectedSlices ?? [], event.state.selectedSlices ?? []);
+    return {
+      binding: {
+        config: chartConfigToOrganizer(chartConfig, options),
+        state: { ...event.state }
+      },
+      shouldRefetch: event.type === 'groupByOptionSelected' || slicesChanged
+    };
   }
 
   // Une nouvelle option de l'axe X peut changer l'affichage des tranches (libellés, tri) : la config est alors recalculée.
@@ -295,7 +335,7 @@ function _formatStackValue(
   value: string,
   resolveSliceDisplay: OrganizerChartBridgeOptions['resolveSliceDisplay']
 ): string {
-  const formatLabel = resolveSliceDisplay?.(groupKey)?.formatLabel;
+  const formatLabel = resolveSliceDisplay?.(groupKey, 'group')?.formatLabel;
   return formatLabel ? formatLabel(String(value)) : String(value);
 }
 

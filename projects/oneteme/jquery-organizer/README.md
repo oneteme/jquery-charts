@@ -132,10 +132,10 @@ Composant standalone qui affiche un bouton ouvrant un menu Material. Le menu exp
 ```typescript
 export interface OrganizerConfig {
   // Champs/Indicateurs/Groupements disponibles
-  xFields?: OrganizerXField[];           // Dimensions (ex: date, host)
+  xFields?: OrganizerXField[];           // Dimensions (ex: date, host) ; `submenu` les regroupe sous un sous-menu commun (ex: Statut)
   yFields?: OrganizerYField[];           // Indicateurs (ex: count, elapsed_avg)
-  groups?: OrganizerViewGroup[];         // Options de regroupement
-  slices?: OrganizerViewSlice[];         // Options de filtre
+  groups?: OrganizerViewGroup[];         // Options de regroupement (`submenu` idem)
+  slices?: OrganizerViewSlice[];         // Options de filtre (`submenu` idem)
   chartTypes?: OrganizerChartType[];     // Types proposés par le renderer hôte
 
   // Callbacks

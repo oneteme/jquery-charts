@@ -31,6 +31,8 @@ export interface OrganizerXField {
    * lorsque `selectedXOption` n'est pas défini.
    */
   options?: OrganizerXOption[];
+  /** Sous-menu regroupant plusieurs axes X (ex. « Statut » : Valeur, Tranche). Les entrées d'un sous-menu n'ont pas de variantes. */
+  submenu?: OrganizerSubmenu;
 }
 
 export interface OrganizerYAggregate {
@@ -45,6 +47,12 @@ export interface OrganizerYField {
   disabled?: boolean;
 }
 
+/** Sous-menu regroupant plusieurs entrées de « Grouper par » ou « Filtrer par » (ex. « Statut » : Valeur, Tranche). */
+export interface OrganizerSubmenu {
+  id: string;
+  label: string;
+}
+
 export interface OrganizerViewGroup {
   id: string;
   label: string;
@@ -52,6 +60,9 @@ export interface OrganizerViewGroup {
   iconFontSet?: OrganizerIconFontSet;
   /** Icône SVG (markup brut), prioritaire sur `icon`. */
   iconSvg?: string;
+  submenu?: OrganizerSubmenu;
+  /** Variantes du groupement (ex. découpage d'une date). La première option est la valeur par défaut. */
+  options?: OrganizerXOption[];
 }
 
 export interface OrganizerViewSlice {
@@ -61,6 +72,10 @@ export interface OrganizerViewSlice {
   iconFontSet?: OrganizerIconFontSet;
   /** Icône SVG (markup brut), prioritaire sur `icon`. */
   iconSvg?: string;
+  /** Sous-menu : les tranches d'un même sous-menu sont exclusives (une seule sélectionnée à la fois). */
+  submenu?: OrganizerSubmenu;
+  /** Variantes du filtre (ex. découpage d'une date). La première option est la valeur par défaut. */
+  options?: OrganizerXOption[];
   /** Libellé affiché pour une valeur de slice ; la clé brute reste utilisée pour le filtrage. */
   formatLabel?: (raw: string) => string;
   /** Ordre d'affichage des valeurs de slice ; par défaut, tri natif des clés. */
@@ -169,12 +184,16 @@ export interface OrganizerState {
   selectedYAggregate?: string;
 
   selectedGroupBy?: string;
+  /** Variante choisie pour « Grouper par » ; absent = première option. Indépendante de `selectedXOption`. */
+  selectedGroupByOption?: string;
   selectedSlices?: string[];
+  /** Variante choisie par filtre (clé : id de la tranche) ; absent = première option. Indépendante des autres menus. */
+  selectedSliceOptions?: Record<string, string>;
   selectedTemplate?: string;
 }
 
 export interface OrganizerButtonEvent {
-  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'templateSelected' | 'sliceSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
+  type: 'fieldToggled' | 'xSelected' | 'ySelected' | 'groupBySelected' | 'groupByOptionSelected' | 'templateSelected' | 'sliceSelected' | 'sliceOptionSelected' | 'chartTypeSelected' | 'reset' | 'viewSwitched';
   state: OrganizerState;
   source?: 'user' | 'api';
   resolvedYUnit?: string | UnitConfig;

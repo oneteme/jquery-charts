@@ -245,11 +245,13 @@
   color: #212121;
 }
 
-.organizer-champs-wrapper .organizer-submenu-item--has-children {
+.organizer-champs-wrapper .organizer-submenu-item--has-children,
+.organizer-submenu .organizer-submenu-item--has-children {
   padding-right: 8px;
 }
 
-.organizer-champs-wrapper .organizer-submenu-arrow {
+.organizer-champs-wrapper .organizer-submenu-arrow,
+.organizer-submenu .organizer-submenu-arrow {
   font-size: 18px !important;
   width: 18px !important;
   height: 18px !important;

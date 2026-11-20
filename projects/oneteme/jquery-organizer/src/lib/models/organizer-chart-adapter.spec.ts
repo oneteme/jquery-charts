@@ -10,6 +10,7 @@ import {
 } from './organizer-chart-adapter';
 import { OrganizerChartConfig, getGroupItems, getIndicatorItems, getStackItems } from './organizer-chart-config';
 import { OrganizerButtonEvent } from './organizer-config.interface';
+import { buildMenuEntries } from './organizer-utils';
 
 const item = (key: string, label: string, extra: Partial<OrganizerChartItem> = {}): OrganizerChartItem => ({
   key, selected: false, menu: { label }, ...extra,
@@ -99,6 +100,41 @@ describe('organizer-chart-adapter', () => {
       expect(ok?.compareKeys).toBe(compareKeys);
       expect(ko?.formatLabel).toBeUndefined();
       expect(ko?.label).toBe('KO');
+    });
+  });
+
+  describe('sous-menus', () => {
+    it('affiche le sous-menu et le libellé d\'entrée sur l\'axe X comme dans Grouper par', () => {
+      const chart = makeChart();
+      chart.indicators!.items[0].extra!.stacks!.items[0].submenu = { id: 'statut', label: 'Statut', itemLabel: 'Valeur' };
+      const organizer = chartConfigToOrganizer(chart);
+
+      const xField = organizer.xFields?.find(f => f.id === 'status');
+      expect(xField).toEqual(jasmine.objectContaining({ label: 'Valeur', submenu: { id: 'statut', label: 'Statut' } }));
+      expect(organizer.groups?.find(g => g.id === 'status')).toEqual(jasmine.objectContaining({ label: 'Valeur', submenu: { id: 'statut', label: 'Statut' } }));
+    });
+
+    it('transmet le sous-menu des tranches', () => {
+      const chart = makeChart();
+      chart.filters!.items[0].submenu = { id: 'statut', label: 'Statut' };
+      const slices = chartConfigToOrganizer(chart).slices;
+
+      expect(slices?.find(s => s.id === 'ok')?.submenu).toEqual({ id: 'statut', label: 'Statut' });
+      expect(slices?.find(s => s.id === 'ko')?.submenu).toBeUndefined();
+    });
+
+    it('regroupe les entrées d\'un même sous-menu à la position de la première', () => {
+      const statut = { id: 'statut', label: 'Statut' };
+      const entries = buildMenuEntries([
+        { id: 'a', submenu: statut },
+        { id: 'b' },
+        { id: 'c', submenu: statut },
+      ]);
+
+      expect(entries.length).toBe(2);
+      expect(entries[0].submenu).toEqual(statut);
+      expect(entries[0].items?.map(i => i.id)).toEqual(['a', 'c']);
+      expect(entries[1].item?.id).toBe('b');
     });
   });
 
@@ -227,6 +263,15 @@ describe('organizer-chart-adapter', () => {
         expect(stackLabel(chart, '11-03')).toBe('11-03');
       });
 
+      it('transmet le rôle du menu : « group » pour l\'empilement, « slice » pour les tranches', () => {
+        const chart = withGroupJquery(makeChart());
+        const resolveSliceDisplay = jasmine.createSpy('resolveSliceDisplay').and.returnValue(undefined);
+        handleOrganizerChartEvent(groupByApp, chart, undefined, { resolveSliceDisplay });
+        stackLabel(chart, '11-03');
+        expect(resolveSliceDisplay).toHaveBeenCalledWith('app', 'group');
+        expect(resolveSliceDisplay).toHaveBeenCalledWith('ko', 'slice');
+      });
+
       it('résout le formateur au rendu : suit un changement de granularité sans réappliquer l\'événement', () => {
         let granularity = 'jour';
         const chart = withGroupJquery(makeChart());
@@ -340,6 +385,64 @@ describe('organizer-chart-adapter', () => {
       );
       expect(result.shouldRefetch).toBeTrue();
       expect(result.binding.state.selectedXOption).toBe('date');
+    });
+  });
+
+  describe('options de Grouper par et de Filtrer par', () => {
+    const dayOptions = [{ id: 'auto', label: 'Automatique' }, { id: 'date', label: 'Jour' }];
+    const opts = { resolveXOptions: (key: string) => (key === 'day' || key === 'ko' ? dayOptions : undefined) };
+
+    it('chartConfigToOrganizer expose les options aux groupes et aux filtres qui en déclarent', () => {
+      const config = chartConfigToOrganizer(makeChart(), opts);
+      expect(config.groups?.find(g => g.id === 'day')?.options).toEqual(dayOptions);
+      expect(config.groups?.find(g => g.id === 'app')?.options).toBeUndefined();
+      expect(config.slices?.find(s => s.id === 'ko')?.options).toEqual(dayOptions);
+      expect(config.slices?.find(s => s.id === 'ok')?.options).toBeUndefined();
+    });
+
+    it('groupByOptionSelected : change la granularité du groupe sans toucher à l\'axe X, et recharge', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart, opts);
+      const result = handleOrganizerChartEvent(
+        event('groupByOptionSelected', { selectedX: 'app', selectedY: 'count', selectedGroupBy: 'day', selectedGroupByOption: 'date' }),
+        chart, current, opts,
+      );
+      expect(result.shouldRefetch).toBeTrue();
+      expect(result.binding.state.selectedX).toBe('app');
+      expect(result.binding.state.selectedGroupByOption).toBe('date');
+    });
+
+    it('sliceOptionSelected : ne recharge pas quand la sélection de filtres est inchangée', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart, opts);
+      const result = handleOrganizerChartEvent(
+        event('sliceOptionSelected', { selectedX: 'day', selectedY: 'count', selectedSlices: ['ko'], selectedSliceOptions: { ko: 'date' } }),
+        chart, current, opts,
+      );
+      expect(result.shouldRefetch).toBeFalse();
+      expect(result.binding.state.selectedSliceOptions).toEqual({ ko: 'date' });
+    });
+
+    it('sliceOptionSelected : recharge quand la conversion vide la sélection de filtres', () => {
+      const chart = makeChart();
+      const current = buildOrganizerChartBinding(chart, opts);
+      const result = handleOrganizerChartEvent(
+        event('sliceOptionSelected', { selectedX: 'day', selectedY: 'count', selectedSlices: [], selectedSliceOptions: { ko: 'date' } }),
+        chart, current, opts,
+      );
+      expect(result.shouldRefetch).toBeTrue();
+    });
+
+    it('ySelected conserve selectedGroupByOption et selectedSliceOptions', () => {
+      const chart = makeChart();
+      const result = handleOrganizerChartEvent(
+        event('ySelected', {
+          selectedX: 'app', selectedY: 'count', selectedGroupBy: 'day', selectedGroupByOption: 'date', selectedSliceOptions: { ko: 'date' },
+        }),
+        chart, undefined, opts,
+      );
+      expect(result.binding.state.selectedGroupByOption).toBe('date');
+      expect(result.binding.state.selectedSliceOptions).toEqual({ ko: 'date' });
     });
   });
 
