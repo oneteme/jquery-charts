@@ -199,11 +199,15 @@ describe('organizer-chart-adapter', () => {
       expect(e.resolvedYUnit).toBe('ms');
     });
 
-    it('changer d\'indicateur désélectionne les empilements puis applique celui demandé', () => {
+    it('changer d\'indicateur conserve l\'empilement mémorisé et le restaure au retour', () => {
       const chart = makeChart();
       getStackItems(getIndicatorItems(chart)[0])[0].selected = true;
       applyOrganizerEventToChart(event('ySelected', { selectedX: 'day', selectedY: 'avg', selectedYAggregate: undefined }), chart);
-      expect(selected(getStackItems(getIndicatorItems(chart)[0]))).toEqual([]);
+      expect(selected(getStackItems(getIndicatorItems(chart)[0]))).toEqual(['status']);
+
+      applyOrganizerEventToChart(event('ySelected', { selectedX: 'day', selectedY: 'count', selectedYAggregate: undefined }), chart);
+      expect(selected(getStackItems(getIndicatorItems(chart)[0]))).toEqual(['status']);
+      expect(chartConfigToState(chart).selectedGroupBy).toBe('status');
     });
 
     it('un empilement choisi comme X devient un groupe synthétique sélectionné', () => {
