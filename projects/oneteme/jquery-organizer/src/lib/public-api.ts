@@ -12,6 +12,7 @@ export {
   OrganizerViewField,
   OrganizerViewGroup,
   OrganizerChartType,
+  OrganizerSubmenu,
   OrganizerViewStack,
   OrganizerViewSlice,
   FieldState,

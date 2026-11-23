@@ -95,6 +95,8 @@ export interface OrganizerChartType {
   label: string;
   icon?: string;
   disabled?: boolean;
+  /** Sous-menu regroupant plusieurs types (ex. « Courbes et aires » : Courbe, Aire). */
+  submenu?: OrganizerSubmenu;
 }
 
 export interface OrganizerTemplate {

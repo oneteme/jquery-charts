@@ -136,7 +136,7 @@ export interface OrganizerConfig {
   yFields?: OrganizerYField[];           // Indicateurs (ex: count, elapsed_avg)
   groups?: OrganizerViewGroup[];         // Options de regroupement (`submenu` idem)
   slices?: OrganizerViewSlice[];         // Options de filtre (`submenu` idem)
-  chartTypes?: OrganizerChartType[];     // Types proposés par le renderer hôte
+  chartTypes?: OrganizerChartType[];     // Types proposés par le renderer hôte (`submenu` les regroupe, ex: Courbes et aires)
 
   // Callbacks
   onFetchFieldData?: (fieldId: string) => Promise<any[]>;
