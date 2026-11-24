@@ -22,6 +22,7 @@
       <div class="chart-label">{{ section.label }}</div>
 
       <chart
+        *ngIf="isChartRendered(section.id)"
         class="chart-component"
         [type]="section.type"
         [config]="examples[section.exampleKey].config"

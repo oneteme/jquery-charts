@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ChartComponent } from '@oneteme/jquery-echarts';
 import { ECHARTS_EXAMPLES } from 'src/app/data/chart/echarts-examples.data';
@@ -8,6 +8,7 @@ import { buildChartCode, highlightChartCode } from 'src/app/core/chart-code-snip
 import { ChartExampleSection, ECHARTS_SECTIONS } from '../charts/chart-example-sections';
 import { ChartExampleNavigationService } from '../charts/chart-example-navigation.service';
 import { trackVisibleChartExample } from '../charts/chart-example-tracker';
+import { DeferredChartRendering, trackDeferredChartRendering } from '../charts/chart-deferred-rendering';
 import { StackBlitzService } from 'src/app/core/services/stackblitz.service';
 
 @Component({
@@ -27,9 +28,11 @@ export class EChartsComponent implements AfterViewInit, OnDestroy {
   activeCodeBlock: string | null = null;
 
   private stopExampleTracking: (() => void) | null = null;
+  private chartRendering: DeferredChartRendering | null = null;
 
   constructor(
     private readonly hostElement: ElementRef<HTMLElement>,
+    private readonly cdr: ChangeDetectorRef,
     private readonly chartNavigation: ChartExampleNavigationService,
     private readonly stackBlitzService: StackBlitzService,
   ) {}
@@ -40,10 +43,19 @@ export class EChartsComponent implements AfterViewInit, OnDestroy {
       this.hostElement.nativeElement,
       id => this.chartNavigation.setCurrentExample(id),
     );
+    this.chartRendering = trackDeferredChartRendering(
+      this.hostElement.nativeElement,
+      () => this.cdr.detectChanges(),
+    );
   }
 
   ngOnDestroy(): void {
     this.stopExampleTracking?.();
+    this.chartRendering?.stop();
+  }
+
+  isChartRendered(id: string): boolean {
+    return this.chartRendering?.isRendered(id) ?? false;
   }
 
   @HostListener('document:click', ['$event'])
