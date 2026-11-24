@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, ElementRef, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ChartComponent as ApexChartComponent } from '@oneteme/jquery-apexcharts';
 import { APEXCHARTS_EXAMPLES } from 'src/app/data/chart/apexcharts-examples.data';
@@ -6,6 +6,7 @@ import type { ChartType } from '@oneteme/jquery-core';
 import { ChartExampleSection, APEXCHARTS_SECTIONS } from '../charts/chart-example-sections';
 import { ChartExampleNavigationService } from '../charts/chart-example-navigation.service';
 import { trackVisibleChartExample } from '../charts/chart-example-tracker';
+import { DeferredChartRendering, trackDeferredChartRendering } from '../charts/chart-deferred-rendering';
 import { buildChartCode, highlightChartCode } from 'src/app/core/chart-code-snippet.util';
 import { StackBlitzService } from 'src/app/core/services/stackblitz.service';
 
@@ -27,9 +28,11 @@ export class ApexChartsPageComponent implements AfterViewInit, OnDestroy {
   activeCodeBlock: string | null = null;
 
   private stopExampleTracking: (() => void) | null = null;
+  private chartRendering: DeferredChartRendering | null = null;
 
   constructor(
     private readonly hostElement: ElementRef<HTMLElement>,
+    private readonly cdr: ChangeDetectorRef,
     private readonly chartNavigation: ChartExampleNavigationService,
     private readonly stackBlitzService: StackBlitzService,
   ) {}
@@ -40,10 +43,19 @@ export class ApexChartsPageComponent implements AfterViewInit, OnDestroy {
       this.hostElement.nativeElement,
       id => this.chartNavigation.setCurrentExample(id),
     );
+    this.chartRendering = trackDeferredChartRendering(
+      this.hostElement.nativeElement,
+      () => this.cdr.detectChanges(),
+    );
   }
 
   ngOnDestroy(): void {
     this.stopExampleTracking?.();
+    this.chartRendering?.stop();
+  }
+
+  isChartRendered(id: string): boolean {
+    return this.chartRendering?.isRendered(id) ?? false;
   }
 
   @HostListener('document:click', ['$event'])

@@ -210,7 +210,10 @@ export function applyOrganizerEventToChart(
   if (state.selectedX !== undefined) _applyXSelection(state.selectedX, chartConfig);
   if (state.selectedY !== undefined) _applyYSelection(state.selectedY, state.selectedYAggregate, chartConfig);
   const effectiveGroupBy = state.selectedGroupBy !== state.selectedX ? state.selectedGroupBy : undefined;
-  _applyGroupBySelection(effectiveGroupBy, chartConfig, options.resolveSliceDisplay);
+  // Un changement d'axe Y sans empilement explicite conserve la pile mémorisée de l'indicateur (restaurée à son retour).
+  if (effectiveGroupBy !== undefined || event.type !== 'ySelected') {
+    _applyGroupBySelection(effectiveGroupBy, chartConfig, options.resolveSliceDisplay);
+  }
   if (state.selectedSlices !== undefined) _applySliceSelection(state.selectedSlices, chartConfig);
   if (state.stacked !== undefined) chartConfig.stacked = state.stacked;
   event.resolvedYUnit = resolveYUnit(chartConfig, event.state.selectedY, event.state.selectedYAggregate);
@@ -343,11 +346,7 @@ function _applyXSelection(selectedX: string, chartConfig: OrganizerChartConfig):
 
 function _applyYSelection(selectedY: string, selectedYAggregate: string | undefined, chartConfig: OrganizerChartConfig): void {
   const actualKey = resolveYKey(selectedY, selectedYAggregate);
-  const indicators = getIndicatorItems(chartConfig);
-  indicators.forEach(i => { i.selected = i.key === actualKey; });
-  indicators.forEach(i => {
-    getStackItems(i).forEach((s: OrganizerChartItem) => { s.selected = false; });
-  });
+  getIndicatorItems(chartConfig).forEach(i => { i.selected = i.key === actualKey; });
 }
 
 /** Libellé d'une valeur d'empilement : formaté si un formateur est résolu pour la clé du groupe, sinon brut. */

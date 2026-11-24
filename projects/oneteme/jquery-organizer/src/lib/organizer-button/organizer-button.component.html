@@ -96,22 +96,58 @@
 
 </mat-menu>
 
-<!-- Sous-menu : types de graphique -->
+<!-- Sous-menu : types de graphique (entrées simples ou regroupées par sous-menu) -->
 <mat-menu #chartTypesSubMenu="matMenu" class="organizer-submenu-panel">
   <div class="organizer-submenu"
        (mousedown)="$event.stopPropagation()"
        (click)="$event.stopPropagation()"
        (keydown)="$event.stopPropagation()">
-    <button type="button" class="organizer-submenu-item"
-      *ngFor="let chartType of config.chartTypes"
-      [class.active]="isChartTypeActive(chartType.id)"
-      [disabled]="chartType.disabled"
-      (click)="onChartTypeSelect(chartType.id)">
-      <span class="organizer-submenu-check">{{ isChartTypeActive(chartType.id) ? '✓' : '' }}</span>
-      <mat-icon *ngIf="chartType.icon" class="organizer-submenu-icon">{{ chartType.icon }}</mat-icon>
-      {{ chartType.label }}
-    </button>
+    <ng-container *ngFor="let entry of chartTypeMenuEntries()">
+      <ng-container *ngIf="entry.item as chartType; else chartTypeSection">
+        <button type="button" class="organizer-submenu-item"
+          [class.active]="isChartTypeActive(chartType.id)"
+          [disabled]="chartType.disabled"
+          (click)="onChartTypeSelect(chartType.id)">
+          <span class="organizer-submenu-check">{{ isChartTypeActive(chartType.id) ? '✓' : '' }}</span>
+          <mat-icon *ngIf="chartType.icon" class="organizer-submenu-icon">{{ chartType.icon }}</mat-icon>
+          {{ chartType.label }}
+        </button>
+      </ng-container>
+      <ng-template #chartTypeSection>
+        <button type="button" class="organizer-submenu-item organizer-submenu-item--has-children"
+          [class.active]="isChartTypeEntryActive(entry)"
+          [matMenuTriggerFor]="chartTypeGroupSubMenu"
+          [matMenuTriggerData]="{ entry: entry }"
+          (mousedown)="$event.stopPropagation()">
+          <span class="organizer-submenu-check">{{ isChartTypeEntryActive(entry) ? '✓' : '' }}</span>
+          <span *ngIf="entry.submenu?.iconSvg" class="organizer-submenu-icon organizer-submenu-icon-svg" [innerHTML]="svgHtml(entry.submenu?.iconSvg)"></span>
+          <mat-icon *ngIf="entry.submenu?.icon && !entry.submenu?.iconSvg" class="organizer-submenu-icon" [fontSet]="entry.submenu?.iconFontSet ?? 'material-icons-outlined'">{{ entry.submenu?.icon }}</mat-icon>
+          {{ entry.submenu?.label }}
+          <mat-icon class="organizer-submenu-arrow">chevron_right</mat-icon>
+        </button>
+      </ng-template>
+    </ng-container>
   </div>
+</mat-menu>
+
+<!-- Sous-menu dynamique : types d'une section (ex. « Barres ») -->
+<mat-menu #chartTypeGroupSubMenu="matMenu" class="organizer-submenu-panel">
+  <ng-template matMenuContent let-entry="entry">
+    <div class="organizer-submenu"
+         (mousedown)="$event.stopPropagation()"
+         (click)="$event.stopPropagation()"
+         (keydown)="$event.stopPropagation()">
+      <button type="button" class="organizer-submenu-item"
+        *ngFor="let chartType of entry.items"
+        [class.active]="isChartTypeActive(chartType.id)"
+        [disabled]="chartType.disabled"
+        (click)="onChartTypeSelect(chartType.id)">
+        <span class="organizer-submenu-check">{{ isChartTypeActive(chartType.id) ? '✓' : '' }}</span>
+        <mat-icon *ngIf="chartType.icon" class="organizer-submenu-icon">{{ chartType.icon }}</mat-icon>
+        {{ chartType.label }}
+      </button>
+    </div>
+  </ng-template>
 </mat-menu>
 
 <!-- Sous-menu : actions du visuel -->

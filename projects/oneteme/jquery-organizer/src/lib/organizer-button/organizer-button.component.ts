@@ -9,7 +9,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { Subject, Subscription, combineLatest, from, isObservable } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-import { OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, OrganizerViewGroup, OrganizerViewSlice, OrganizerXField } from '../models';
+import { OrganizerChartType, OrganizerConfig, OrganizerButtonEvent, OrganizerSliceState, OrganizerState, OrganizerViewGroup, OrganizerViewSlice, OrganizerXField } from '../models';
 import { createMenuEntriesMemo, normalizeOrganizerState, OrganizerMenuEntry, resolveMatchingTemplateId } from '../models/organizer-utils';
 import { buildCategoriesFromRows } from '../slice-panel/slice-categories';
 import { TemplateManager } from './template-manager.utility';
@@ -56,10 +56,20 @@ export class OrganizerButtonComponent implements OnDestroy {
   private readonly groupMenu = createMenuEntriesMemo<OrganizerViewGroup>();
   private readonly sliceMenu = createMenuEntriesMemo<OrganizerViewSlice>();
   private readonly xMenu = createMenuEntriesMemo<OrganizerXField>();
+  private readonly chartTypeMenu = createMenuEntriesMemo<OrganizerChartType>();
 
   /** Entrées de l'axe X : les champs d'un même sous-menu (ex. « Statut ») sont regroupés. */
   xMenuEntries(): OrganizerMenuEntry<OrganizerXField>[] {
     return this.xMenu(this.config?.xFields);
+  }
+
+  /** Entrées du menu Type : les types d'un même sous-menu (ex. « Barres ») sont regroupés. */
+  chartTypeMenuEntries(): OrganizerMenuEntry<OrganizerChartType>[] {
+    return this.chartTypeMenu(this.config?.chartTypes);
+  }
+
+  isChartTypeEntryActive(entry: OrganizerMenuEntry<OrganizerChartType>): boolean {
+    return !!entry.items?.some(type => type.id === this.state?.selectedChartType);
   }
 
   /** Entrées de « Grouper par » : les groupes d'un même sous-menu sont regroupés. */

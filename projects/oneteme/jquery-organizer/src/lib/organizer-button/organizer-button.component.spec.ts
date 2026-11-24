@@ -325,6 +325,24 @@ describe('OrganizerButtonComponent', () => {
       expect(last().type).toBe('chartTypeSelected');
       expect(last().state.selectedChartType).toBe('line');
     });
+
+    it('type de graphique : regroupe les types d\'une même section et coche la section active', () => {
+      const config = {
+        ...baseConfig(),
+        chartTypes: [
+          { id: 'bar', label: 'Bar', submenu: { id: 'bars', label: 'Barres' } },
+          { id: 'line', label: 'Courbe', submenu: { id: 'lines', label: 'Courbes et aires' } },
+          { id: 'spline', label: 'Courbe lissée', submenu: { id: 'lines', label: 'Courbes et aires' } },
+          { id: 'treemap', label: 'Treemap' }
+        ]
+      };
+      const { component } = setup(config, { selectedChartType: 'spline' });
+      const entries = component.chartTypeMenuEntries();
+      expect(entries.map(e => e.submenu?.id ?? e.item?.id)).toEqual(['bars', 'lines', 'treemap']);
+      expect(entries[1].items?.map(t => t.id)).toEqual(['line', 'spline']);
+      expect(component.isChartTypeEntryActive(entries[1])).toBeTrue();
+      expect(component.isChartTypeEntryActive(entries[0])).toBeFalse();
+    });
   });
 
   describe('modèles', () => {
